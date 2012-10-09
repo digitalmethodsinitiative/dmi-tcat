@@ -34,7 +34,6 @@ $uselocalresults = true;
 
 // => gexf
 // => time
-
 validate_all_variables();
 // Output format: {dataset}_{query}_{startdate}_{enddate}_{from_user}_{output type}.{filetype}
 get_dataset_name();

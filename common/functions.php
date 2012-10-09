@@ -9,7 +9,6 @@ if(!empty($whattodo)) {
 
 // return the desired file
 function get_file($what) {
-
 	validate_all_variables();
 
 	// get filename (this also validates the data)
@@ -22,6 +21,7 @@ function get_file($what) {
 
 	// redirect to file
 	$location = str_replace("index.php","",$_SERVER['PHP_SELF']).str_replace("#","%23",$filename);
+	if(defined('LOCATION')) $location = LOCATION.$location;
 	header("Content-type: text/csv");
 	header("Location: $location");
 }
@@ -251,7 +251,7 @@ function get_filename($what) {
 	global $resultsdir,$esc;
 	get_dataset_name();
 	$exc = (empty($esc['shell']["exclude"])) ? "" : "-" . $esc['shell']["exclude"];
-	return $resultsdir . $esc['shell']['datasetname'] . "_" . $esc['shell']["query"] . $exc . "_" . $esc['date']["startdate"] . "_" . $esc['date']["enddate"]. "_" . $esc['shell']["from_user"] . "_". $what . "_min" . $esc['shell']['minf'] . ".csv";	
+	return $resultsdir . str_replace(" ","_",$esc['shell']['datasetname']) . "_" . $esc['shell']["query"] . $exc . "_" . $esc['date']["startdate"] . "_" . $esc['date']["enddate"]. "_" . $esc['shell']["from_user"] . "_". $what . "_min" . $esc['shell']['minf'] . ".csv";	
 }
 
 function get_dataset_name() {

@@ -47,8 +47,12 @@ $datasets = get_all_datasets();
 			//_prompt = true; //confirm("This will launch the export script and can take some time. Do you want to proceed?");
 			_prompt = true;
 		}
-		
-		var _url = "https://lab.digitalmethods.net/~brieder/ytk_analysis/" + _file +
+		var _url = 
+		<?php
+			if(defined('LOCATION')) print '"'.LOCATION.'" + ';
+			print '"'.str_replace("index.php","",$_SERVER['PHP_SELF']).'"';
+		?>
+			 + _file +
 				   "?dataset=" + $("#ipt_dataset").val() +
 				   "&query=" + escape($("#ipt_query").val()) +
 				   "&exclude=" + escape($("#ipt_exclude").val()) +
