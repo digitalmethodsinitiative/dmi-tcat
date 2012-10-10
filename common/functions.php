@@ -1,6 +1,43 @@
 <?php
+$connection = false;
 
 db_connect($db_host,$db_user,$db_pass,$db_name);// or die("could not connect to $db_name on $db_host");
+
+// catch parameters
+if(isset($_GET['database']) && !empty($_GET['database'])) $database = $_GET['database']; else $database = "default";
+if(isset($_GET['dataset']) && !empty($_GET['dataset'])) $dataset = $_GET['dataset']; else $dataset = $database."_z_1";
+if(isset($_GET['query']) && !empty($_GET['query'])) $query = $_GET['query']; else $query = "";
+if(isset($_GET['exclude']) && !empty($_GET['exclude'])) $exclude = $_GET['exclude']; else $exclude = "";
+if(isset($_GET['from_user']) && !empty($_GET['from_user'])) $from_user = $_GET['from_user']; else $from_user = "";
+if(isset($_GET['samplesize']) && !empty($_GET['samplesize'])) $samplesize = $_GET['samplesize']; else $samplesize = "1000";
+if(isset($_GET['minf']) && !empty($_GET['minf'])) $minf = $_GET['minf']; else $minf = 2;
+if(isset($_GET['startdate']) && !empty($_GET['startdate'])) $startdate = $_GET['startdate']; else $startdate = strftime("%Y-%m-%d",date('U')-86400);
+if(isset($_GET['enddate']) && !empty($_GET['enddate'])) $enddate = $_GET['enddate']; else $enddate = strftime("%Y-%m-%d",date('U'));
+$u_startdate = $u_enddate = 0;
+
+if(isset($_GET['whattodo']) && !empty($_GET['whattodo'])) $whattodo = $_GET['whattodo']; else $whattodo = "";
+
+$keywords = array();
+$esc = array();
+
+// TODO, include switch for database
+
+// define punctuation symbols
+$punctuation = array("\s","\.",",","!","\?",":",";","\/","\\","#","@","&","\^","\$","\|","`","~","=","\+","\*","\"","'","\(","\)","\]","\[","\{","\}","<",">","�");
+
+// define the type of output
+$tsv = array("hashtag","mention","retweet","urls","hosts","user","user-mention");	// these analyses will output tsv files
+$network = array("coword","interaction");			// these analyses will output network files
+
+$titles = array(
+"hashtag"=>"Hashtag frequency",
+"retweet"=>"Retweet frequency",
+"user"=>"User frequency",
+"mention"=>"Mention (@username) frequency",
+"urls"=>"URL frequency",
+"hosts"=>"host frequency"
+);
+
 
 if(!empty($whattodo)) {
 	if(in_array($whattodo,$tsv)!==false)
@@ -16,7 +53,7 @@ function get_file($what) {
 	$filename = get_filename($what);
 
 	// if the file does not exist yet, generate it
-	if(!file_exists($filename))	// @todo remove
+	if(!$cacheresults || !file_exists($filename))
 		generate($what,$filename);
 
 	// redirect to file
