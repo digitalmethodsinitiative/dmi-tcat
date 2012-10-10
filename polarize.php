@@ -18,6 +18,7 @@ $dataname = "acta";
 $datadir = "files";
 $charges = loadCharges($datadir . '/' . $dataname . "_charges.csv");    // List of {host,charge}-combinations, where charge can be 'pro', 'con' or 'neutral'
 getTweetUrls($dataset, $start, $end);
+
 //polarizeTweets($dataset, $charges, $start, $end);
 
 /*
@@ -91,7 +92,7 @@ function polarizeTweets($dataset, $charges, $start, $end) {
     $tweetstotal = $tweetspros + $tweetscons + $tweetsneutrals;
     $tweetsUrlPercentage = round(($tweetstotal / $tweetsWithUrls) * 100, 2);
     $tweetsAllPercentage = round(($tweetstotal / $nrOfTweets) * 100, 2);
-die;
+    die;
     /*
      * Time for printing
      */
@@ -167,10 +168,10 @@ function getTweetUrls($dataset, $start = 0, $end = 0) {
     }
     // removes retweets
     $sql .= " AND lower(text) NOT LIKE 'rt%'";
-    print $sql."\n";
+    print $sql . "\n";
     $rec = mysql_query($sql);
     if ($rec) {
-        $handle = fopen($datadir . $dataname . "/_urls.csv", "w");
+        $handle = fopen($datadir . "/" . $dataname . "_urls.csv", "w");
         while ($res = mysql_fetch_assoc($rec)) {
             fputcsv($handle, $res);
             print ".";
