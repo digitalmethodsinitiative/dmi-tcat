@@ -1,5 +1,21 @@
 Notes on using ytk_analysis
 
+Todo:
+- checkout on lab and change config
+- checkout on lab and change config
+- what is probabilityOfAssociation and why is it enabled from index.php?
+- urls have not been imported on temlab or localhost
+- what is difference between absolute weighting and coocurrence weight normalization?
+- encoding of tweets
+- BASE_URL vs $branch=DMI_PRODUCTION
+- CowordOnTools.php calls coword (persistent version) but uses 100% CPU
+- @todo, think through the inclusion of the probability of association
+- word1 word2 coword_freq word1_freq word2_freq
+- pull out variability of association
+
+Strategy:
+- unpersist coword
+- merge CowordOnTools.class.orig.php with variabilityOfAssociation from CowordOnTools.class.orig.php
 
 *******************************************************************************************
 Git repository
@@ -12,8 +28,8 @@ Init
 Config
 *******************************************************************************************
 Modify config.php to reflect your setup, after copying a template file
-    cp common/config.php.lab common/config.php
-
+    cp common/config.php.local common/config.php
+    mkdir files; chown 777;
 
 *******************************************************************************************
 Logging in to coword.digitalmethods.net
@@ -28,10 +44,11 @@ Open second terminal to ssh into the coword machine
 Updating database on coword.digitalmethods.net
 *******************************************************************************************
 export table from lab.digitalmethods.net (the server aggregating data through yourTwapperKeeper)
-    mysqldump -h 82.94.190.198 -u ytk -p yourTwapperKeeper z_XXX | bzip2 > /home/erik/data/yourTwapperKeeper.z_XXX.DATE.sql.bz2
+    mysqldump -h 82.94.190.198 -u ytk -p yourTwapperKeeper z_XXX | bzip2 > yourTwapperKeeper.z_XXX.DATE.sql.bz2
 get pass from
     cat common/config.php
 	
 import table on coword.digitalmethods.net
-    mysql -u ytk -p yourTwapperKeeper < /home/erik/data/yourTwapperKeeper.z_XXX.DATE.sql.bz2
+    bunzip2 yourTwapperKeeper.z_XXX.DATE.sql.bz2
+    mysql -u ytk -p yourTwapperKeeper < yourTwapperKeeper.z_XXX.DATE.sql
 

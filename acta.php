@@ -4,8 +4,12 @@ include_once('common/functions.php');
 db_connect($db_host,$db_user,$db_pass,$db_name);// or die("could not connect to $db_name on $db_host");
 include_once('acta_polarizingUrls.php');
 
-//getTweetUrls();
-getTopHosts();
+// get Tweets with URLs
+$start = strtotime("19 May 2012");
+$end = strtotime("22 June 2012");
+getTweetUrls($start,$end);
+// compare the tweeted hosts with the ones in our pro / con / neutral lists in acta_polarizingUrls.php
+//getTopHosts();
 
 function getTopHosts() {
 
@@ -58,6 +62,7 @@ function getTopHosts() {
 	$acvneutrals = array_count_values($neutrals);
 	print count($acvneutrals)." neutral acta hosts found\n";
 	print array_sum($acvneutrals)." neutral acta tweets found\n";
+        // @todo, report about tweets without URLs
 	
 	// write host count and pole
 	$out = "";
@@ -73,11 +78,16 @@ function getTopHosts() {
 	getTweets($conTweetIds,"acta_conTweets");
 	getTweets($proTweetIds,"acta_proTweets");
 	getTweets($neutralTweetIds,"acta_neutralTweets");
+        // @todo: write tweets without URL
 }
 
-function getTweetUrls() {
+function getTweetUrls($start = 0, $end = 0) {
 	$sql = "SELECT tweetid, tweetedurl, targeturl, tweetedhost, targethost FROM urls WHERE dbname = 'yourTwapperKeeper' AND tablename = 'z_501'";
-	print $sql."\n";
+        if($start != 0 && is_int($start))
+            $sql .= " AND time >= $start";
+	if($end != 0 && is_int($end))
+            $sql .= " AND time <= $end";
+        print $sql."\n";
 	$rec = mysql_query($sql);
 	if($rec) {
 		$handle = fopen("files/acta_urls.csv","w");
