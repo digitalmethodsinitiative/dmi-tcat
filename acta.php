@@ -82,11 +82,15 @@ function getTopHosts() {
 }
 
 function getTweetUrls($start = 0, $end = 0) {
-	$sql = "SELECT tweetid, tweetedurl, targeturl, tweetedhost, targethost FROM urls WHERE dbname = 'yourTwapperKeeper' AND tablename = 'z_501'";
-        if($start != 0 && is_int($start))
-            $sql .= " AND time >= $start";
-	if($end != 0 && is_int($end))
-            $sql .= " AND time <= $end";
+	if(!$start && !$end) 
+		$sql = "SELECT tweetid, tweetedurl, targeturl, tweetedhost, targethost FROM urls WHERE dbname = 'yourTwapperKeeper' AND tablename = 'z_501'";
+	else {
+		$sql = "SELECT u.tweetid, u.tweetedurl, u.targeturl, u.tweetedhost, u.targethost FROM urls u, z_501 t WHERE u.dbname = 'yourTwapperKeeper' AND u.tablename = 'z_501' AND u.tweetid = t.id";
+        	if($start != 0 && is_int($start))
+            		$sql .= " AND t.time >= $start";
+		if($end != 0 && is_int($end))
+       		     $sql .= " AND t.time <= $end";
+	}
         print $sql."\n";
 	$rec = mysql_query($sql);
 	if($rec) {
