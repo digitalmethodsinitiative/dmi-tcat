@@ -164,8 +164,6 @@ function polarizeTweets($dataset, $charges, $start, $end, $includeRetweets) {
 function getTweetUrls($dataset, $start = 0, $end = 0) {
     global $datadir, $dataname, $includeRetweets;
 
-    $sql = "select id, text from z_501 where lower(text) not like 'rt%' group by text";
-
     if ($includeRetweets && !$start && !$end)
         $sql = "SELECT tweetid, tweetedurl, targeturl, tweetedhost, targethost FROM urls WHERE dbname = 'yourTwapperKeeper' AND tablename = '$dataset'";
     else {
@@ -175,9 +173,6 @@ function getTweetUrls($dataset, $start = 0, $end = 0) {
             $sql .= " AND t.time >= $start";
         if ($end != 0 && is_int($end))
             $sql .= " AND t.time <= $end";
-
-        if (!$includeRetweets)   // remove identical tweets and tweets starting with 'rt'
-            $sql .= " AND lower(text) NOT LIKE 'rt%' GROUP BY t.text";
     }
 
     // list all tweets
@@ -191,6 +186,9 @@ function getTweetUrls($dataset, $start = 0, $end = 0) {
         fclose($handle);
         print "\ndone\n";
     }
+
+    if (!$includeRetweets)   // remove identical tweets and tweets starting with 'rt'
+        $sql .= " AND lower(text) NOT LIKE 'rt%' GROUP BY t.text";
     $rec = mysql_query($sql);
     if ($rec) {
 
