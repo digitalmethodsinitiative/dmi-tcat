@@ -37,27 +37,26 @@ $datasets = get_all_datasets();
                     return false;
                 }
 		
-                if(typeof(_file) == "undefined") {	
-                    _file = "index.php";
-                    $('#whattodo').val('');
-                    _prompt = true;
-                } else {
-                    //_prompt = true; //confirm("This will launch the export script and can take some time. Do you want to proceed?");
-                    _prompt = true;
-                }
-                var _url = 
-<?php
-if (defined('BASE_URL'))
-    print '"' . BASE_URL . '"';
-?>
-            + _file +
-            "?dataset=" + $("#ipt_dataset").val() +
-            "&query=" + escape($("#ipt_query").val()) +
-            "&exclude=" + escape($("#ipt_exclude").val()) +
-            "&from_user=" + $("#ipt_from_user").val() +
-            "&startdate=" + $("#ipt_startdate").val() +
-            "&enddate=" + $("#ipt_enddate").val() +
-            "&whattodo=" + $("#whattodo").val();
+		if(typeof(_file) == "undefined") {	
+			_file = "index.php";
+			$('#whattodo').val('');
+			_prompt = true;
+		} else {
+			//_prompt = true; //confirm("This will launch the export script and can take some time. Do you want to proceed?");
+			_prompt = true;
+		}
+		var _url = 
+		<?php
+			if(defined('BASE_URL')) print '"'.BASE_URL.'"';
+		?>
+			 + _file +
+				   "?dataset=" + $("#ipt_dataset").val() +
+				   "&query=" + escape($("#ipt_query").val()) +
+				   "&exclude=" + escape($("#ipt_exclude").val()) +
+				   "&from_user=" + $("#ipt_from_user").val() +
+				   "&startdate=" + $("#ipt_startdate").val() +
+				   "&enddate=" + $("#ipt_enddate").val() +
+				   "&whattodo=" + $("#whattodo").val();
 			
         if(_prompt == true) {
             document.location.href = _url;
