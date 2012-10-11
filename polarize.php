@@ -18,9 +18,8 @@ $dataname = "acta";
 $datadir = "files";
 $includeRetweets = FALSE;
 $charges = loadCharges($datadir . '/' . $dataname . "_charges.csv");    // List of {host,charge}-combinations, where charge can be 'pro', 'con' or 'neutral'
-getTweetUrls($dataset, $start, $end);
-
-//polarizeTweets($dataset, $charges, $start, $end, $includeRetweets);
+//getTweetUrls($dataset, $start, $end);
+polarizeTweets($dataset, $charges, $start, $end, $includeRetweets);
 
 /*
  * Compare the tweeted hosts with the ones in our pro / con / neutral lists in files/$dataname_charges
@@ -151,9 +150,9 @@ function polarizeTweets($dataset, $charges, $start, $end, $includeRetweets) {
     getNonPolarizedTweets($dataset, array_merge($conTweetIds, $proTweetIds, $neutralTweetIds), $dataname . ($includeRetweets ? "" : "_noRT") . "_nonPolarizedTweets");
 
     // get coword and word frequencies
-    simpleCoword($datadir . "/" . $dataname . ($includeRetweets ? "" : "_noRT") . "_conTweets.csv");
-    simpleCoword($datadir . "/" . $dataname . ($includeRetweets ? "" : "_noRT") . "_proTweets.csv");
-    simpleCoword($datadir . "/" . $dataname . ($includeRetweets ? "" : "_noRT") . "_neutralTweets.csv");
+    coword($datadir . "/" . $dataname . ($includeRetweets ? "" : "_noRT") . "_conTweets.csv");
+    coword($datadir . "/" . $dataname . ($includeRetweets ? "" : "_noRT") . "_proTweets.csv");
+    coword($datadir . "/" . $dataname . ($includeRetweets ? "" : "_noRT") . "_neutralTweets.csv");
     //simpleCoword($datadir . "/" . $dataname . ($includeRetweets ? "" : "_noRT") ."_nonPolarizedTweets.csv"); // will blow up ur computer
 }
 
@@ -252,7 +251,7 @@ function loadCharges($filename) {
     $charges = array();
     $file = file($filename);
     foreach ($file as $f) {
-        $s = explode(", ", $f);
+        $s = explode(",", $f);
         $charges[trim($s[1])][] = trim($s[0]);
     }
     return $charges;
@@ -262,86 +261,24 @@ function loadCharges($filename) {
  * Simple coword calculation, all in memory
  */
 
-function simpleCoword($datafile) {
-    $nodes = $fromTo = array();
+function coword($datafile) {
 
+    print "getting cowords $datafile\n";
+    
+    include_once("common/Coword.class.php");
+
+    $coword = new Coword;
+    $coword->setHashtags_are_separate_words(TRUE);
     if (($handle = fopen($datafile, "r")) === FALSE)
         die("could not open $datafile\n");
-    while (($data = fgetcsv($handle, 1000, ", ")) !== FALSE) {
-        $text = substr(stripslashes($data[1]), 0, -1); // remove quotes surrounding tweet
-        $text = strtolower($text);         // lower text
-        $text = html_entity_decode($text);
-        $text = preg_replace("/https?:\/\/[^\s]*/", " ", $text); // remove URLs
-        //$text = preg_replace("/[^#\w\d]/", " ", $text);    // remove non-words -> breaks on things like don't @todo
-
-        $text = mb_str_split($text);    // remove non-words
-        $text = implode(" - ", $text);
-
-        $text = trim($text);          // trim
-        $text = preg_replace("/[\s\t\n\r]+/", " ", $text);   // replace whitespace characters by single whitespace
-
-        $words = explode(" ", $text);
-        //$words = array_diff($words, $stopwords);  // @todo
-
-        $frequency = array_count_values($words);
-        $words = array_keys($frequency);
-        for ($i = 0; $i < count($words); $i++) {
-            $from = $words[$i];
-            if (strlen($from) < 2)
-                continue;           // remove words smaller than 2 chars
-            $nodes[] = $from;
-            for ($j = $i + 1; $j < count($words); $j++) {
-                $to = $words[$j];
-                if (strlen($to) < 2)
-                    continue;           // remove words smaller than 2 chars
-                $nodes[] = $to;
-
-                if (!isset($fromTo[$from]) || !isset($fromTo[$from][$to]))   // init
-                    $fromTo[$from][$to] = 0;
-
-                $fromTo[$from][$to] += min($frequency[$words[$i]], $frequency[$words[$j]]); // add per tweet cooccurence
-            }
-        }
+    while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
+        $coword->addDocument($data[1]);
     }
-
-    // various outputs
-    $frequencies = array_count_values($nodes);
-    arsort($frequencies);
-    $out = "";
-    foreach ($frequencies as $word => $freq)
-        $out .= "$word,$freq\n";
-    file_put_contents(str_replace(".csv", "_frequencies.csv", $datafile), $out);
-
-    $out = "";
-    foreach ($fromTo as $from => $tos) {
-        foreach ($tos as $to => $freq) {
-            if ($freq >= 2)   // @todo min coword frequency of two
-                $out .= "$from,$to,$freq\n";
-            else {
-                unset($fromTo[$from][$to]);
-                if (empty($fromTo[$from]))
-                    unset($fromTo[$from]);
-            }
-        }
-    }
-    file_put_contents(str_replace(".csv", "_cowords.csv", $datafile), $out);
-
-    $nodes = array_unique($nodes);
-    file_put_contents(str_replace(".csv", "_cowords_network.gexf", $datafile), toGephi($fromTo, $nodes, $datafile, $frequencies));
-}
-
-function mb_str_split($string) {
-    global $punctuation;
-    $split = preg_split('/\b([\(\).,\-\',:!\?;"\{\}\[\]„“»«‘\r\n\.]*)/u', $string, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
-    $split = preg_split('/\b([' . implode("", $punctuation) . "]*)/u", $string, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
-    return array_filter($split, 'filter');
-}
-
-function filter($val) {
-    if (trim($val) != '') {
-        return trim($val);
-    }
-    return false;
+    $coword->iterate();
+    
+    file_put_contents(str_replace(".csv", "_frequencies.csv", $datafile), $coword->getWordsAsCsv());
+    file_put_contents(str_replace(".csv", "_cowords.csv", $datafile), $coword->getCowordsAsCsv());
+    file_put_contents(str_replace(".csv", "_cowords_network.gexf", $datafile), $coword->getCowordsAsGexf($datafile));
 }
 
 ?>
