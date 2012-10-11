@@ -16,24 +16,28 @@ $end = strtotime("22 June 2012");
 $dataset = "z_501";
 $dataname = "acta";
 $datadir = "files";
+$includeRetweets = FALSE;
 $charges = loadCharges($datadir . '/' . $dataname . "_charges.csv");    // List of {host,charge}-combinations, where charge can be 'pro', 'con' or 'neutral'
 getTweetUrls($dataset, $start, $end);
 
-//polarizeTweets($dataset, $charges, $start, $end);
+//polarizeTweets($dataset, $charges, $start, $end, $includeRetweets);
 
 /*
  * Compare the tweeted hosts with the ones in our pro / con / neutral lists in files/$dataname_charges
  * Output stats and polarized tweets
  */
 
-function polarizeTweets($dataset, $charges, $start, $end) {
+function polarizeTweets($dataset, $charges, $start, $end, $includeRetweets) {
 
     global $pro, $con, $neutral, $datadir, $dataname;
     $pros = $cons = $neutrals = $proTweetIds = $conTweetIds = $neutralTweetIds = array();
 
     // see whether hosts of specific leaning are found in specific tweet
     // @todo, it might be that a tweet contains URLs of different polarization, this will lead to the tweet appearing in both polarizations
-    $file = file($datadir . '/' . $dataname . '_urls.csv');
+    if ($includeRetweets)
+        $file = file($datadir . '/' . $dataname . '_urls_all.csv');
+    else
+        $file = file($datadir . '/' . $dataname . '_urls_noRT.csv');
     foreach ($file as $f) {
         $e = explode(",", $f);
         $host = strtolower(trim($e[4]));
@@ -66,6 +70,8 @@ function polarizeTweets($dataset, $charges, $start, $end) {
     $sql = "SELECT count(id) as count FROM $dataset";
     if ($start != 0 && $end != 0)
         $sql .= " WHERE time >= $start AND time <= $end";
+    if (!$includeRetweets)
+        $sql .= " AND lower(text) NOT LIKE 'rt%'";  // @todo, also unique the texts (native retweet)
     $rec = mysql_query($sql);
     $res = mysql_fetch_assoc($rec);
     $nrOfTweets = $res['count'];
@@ -92,7 +98,7 @@ function polarizeTweets($dataset, $charges, $start, $end) {
     $tweetstotal = $tweetspros + $tweetscons + $tweetsneutrals;
     $tweetsUrlPercentage = round(($tweetstotal / $tweetsWithUrls) * 100, 2);
     $tweetsAllPercentage = round(($tweetstotal / $nrOfTweets) * 100, 2);
-    die;
+
     /*
      * Time for printing
      */
@@ -123,7 +129,7 @@ function polarizeTweets($dataset, $charges, $start, $end) {
     $out = "";
     foreach ($acvhosts as $a => $v)
         $out .= "$a,$v\n";
-    file_put_contents($datadir . '/' . $dataname . '_hostsInTweets.csv', $out);
+    file_put_contents($datadir . '/' . $dataname . ($includeRetweets ? "" : "_noRT") . '_hostsInTweets.csv', $out);
 
     // write host count and pole
     $out = "";
@@ -136,19 +142,19 @@ function polarizeTweets($dataset, $charges, $start, $end) {
         $out .= "$host,$v,con\n";
     foreach ($acvneutrals as $host => $v)
         $out .= "$host,$v,neutral\n";
-    file_put_contents($datadir . '/' . $dataname . '_polarizedHosts.csv', $out);
+    file_put_contents($datadir . '/' . $dataname . ($includeRetweets ? "" : "_noRT") . '_polarizedHosts.csv', $out);
 
     //  write tweets per pole
-    getTweets($dataset, $conTweetIds, $dataname . "_conTweets");
-    getTweets($dataset, $proTweetIds, $dataname . "_proTweets");
-    getTweets($dataset, $neutralTweetIds, $dataname . "_neutralTweets");
-    getNonPolarizedTweets($dataset, array_merge($conTweetIds, $proTweetIds, $neutralTweetIds), $dataname . "_nonPolarizedTweets");
+    getTweets($dataset, $conTweetIds, $dataname . ($includeRetweets ? "" : "_noRT") . "_conTweets");
+    getTweets($dataset, $proTweetIds, $dataname . ($includeRetweets ? "" : "_noRT") . "_proTweets");
+    getTweets($dataset, $neutralTweetIds, $dataname . ($includeRetweets ? "" : "_noRT") . "_neutralTweets");
+    getNonPolarizedTweets($dataset, array_merge($conTweetIds, $proTweetIds, $neutralTweetIds), $dataname . ($includeRetweets ? "" : "_noRT") . "_nonPolarizedTweets");
 
     // get coword and word frequencies
-    simpleCoword($datadir . "/" . $dataname . "_conTweets.csv");
-    simpleCoword($datadir . "/" . $dataname . "_proTweets.csv");
-    simpleCoword($datadir . "/" . $dataname . "_neutralTweets.csv");
-    //simpleCoword($datadir . "/" . $dataname . "_nonPolarizedTweets.csv"); // will blow up ur computer
+    simpleCoword($datadir . "/" . $dataname . ($includeRetweets ? "" : "_noRT") . "_conTweets.csv");
+    simpleCoword($datadir . "/" . $dataname . ($includeRetweets ? "" : "_noRT") . "_proTweets.csv");
+    simpleCoword($datadir . "/" . $dataname . ($includeRetweets ? "" : "_noRT") . "_neutralTweets.csv");
+    //simpleCoword($datadir . "/" . $dataname . ($includeRetweets ? "" : "_noRT") ."_nonPolarizedTweets.csv"); // will blow up ur computer
 }
 
 /*
@@ -156,22 +162,39 @@ function polarizeTweets($dataset, $charges, $start, $end) {
  */
 
 function getTweetUrls($dataset, $start = 0, $end = 0) {
-    global $datadir, $dataname;
-    if (!$start && !$end)
+    global $datadir, $dataname, $includeRetweets;
+
+    $sql = "select id, text from z_501 where lower(text) not like 'rt%' group by text";
+
+    if ($includeRetweets && !$start && !$end)
         $sql = "SELECT tweetid, tweetedurl, targeturl, tweetedhost, targethost FROM urls WHERE dbname = 'yourTwapperKeeper' AND tablename = '$dataset'";
     else {
         $sql = "SELECT u.tweetid, u.tweetedurl, u.targeturl, u.tweetedhost, u.targethost FROM urls u, $dataset t WHERE u.dbname = 'yourTwapperKeeper' AND u.tablename = '$dataset' AND u.tweetid = t.id";
+
         if ($start != 0 && is_int($start))
             $sql .= " AND t.time >= $start";
         if ($end != 0 && is_int($end))
             $sql .= " AND t.time <= $end";
+        
+        if(!$includeRetweets)   // remove identical tweets and tweets starting with 'rt'
+            $sql .= " AND lower(text) NOT LIKE 'rt%' GROUP BY t.text";
     }
-    // removes retweets
-    $sql .= " AND lower(text) NOT LIKE 'rt%'";
-    print $sql . "\n";
+    
+    // list all tweets
     $rec = mysql_query($sql);
     if ($rec) {
-        $handle = fopen($datadir . "/" . $dataname . "_urls.csv", "w");
+        $handle = fopen($datadir . "/" . $dataname . "_urls_all.csv", "w");
+        while ($res = mysql_fetch_assoc($rec)) {
+            fputcsv($handle, $res);
+            print ".";
+        }
+        fclose($handle);
+        print "\ndone\n";
+    }
+    $rec = mysql_query($sql);
+    if ($rec) {
+
+        $handle = fopen($datadir . "/" . $dataname . "_urls:" . ($includeRetweets ? "" : "_noRT") . ".csv", "w");
         while ($res = mysql_fetch_assoc($rec)) {
             fputcsv($handle, $res);
             print ".";
@@ -187,7 +210,7 @@ function getTweetUrls($dataset, $start = 0, $end = 0) {
 
 function getTweets($dataset, $tweetIds, $name) {
     global $datadir;
-    $sql = "SELECT id,text FROM $dataset WHERE id IN (" . implode(",", array_keys($tweetIds)) . ")";
+    $sql = "SELECT id, text FROM $dataset WHERE id IN (" . implode(", ", array_keys($tweetIds)) . ")";
     $rec = mysql_query($sql);
     if ($rec) {
         $handle = fopen($datadir . "/$name.csv", "w");
@@ -208,7 +231,7 @@ function getTweets($dataset, $tweetIds, $name) {
 
 function getNonPolarizedTweets($dataset, $tweetIds, $name) {
     global $datadir;
-    $sql = "SELECT id,text FROM $dataset WHERE id NOT IN (" . implode(",", array_keys($tweetIds)) . ")";
+    $sql = "SELECT id, text FROM $dataset WHERE id NOT IN (" . implode(", ", array_keys($tweetIds)) . ")";
     $rec = mysql_query($sql);
     if ($rec) {
         $handle = fopen($datadir . "/$name.csv", "w");
@@ -231,7 +254,7 @@ function loadCharges($filename) {
     $charges = array();
     $file = file($filename);
     foreach ($file as $f) {
-        $s = explode(",", $f);
+        $s = explode(", ", $f);
         $charges[trim($s[1])][] = trim($s[0]);
     }
     return $charges;
@@ -246,7 +269,7 @@ function simpleCoword($datafile) {
 
     if (($handle = fopen($datafile, "r")) === FALSE)
         die("could not open $datafile\n");
-    while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
+    while (($data = fgetcsv($handle, 1000, ", ")) !== FALSE) {
         $text = substr(stripslashes($data[1]), 0, -1); // remove quotes surrounding tweet
         $text = strtolower($text);         // lower text
         $text = html_entity_decode($text);
