@@ -49,8 +49,7 @@ $datasets = get_all_datasets();
 		}
 		var _url = 
 		<?php
-			if(defined('BASE_URL')) print '"'.BASE_URL.'" + ';
-			print '"'.str_replace("index.php","",$_SERVER['PHP_SELF']).'"';
+			if(defined('BASE_URL')) print '"'.BASE_URL.'"';
 		?>
 			 + _file +
 				   "?dataset=" + $("#ipt_dataset").val() +
