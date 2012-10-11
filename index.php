@@ -49,7 +49,7 @@ $datasets = get_all_datasets();
 		}
 		var _url = 
 		<?php
-			if(defined('LOCATION')) print '"'.LOCATION.'" + ';
+			if(defined('BASE_URL')) print '"'.BASE_URL.'" + ';
 			print '"'.str_replace("index.php","",$_SERVER['PHP_SELF']).'"';
 		?>
 			 + _file +
