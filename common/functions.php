@@ -495,34 +495,6 @@ function get_datasets() {
     return $datasets;
 }
 
-// returns a GEXF file
-function toGephi($fromTo, $nodes, $title, $word_frequencies = array()) {
-    include_once('Gexf.class.php');
-    $gexf = new Gexf();
-    $gexf->setTitle("Co-word " . $title);
-    $gexf->setEdgeType(GEXF_EDGE_UNDIRECTED);
-    $gexf->setMode(GEXF_MODE_DYNAMIC);
-    $gexf->setTimeFormat(GEXF_TIMEFORMAT_DATE);
-    $gexf->setCreator("tools.digitalmethods.net"); //@todo set creator to be the logged in user
-
-    foreach ($fromTo as $word => $tos) {
-        foreach ($tos as $coword => $coword_frequency) {
-            $node1 = new GexfNode($word);
-            if (isset($word_frequencies[$word]))
-                $node1->addNodeAttribute("word_frequency", $word_frequencies[$word], $type = "int");
-            $gexf->addNode($node1);
-            $node2 = new GexfNode($coword);
-            if (isset($word_frequencies[$coword]))
-                $node2->addNodeAttribute("word_frequency", $word_frequencies[$coword], $type = "int");
-            $gexf->addNode($node2);
-            $edge_id = $gexf->addEdge($node1, $node2, $coword_frequency);
-        }
-    }
-
-    $gexf->render();
-    return $gexf->gexfFile;
-}
-
 function xml_escape($stuff) {
     return str_replace("&", "&amp;", str_replace("'", "&quot;", str_replace('"', "'", strip_tags($stuff))));
 }
