@@ -175,11 +175,11 @@ function getTweetUrls($dataset, $start = 0, $end = 0) {
             $sql .= " AND t.time >= $start";
         if ($end != 0 && is_int($end))
             $sql .= " AND t.time <= $end";
-        
-        if(!$includeRetweets)   // remove identical tweets and tweets starting with 'rt'
+
+        if (!$includeRetweets)   // remove identical tweets and tweets starting with 'rt'
             $sql .= " AND lower(text) NOT LIKE 'rt%' GROUP BY t.text";
     }
-    
+
     // list all tweets
     $rec = mysql_query($sql);
     if ($rec) {
@@ -194,7 +194,7 @@ function getTweetUrls($dataset, $start = 0, $end = 0) {
     $rec = mysql_query($sql);
     if ($rec) {
 
-        $handle = fopen($datadir . "/" . $dataname . "_urls:" . ($includeRetweets ? "" : "_noRT") . ".csv", "w");
+        $handle = fopen($datadir . "/" . $dataname . "_urls" . ($includeRetweets ? "" : "_noRT") . ".csv", "w");
         while ($res = mysql_fetch_assoc($rec)) {
             fputcsv($handle, $res);
             print ".";
