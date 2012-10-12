@@ -25,14 +25,17 @@ class Coword {
     public $extract_only_hashtags;
     public $remove_stop_words;
     public $min_word_length;
+    public $min_word_frequency;
     public $words = array();    // holds word frequencies
     public $cowords = array();  // holds coword frequencies
+    public $document_word_frequencies = array(); // holds word frequencies per document
 
     function __construct() {
         $this->hashtags_are_separate_words = FALSE;
         $this->remove_stop_words = TRUE;
         $this->extract_only_hashtags = FALSE;
         $this->min_word_length = 2;
+        $this->min_word_frequency = 2;
         $this->punctuation = array("\s", "\.", ",", "!", "\?", ":", ";", "\/", "&", "\^", "\$", "\|", "`", "~", "=", "\+", "\*", "\"", "'", "\(", "\)", "\]", "\[", "{", "}", "<", ">");
     }
 
@@ -50,35 +53,67 @@ class Coword {
 
     function iterate() {
 
+        // first get a list of all words in the corpus + their frequencies
         foreach ($this->documents as $k => $v) {
 
             // get words
             $words = $this->getWordsInString($v);               // get words
             $frequency = array_count_values($words);            // word frequency
             ksort($frequency);
-            $words = array_keys($frequency);                    // get unique words
-            // @todo, remove stopwords
-            // 
-            // list cowords
-            for ($i = 0; $i < count($words); $i++) {
-                $from = $words[$i];
-                if (strlen($from) < $this->getMin_word_length())
-                    continue;           // do not consider words smaller than 2 chars
-                for ($j = $i + 1; $j < count($words); $j++) {
-                    $to = $words[$j];
-                    if (strlen($to) < $this->getMin_word_length())
-                        continue;           // do not consider words smaller than 2 chars
-                    $this->addCoword($from, $to, min($frequency[$words[$i]], $frequency[$words[$j]]));
+            $words_in_document = array_keys($frequency);        // get unique words
+
+            foreach ($frequency as $word => $count) {
+                if (strlen($word) < $this->min_word_length) {    // remove small words
+                    unset($frequency[$word]);
+                    continue;
+                }
+                $this->addWord($word, $count);                  // add word to list of all words in corpus
+            }
+            $this->document_word_frequencies[$k] = $frequency;
+        }
+        // remove words appearing less than x times
+        foreach ($this->words as $word => $frequency) {
+            if ($frequency < $this->min_word_frequency)
+                unset($this->words[$word]);
+        }
+        arsort($this->words);
+
+        // remove stop words
+        include_once('common/Stopwords.class.php');
+        $sw = new Stopwords();
+        $sw->loadAllLists();
+        $cleaned = $sw->removeStopwords(array_keys($this->words));
+        print count($this->words) . " vs " . count($cleaned) . "<bR>";
+        flush();
+        foreach ($this->words as $word => $c) {
+            if (array_search($word, $cleaned) === false)
+                unset($this->words[$word]);
+        }
+        unset($cleaned);
+        print "done<bR>";
+        flush();
+
+        // list cowords
+        foreach ($this->document_word_frequencies as $k => $frequency) {
+            $words_in_document = array_keys($frequency);
+            for ($i = 0; $i < count($words_in_document); $i++) {
+                $from = $words_in_document[$i];
+                if (!isset($this->words[$from]))
+                    continue;
+                for ($j = $i + 1; $j < count($words_in_document); $j++) {
+                    $to = $words_in_document[$j];
+                    if (!isset($this->words[$to]))
+                        continue;
+                    $this->addCoword($from, $to, min($frequency[$words_in_document[$i]], $frequency[$words_in_document[$j]]));
                 }
             }
-            // keep track of word frequencies
-            foreach ($frequency as $word => $count)
-                $this->addWord($word, $count);
         }
+        
+        // @todo add minimum_coword_frequency
     }
 
     /*
-     * Remove non-words
+     * Tokenize
      */
 
     function getWordsInString($v) {
@@ -214,6 +249,14 @@ class Coword {
 
     public function setRemove_stop_words($remove_stop_words) {
         $this->remove_stop_words = $remove_stop_words;
+    }
+
+    public function getMin_word_frequency() {
+        return $this->min_word_frequency;
+    }
+
+    public function setMin_word_frequency($min_word_frequency) {
+        $this->min_word_frequency = $min_word_frequency;
     }
 
 }
