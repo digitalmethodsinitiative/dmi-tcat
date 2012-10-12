@@ -4,6 +4,8 @@
 require_once './common/config.php';
 require_once './common/functions.php';
 
+$show_coword = FALSE;
+
 $datasets = get_all_datasets();
 ?>
 
@@ -37,36 +39,37 @@ $datasets = get_all_datasets();
                     return false;
                 }
 		
-		if(typeof(_file) == "undefined") {	
-			_file = "index.php";
-			$('#whattodo').val('');
-			_prompt = true;
-		} else {
-			//_prompt = true; //confirm("This will launch the export script and can take some time. Do you want to proceed?");
-			_prompt = true;
-		}
-		var _url = 
-		<?php
-			if(defined('BASE_URL')) print '"'.BASE_URL.'"';
-		?>
-			 + _file +
-				   "?dataset=" + $("#ipt_dataset").val() +
-				   "&query=" + escape($("#ipt_query").val()) +
-				   "&exclude=" + escape($("#ipt_exclude").val()) +
-				   "&from_user=" + $("#ipt_from_user").val() +
-				   "&startdate=" + $("#ipt_startdate").val() +
-				   "&enddate=" + $("#ipt_enddate").val() +
-				   "&whattodo=" + $("#whattodo").val();
+                if(typeof(_file) == "undefined") {	
+                    _file = "index.php";
+                    $('#whattodo').val('');
+                    _prompt = true;
+                } else {
+                    //_prompt = true; //confirm("This will launch the export script and can take some time. Do you want to proceed?");
+                    _prompt = true;
+                }
+                var _url = 
+<?php
+if (defined('BASE_URL'))
+    print '"' . BASE_URL . '"';
+?>
+                            + _file +
+                            "?dataset=" + $("#ipt_dataset").val() +
+                            "&query=" + escape($("#ipt_query").val()) +
+                            "&exclude=" + escape($("#ipt_exclude").val()) +
+                            "&from_user=" + $("#ipt_from_user").val() +
+                            "&startdate=" + $("#ipt_startdate").val() +
+                            "&enddate=" + $("#ipt_enddate").val() +
+                            "&whattodo=" + $("#whattodo").val();
 			
-        if(_prompt == true) {
-            document.location.href = _url;
-        }
-    }
+                        if(_prompt == true) {
+                            document.location.href = _url;
+                        }
+                    }
 	
-    function askFrequency() {
-        var minf = prompt("Specify the minimum frequency for data to be included in the export:","2");
-        return minf;
-    }
+                    function askFrequency() {
+                        var minf = prompt("Specify the minimum frequency for data to be included in the export:","2");
+                        return minf;
+                    }
 	
         </script>
 
@@ -391,7 +394,7 @@ foreach ($linedata as $key => $value) {
                 <div class="txt_desc">Use: see wether the users mentioned are also those who tweet a lot.</div>
                 <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('user-mention'); sendUrl('index.php');return false;">launch</a></div>
 
-                <?php if ($show_url_export) { ?>
+<?php if ($show_url_export) { ?>
                     <hr />
                     <h3>Url frequency</h3>
                     <div class="txt_desc">Creates a .csv file (open in Excel or similar) that contains the frequencies of tweeted URLs, per day (date range > 2 days) or per hour (date range 2 days or smaller).</div>
@@ -403,7 +406,7 @@ foreach ($linedata as $key => $value) {
                     <div class="txt_desc">Creates a .csv file (open in Excel or similar) that contains the frequencies of tweeted domain names, per day (date range > 2 days) or per hour (date range 2 days or smaller).</div>
                     <div class="txt_desc">Use: find out which sources (media, platforms, etc.) are referenced most ofter.</div>
                     <div class="txt_link"> &raquo;  <a href="" onclick="var minf = askFrequency(); $('#whattodo').val('hosts&minf='+minf); sendUrl('index.php');return false;">launch</a></div>
-                <?php } ?>
+<?php } ?>
 
             </div>
 
@@ -435,23 +438,23 @@ foreach ($linedata as $key => $value) {
                     The more often a user mentions another, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>"). The "count" value contains the number of tweets for each user in the specified period.</div>
                 <div class="txt_desc">Use: analyze patterns in communication, find "hubs" and "communities", categorize user accounts.</div>
                 <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('mention_graph');sendUrl('mod.mention_graph.php');return false;">launch</a></div>
-                <!--
-                        <hr />
-                        
-                        <h3>Co-hashtag analysis</h3>
-                        <div class="txt_desc">Produces an <a href="http://en.wikipedia.org/wiki/Graph_%28mathematics%29#Undirected_graph">undirected graph</a> (.gdf, open in gephi) based on co-word analysis of hashtags. If two hashtags appear in the same tweet, they are linked.
-                                The more often they appear together, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>").</div>
-                        <div class="txt_desc">Use: explore the relations between hashtags, find and analyze sub-issues, distinguish between different types of hashtags (event related, qualifiers, etc.).</div>
-                        <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('hashtag_cooc');sendUrl('mod.hashtag_cooc.php');return false;">launch with absolute weighting of cooccurrences</a></div>
-                        <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('hashtag_cooc&probabilityOfAssociation=1');sendUrl('mod.hashtag_cooc.php');return false;">launch with cooccurrence weight normalization</a></div>
-                        <hr />
-                        <h3>Co-word analysis</h3>
-                        <div class="txt_desc">Produces an <a href="http://en.wikipedia.org/wiki/Graph_%28mathematics%29#Undirected_graph">undirected graph</a> (.gdf, open in gephi) based on co-word analysis of the words found in tweets. If two words appear in the same tweet, they are linked.
-                                The more often they appear together, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>").</div>
-                        <div class="txt_desc">Use: explore the relations between words, find and analyze sub-issues, distinguish between different types of words.</div>
-                        <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('word_cooc');sendUrl('mod.word_cooc.php');return false;">launch with absolute weighting of coorccurrences</a></div>
-                        <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('word_cooc&probabilityOfAssociation=1');sendUrl('mod.word_cooc.php');return false;">launch with cooccurrence weight normalization</a></div>
-                -->
+
+                <hr />
+<?php if($show_coword) { ?>
+                <h3>Co-hashtag analysis</h3>
+                <div class="txt_desc">Produces an <a href="http://en.wikipedia.org/wiki/Graph_%28mathematics%29#Undirected_graph">undirected graph</a> (.gdf, open in gephi) based on co-word analysis of hashtags. If two hashtags appear in the same tweet, they are linked.
+                    The more often they appear together, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>").</div>
+                <div class="txt_desc">Use: explore the relations between hashtags, find and analyze sub-issues, distinguish between different types of hashtags (event related, qualifiers, etc.).</div>
+                <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('hashtag_cooc');sendUrl('mod.hashtag_cooc.php');return false;">launch with absolute weighting of cooccurrences</a></div>
+                <!-- <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('hashtag_cooc&probabilityOfAssociation=1');sendUrl('mod.hashtag_cooc.php');return false;">launch with cooccurrence weight normalization</a></div> -->
+                <hr />
+                <h3>Co-word analysis</h3>
+                <div class="txt_desc">Produces an <a href="http://en.wikipedia.org/wiki/Graph_%28mathematics%29#Undirected_graph">undirected graph</a> (.gdf, open in gephi) based on co-word analysis of the words found in tweets. If two words appear in the same tweet, they are linked.
+                    The more often they appear together, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>").</div>
+                <div class="txt_desc">Use: explore the relations between words, find and analyze sub-issues, distinguish between different types of words.</div>
+                <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('word_cooc');sendUrl('mod.word_cooc.php');return false;">launch with absolute weighting of coorccurrences</a></div>
+                <!--        <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('word_cooc&probabilityOfAssociation=1');sendUrl('mod.word_cooc.php');return false;">launch with cooccurrence weight normalization</a></div> -->
+<?php } ?>
             </div>
 
 
