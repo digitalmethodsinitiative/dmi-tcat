@@ -1,21 +1,12 @@
 Notes on using ytk_analysis
 
 Todo:
-- checkout on lab and change config
-- checkout on lab and change config
-- what is probabilityOfAssociation and why is it enabled from index.php?
-- urls have not been imported on temlab or localhost
+- extract variability of association from mod.hashtag
+- Warning: urls have not been imported on temlab or localhost
 - what is difference between absolute weighting and coocurrence weight normalization?
-- encoding of tweets
+- encoding of tweets (current coword class can only tokenize tweets which consists fully out of latin characters; allmost all other tweets are discarded.)
 - BASE_URL vs $branch=DMI_PRODUCTION
 - CowordOnTools.php calls coword (persistent version) but uses 100% CPU
-- @todo, think through the inclusion of the probability of association
-- word1 word2 coword_freq word1_freq word2_freq
-- pull out variability of association
-
-Strategy:
-- unpersist coword
-- merge CowordOnTools.class.orig.php with variabilityOfAssociation from CowordOnTools.class.orig.php
 
 *******************************************************************************************
 Git repository
