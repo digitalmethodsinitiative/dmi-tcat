@@ -2,14 +2,15 @@
 
 /*
  * Simple coword calculation, all in memory
+ * 
+ * WARNING: Because of PHP's very very very bad UTF-8 support, splitting tweets into words only works reliably for tweets consisting solely of latin chars (i.e. English)
  */
-
-$coword = new Coword;
-$coword->setDocuments(array("bla bla bla test test clash", "test test test bla bla", "clash bla test"));
-$coword->addDocument("bla, !test 345 cla5sh");
-$coword->iterate();
-
 if (0) {
+    $coword = new Coword;
+    $coword->setDocuments(array("bla bla bla test test clash", "test test test bla bla", "clash bla test"));
+    $coword->addDocument("bla, !test 345 cla5sh");
+    $coword->iterate();
+
     var_export($coword->getCowordsAsCsv());
     print "\n\n";
     var_export($coword->getWordsAsCsv());
@@ -21,14 +22,18 @@ class Coword {
     public $documents = array();
     public $punctuation = array();
     public $hashtags_are_separate_words;
+    public $extract_only_hashtags;
+    public $remove_stop_words;
     public $min_word_length;
     public $words = array();    // holds word frequencies
     public $cowords = array();  // holds coword frequencies
 
     function __construct() {
         $this->hashtags_are_separate_words = FALSE;
+        $this->remove_stop_words = TRUE;
+        $this->extract_only_hashtags = FALSE;
         $this->min_word_length = 2;
-        $this->punctuation = array("\s", "\.", ",", "!", "\?", ":", ";", "\/", "\\", "@", "&", "\^", "\$", "\|", "`", "~", "=", "\+", "\*", "\"", "'", "\(", "\)", "\]", "\[", "\{", "\}", "<", ">", "�");
+        $this->punctuation = array("\s", "\.", ",", "!", "\?", ":", ";", "\/", "&", "\^", "\$", "\|", "`", "~", "=", "\+", "\*", "\"", "'", "\(", "\)", "\]", "\[", "{", "}", "<", ">");
     }
 
     /*
@@ -48,7 +53,7 @@ class Coword {
         foreach ($this->documents as $k => $v) {
 
             // get words
-            $words = $this->getWordsInString($v);                       // get words
+            $words = $this->getWordsInString($v);               // get words
             $frequency = array_count_values($words);            // word frequency
             ksort($frequency);
             $words = array_keys($frequency);                    // get unique words
@@ -77,13 +82,19 @@ class Coword {
      */
 
     function getWordsInString($v) {
-        $punctuation = $this->punctuation;
-        if (!$this->hashtags_are_separate_words)
+        $punctuation = $this->getPunctuation();
+        if (!$this->getHashtags_are_separate_words())
             $punctuation[] = "#";
-        $regexp = '/([' . implode("|", $punctuation) . "]+)/u";
-        $v = preg_replace($regexp, " ",$v);
+        $regexp = '/([' . implode("", $punctuation) . "]+)/u";  // @todo, this only works for latin chars, strings with non-ascii will become empty with this regexp
+        $v = preg_replace($regexp, " ", $v);                  // replace punctuation by whitespace
         $v = preg_replace("/[\s\t\n\r]+/", " ", $v);          // replace whitespace characters by single whitespace
-        return explode(" ",$v);
+        $sp = preg_split("/\s/u", $v, 0, PREG_SPLIT_NO_EMPTY);
+        if ($this->getExtract_only_hashtags()) {
+            foreach ($sp as $k => $v)
+                if ($v[0] !== "#")
+                    unset($sp[$k]);
+        }
+        return $sp;
     }
 
     public function getDocuments() {
@@ -144,7 +155,7 @@ class Coword {
     function addCoword($from, $to, $frequency) {
         if (!isset($this->cowords[$from]) || !isset($this->cowords[$from][$to]))
             $this->cowords[$from][$to] = 0;
-        $this->cowords[$from][$to] += $frequency; // within document weight @todo provide option to count each coword only once per doc
+        $this->cowords[$from][$to] += $frequency; // within document weight @todo provide option to count each coword pair only once per doc
     }
 
     function getCowords() {
@@ -187,6 +198,22 @@ class Coword {
 
         $gexf->render();
         return $gexf->gexfFile;
+    }
+
+    public function getExtract_only_hashtags() {
+        return $this->extract_only_hashtags;
+    }
+
+    public function setExtract_only_hashtags($extract_only_hashtags) {
+        $this->extract_only_hashtags = $extract_only_hashtags;
+    }
+
+    public function getRemove_stop_words() {
+        return $this->remove_stop_words;
+    }
+
+    public function setRemove_stop_words($remove_stop_words) {
+        $this->remove_stop_words = $remove_stop_words;
     }
 
 }
