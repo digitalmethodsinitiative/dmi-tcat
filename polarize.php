@@ -16,7 +16,7 @@ $end = strtotime("22 June 2012");
 $dataset = "z_501";
 $dataname = "acta";
 $datadir = "files";
-$includeRetweets = FALSE;
+$includeRetweets = TRUE;
 $charges = loadCharges($datadir . '/' . $dataname . "_charges.csv");    // List of {host,charge}-combinations, where charge can be 'pro', 'con' or 'neutral'
 //getTweetUrls($dataset, $start, $end);
 polarizeTweets($dataset, $charges, $start, $end, $includeRetweets);
@@ -37,6 +37,7 @@ function polarizeTweets($dataset, $charges, $start, $end, $includeRetweets) {
         $file = file($datadir . '/' . $dataname . '_urls_all.csv');
     else
         $file = file($datadir . '/' . $dataname . '_urls_noRT.csv');
+    // @todo: ge.com and e.g. engage.com
     foreach ($file as $f) {
         $e = explode(",", $f);
         $host = strtolower(trim($e[4]));
@@ -154,6 +155,36 @@ function polarizeTweets($dataset, $charges, $start, $end, $includeRetweets) {
     coword($datadir . "/" . $dataname . ($includeRetweets ? "" : "_noRT") . "_proTweets.csv");
     coword($datadir . "/" . $dataname . ($includeRetweets ? "" : "_noRT") . "_neutralTweets.csv");
     //simpleCoword($datadir . "/" . $dataname . ($includeRetweets ? "" : "_noRT") ."_nonPolarizedTweets.csv"); // will blow up ur computer
+    
+    
+    /* calculate polarization */
+    // load frequencies
+    $pro = file($datadir . "/" . $dataname . ($includeRetweets ? "" : "_noRT") . "_proTweets_frequencies.csv");
+    foreach ($pro as $p) {
+        $e = explode(",", $p);
+        $frequency['pro'][$e[0]] = trim($e[1]);
+        $words[] = $e[0];
+    }
+    $con = file($datadir . "/" . $dataname . ($includeRetweets ? "" : "_noRT") . "_conTweets_frequencies.csv");
+    foreach ($con as $c) {
+        $e = explode(",", $c);
+        $frequency['con'][$e[0]] = trim($e[1]);
+        $words[] = $e[0];
+    }
+    $words = array_unique($words);
+    $volume['pro'] = array_sum($frequency['pro']);
+    $volume['con'] = array_sum($frequency['con']);
+    $handle = fopen($datadir . "/" . $dataname . ($includeRetweets ? "" : "_noRT") . "_polarization.csv", "w");
+    // calculate leaning, just as in Weber, Garimella and Borra (2012), equation 1
+    foreach ($words as $word) {
+        if (!isset($frequency['pro'][$word]))
+            $frequency['pro'][$word] = 0;
+        if (!isset($frequency['con'][$word]))
+            $frequency['con'][$word] = 0;
+        $leaning[$word] = ($frequency['pro'][$word] / $volume['pro']) + (2 / ($volume['pro'] + $volume['con'])) / (($frequency['pro'][$word] / $volume['pro']) + ($frequency['con'][$word] / $volume['con']) + (4 / ($volume['pro'] + $volume['con'])));
+        fwrite($handle, $word . "," . $leaning[$word] . "\n");
+    }
+    fclose($handle);
 }
 
 /*
@@ -264,7 +295,7 @@ function loadCharges($filename) {
 function coword($datafile) {
 
     print "getting cowords $datafile\n";
-    
+
     include_once("common/Coword.class.php");
 
     $coword = new Coword;
@@ -275,7 +306,7 @@ function coword($datafile) {
         $coword->addDocument($data[1]);
     }
     $coword->iterate();
-    
+
     file_put_contents(str_replace(".csv", "_frequencies.csv", $datafile), $coword->getWordsAsCsv());
     file_put_contents(str_replace(".csv", "_cowords.csv", $datafile), $coword->getCowordsAsCsv());
     file_put_contents(str_replace(".csv", "_cowords_network.gexf", $datafile), $coword->getCowordsAsGexf($datafile));
