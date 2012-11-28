@@ -2,14 +2,11 @@
 
 $connection = false;
 
-db_connect($db_host, $db_user, $db_pass, $db_name); // or die("could not connect to $db_name on $db_host");
+db_connect($dbhost, $dbuser, $dbpass, $dbname);
 // catch parameters
-if (isset($_GET['database']) && !empty($_GET['database']))
-    $database = $_GET['database']; else
-    $database = "default";
 if (isset($_GET['dataset']) && !empty($_GET['dataset']))
     $dataset = $_GET['dataset']; else
-    $dataset = $database . "_z_1";
+    $dataset = "globalwarming";
 if (isset($_GET['query']) && !empty($_GET['query']))
     $query = $_GET['query']; else
     $query = "";
@@ -85,7 +82,7 @@ function get_file($what) {
 
 // generates the datafiles, only used if the file does not exist yet
 function generate($what, $filename) {
-    global $tsv, $network, $esc, $titles, $db_name;
+    global $tsv, $network, $esc, $titles, $dbname;
 
     // initialize variables
     $tweets = $times = $from_users = $results = array();
@@ -94,7 +91,7 @@ function generate($what, $filename) {
     $maxtime = 0;
 
     // build query
-    $sql = "SELECT id,text,time,from_user FROM " . $esc['mysql']['dataset'] . " WHERE ";
+    $sql = "SELECT id,text,created_at,from_user FROM " . $esc['mysql']['dataset'] . "_tweets WHERE ";
     if (!empty($esc['mysql']['from_user'])) {
         $subusers = explode(" OR ", $esc['mysql']['from_user']);
         $sql .= "(";
@@ -136,7 +133,7 @@ function generate($what, $filename) {
 
     // urls
     if ($what == "urls" || $what == "hosts") {
-        $sql2 = "SELECT u.tweetid, u.targeturl, u.targethost FROM urls u, " . $esc['mysql']['dataset'] . " t WHERE u.tweetid = t.id AND u.tablename = '" . $esc['mysql']['dataset'] . "' AND ";
+        $sql2 = "SELECT u.tweetid, u.targeturl, u.targethost FROM urls u, " . $esc['mysql']['dataset'] . "_tweets t WHERE u.tweetid = t.id AND u.tablename = '" . $esc['mysql']['dataset'] . "_tweets' AND ";
         if (!empty($esc['mysql']['from_user'])) {
             $subusers = explode(" OR ", $esc['mysql']['from_user']);
             $sql2 .= "(";
@@ -386,15 +383,6 @@ function validate(&$what, $how) {
 function validate_all_variables() {
     global $esc, $query, $dataset, $exclude, $from_user, $startdate, $enddate, $databases, $connection, $keywords, $database, $minf;
 
-    // the dataset name includes the database key
-    $e = explode("_z_", $dataset);
-    $dataset = "z_" . $e[1];
-    $db_name = $databases[validate($e[0], 'database')];
-    $database = array_search($db_name, $databases);
-
-    // connect to the desired database
-    mysql_select_db($db_name, $connection);
-
     // validate and escape all user input
     $esc['mysql']['dataset'] = validate($dataset, "mysql");
     $esc['mysql']['query'] = validate($query, "mysql");
@@ -410,8 +398,8 @@ function validate_all_variables() {
 
     $esc['date']['startdate'] = validate($startdate, "startdate");
     $esc['date']['enddate'] = validate($enddate, "enddate");
-    $esc['timestamp']['startdate'] = strtotime($esc['date']['startdate'] . " 00:00:00");
-    $esc['timestamp']['enddate'] = strtotime($esc['date']['enddate'] . " 23:59:59");
+    $esc['timestamp']['startdate'] = $esc['date']['startdate'] . " 00:00:00";
+    $esc['timestamp']['enddate'] = $esc['date']['enddate'] . " 23:59:59";
 }
 
 // get all @replies in a message
@@ -445,51 +433,25 @@ function get_hash_tags($msg) {
 
 // get listing of all databases
 function get_all_datasets() {
-    global $databases, $connection, $keywords;
-    $forsort = array();
-    foreach ($databases as $k => $db) {
-        mysql_select_db($db, $connection);
 
-        $dataset = get_datasets();
-        foreach ($dataset as $row) {
-            $forsort[$k . "_z_" . $row['id']] = preg_replace("/^#/", "", strtolower($row['keyword']));
-            $datasets[$k . "_z_" . $row['id']] = $row;
-            $keywords[$k . "_z_" . $row['id']] = $row['keyword'];
-        }
-    }
+    global $querybins; // defined in php.ini of twitter capture
 
-    // reshuffle results
-    asort($forsort);
-    foreach ($forsort as $id => $keyword) {
-        $tmp_datasets[$id] = $datasets[$id];
-        $tmp_keywords[$id] = $keywords[$id];
-    }
-    $datasets = $tmp_datasets;
-    $keywords = $tmp_keywords;
-
-    return $datasets;
-}
-
-// get list of tables
-function get_datasets() {
     $datasets = array();
-    $sql = "SELECT id, keyword FROM archives ORDER BY keyword";
-    $result = mysql_query($sql);
-    while ($row = mysql_fetch_assoc($result)) {
 
-        if (in_array($row['keyword'], array("#15N", "#humanrights", "#Top100Lies", "#keepitfree")) === true)
-            continue;
+    foreach ($querybins as $bin => $keywords) {
 
         // get nr of results per table
-        $sql2 = "SELECT count(id) AS notweets,MIN(time) AS min,MAX(time) AS max  FROM z_" . $row['id'];
+        $sql2 = "SELECT count(id) AS notweets,MIN(created_at) AS min,MAX(created_at) AS max  FROM " . $bin . "_tweets";
         $rec2 = mysql_query($sql2);
         if ($rec2 && mysql_num_rows($rec2) > 0) {
             $res2 = mysql_fetch_assoc($rec2);
+            $row['bin'] = $bin;
             $row['notweets'] = $res2['notweets'];
             $row['mintime'] = $res2['min'];
             $row['maxtime'] = $res2['max'];
+            $row['keywords'] = $keywords;
             // return datasets
-            $datasets["z_" . $row['id']] = $row;
+            $datasets[$bin] = $row;
         }
     }
     return $datasets;

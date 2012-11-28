@@ -52,24 +52,24 @@ $datasets = get_all_datasets();
 if (defined('BASE_URL'))
     print '"' . BASE_URL . '"';
 ?>
-                            + _file +
-                            "?dataset=" + $("#ipt_dataset").val() +
-                            "&query=" + escape($("#ipt_query").val()) +
-                            "&exclude=" + escape($("#ipt_exclude").val()) +
-                            "&from_user=" + $("#ipt_from_user").val() +
-                            "&startdate=" + $("#ipt_startdate").val() +
-                            "&enddate=" + $("#ipt_enddate").val() +
-                            "&whattodo=" + $("#whattodo").val();
+            + _file +
+            "?dataset=" + $("#ipt_dataset").val() +
+            "&query=" + escape($("#ipt_query").val()) +
+            "&exclude=" + escape($("#ipt_exclude").val()) +
+            "&from_user=" + $("#ipt_from_user").val() +
+            "&startdate=" + $("#ipt_startdate").val() +
+            "&enddate=" + $("#ipt_enddate").val() +
+            "&whattodo=" + $("#whattodo").val();
 			
-                        if(_prompt == true) {
-                            document.location.href = _url;
-                        }
-                    }
+        if(_prompt == true) {
+            document.location.href = _url;
+        }
+    }
 	
-                    function askFrequency() {
-                        var minf = prompt("Specify the minimum frequency for data to be included in the export:","2");
-                        return minf;
-                    }
+    function askFrequency() {
+        var minf = prompt("Specify the minimum frequency for data to be included in the export:","2");
+        return minf;
+    }
 	
         </script>
 
@@ -94,7 +94,7 @@ if (defined('BASE_URL'))
 
                     $v = ($key == $dataset) ? 'selected="selected"' : "";
 
-                    echo '<option value="' . $key . '" ' . $v . '>' . $set["keyword"] . ' --- ' . $set["notweets"] . ' tweets from ' . strftime("%d %b %y", $set['mintime']) . ' to ' . strftime("%d %b %y", $set['maxtime']) . '</option>';
+                    echo '<option value="' . $key . '" ' . $v . '>' . $set["bin"] . ' --- ' . $set["notweets"] . ' tweets from ' . $set['mintime'] . ' to ' . $set['maxtime'] . ' --- ' . $set['keywords'] . '</option>';
                 }
 
                 echo "</select>";
@@ -138,7 +138,7 @@ if (defined('BASE_URL'))
         validate_all_variables();
 
 // count current subsample
-        $sql = "SELECT count(distinct(id)) as count FROM " . $esc['mysql']['dataset'] . " WHERE ";
+        $sql = "SELECT count(distinct(id)) as count FROM " . $esc['mysql']['dataset'] . "_tweets WHERE ";
         if (!empty($esc['mysql']['from_user'])) {
             $subusers = explode(" OR ", $esc['mysql']['from_user']);
             $sql .= "(";
@@ -156,10 +156,10 @@ if (defined('BASE_URL'))
         }
         if (!empty($esc['mysql']['exclude']))
             $sql .= "text NOT LIKE '%" . $esc['mysql']['exclude'] . "%' AND ";
-        $sql .= "time >= " . $esc['timestamp']['startdate'] . " AND time <= " . $esc['timestamp']['enddate'];
+        $sql .= "created_at >= '" . $esc['timestamp']['startdate'] . "' AND created_at <= '" . $esc['timestamp']['enddate'] . "'";
 
 
-//	echo $sql;
+        echo $sql . "<br>";
 
         $sqlresults = mysql_query($sql);
         $data = mysql_fetch_assoc($sqlresults);
@@ -186,7 +186,7 @@ if (defined('BASE_URL'))
         }
         if (!empty($esc['mysql']['exclude']))
             $sql .= "text NOT LIKE '%" . $esc['mysql']['exclude'] . "%' AND ";
-        $sql .= "time >= " . $esc['timestamp']['startdate'] . " AND time <= " . $esc['timestamp']['enddate'];
+        $sql .= "created_at >= '" . $esc['timestamp']['startdate'] . "' AND created_at <= '" . $esc['timestamp']['enddate'] . "'";
 
         $sqlresults = mysql_query($sql);
         if ($sqlresults && mysql_num_rows($sqlresults) > 0) {
@@ -196,7 +196,7 @@ if (defined('BASE_URL'))
 
 
 // see if all URLs are loaded
-        $sql = "SELECT count(t.id) AS count FROM urls u, " . $esc['mysql']['dataset'] . " t WHERE t.id = u.tweetid AND u.tablename = '" . $esc['mysql']['dataset'] . "' AND t.text REGEXP 'https?://' AND ";
+        $sql = "SELECT count(t.id) AS count FROM urls u, " . $esc['mysql']['dataset'] . "_tweets t WHERE t.id = u.tweetid AND u.tablename = '" . $esc['mysql']['dataset'] . "_tweets' AND t.text REGEXP 'https?://' AND ";
         if (!empty($esc['mysql']['from_user'])) {
             $subusers = explode(" OR ", $esc['mysql']['from_user']);
             $sql .= "(";
@@ -214,7 +214,7 @@ if (defined('BASE_URL'))
         }
         if (!empty($esc['mysql']['exclude']))
             $sql .= "text NOT LIKE '%" . $esc['mysql']['exclude'] . "%' AND ";
-        $sql .= "t.time >= " . $esc['timestamp']['startdate'] . " AND t.time <= " . $esc['timestamp']['enddate'];
+        $sql .= "t.created_at >= '" . $esc['timestamp']['startdate'] . "' AND t.created_at <= '" . $esc['timestamp']['enddate'] . "'";
 
         $show_url_export = false;
         $rec = mysql_query($sql);
@@ -225,14 +225,14 @@ if (defined('BASE_URL'))
         }
 
 // get data for the line graph
-        $period = ( ($esc['timestamp']['enddate'] - $esc['timestamp']['startdate']) <= 86400 * 2) ? "hour" : "day";
-        $curdate = $esc['timestamp']['startdate'];
+        $period = ( (strtotime($esc['timestamp']['enddate']) - strtotime($esc['timestamp']['startdate'])) <= 86400 * 2) ? "hour" : "day"; // @todo
+        $curdate = strtotime($esc['timestamp']['startdate']);
         $linedata = array();
 
-        while ($curdate < $esc['timestamp']['enddate']) {
+        while ($curdate < strtotime($esc['timestamp']['enddate'])) {
             $thendate = ($period == "day") ? $curdate + 86400 : $curdate + 3600;
 
-            $sql = "SELECT COUNT(id) as count FROM " . $esc['mysql']['dataset'] . " WHERE ";
+            $sql = "SELECT COUNT(id) as count FROM " . $esc['mysql']['dataset'] . "_tweets WHERE ";
             if (!empty($esc['mysql']['from_user'])) {
                 $subusers = explode(" OR ", $esc['mysql']['from_user']);
                 $sql .= "(";
@@ -250,7 +250,8 @@ if (defined('BASE_URL'))
             }
             if (!empty($esc['mysql']['exclude']))
                 $sql .= "text NOT LIKE '%" . $esc['mysql']['exclude'] . "%' AND ";
-            $sql .= "time >= " . $curdate . " AND time <= " . $thendate;
+            $sql .= "created_at >= '" . strftime("%Y-%m-%d %H:%M:%S", $curdate) . "' AND created_at <= '" . strftime("%Y-%m-%d %H:%M:%S", $thendate) . "'";
+            //print $sql . "<br>";
 
             $rec = mysql_query($sql);
             $data = mysql_fetch_assoc($rec);
@@ -273,7 +274,7 @@ if (defined('BASE_URL'))
 
                     <table>
                         <tr>
-                            <td class="tbl_head">Dataset:</td><td><?php echo $datasets[$database . "_" . $dataset]['keyword']; ?>
+                            <td class="tbl_head">Dataset:</td><td><?php echo $datasets[$dataset]['bin']." (".$datasets[$dataset]['keywords'].")"; ?>
 
                             </td>
                         </tr>
@@ -394,7 +395,7 @@ foreach ($linedata as $key => $value) {
                 <div class="txt_desc">Use: see wether the users mentioned are also those who tweet a lot.</div>
                 <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('user-mention'); sendUrl('index.php');return false;">launch</a></div>
 
-<?php if ($show_url_export) { ?>
+                <?php if ($show_url_export) { ?>
                     <hr />
                     <h3>Url frequency</h3>
                     <div class="txt_desc">Creates a .csv file (open in Excel or similar) that contains the frequencies of tweeted URLs, per day (date range > 2 days) or per hour (date range 2 days or smaller).</div>
@@ -406,7 +407,7 @@ foreach ($linedata as $key => $value) {
                     <div class="txt_desc">Creates a .csv file (open in Excel or similar) that contains the frequencies of tweeted domain names, per day (date range > 2 days) or per hour (date range 2 days or smaller).</div>
                     <div class="txt_desc">Use: find out which sources (media, platforms, etc.) are referenced most ofter.</div>
                     <div class="txt_link"> &raquo;  <a href="" onclick="var minf = askFrequency(); $('#whattodo').val('hosts&minf='+minf); sendUrl('index.php');return false;">launch</a></div>
-<?php } ?>
+                <?php } ?>
 
             </div>
 
@@ -440,21 +441,21 @@ foreach ($linedata as $key => $value) {
                 <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('mention_graph');sendUrl('mod.mention_graph.php');return false;">launch</a></div>
 
                 <hr />
-<?php if($show_coword) { ?>
-                <h3>Co-hashtag analysis</h3>
-                <div class="txt_desc">Produces an <a href="http://en.wikipedia.org/wiki/Graph_%28mathematics%29#Undirected_graph">undirected graph</a> (.gdf, open in gephi) based on co-word analysis of hashtags. If two hashtags appear in the same tweet, they are linked.
-                    The more often they appear together, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>").</div>
-                <div class="txt_desc">Use: explore the relations between hashtags, find and analyze sub-issues, distinguish between different types of hashtags (event related, qualifiers, etc.).</div>
-                <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('hashtag_cooc');sendUrl('mod.hashtag_cooc.php');return false;">launch with absolute weighting of cooccurrences</a></div>
-                <!-- <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('hashtag_cooc&probabilityOfAssociation=1');sendUrl('mod.hashtag_cooc.php');return false;">launch with cooccurrence weight normalization</a></div> -->
-                <hr />
-                <h3>Co-word analysis</h3>
-                <div class="txt_desc">Produces an <a href="http://en.wikipedia.org/wiki/Graph_%28mathematics%29#Undirected_graph">undirected graph</a> (.gdf, open in gephi) based on co-word analysis of the words found in tweets. If two words appear in the same tweet, they are linked.
-                    The more often they appear together, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>").</div>
-                <div class="txt_desc">Use: explore the relations between words, find and analyze sub-issues, distinguish between different types of words.</div>
-                <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('word_cooc');sendUrl('mod.word_cooc.php');return false;">launch with absolute weighting of coorccurrences</a></div>
-                <!--        <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('word_cooc&probabilityOfAssociation=1');sendUrl('mod.word_cooc.php');return false;">launch with cooccurrence weight normalization</a></div> -->
-<?php } ?>
+                <?php if ($show_coword) { ?>
+                    <h3>Co-hashtag analysis</h3>
+                    <div class="txt_desc">Produces an <a href="http://en.wikipedia.org/wiki/Graph_%28mathematics%29#Undirected_graph">undirected graph</a> (.gdf, open in gephi) based on co-word analysis of hashtags. If two hashtags appear in the same tweet, they are linked.
+                        The more often they appear together, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>").</div>
+                    <div class="txt_desc">Use: explore the relations between hashtags, find and analyze sub-issues, distinguish between different types of hashtags (event related, qualifiers, etc.).</div>
+                    <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('hashtag_cooc');sendUrl('mod.hashtag_cooc.php');return false;">launch with absolute weighting of cooccurrences</a></div>
+                    <!-- <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('hashtag_cooc&probabilityOfAssociation=1');sendUrl('mod.hashtag_cooc.php');return false;">launch with cooccurrence weight normalization</a></div> -->
+                    <hr />
+                    <h3>Co-word analysis</h3>
+                    <div class="txt_desc">Produces an <a href="http://en.wikipedia.org/wiki/Graph_%28mathematics%29#Undirected_graph">undirected graph</a> (.gdf, open in gephi) based on co-word analysis of the words found in tweets. If two words appear in the same tweet, they are linked.
+                        The more often they appear together, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>").</div>
+                    <div class="txt_desc">Use: explore the relations between words, find and analyze sub-issues, distinguish between different types of words.</div>
+                    <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('word_cooc');sendUrl('mod.word_cooc.php');return false;">launch with absolute weighting of coorccurrences</a></div>
+                    <!--        <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('word_cooc&probabilityOfAssociation=1');sendUrl('mod.word_cooc.php');return false;">launch with cooccurrence weight normalization</a></div> -->
+                <?php } ?>
             </div>
 
 
