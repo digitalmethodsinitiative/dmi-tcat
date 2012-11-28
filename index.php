@@ -189,6 +189,7 @@ if (defined('BASE_URL'))
         $sql .= "created_at >= '" . $esc['datetime']['startdate'] . "' AND created_at <= '" . $esc['datetime']['enddate'] . "'";
 
         $sqlresults = mysql_query($sql);
+	$numlinktweets = 0;
         if ($sqlresults && mysql_num_rows($sqlresults) > 0) {
             $res = mysql_fetch_assoc($sqlresults);
             $numlinktweets = $res['count'];

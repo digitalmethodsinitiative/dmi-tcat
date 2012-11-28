@@ -78,11 +78,11 @@ function get_file($what) {
     $filename = get_filename($what);
 
     // if the file does not exist yet, generate it
-    if (!$cacheresults || !file_exists($filename))
+    if (1 || !file_exists($filename)) // @todo 1
         generate($what, $filename);
 
     // redirect to file
-    $location = str_replace("index.php", "", $_SERVER['PHP_SELF']) . str_replace("#", "%23", $filename);
+    $location = str_replace("index.php", "", BASE_URL) . str_replace("#", "%23", $filename);
     if (defined('LOCATION'))
         $location = LOCATION . $location;
     header("Content-type: text/csv");
@@ -129,8 +129,9 @@ function generate($what, $filename) {
             $from_user_names[] = strtolower($res['from_user_name']);
         }
     }
-    $mintime = array_shift(array_values($times));
-    $maxtime = array_pop(array_values($times));
+    $times_v = array_values($times);
+    $mintime = array_shift($times_v);
+    $maxtime = array_pop($times_v);
 
     // determine whether we should display intervals as days or hours
     if (strtotime($maxtime) - strtotime($mintime) < 86400 * 2) // if smaller than 2 days we'll do hours
