@@ -9,7 +9,7 @@
 
 include_once('common/config.php');
 include_once('common/functions.php');
-db_connect($db_host, $db_user, $db_pass, $db_name); // or die("could not connect to $db_name on $db_host");
+db_connect($hostname, $db_user, $db_pass, $database); 
 
 $start = strtotime("19 May 2012");
 $end = strtotime("22 June 2012");

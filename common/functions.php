@@ -2,7 +2,7 @@
 
 $connection = false;
 
-db_connect($dbhost, $dbuser, $dbpass, $dbname);
+db_connect($hostname, $dbuser, $dbpass, $database);
 // catch parameters
 if (isset($_GET['dataset']) && !empty($_GET['dataset']))
     $dataset = $_GET['dataset']; else
@@ -82,7 +82,7 @@ function get_file($what) {
 
 // generates the datafiles, only used if the file does not exist yet
 function generate($what, $filename) {
-    global $tsv, $network, $esc, $titles, $dbname;
+    global $tsv, $network, $esc, $titles, $database;
 
     // initialize variables
     $tweets = $times = $from_users = $results = array();
