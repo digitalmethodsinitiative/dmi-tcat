@@ -6,7 +6,7 @@ db_connect($hostname, $dbuser, $dbpass, $database);
 // catch parameters
 if (isset($_GET['dataset']) && !empty($_GET['dataset']))
     $dataset = $_GET['dataset']; else
-    $dataset = "globalwarming";
+    $dataset = "americanpolitics";
 if (isset($_GET['query']) && !empty($_GET['query']))
     $query = $_GET['query']; else
     $query = "";
@@ -454,6 +454,7 @@ function get_all_datasets() {
             $datasets[$bin] = $row;
         }
     }
+    asort($datasets);
     return $datasets;
 }
 
