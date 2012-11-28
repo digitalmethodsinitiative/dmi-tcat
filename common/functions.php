@@ -5,33 +5,42 @@ $connection = false;
 db_connect($hostname, $dbuser, $dbpass, $database);
 // catch parameters
 if (isset($_GET['dataset']) && !empty($_GET['dataset']))
-    $dataset = $_GET['dataset']; else
-    $dataset = "americanpolitics";
+    $dataset = $_GET['dataset'];
+else
+    $dataset = "tibet";
 if (isset($_GET['query']) && !empty($_GET['query']))
-    $query = $_GET['query']; else
+    $query = $_GET['query'];
+else
     $query = "";
 if (isset($_GET['exclude']) && !empty($_GET['exclude']))
-    $exclude = $_GET['exclude']; else
+    $exclude = $_GET['exclude'];
+else
     $exclude = "";
-if (isset($_GET['from_user']) && !empty($_GET['from_user']))
-    $from_user = $_GET['from_user']; else
-    $from_user = "";
+if (isset($_GET['from_user_name']) && !empty($_GET['from_user_name']))
+    $from_user_name = $_GET['from_user_name'];
+else
+    $from_user_name = "";
 if (isset($_GET['samplesize']) && !empty($_GET['samplesize']))
-    $samplesize = $_GET['samplesize']; else
+    $samplesize = $_GET['samplesize'];
+else
     $samplesize = "1000";
 if (isset($_GET['minf']) && !empty($_GET['minf']))
-    $minf = $_GET['minf']; else
+    $minf = $_GET['minf'];
+else
     $minf = 2;
 if (isset($_GET['startdate']) && !empty($_GET['startdate']))
-    $startdate = $_GET['startdate']; else
+    $startdate = $_GET['startdate'];
+else
     $startdate = strftime("%Y-%m-%d", date('U') - 86400);
 if (isset($_GET['enddate']) && !empty($_GET['enddate']))
-    $enddate = $_GET['enddate']; else
+    $enddate = $_GET['enddate'];
+else
     $enddate = strftime("%Y-%m-%d", date('U'));
 $u_startdate = $u_enddate = 0;
 
 if (isset($_GET['whattodo']) && !empty($_GET['whattodo']))
-    $whattodo = $_GET['whattodo']; else
+    $whattodo = $_GET['whattodo'];
+else
     $whattodo = "";
 
 $keywords = array();
@@ -85,18 +94,16 @@ function generate($what, $filename) {
     global $tsv, $network, $esc, $titles, $database;
 
     // initialize variables
-    $tweets = $times = $from_users = $results = array();
+    $tweets = $times = $from_user_names = $results = array();
     $file = "";
-    $mintime = 1000000000000;
-    $maxtime = 0;
 
     // build query
-    $sql = "SELECT id,text,created_at,from_user FROM " . $esc['mysql']['dataset'] . "_tweets WHERE ";
-    if (!empty($esc['mysql']['from_user'])) {
-        $subusers = explode(" OR ", $esc['mysql']['from_user']);
+    $sql = "SELECT id,text,created_at,from_user_name FROM " . $esc['mysql']['dataset'] . "_tweets WHERE ";
+    if (!empty($esc['mysql']['from_user_name'])) {
+        $subusers = explode(" OR ", $esc['mysql']['from_user_name']);
         $sql .= "(";
         for ($i = 0; $i < count($subusers); $i++) {
-            $subusers[$i] = "from_user = '" . $subusers[$i] . "'";
+            $subusers[$i] = "from_user_name = '" . $subusers[$i] . "'";
         }
         $sql .= implode(" OR ", $subusers);
         $sql .= ") AND ";
@@ -109,7 +116,7 @@ function generate($what, $filename) {
     }
     if (!empty($esc['mysql']['exclude']))
         $sql .= "text NOT LIKE '%" . $esc['mysql']['exclude'] . "%' AND ";
-    $sql .= "time >= " . $esc['timestamp']['startdate'] . " AND time <= " . $esc['timestamp']['enddate'];
+    $sql .= "created_at >= '" . $esc['datetime']['startdate'] . "' AND created_at <= '" . $esc['datetime']['enddate'] . "' ORDER BY created_at";
 
     // get slice and its min and max time
     $rec = mysql_query($sql);
@@ -118,27 +125,27 @@ function generate($what, $filename) {
         while ($res = mysql_fetch_assoc($rec)) {
             $tweets[] = $res['text'];
             $ids[] = $res['id'];
-            $times[] = $res['time'];
-            $from_users[] = strtolower($res['from_user']);
+            $times[] = $res['created_at'];
+            $from_user_names[] = strtolower($res['from_user_name']);
         }
     }
-    $mintime = min($times);
-    $maxtime = max($times);
+    $mintime = array_shift(array_values($times));
+    $maxtime = array_pop(array_values($times));
 
     // determine whether we should display intervals as days or hours
-    if ($maxtime - $mintime < 86400 * 2) // if smaller than 2 days we'll do hours
+    if (strtotime($maxtime) - strtotime($mintime) < 86400 * 2) // if smaller than 2 days we'll do hours
         $interval = "hours";
     else
         $interval = "days";
 
-    // urls
+    // urls, @todo
     if ($what == "urls" || $what == "hosts") {
         $sql2 = "SELECT u.tweetid, u.targeturl, u.targethost FROM urls u, " . $esc['mysql']['dataset'] . "_tweets t WHERE u.tweetid = t.id AND u.tablename = '" . $esc['mysql']['dataset'] . "_tweets' AND ";
-        if (!empty($esc['mysql']['from_user'])) {
-            $subusers = explode(" OR ", $esc['mysql']['from_user']);
+        if (!empty($esc['mysql']['from_user_name'])) {
+            $subusers = explode(" OR ", $esc['mysql']['from_user_name']);
             $sql2 .= "(";
             for ($i = 0; $i < count($subusers); $i++) {
-                $subusers[$i] = "t.from_user = '" . $subusers[$i] . "'";
+                $subusers[$i] = "t.from_user_name = '" . $subusers[$i] . "'";
             }
             $sql2 .= implode(" OR ", $subusers);
             $sql2 .= ") AND ";
@@ -151,7 +158,7 @@ function generate($what, $filename) {
         }
         if (!empty($esc['mysql']['exclude']))
             $sql2 .= "t.text NOT LIKE '%" . $esc['mysql']['exclude'] . "%' AND ";
-        $sql2 .= "t.time >= " . $esc['timestamp']['startdate'] . " AND t.time <= " . $esc['timestamp']['enddate'];
+        $sql2 .= "t.created_at >= '" . $esc['datetime']['startdate'] . "' AND t.created_at <= '" . $esc['datetime']['enddate'] . "' ORDER BY created_at";
 
         $rec = mysql_query($sql2);
         while ($res = mysql_fetch_assoc($rec)) {
@@ -186,7 +193,7 @@ function generate($what, $filename) {
                     $results[$group][] = $thing;
                 break;
             case "user":
-                $results[$group][] = $from_users[$key];
+                $results[$group][] = $from_user_names[$key];
                 break;
 
             case "user-mention":
@@ -194,7 +201,7 @@ function generate($what, $filename) {
                 foreach ($stuff as $thing) {
                     $results[$group]['mentions'][] = $thing;
                 }
-                $results[$group]['users'][] = $from_users[$key];
+                $results[$group]['users'][] = $from_user_names[$key];
                 break;
 
             case "retweet":
@@ -219,7 +226,7 @@ function generate($what, $filename) {
             $tmp_mentions = array_count_values($things['mentions']);
             $tmp_users = array_count_values($things['users']);
             $counted_things = array();
-            // add all from_users 
+            // add all from_user_names 
             foreach ($tmp_users as $user => $count) {
                 if (isset($tmp_mentions["@" . $user]))
                     $counted_things[$user] = $tmp_mentions["@" . $user] . "," . $count;
@@ -297,39 +304,24 @@ function generate($what, $filename) {
 
 // formats time as days
 function time_to_day($time) {
-    return strftime("%Y-%m-%d", $time);
+    return strftime("%Y-%m-%d", strtotime($time));
 }
 
 // formats time as hours
 function time_to_hour($time) {
-    return strftime("%Y-%m-%d %H" . "h", $time);
+    return strftime("%Y-%m-%d %H" . "h", strtotime($time));
 }
 
 // formats time as months
 function time_to_month($time) {
-    return strftime("%Y-%m-%d", $time);
+    return strftime("%Y-%m-%d", strtotime($time));
 }
 
 // constructs the filename and validates the variables
 function get_filename($what) {
     global $resultsdir, $esc;
-    get_dataset_name();
     $exc = (empty($esc['shell']["exclude"])) ? "" : "-" . $esc['shell']["exclude"];
-    return $resultsdir . str_replace(" ", "_", $esc['shell']['datasetname']) . "_" . $esc['shell']["query"] . $exc . "_" . $esc['date']["startdate"] . "_" . $esc['date']["enddate"] . "_" . $esc['shell']["from_user"] . "_" . $what . "_min" . $esc['shell']['minf'] . ".csv";
-}
-
-function get_dataset_name() {
-    global $esc, $database, $databases;
-
-    mysql_select_db($databases[$database]);
-
-    $id = preg_replace("/[^\d]/", "", $esc['shell']["dataset"]);
-
-    $sql = "SELECT keyword FROM archives WHERE id = $id";
-    $rec = mysql_query($sql);
-    $res = mysql_fetch_row($rec);
-
-    $esc['shell']['datasetname'] = $res[0];
+    return $resultsdir . str_replace(" ", "_", $esc['shell']['datasetname']) . "_" . $esc['shell']["query"] . $exc . "_" . $esc['date']["startdate"] . "_" . $esc['date']["enddate"] . "_" . $esc['shell']["from_user_name"] . "_" . $what . "_min" . $esc['shell']['minf'] . ".csv";
 }
 
 // does some cleanup of data types
@@ -381,25 +373,27 @@ function validate(&$what, $how) {
 // make sure that we have all the right types and values
 // also make sure one cannot do a mysql injection attack
 function validate_all_variables() {
-    global $esc, $query, $dataset, $exclude, $from_user, $startdate, $enddate, $databases, $connection, $keywords, $database, $minf;
+    global $esc, $query, $dataset, $exclude, $from_user_name, $startdate, $enddate, $databases, $connection, $keywords, $database, $minf;
 
     // validate and escape all user input
     $esc['mysql']['dataset'] = validate($dataset, "mysql");
     $esc['mysql']['query'] = validate($query, "mysql");
     $esc['mysql']['exclude'] = validate($exclude, "mysql");
-    $esc['mysql']['from_user'] = validate($from_user, "mysql");
+    $esc['mysql']['from_user_name'] = validate($from_user_name, "mysql");
 
     $esc['shell']['dataset'] = validate($dataset, "mysql");
     $esc['shell']['query'] = validate($query, "mysql");
     $esc['shell']['exclude'] = validate($exclude, "mysql");
-    $esc['shell']['from_user'] = validate($from_user, "mysql");
+    $esc['shell']['from_user_name'] = validate($from_user_name, "mysql");
+    
+    $esc['shell']['datasetname'] = validate($dataset, "shell");
 
     $esc['shell']['minf'] = validate($minf, 'frequency');
 
     $esc['date']['startdate'] = validate($startdate, "startdate");
     $esc['date']['enddate'] = validate($enddate, "enddate");
-    $esc['timestamp']['startdate'] = $esc['date']['startdate'] . " 00:00:00";
-    $esc['timestamp']['enddate'] = $esc['date']['enddate'] . " 23:59:59";
+    $esc['datetime']['startdate'] = $esc['date']['startdate'] . " 00:00:00";
+    $esc['datetime']['enddate'] = $esc['date']['enddate'] . " 23:59:59";
 }
 
 // get all @replies in a message

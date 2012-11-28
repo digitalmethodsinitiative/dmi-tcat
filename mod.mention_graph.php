@@ -33,11 +33,11 @@ require_once './common/functions.php';
 // => time
 
 validate_all_variables();
-get_dataset_name();
-$exc = (empty($esc['shell']["exclude"])) ? "" : "-" . $esc['shell']["exclude"];
-$filename = $resultsdir . $esc['shell']['datasetname'] . "_" . $esc['shell']["query"] . $exc . "_" . $esc['date']["startdate"] . "_" . $esc['date']["enddate"]. "_" . $esc['shell']["from_user"] . "_mentionGraph.gdf";	
 
-if(!file_exists($filename)) {
+$exc = (empty($esc['shell']["exclude"])) ? "" : "-" . $esc['shell']["exclude"];
+$filename = $resultsdir . $esc['shell']['datasetname'] . "_" . $esc['shell']["query"] . $exc . "_" . $esc['date']["startdate"] . "_" . $esc['date']["enddate"]. "_" . $esc['shell']["from_user_name"] . "_mentionGraph.gdf";	
+
+if(1 || !file_exists($filename)) {
 //if(true) {
 
 	$users = array();
@@ -45,16 +45,16 @@ if(!file_exists($filename)) {
 	$edges = array();
 
 	$cur = 0;
-	$results = 10000;
+	$results = 10000;   //@todo, explain to user
 
 	while($results == 10000) {
 
-		$sql = "SELECT from_user,text FROM " . $esc['mysql']['dataset'] . " WHERE ";
-		if(!empty($esc['mysql']['from_user'])) {
-			$subusers = explode(" OR ", $esc['mysql']['from_user']);
+		$sql = "SELECT from_user_name,text FROM " . $esc['mysql']['dataset'] . "_tweets WHERE ";
+		if(!empty($esc['mysql']['from_user_name'])) {
+			$subusers = explode(" OR ", $esc['mysql']['from_user_name']);
 			$sql .= "(";
 			for($i = 0; $i < count($subusers); $i++) {
-				$subusers[$i] = "from_user = '" . $subusers[$i] . "'";
+				$subusers[$i] = "from_user_name = '" . $subusers[$i] . "'";
 			}
 			$sql .= implode(" OR ", $subusers);
 			$sql .= ") AND ";
@@ -67,26 +67,26 @@ if(!file_exists($filename)) {
 		}
 		if(!empty($esc['mysql']['exclude'])) 
 			$sql .= "text NOT LIKE '%" . $esc['mysql']['exclude'] . "%' AND ";
-		$sql .= "time >= " . $esc['timestamp']['startdate'] . " AND time <= " . $esc['timestamp']['enddate']." ";
+		$sql .= "created_at >= '" . $esc['datetime']['startdate'] . "' AND created_at <= '" . $esc['datetime']['enddate']."' ";
 		$sql .= "LIMIT ".$cur.",".$results;
 	
 		$sqlresults = mysql_query($sql);
 
 		while($data = mysql_fetch_assoc($sqlresults)) {
 		
-			$data["from_user"] = strtolower($data["from_user"]);
+			$data["from_user_name"] = strtolower($data["from_user_name"]);
 			$data["text"] = strtolower($data["text"]);
 			
 		
-			if(!isset($users[$data["from_user"]])) {
+			if(!isset($users[$data["from_user_name"]])) {
 							
-				$users[$data["from_user"]] = $arrayName = array('id' => count($usersinv), 'notweets' => 1);
+				$users[$data["from_user_name"]] = $arrayName = array('id' => count($usersinv), 'notweets' => 1);
 				
-				$usersinv[] = $data["from_user"];
+				$usersinv[] = $data["from_user_name"];
 				
 			} else {
 					
-				$users[$data["from_user"]]["notweets"]++;
+				$users[$data["from_user_name"]]["notweets"]++;
 			}
 		
 			// process mentions in tweet
@@ -101,7 +101,7 @@ if(!file_exists($filename)) {
 					$usersinv[] = $mention;
 				}
 				
-				$to = $users[$data["from_user"]]["id"] . "," . $users[$mention]["id"];
+				$to = $users[$data["from_user_name"]]["id"] . "," . $users[$mention]["id"];
 				
 				if(!isset($edges[$to])) {
 					

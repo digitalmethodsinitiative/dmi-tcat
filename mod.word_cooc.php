@@ -32,10 +32,10 @@ require_once './common/functions.php';
 // => time
 
         validate_all_variables();
-// Output format: {dataset}_{query}_{startdate}_{enddate}_{from_user}_{output type}.{filetype}
+// Output format: {dataset}_{query}_{startdate}_{enddate}_{from_user_name}_{output type}.{filetype}
         get_dataset_name();
         $exc = (empty($esc['shell']["exclude"])) ? "" : "-" . $esc['shell']["exclude"];
-        $filename = $resultsdir . $esc['shell']["datasetname"] . "_" . $esc['shell']["query"] . $exc . "_" . $esc['date']["startdate"] . "_" . $esc['date']["enddate"] . "_" . $esc['shell']["from_user"] . (isset($_GET['probabilityOfAssociation']) ? "_normalizedAssociationWeight" : "") . "_wordCooc.gexf";
+        $filename = $resultsdir . $esc['shell']["datasetname"] . "_" . $esc['shell']["query"] . $exc . "_" . $esc['date']["startdate"] . "_" . $esc['date']["enddate"] . "_" . $esc['shell']["from_user_name"] . (isset($_GET['probabilityOfAssociation']) ? "_normalizedAssociationWeight" : "") . "_wordCooc.gexf";
 
         $store_tweets = false; // @todo, modify if necessary. Used to output the tweets considered, instead of the cowords
         if ($store_tweets)
@@ -45,11 +45,11 @@ require_once './common/functions.php';
             $sql = "SELECT text, time FROM " . $esc['mysql']['dataset'] . " WHERE ";
         else
             $sql = "SELECT text, time, targeturl FROM " . $esc['mysql']['dataset'] . ", urls WHERE ";
-        if (!empty($esc['mysql']['from_user'])) {
-            $subusers = explode(" OR ", $esc['mysql']['from_user']);
+        if (!empty($esc['mysql']['from_user_name'])) {
+            $subusers = explode(" OR ", $esc['mysql']['from_user_name']);
             $sql .= "(";
             for ($i = 0; $i < count($subusers); $i++) {
-                $subusers[$i] = "from_user = '" . $subusers[$i] . "'";
+                $subusers[$i] = "from_user_name = '" . $subusers[$i] . "'";
             }
             $sql .= implode(" OR ", $subusers);
             $sql .= ") AND ";
@@ -62,7 +62,7 @@ require_once './common/functions.php';
         }
         if (!empty($esc['mysql']['exclude']))
             $sql .= "text NOT LIKE '%" . $esc['mysql']['exclude'] . "%' AND ";
-        $sql .= "time >= " . $esc['timestamp']['startdate'] . " AND time <= " . $esc['timestamp']['enddate'];
+        $sql .= "created_at >= '" . $esc['timestamp']['startdate'] . "' AND created_at <= '" . $esc['timestamp']['enddate']."'";
         if ($store_tweets)
             $sql .= " AND tweetid = id";
 
