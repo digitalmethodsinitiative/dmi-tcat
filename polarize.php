@@ -11,8 +11,8 @@ include_once('common/config.php');
 include_once('common/functions.php');
 db_connect($hostname, $dbuser, $dbpass, $database); 
 
-$start = strtotime("19 May 2012");
-$end = strtotime("22 June 2012");
+$start = "2012-05-19 00:00:00";
+$end = "2012-06-22 23:59:59";
 $dataset = "z_501";
 $dataname = "acta";
 $datadir = "files";
@@ -67,9 +67,9 @@ function polarizeTweets($dataset, $charges, $start, $end, $includeRetweets) {
      */
 
     // get total nr of tweets
-    $sql = "SELECT count(id) as count FROM $dataset";
+    $sql = "SELECT count(id) as count FROM ".$dataset."_tweets";
     if ($start != 0 && $end != 0)
-        $sql .= " WHERE time >= $start AND time <= $end";
+        $sql .= " WHERE created_at >= '$start' AND created_at <= '$end'";
     if (!$includeRetweets)
         $sql .= " AND lower(text) NOT LIKE 'rt%'";  // @todo, also unique the texts (native retweet)
     $rec = mysql_query($sql);
@@ -200,9 +200,9 @@ function getTweetUrls($dataset, $start = 0, $end = 0) {
         $sql = "SELECT u.tweetid, u.tweetedurl, u.targeturl, u.tweetedhost, u.targethost FROM urls u, $dataset t WHERE u.dbname = 'yourTwapperKeeper' AND u.tablename = '$dataset' AND u.tweetid = t.id";
 
         if ($start != 0 && is_int($start))
-            $sql .= " AND t.time >= $start";
+            $sql .= " AND t.created_at >= '$start'";
         if ($end != 0 && is_int($end))
-            $sql .= " AND t.time <= $end";
+            $sql .= " AND t.created_at <= '$end'";
     }
 
     // list all tweets

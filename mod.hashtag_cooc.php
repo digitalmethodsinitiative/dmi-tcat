@@ -32,17 +32,17 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
 // => gexf
 // => time
         validate_all_variables();
-// Output format: {dataset}_{query}_{startdate}_{enddate}_{from_user}_{output type}.{filetype}
-        get_dataset_name();
+// Output format: {dataset}_{query}_{startdate}_{enddate}_{from_user_name}_{output type}.{filetype}
+        
         $exc = (empty($esc['shell']["exclude"])) ? "" : "-" . $esc['shell']["exclude"];
-        $filename = $resultsdir . $esc['shell']["datasetname"] . "_" . $esc['shell']["query"] . $exc . "_" . $esc['date']["startdate"] . "_" . $esc['date']["enddate"] . "_" . $esc['shell']["from_user"] . (isset($_GET['probabilityOfAssociation']) ? "_normalizedAssociationWeight" : "") . "_hashtagCooc.gexf";
+        $filename = $resultsdir . $esc['shell']["datasetname"] . "_" . $esc['shell']["query"] . $exc . "_" . $esc['date']["startdate"] . "_" . $esc['date']["enddate"] . "_" . $esc['shell']["from_user_name"] . (isset($_GET['probabilityOfAssociation']) ? "_normalizedAssociationWeight" : "") . "_hashtagCooc.gexf";
 
-        $sql = "SELECT text,time FROM " . $esc['mysql']['dataset'] . " WHERE ";
-        if (!empty($esc['mysql']['from_user'])) {
-            $subusers = explode(" OR ", $esc['mysql']['from_user']);
+        $sql = "SELECT text,created_at FROM " . $esc['mysql']['dataset'] . "_tweets WHERE ";  // @todo, get hashtags from hashtag table
+        if (!empty($esc['mysql']['from_user_name'])) {
+            $subusers = explode(" OR ", $esc['mysql']['from_user_name']);
             $sql .= "(";
             for ($i = 0; $i < count($subusers); $i++) {
-                $subusers[$i] = "from_user = '" . $subusers[$i] . "'";
+                $subusers[$i] = "from_user_name = '" . $subusers[$i] . "'";
             }
             $sql .= implode(" OR ", $subusers);
             $sql .= ") AND ";
@@ -55,8 +55,8 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
         }
         if (!empty($esc['mysql']['exclude']))
             $sql .= "text NOT LIKE '%" . $esc['mysql']['exclude'] . "%' AND ";
-        $sql .= "time >= " . $esc['timestamp']['startdate'] . " AND time <= " . $esc['timestamp']['enddate'];
-
+        $sql .= "created_at >= '" . $esc['datetime']['startdate'] . "' AND created_at <= '" . $esc['datetime']['enddate']."'";
+//print $sql."<br>";
         $sqlresults = mysql_query($sql);
 
         // @todo, make switch between memory and database
