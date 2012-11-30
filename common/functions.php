@@ -104,8 +104,6 @@ function frequencyTable($table, $toget, $sql_interval) {
     $sql .= "WHERE t.id = $table.tweet_id AND ";
     $sql .= sqlSubset();
     $sql .= " GROUP BY LOWER($table.$toget) HAVING COUNT(LOWER($table.$toget)) > " . $esc['shell']['minf'] . " ORDER BY datepart ASC, count DESC";
-    print $sql . "<bR>";
-    die;
     $rec = mysql_query($sql);
     while ($res = mysql_fetch_assoc($rec)) {
         $results[$res['datepart']] = $res['toget'];
@@ -152,7 +150,7 @@ function generate($what, $filename) {
     // determine interval
     $sql = "SELECT MIN(created_at) AS min, MAX(created_at) AS max FROM " . $esc['mysql']['dataset'] . "_tweets t WHERE ";
     $sql .= sqlSubset();
-    print $sql . "<bR>";
+    //print $sql . "<bR>";
     $rec = mysql_query($sql);
     $res = mysql_fetch_assoc($rec);
     // determine whether we should display intervals as days or hours
