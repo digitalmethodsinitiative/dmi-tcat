@@ -33,34 +33,24 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
 // => time
         validate_all_variables();
 // Output format: {dataset}_{query}_{startdate}_{enddate}_{from_user_name}_{output type}.{filetype}
-        
+
         $exc = (empty($esc['shell']["exclude"])) ? "" : "-" . $esc['shell']["exclude"];
         $filename = $resultsdir . $esc['shell']["datasetname"] . "_" . $esc['shell']["query"] . $exc . "_" . $esc['date']["startdate"] . "_" . $esc['date']["enddate"] . "_" . $esc['shell']["from_user_name"] . (isset($_GET['probabilityOfAssociation']) ? "_normalizedAssociationWeight" : "") . "_hashtagCooc.gexf";
 
-        $sql = "SELECT text,created_at FROM " . $esc['mysql']['dataset'] . "_tweets WHERE ";  // @todo, get hashtags from hashtag table
-        if (!empty($esc['mysql']['from_user_name'])) {
-            $subusers = explode(" OR ", $esc['mysql']['from_user_name']);
-            $sql .= "(";
-            for ($i = 0; $i < count($subusers); $i++) {
-                $subusers[$i] = "from_user_name = '" . $subusers[$i] . "'";
-            }
-            $sql .= implode(" OR ", $subusers);
-            $sql .= ") AND ";
-        }
-        if (!empty($esc['mysql']['query'])) {
-            $subqueries = explode(" AND ", $esc['mysql']['query']);
-            foreach ($subqueries as $subquery) {
-                $sql .= "text LIKE '%" . $subquery . "%' AND ";
-            }
-        }
-        if (!empty($esc['mysql']['exclude']))
-            $sql .= "text NOT LIKE '%" . $esc['mysql']['exclude'] . "%' AND ";
-        $sql .= "created_at >= '" . $esc['datetime']['startdate'] . "' AND created_at <= '" . $esc['datetime']['enddate']."'";
-//print $sql."<br>";
+        $sql = "SELECT tweet_id, LOWER(text) as text, created_at FROM " . $esc['mysql']['dataset'] . "_hashtags t WHERE ";
+        $sql .= sqlSubset();
+        //print $sql . "<br>";
         $sqlresults = mysql_query($sql);
+        while ($res = mysql_fetch_assoc($sqlresults)) {
+            $hashtags[$res['tweet_id']][] = $res['text'];
+            $created_at[$res['tweet_id']] = $res['created_at'];
+        }
+        foreach ($hashtags as $tweet_id => $tags) {
+            $results[$tweet_id] = implode(" ", $tags);
+        }
 
         // @todo, make switch between memory and database
-        cohashtagsViaMemory($sqlresults, $filename);
+        cohashtagsViaMemory($results, $filename);
         //cohashtagsViaDatabase($sqlresults,$filename);
 
         echo '<fieldset class="if_parameters">';
@@ -82,15 +72,16 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
  * @todo, consider splitting per day and producing a time series gexf
  */
 
-function cohashtagsViaMemory($sqlresults, $filename) {
-    print "collecting tweets<Br>";
+function cohashtagsViaMemory($results, $filename) {
+    //print "collecting tweets<Br>";
     flush();
     include_once('common/Coword.class.php');
     $coword = new Coword;
     $coword->setHashtags_are_separate_words(TRUE);
     $coword->setExtract_only_hashtags(TRUE);
-    while ($data = mysql_fetch_assoc($sqlresults)) {
-        $coword->addDocument($data['text']);
+    $coword->setSimpleTokens(TRUE);
+    foreach ($results as $tags) {
+        $coword->addDocument($tags);
     }
     $coword->iterate();
     file_put_contents($filename, $coword->getCowordsAsGexf($filename));
@@ -109,7 +100,7 @@ function cohashtagsViaDatabase($sqlresults, $filename) {
     print "collecting<br/>";
     flush();
     $word_frequencies = array();
-    while ($data = mysql_fetch_assoc($sqlresults)) {
+    while ($data = mysql_fetch_assoc($sqlresults)) { // @todo, new scheme of things
         // preprocess
         preg_match_all("/(#.+?)[" . implode("|", $punctuation) . "]/", strtolower($data["text"]), $text, PREG_PATTERN_ORDER);
         $text = trim(implode(" ", $text[1]));

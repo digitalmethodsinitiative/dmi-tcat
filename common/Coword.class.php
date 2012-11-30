@@ -29,6 +29,7 @@ class Coword {
     public $words = array();    // holds word frequencies
     public $cowords = array();  // holds coword frequencies
     public $document_word_frequencies = array(); // holds word frequencies per document
+    public $simpleTokens;
 
     function __construct() {
         $this->hashtags_are_separate_words = FALSE;
@@ -37,6 +38,7 @@ class Coword {
         $this->min_word_length = 2;
         $this->min_word_frequency = 2;
         $this->punctuation = array("\s", "\.", ",", "!", "\?", ":", ";", "\/", "&", "\^", "\$", "\|", "`", "~", "=", "\+", "\*", "\"", "'", "\(", "\)", "\]", "\[", "{", "}", "<", ">");
+        $this->simpleTokens = FALSE;
     }
 
     /*
@@ -83,14 +85,14 @@ class Coword {
         $sw = new Stopwords();
         $sw->loadAllLists();
         $cleaned = $sw->removeStopwords(array_keys($this->words));
-        print count($this->words) . " vs " . count($cleaned) . "<bR>";
+        //print count($this->words) . " vs " . count($cleaned) . "<bR>";
         flush();
         foreach ($this->words as $word => $c) {
             if (array_search($word, $cleaned) === false)
                 unset($this->words[$word]);
         }
         unset($cleaned);
-        print "done<bR>";
+        //print "done<bR>";
         flush();
 
         // list cowords
@@ -108,7 +110,7 @@ class Coword {
                 }
             }
         }
-        
+
         // @todo add minimum_coword_frequency
     }
 
@@ -117,17 +119,21 @@ class Coword {
      */
 
     function getWordsInString($v) {
-        $punctuation = $this->getPunctuation();
-        if (!$this->getHashtags_are_separate_words())
-            $punctuation[] = "#";
-        $regexp = '/([' . implode("", $punctuation) . "]+)/u";  // @todo, this only works for latin chars, strings with non-ascii will become empty with this regexp
-        $v = preg_replace($regexp, " ", $v);                  // replace punctuation by whitespace
-        $v = preg_replace("/[\s\t\n\r]+/", " ", $v);          // replace whitespace characters by single whitespace
-        $sp = preg_split("/\s/u", $v, 0, PREG_SPLIT_NO_EMPTY);
-        if ($this->getExtract_only_hashtags()) {
-            foreach ($sp as $k => $v)
-                if ($v[0] !== "#")
-                    unset($sp[$k]);
+        if ($this->getSimpleTokens())
+            $sp = explode(" ", $v);
+        else {
+            $punctuation = $this->getPunctuation();
+            if (!$this->getHashtags_are_separate_words())
+                $punctuation[] = "#";
+            $regexp = '/([' . implode("", $punctuation) . "]+)/u";  // @todo, this only works for latin chars, strings with non-ascii will become empty with this regexp
+            $v = preg_replace($regexp, " ", $v);                  // replace punctuation by whitespace
+            $v = preg_replace("/[\s\t\n\r]+/", " ", $v);          // replace whitespace characters by single whitespace
+            $sp = preg_split("/\s/u", $v, 0, PREG_SPLIT_NO_EMPTY);
+            if ($this->getExtract_only_hashtags()) {
+                foreach ($sp as $k => $v)
+                    if ($v[0] !== "#")
+                        unset($sp[$k]);
+            }
         }
         return $sp;
     }
@@ -257,6 +263,14 @@ class Coword {
 
     public function setMin_word_frequency($min_word_frequency) {
         $this->min_word_frequency = $min_word_frequency;
+    }
+
+    public function getSimpleTokens() {
+        return $this->simpleTokens;
+    }
+
+    public function setSimpleTokens($simpleTokens) {
+        $this->simpleTokens = $simpleTokens;
     }
 
 }

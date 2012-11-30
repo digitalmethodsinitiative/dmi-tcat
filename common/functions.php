@@ -89,21 +89,39 @@ function get_file($what) {
     header("Location: $location");
 }
 
-// generates the datafiles, only used if the file does not exist yet
-function generate($what, $filename) {
-    global $tsv, $network, $esc, $titles, $database;
+/*
+ * @var $toget specifies fieldname
+ * @var $table specifies table name
+ * @todo most likely we can do the lowering some other way
+ */
 
-    // initialize variables
-    $tweets = $times = $from_user_names = $results = array();
-    $file = "";
+function frequencyTable($table, $toget, $sql_interval) {
+    global $esc;
+    $results = array();
+    $sql = "SELECT COUNT(LOWER($table.$toget)) AS count, LOWER($table.$toget) AS toget, ";
+    $sql .= $sql_interval;
+    $sql .= "FROM " . $esc['mysql']['dataset'] . "_$table $table, " . $esc['mysql']['dataset'] . "_tweets t ";
+    $sql .= "WHERE t.id = $table.tweet_id AND ";
+    $sql .= sqlSubset();
+    $sql .= " GROUP BY LOWER($table.$toget) HAVING COUNT(LOWER($table.$toget)) > " . $esc['shell']['minf'] . " ORDER BY datepart ASC, count DESC";
+    print $sql . "<bR>";
+    die;
+    $rec = mysql_query($sql);
+    while ($res = mysql_fetch_assoc($rec)) {
+        $results[$res['datepart']] = $res['toget'];
+    }
+    return $results;
+}
 
-    // build query
-    $sql = "SELECT id,text,created_at,from_user_name FROM " . $esc['mysql']['dataset'] . "_tweets WHERE ";
+// here further sqlSubset selection is constructed
+function sqlSubset($table = "t",$period=FALSE) {
+    global $esc;
+    $sql = "";
     if (!empty($esc['mysql']['from_user_name'])) {
         $subusers = explode(" OR ", $esc['mysql']['from_user_name']);
         $sql .= "(";
         for ($i = 0; $i < count($subusers); $i++) {
-            $subusers[$i] = "from_user_name = '" . $subusers[$i] . "'";
+            $subusers[$i] = "$table.from_user_name = '" . $subusers[$i] . "'";
         }
         $sql .= implode(" OR ", $subusers);
         $sql .= ") AND ";
@@ -111,117 +129,128 @@ function generate($what, $filename) {
     if (!empty($esc['mysql']['query'])) {
         $subqueries = explode(" AND ", $esc['mysql']['query']);
         foreach ($subqueries as $subquery) {
-            $sql .= "text LIKE '%" . $subquery . "%' AND ";
+            $sql .= "$table.text LIKE '%" . $subquery . "%' AND ";
         }
     }
     if (!empty($esc['mysql']['exclude']))
-        $sql .= "text NOT LIKE '%" . $esc['mysql']['exclude'] . "%' AND ";
-    $sql .= "created_at >= '" . $esc['datetime']['startdate'] . "' AND created_at <= '" . $esc['datetime']['enddate'] . "' ORDER BY created_at";
-
-    // get slice and its min and max time
-    $rec = mysql_query($sql);
-
-    if ($rec && mysql_num_rows($rec) > 0) {
-        while ($res = mysql_fetch_assoc($rec)) {
-            $tweets[] = $res['text'];
-            $ids[] = $res['id'];
-            $times[] = $res['created_at'];
-            $from_user_names[] = strtolower($res['from_user_name']);
-        }
-    }
-    $times_v = array_values($times);
-    $mintime = array_shift($times_v);
-    $maxtime = array_pop($times_v);
-
-    // determine whether we should display intervals as days or hours
-    if (strtotime($maxtime) - strtotime($mintime) < 86400 * 2) // if smaller than 2 days we'll do hours
-        $interval = "hours";
+        $sql .= "$table.text NOT LIKE '%" . $esc['mysql']['exclude'] . "%' AND ";
+    if($period===FALSE)
+        $sql .= "$table.created_at >= '" . $esc['datetime']['startdate'] . "' AND $table.created_at <= '" . $esc['datetime']['enddate'] . "' ";
     else
+        $sql .= $period;
+    return $sql;
+}
+
+// generates the datafiles, only used if the file does not exist yet
+function generate($what, $filename) {
+    global $tsv, $network, $esc, $titles, $database;
+
+    // initialize variables
+    $tweets = $times = $from_user_names = $results = $urls = $urls_expanded = $hosts = $hashtags = array();
+    $file = "";
+
+    // determine interval
+    $sql = "SELECT MIN(created_at) AS min, MAX(created_at) AS max FROM " . $esc['mysql']['dataset'] . "_tweets t WHERE ";
+    $sql .= sqlSubset();
+    print $sql . "<bR>";
+    $rec = mysql_query($sql);
+    $res = mysql_fetch_assoc($rec);
+    // determine whether we should display intervals as days or hours
+    if (strtotime($res['max']) - strtotime($res['min']) < 86400 * 2) { // if smaller than 2 days we'll do hours
+        $interval = "hours";
+        $sql_interval = "DATE_FORMAT(t.created_at,'%Y-%m-%d %Hh') datepart ";
+    } else {
         $interval = "days";
-
-    // urls, @todo
-    if ($what == "urls" || $what == "hosts") {
-        $sql2 = "SELECT u.tweetid, u.targeturl, u.targethost FROM urls u, " . $esc['mysql']['dataset'] . "_tweets t WHERE u.tweetid = t.id AND u.tablename = '" . $esc['mysql']['dataset'] . "_tweets' AND ";
-        if (!empty($esc['mysql']['from_user_name'])) {
-            $subusers = explode(" OR ", $esc['mysql']['from_user_name']);
-            $sql2 .= "(";
-            for ($i = 0; $i < count($subusers); $i++) {
-                $subusers[$i] = "t.from_user_name = '" . $subusers[$i] . "'";
-            }
-            $sql2 .= implode(" OR ", $subusers);
-            $sql2 .= ") AND ";
-        }
-        if (!empty($esc['mysql']['query'])) {
-            $subqueries = explode(" AND ", $esc['mysql']['query']);
-            foreach ($subqueries as $subquery) {
-                $sql2 .= "t.text LIKE '%" . $subquery . "%' AND ";
-            }
-        }
-        if (!empty($esc['mysql']['exclude']))
-            $sql2 .= "t.text NOT LIKE '%" . $esc['mysql']['exclude'] . "%' AND ";
-        $sql2 .= "t.created_at >= '" . $esc['datetime']['startdate'] . "' AND t.created_at <= '" . $esc['datetime']['enddate'] . "' ORDER BY created_at";
-
-        $rec = mysql_query($sql2);
-        while ($res = mysql_fetch_assoc($rec)) {
-            $urls[$res['tweetid']] = $res['targeturl'];
-            $hosts[$res['tweetid']] = $res['targethost'];
-        }
-    }
-
-    // extract desired things ($what) and group per interval
-    foreach ($tweets as $key => $tweet) {
-        $time = $times[$key];
-//		$tweet = mb_convert_encoding($tweet, 'ISO-8859-1','latin1');
-//var_dump(iconv_get_encoding('all'));
-//die;
-
-        if ($interval == "days")
-            $group = time_to_day($time);
-        elseif ($interval == "hours")
-            $group = time_to_hour($time);
-        elseif ($interval == "months")
-            $group = time_to_month($time);
-
-        switch ($what) {
-            case "hashtag":
-                $stuff = get_hash_tags($tweet);
-                foreach ($stuff as $thing)
-                    $results[$group][] = $thing;
-                break;
-            case "mention":
-                $stuff = get_replies($tweet);
-                foreach ($stuff as $thing)
-                    $results[$group][] = $thing;
-                break;
-            case "user":
-                $results[$group][] = $from_user_names[$key];
-                break;
-
-            case "user-mention":
-                $stuff = get_replies($tweet);
-                foreach ($stuff as $thing) {
-                    $results[$group]['mentions'][] = $thing;
-                }
-                $results[$group]['users'][] = $from_user_names[$key];
-                break;
-
-            case "retweet":
-                $results[$group][] = $tweet; // TODO, write stemming function
-                break;
-            case "urls":
-                if (isset($urls[$ids[$key]]))
-                    $results[$group][] = $urls[$ids[$key]];
-                break;
-            case "hosts":
-                if (isset($urls[$ids[$key]]))
-                    $results[$group][] = $hosts[$ids[$key]];
-                break;
-            default:
-                break;
-        }
+        $sql_interval .= "DATE_FORMAT(t.created_at,'%Y-%m-%d') datepart ";
     }
 
 
+    // get frequencies
+    if ($what == "hashtag") {
+        $results = frequencyTable("hashtags", "text", $sql_interval);
+    } elseif ($what == "urls") {
+        $results = frequencyTable("urls", "url_expanded", $sql_interval);
+    } elseif ($what == "hosts") {
+        $results = frequencyTable("urls", "domain", $sql_interval);
+    } elseif ($what == "mention") {
+        $results = frequencyTable("mentions","to_user",$sql_interval);
+        // get other things        
+    } else {
+        // @todo, this could also use database grouping
+        $sql = "SELECT id,text,created_at,from_user_name FROM " . $esc['mysql']['dataset'] . "_tweets WHERE ";
+        $sql .= sqlSubset();
+
+        // get slice and its min and max time
+        $rec = mysql_query($sql);
+
+        if ($rec && mysql_num_rows($rec) > 0) {
+            while ($res = mysql_fetch_assoc($rec)) {
+                $tweets[] = $res['text'];
+                $ids[] = $res['id'];
+                $times[] = $res['created_at'];
+                $from_user_names[] = strtolower($res['from_user_name']);
+            }
+        }
+
+
+        // extract desired things ($what) and group per interval
+        foreach ($tweets as $key => $tweet) {
+            $time = $times[$key];
+
+            if ($interval == "days")
+                $group = time_to_day($time);
+            elseif ($interval == "hours")
+                $group = time_to_hour($time);
+            elseif ($interval == "months")
+                $group = time_to_month($time);
+
+            switch ($what) {
+                //case "hashtag":
+                //    foreach ($hashtags as $hashtag)
+                //        $results[$group][] = $hashtag;
+                //    break;
+                //case "mention": // @todo, mentions might be taken from own table
+                //    $stuff = get_replies($tweet);
+                //    foreach ($stuff as $thing)
+                //        $results[$group][] = $thing;
+                //    break;
+                case "user":
+                    $results[$group][] = $from_user_names[$key];
+                    break;
+
+                case "user-mention":
+                    $stuff = get_replies($tweet);
+                    foreach ($stuff as $thing) {
+                        $results[$group]['mentions'][] = $thing;
+                    }
+                    $results[$group]['users'][] = $from_user_names[$key];
+                    break;
+
+                case "retweet":
+                    $results[$group][] = $tweet; // TODO, write stemming function
+                    break;
+                //case "urls":
+                //    if (isset($urls_expanded[$ids[$key]]))
+                //        $results[$group][] = $urls_expanded[$ids[$key]];
+                //    break;
+                //case "hosts":
+                //    if (isset($urls_expanded[$ids[$key]]))
+                //        $results[$group][] = $hosts[$ids[$key]];
+                //    break;
+                default:
+                    break;
+            }
+        }
+        // count frequency of occurence of thing, per interval
+        foreach ($results as $group => $things) {
+            $counted_things = array_count_values($things);
+            arsort($counted_things);
+            $results[$group] = $counted_things;
+        }
+    }
+
+
+    // network output for users
     if ($what == "user-mention") {
         foreach ($results as $group => $things) {
             $tmp_mentions = array_count_values($things['mentions']);
@@ -261,12 +290,8 @@ function generate($what, $filename) {
         }
         // write tsv output
     } elseif (in_array($what, $tsv) !== false) {
-        // count frequency of occurence of thing, per interval
-        foreach ($results as $group => $things) {
-            $counted_things = array_count_values($things);
-            arsort($counted_things);
-            $results[$group] = $counted_things;
-        }
+
+
 
         ksort($results);
 
@@ -300,7 +325,7 @@ function generate($what, $filename) {
 
     if (!empty($file))
         ;
-    file_put_contents($filename, "\xEF\xBB\xBF" . $file);
+    file_put_contents($filename, "\xEF\xBB\xBF" . $file);   // write BOM
 }
 
 // formats time as days
@@ -386,7 +411,7 @@ function validate_all_variables() {
     $esc['shell']['query'] = validate($query, "mysql");
     $esc['shell']['exclude'] = validate($exclude, "mysql");
     $esc['shell']['from_user_name'] = validate($from_user_name, "mysql");
-    
+
     $esc['shell']['datasetname'] = validate($dataset, "shell");
 
     $esc['shell']['minf'] = validate($minf, 'frequency');
@@ -426,7 +451,7 @@ function get_hash_tags($msg) {
     return $tags;
 }
 
-// get listing of all databases
+// get listing of all datasets
 function get_all_datasets() {
 
     global $querybins; // defined in php.ini of twitter capture
