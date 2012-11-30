@@ -103,10 +103,11 @@ function frequencyTable($table, $toget, $sql_interval) {
     $sql .= "FROM " . $esc['mysql']['dataset'] . "_$table $table, " . $esc['mysql']['dataset'] . "_tweets t ";
     $sql .= "WHERE t.id = $table.tweet_id AND ";
     $sql .= sqlSubset();
-    $sql .= " GROUP BY LOWER($table.$toget) HAVING COUNT(LOWER($table.$toget)) > " . $esc['shell']['minf'] . " ORDER BY datepart ASC, count DESC";
+    $sql .= " GROUP BY toget, datepart ORDER BY datepart ASC, count DESC";
     $rec = mysql_query($sql);
     while ($res = mysql_fetch_assoc($rec)) {
-        $results[$res['datepart']] = $res['toget'];
+	if($res['count']>$esc['shell']['minf'])
+        	$results[$res['datepart']][$res['toget']] = $res['count'];
     }
     return $results;
 }
