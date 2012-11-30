@@ -138,85 +138,30 @@ if (defined('BASE_URL'))
         validate_all_variables();
 
 // count current subsample
-        $sql = "SELECT count(distinct(id)) as count FROM " . $esc['mysql']['dataset'] . "_tweets WHERE ";
-        if (!empty($esc['mysql']['from_user_name'])) {
-            $subusers = explode(" OR ", $esc['mysql']['from_user_name']);
-            $sql .= "(";
-            for ($i = 0; $i < count($subusers); $i++) {
-                $subusers[$i] = "from_user_name = '" . $subusers[$i] . "'";
-            }
-            $sql .= implode(" OR ", $subusers);
-            $sql .= ") AND ";
-        }
-        if (!empty($esc['mysql']['query'])) {
-            $subqueries = explode(" AND ", $esc['mysql']['query']);
-            foreach ($subqueries as $subquery) {
-                $sql .= "text LIKE '%" . $subquery . "%' AND ";
-            }
-        }
-        if (!empty($esc['mysql']['exclude']))
-            $sql .= "text NOT LIKE '%" . $esc['mysql']['exclude'] . "%' AND ";
-        $sql .= "created_at >= '" . $esc['datetime']['startdate'] . "' AND created_at <= '" . $esc['datetime']['enddate'] . "'";
-
-
-        //echo $sql . "<br>";
-
+        $sql = "SELECT count(distinct(id)) as count FROM " . $esc['mysql']['dataset'] . "_tweets t WHERE ";
+        $sql .= sqlSubset();
+        //print $sql . "<br>";
         $sqlresults = mysql_query($sql);
         $data = mysql_fetch_assoc($sqlresults);
         $numtweets = $data["count"];
+        //print "numtweets $numtweets<bR>";
 
-
-// count tweets with links // @todo
-        $sql = "SELECT count(id) AS count FROM " . $esc['mysql']['dataset'] . " WHERE ";
+// count tweets with links
+        $sql = "SELECT count(id) AS count FROM " . $esc['mysql']['dataset'] . "_tweets t WHERE ";
         $sql .= "text REGEXP 'https?://' AND ";
-        if (!empty($esc['mysql']['from_user_name'])) {
-            $subusers = explode(" OR ", $esc['mysql']['from_user_name']);
-            $sql .= "(";
-            for ($i = 0; $i < count($subusers); $i++) {
-                $subusers[$i] = "from_user_name = '" . $subusers[$i] . "'";
-            }
-            $sql .= implode(" OR ", $subusers);
-            $sql .= ") AND ";
-        }
-        if (!empty($esc['mysql']['query'])) {
-            $subqueries = explode(" AND ", $esc['mysql']['query']);
-            foreach ($subqueries as $subquery) {
-                $sql .= "text LIKE '%" . $subquery . "%' AND ";
-            }
-        }
-        if (!empty($esc['mysql']['exclude']))
-            $sql .= "text NOT LIKE '%" . $esc['mysql']['exclude'] . "%' AND ";
-        $sql .= "created_at >= '" . $esc['datetime']['startdate'] . "' AND created_at <= '" . $esc['datetime']['enddate'] . "'";
-
+        $sql .= sqlSubset();
         $sqlresults = mysql_query($sql);
-	$numlinktweets = 0;
+        $numlinktweets = 0;
         if ($sqlresults && mysql_num_rows($sqlresults) > 0) {
             $res = mysql_fetch_assoc($sqlresults);
             $numlinktweets = $res['count'];
         }
+        //print "numlinktweets $numlinktweets<bR>";
 
-
-// see if all URLs are loaded // @todo
-        $sql = "SELECT count(t.id) AS count FROM urls u, " . $esc['mysql']['dataset'] . "_tweets t WHERE t.id = u.tweetid AND u.tablename = '" . $esc['mysql']['dataset'] . "_tweets' AND t.text REGEXP 'https?://' AND ";
-        if (!empty($esc['mysql']['from_user_name'])) {
-            $subusers = explode(" OR ", $esc['mysql']['from_user_name']);
-            $sql .= "(";
-            for ($i = 0; $i < count($subusers); $i++) {
-                $subusers[$i] = "from_user_name = '" . $subusers[$i] . "'";
-            }
-            $sql .= implode(" OR ", $subusers);
-            $sql .= ") AND ";
-        }
-        if (!empty($esc['mysql']['query'])) {
-            $subqueries = explode(" AND ", $esc['mysql']['query']);
-            foreach ($subqueries as $subquery) {
-                $sql .= "text LIKE '%" . $subquery . "%' AND ";
-            }
-        }
-        if (!empty($esc['mysql']['exclude']))
-            $sql .= "text NOT LIKE '%" . $esc['mysql']['exclude'] . "%' AND ";
-        $sql .= "t.created_at >= '" . $esc['datetime']['startdate'] . "' AND t.created_at <= '" . $esc['datetime']['enddate'] . "'";
-
+// see whether all URLs are loaded 
+        $sql = "SELECT count(distinct(t.id)) AS count FROM " . $esc['mysql']['dataset'] . "_urls u, " . $esc['mysql']['dataset'] . "_tweets t WHERE t.id = u.tweet_id AND u.url_followed != '' AND t.text REGEXP 'https?://' AND ";
+        $sql .= sqlSubset();
+        //print $sql . "<br>";
         $show_url_export = false;
         $rec = mysql_query($sql);
         if ($rec && mysql_num_rows($rec) > 0) {
@@ -224,45 +169,37 @@ if (defined('BASE_URL'))
             if ($res['count'] / $numlinktweets > 0.95)
                 $show_url_export = true;
         }
+        //print "share tweets " . $res['count'] . "<bR>";
 
 // get data for the line graph
         $period = ( (strtotime($esc['datetime']['enddate']) - strtotime($esc['datetime']['startdate'])) <= 86400 * 2) ? "hour" : "day"; // @todo
         $curdate = strtotime($esc['datetime']['startdate']);
         $linedata = array();
 
+        $sql = "SELECT COUNT(text) as count, ";
+        if ($period == "day")
+            $sql .= "DATE_FORMAT(t.created_at,'%d.%m') datepart ";
+        else
+            $sql .= "DATE_FORMAT(t.created_at,'%d. %H:00h') datepart ";
+        $sql .= "FROM " . $esc['mysql']['dataset'] . "_tweets t WHERE ";
+        $sql .= sqlSubset();
+        $sql .= "GROUP BY datepart";
+        //print $sql."<br>";
+        $rec = mysql_query($sql);
+        // initialize with empty dates
         while ($curdate < strtotime($esc['datetime']['enddate'])) {
             $thendate = ($period == "day") ? $curdate + 86400 : $curdate + 3600;
 
-            $sql = "SELECT COUNT(id) as count FROM " . $esc['mysql']['dataset'] . "_tweets WHERE ";
-            if (!empty($esc['mysql']['from_user_name'])) {
-                $subusers = explode(" OR ", $esc['mysql']['from_user_name']);
-                $sql .= "(";
-                for ($i = 0; $i < count($subusers); $i++) {
-                    $subusers[$i] = "from_user_name = '" . $subusers[$i] . "'";
-                }
-                $sql .= implode(" OR ", $subusers);
-                $sql .= ") AND ";
-            }
-            if (!empty($esc['mysql']['query'])) {
-                $subqueries = explode(" AND ", $esc['mysql']['query']);
-                foreach ($subqueries as $subquery) {
-                    $sql .= "text LIKE '%" . $subquery . "%' AND ";
-                }
-            }
-            if (!empty($esc['mysql']['exclude']))
-                $sql .= "text NOT LIKE '%" . $esc['mysql']['exclude'] . "%' AND ";
-            $sql .= "created_at >= '" . strftime("%Y-%m-%d %H:%M:%S", $curdate) . "' AND created_at <= '" . strftime("%Y-%m-%d %H:%M:%S", $thendate) . "'";
-            //print $sql . "<br>";
-
-            $rec = mysql_query($sql);
-            $data = mysql_fetch_assoc($rec);
-
             $tmp = ($period == "day") ? strftime("%d.%m", $curdate) : strftime("%d. %H:%M", $curdate) . "h";
-
-            $linedata[$tmp] = $data["count"];
+            $linedata[$tmp] = 0;
 
             $curdate = $thendate;
         }
+        // overwrite found dates
+        while ($res = mysql_fetch_assoc($rec)) {
+            $linedata[$res['datepart']] = $res['count'];
+        }
+        
         ?>
 
         <fieldset class="if_parameters">

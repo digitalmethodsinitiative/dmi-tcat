@@ -60,25 +60,8 @@ if ($samplesize > 0) {
 
         $content = "time,created_at,from_user_name,text,source\n";
 
-        $sql = "SELECT * FROM " . $esc['mysql']['dataset'] . "_tweets WHERE ";
-        if (!empty($esc['mysql']['from_user_name'])) {
-            $subusers = explode(" OR ", $esc['mysql']['from_user_name']);
-            $sql .= "(";
-            for ($i = 0; $i < count($subusers); $i++) {
-                $subusers[$i] = "from_user_name = '" . $subusers[$i] . "'";
-            }
-            $sql .= implode(" OR ", $subusers);
-            $sql .= ") AND ";
-        }
-        if (!empty($esc['mysql']['query'])) {
-            $subqueries = explode(" AND ", $esc['mysql']['query']);
-            foreach ($subqueries as $subquery) {
-                $sql .= "text LIKE '%" . $subquery . "%' AND ";
-            }
-        }
-        if (!empty($esc['mysql']['exclude']))
-            $sql .= "text NOT LIKE '%" . $esc['mysql']['exclude'] . "%' AND ";
-        $sql .= "created_at >= '" . $esc['datetime']['startdate'] . "' AND created_at <= '" . $esc['datetime']['enddate'] . "' ";
+        $sql = "SELECT * FROM " . $esc['mysql']['dataset'] . "_tweets t WHERE ";
+        $sql .= sqlSubset();
         $sql .= "ORDER BY RAND() LIMIT " . $samplesize;
 
         $sqlresults = mysql_query($sql);
