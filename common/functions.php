@@ -168,7 +168,7 @@ function generate($what, $filename) {
     if ($what == "hashtag") {
         $results = frequencyTable("hashtags", "text", $sql_interval);
     } elseif ($what == "urls") {
-        $results = frequencyTable("urls", "url_expanded", $sql_interval);
+        $results = frequencyTable("urls", "url_followed", $sql_interval);
     } elseif ($what == "hosts") {
         $results = frequencyTable("urls", "domain", $sql_interval);
     } elseif ($what == "mention") {
@@ -312,6 +312,7 @@ function generate($what, $filename) {
             $file .= "date,frequency,$what\n";
         foreach ($results as $group => $things) {
             foreach ($things as $thing => $count) {
+		if(empty($thing)) continue;
                 if ($count < $esc['shell']['minf'])
                     continue;
                 if ($what == "retweet")
