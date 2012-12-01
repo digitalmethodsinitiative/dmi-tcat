@@ -45,12 +45,9 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
             $hashtags[$res['tweet_id']][] = $res['text'];
             $created_at[$res['tweet_id']] = $res['created_at'];
         }
-        foreach ($hashtags as $tweet_id => $tags) {
-            $results[$tweet_id] = implode(" ", $tags);
-        }
 
         // @todo, make switch between memory and database
-        cohashtagsViaMemory($results, $filename);
+        cohashtagsViaMemory($hashtags, $filename);
         //cohashtagsViaDatabase($sqlresults,$filename);
 
         echo '<fieldset class="if_parameters">';
@@ -77,13 +74,34 @@ function cohashtagsViaMemory($results, $filename) {
     flush();
     include_once('common/Coword.class.php');
     $coword = new Coword;
-    $coword->setHashtags_are_separate_words(TRUE);
-    $coword->setExtract_only_hashtags(TRUE);
-    $coword->setSimpleTokens(TRUE);
-    foreach ($results as $tags) {
-        $coword->addDocument($tags);
+    /* $coword->setHashtags_are_separate_words(TRUE);
+      $coword->setExtract_only_hashtags(TRUE);
+      $coword->setSimpleTokens(TRUE);
+      foreach ($results as $tags) {
+      $coword->addDocument(implode(" ",$tags));
+      }
+      $coword->iterate();
+     */
+    // the following skips many steps withing $coword->iterate
+    foreach ($results as $tweet_id => $tags) {
+        if (count($tags) < 2)
+            continue;
+        $frequency = array_count_values($tags);
+        $words_in_document = array_keys($frequency);
+        for ($i = 0; $i < count($words_in_document); $i++) {
+            $from = $words_in_document[$i];
+            if (!isset($coword->words[$from]))
+                $coword->words[$from] = 0;
+            $coword->words[$from] += $frequency[$words_in_document[$i]];
+            for ($j = $i + 1; $j < count($words_in_document); $j++) {
+                $to = $words_in_document[$j];
+                if (!isset($coword->words[$to]))
+                    $coword->words[$to] = 0;
+                $coword->words[$to] += $frequency[$words_in_document[$j]];
+                $coword->addCoword($from, $to, min($frequency[$words_in_document[$i]], $frequency[$words_in_document[$j]]));
+            }
+        }
     }
-    $coword->iterate();
     file_put_contents($filename, $coword->getCowordsAsGexf($filename));
 }
 
