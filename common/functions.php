@@ -176,7 +176,7 @@ function generate($what, $filename) {
         // get other things        
     } else {
         // @todo, this could also use database grouping
-        $sql = "SELECT id,text,created_at,from_user_name FROM " . $esc['mysql']['dataset'] . "_tweets WHERE ";
+        $sql = "SELECT id,text,created_at,from_user_name FROM " . $esc['mysql']['dataset'] . "_tweets t WHERE ";
         $sql .= sqlSubset();
 
         // get slice and its min and max time
