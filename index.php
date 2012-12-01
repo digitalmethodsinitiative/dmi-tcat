@@ -146,10 +146,10 @@ if (defined('BASE_URL'))
         $numtweets = $data["count"];
         //print "numtweets $numtweets<bR>";
 
-// count tweets with links
-        $sql = "SELECT count(id) AS count FROM " . $esc['mysql']['dataset'] . "_tweets t WHERE ";
-        $sql .= "text REGEXP 'https?://' AND ";
+// count links
+        $sql = "SELECT count(u.id) AS count FROM " . $esc['mysql']['dataset'] . "_urls u, ".$esc['mysql']['dataset']."_tweets t WHERE u.tweet_id = t.id AND ";
         $sql .= sqlSubset();
+	//print $sql;
         $sqlresults = mysql_query($sql);
         $numlinktweets = 0;
         if ($sqlresults && mysql_num_rows($sqlresults) > 0) {
@@ -159,17 +159,18 @@ if (defined('BASE_URL'))
         //print "numlinktweets $numlinktweets<bR>";
 
 // see whether all URLs are loaded 
-        $sql = "SELECT count(distinct(t.id)) AS count FROM " . $esc['mysql']['dataset'] . "_urls u, " . $esc['mysql']['dataset'] . "_tweets t WHERE t.id = u.tweet_id AND u.url_followed != '' AND t.text REGEXP 'https?://' AND ";
+	$sql = "SELECT count(u.id) as count FROM ". $esc['mysql']['dataset'] ."_urls u, ".$esc['mysql']['dataset']."_tweets t WHERE u.tweet_id = t.id AND u.url_followed != '' AND ";
         $sql .= sqlSubset();
         //print $sql . "<br>";
         $show_url_export = false;
         $rec = mysql_query($sql);
         if ($rec && mysql_num_rows($rec) > 0) {
             $res = mysql_fetch_assoc($rec);
-            if ($res['count'] / $numlinktweets > 0.95)
+            if ($res['count'] / $numlinktweets > 0.9)
                 $show_url_export = true;
         }
         //print "share tweets " . $res['count'] . "<bR>";
+	//print $res['count']/$numlinktweets."<br>";
 
 // get data for the line graph
         $period = ( (strtotime($esc['datetime']['enddate']) - strtotime($esc['datetime']['startdate'])) <= 86400 * 2) ? "hour" : "day"; // @todo
