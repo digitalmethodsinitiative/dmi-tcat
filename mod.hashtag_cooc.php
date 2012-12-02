@@ -36,20 +36,24 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
 
         $exc = (empty($esc['shell']["exclude"])) ? "" : "-" . $esc['shell']["exclude"];
         $filename = $resultsdir . $esc['shell']["datasetname"] . "_" . $esc['shell']["query"] . $exc . "_" . $esc['date']["startdate"] . "_" . $esc['date']["enddate"] . "_" . $esc['shell']["from_user_name"] . (isset($_GET['probabilityOfAssociation']) ? "_normalizedAssociationWeight" : "") . "_hashtagCooc.gexf";
-
-        $sql = "SELECT tweet_id, LOWER(text) as text, created_at FROM " . $esc['mysql']['dataset'] . "_hashtags t WHERE ";
-        $sql .= sqlSubset();
-        //print $sql . "<br>";
+        
+        $sql = "SELECT LOWER(A.text) AS h1, LOWER(B.text) AS h2 FROM ".$esc['mysql']['dataset']."_hashtags A, ".$esc['mysql']['dataset']."_hashtags B, ".$esc['mysql']['dataset']."_tweets t WHERE ";
+        $sql .= sqlSubset()." AND ";
+        $sql .= "LENGTH(A.text)>1 AND LENGTH(B.text)>1 AND ";
+        $sql .= "LOWER(A.text) < LOWER(B.text) AND A.tweet_id = t.id AND A.tweet_id = B.tweet_id ";
+        $sql .= "ORDER BY h1,h2";
+        
+        //print $sql;die;
         $sqlresults = mysql_query($sql);
+        include_once('common/Coword.class.php');
+        $coword = new Coword;
         while ($res = mysql_fetch_assoc($sqlresults)) {
-            $hashtags[$res['tweet_id']][] = $res['text'];
-            $created_at[$res['tweet_id']] = $res['created_at'];
+            $coword->addWord($res['h1'],1);
+            $coword->addWord($res['h2'],1);
+            $coword->addCoword($res['h1'],$res['h2'],1);
         }
-
-        // @todo, make switch between memory and database
-        cohashtagsViaMemory($hashtags, $filename);
-        //cohashtagsViaDatabase($sqlresults,$filename);
-
+        file_put_contents($filename, $coword->getCowordsAsGexf($filename));
+        
         echo '<fieldset class="if_parameters">';
 
         echo '<legend>Your File</legend>';
