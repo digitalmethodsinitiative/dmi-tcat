@@ -325,7 +325,8 @@ function generate($what, $filename) {
 
     if (!empty($file))
         ;
-    file_put_contents($filename, "\xEF\xBB\xBF" . $file);   // write BOM
+    #file_put_contents($filename, "\xEF\xBB\xBF" . $file);   // write BOM
+    file_put_contents($filename, chr(239) . chr(187) . chr(191) . $file);   // write BOM
 }
 
 // formats time as days

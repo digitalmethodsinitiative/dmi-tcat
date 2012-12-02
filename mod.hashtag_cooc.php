@@ -52,7 +52,7 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
             $coword->addWord($res['h2'],1);
             $coword->addCoword($res['h1'],$res['h2'],1);
         }
-        file_put_contents($filename, "\xEF\xBB\xBF".$coword->getCowordsAsGexf($filename));
+        file_put_contents($filename, chr(239) . chr(187) . chr(191) .$coword->getCowordsAsGexf($filename));
         
         echo '<fieldset class="if_parameters">';
 
