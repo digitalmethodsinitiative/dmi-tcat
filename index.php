@@ -19,7 +19,7 @@ $datasets = get_all_datasets();
 
         <link rel="stylesheet" href="css/main.css" type="text/css" />
 
-        <script type="text/javascript" language="javascript" src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
+        <script type="text/javascript" language="javascript" src="scripts/jquery-1.7.1.min.js"></script>
 
         <script type="text/javascript" src="https://www.google.com/jsapi"></script>
 
