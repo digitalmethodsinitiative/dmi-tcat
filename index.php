@@ -19,7 +19,7 @@ $datasets = get_all_datasets();
 
         <link rel="stylesheet" href="css/main.css" type="text/css" />
 
-        <script type="text/javascript" language="javascript" src="scripts/jquery-1.7.1.min.js"></script>
+        <script type="text/javascript" language="javascript" src="./scripts/jquery-1.7.1.min.js"></script>
 
         <script type="text/javascript" src="https://www.google.com/jsapi"></script>
 
@@ -161,7 +161,6 @@ if (defined('BASE_URL'))
 // see whether all URLs are loaded 
 	$sql = "SELECT count(u.id) as count FROM ". $esc['mysql']['dataset'] ."_urls u, ".$esc['mysql']['dataset']."_tweets t WHERE u.tweet_id = t.id AND u.url_followed != '' AND ";
         $sql .= sqlSubset();
-        //print $sql . "<br>";
         $show_url_export = false;
         $rec = mysql_query($sql);
         if ($rec && mysql_num_rows($rec) > 0) {
@@ -170,14 +169,17 @@ if (defined('BASE_URL'))
                 $show_url_export = true;
         }
         //print "share tweets " . $res['count'] . "<bR>";
-	//print $res['count']/$numlinktweets."<br>";
+        if(0) {
+	print $sql . "<br>";
+	print $res['count']/$numlinktweets."<br>";
+	}
 
 // get data for the line graph
         $period = ( (strtotime($esc['datetime']['enddate']) - strtotime($esc['datetime']['startdate'])) <= 86400 * 2) ? "hour" : "day"; // @todo
         $curdate = strtotime($esc['datetime']['startdate']);
         $linedata = array();
 
-        $sql = "SELECT COUNT(text) as count, ";
+        $sql = "SELECT COUNT(text) as count, COUNT(DISTINCT from_user_name) as usercount, COUNT(DISTINCT location) as loccount,";
         if ($period == "day")
             $sql .= "DATE_FORMAT(t.created_at,'%d.%m') datepart ";
         else
@@ -192,13 +194,18 @@ if (defined('BASE_URL'))
             $thendate = ($period == "day") ? $curdate + 86400 : $curdate + 3600;
 
             $tmp = ($period == "day") ? strftime("%d.%m", $curdate) : strftime("%d. %H:%M", $curdate) . "h";
-            $linedata[$tmp] = 0;
+            $linedata[$tmp] = array();
+            $linedata[$tmp]["tweets"] = 0;
+            $linedata[$tmp]["users"] = 0;
+            $linedata[$tmp]["locations"] = 0;
 
             $curdate = $thendate;
         }
         // overwrite found dates
         while ($res = mysql_fetch_assoc($rec)) {
-            $linedata[$res['datepart']] = $res['count'];
+            $linedata[$res['datepart']]["tweets"] = $res['count'];
+            $linedata[$res['datepart']]["users"] = $res['usercount'];
+            $linedata[$res['datepart']]["locations"] = $res['loccount'];
         }
         
         ?>
@@ -213,7 +220,7 @@ if (defined('BASE_URL'))
 
                     <table>
                         <tr>
-                            <td class="tbl_head">Dataset:</td><td><?php echo $datasets[$dataset]['bin'] . " (" . $datasets[$dataset]['keywords'] . ")"; ?>
+                            <td class="tbl_head" valign="top">Dataset:</td><td width="450"><?php echo $datasets[$dataset]['bin'] . " (" . preg_replace("/,/",", ", $datasets[$dataset]['keywords']) . ")"; ?>
 
                             </td>
                         </tr>
@@ -275,6 +282,8 @@ if (defined('BASE_URL'))
 		
                 data.addColumn('string', 'Date');
                 data.addColumn('number', 'Tweets');
+                data.addColumn('number', 'Users');
+                data.addColumn('number', 'Locations');
 		
 <?php
 echo "data.addRows(" . count($linedata) . ");";
@@ -284,7 +293,9 @@ $counter = 0;
 foreach ($linedata as $key => $value) {
 
     echo "data.setValue(" . $counter . ", 0, '" . $key . "');";
-    echo "data.setValue(" . $counter . ", 1, " . $value . ");";
+    echo "data.setValue(" . $counter . ", 1, " . $value["tweets"] . ");";
+    echo "data.setValue(" . $counter . ", 2, " . $value["users"] . ");";
+    echo "data.setValue(" . $counter . ", 3, " . $value["locations"] . ");";
 
     $counter++;
 }
