@@ -129,7 +129,7 @@ function polarizeTweets($dataset, $charges, $start, $end, $includeRetweets) {
     $out = "";
     foreach ($acvhosts as $a => $v)
         $out .= "$a,$v\n";
-    file_put_contents($datadir . '/' . $dataname . ($includeRetweets ? "" : "_noRT") . '_hostsInTweets.csv', $out);
+    file_put_contents($datadir . '/' . $dataname . ($includeRetweets ? "" : "_noRT") . '_hostsInTweets.csv', chr(239) . chr(187) . chr(191) . $out);
 
     // write host count and pole
     $out = "";
@@ -142,7 +142,7 @@ function polarizeTweets($dataset, $charges, $start, $end, $includeRetweets) {
         $out .= "$host,$v,con\n";
     foreach ($acvneutrals as $host => $v)
         $out .= "$host,$v,neutral\n";
-    file_put_contents($datadir . '/' . $dataname . ($includeRetweets ? "" : "_noRT") . '_polarizedHosts.csv', $out);
+    file_put_contents($datadir . '/' . $dataname . ($includeRetweets ? "" : "_noRT") . '_polarizedHosts.csv', chr(239) . chr(187) . chr(191) . $out);
 
     //  write tweets per pole
     getTweets($dataset, $conTweetIds, $dataname . ($includeRetweets ? "" : "_noRT") . "_conTweets");
@@ -307,9 +307,9 @@ function coword($datafile) {
     }
     $coword->iterate();
 
-    file_put_contents(str_replace(".csv", "_frequencies.csv", $datafile), $coword->getWordsAsCsv());
-    file_put_contents(str_replace(".csv", "_cowords.csv", $datafile), $coword->getCowordsAsCsv());
-    file_put_contents(str_replace(".csv", "_cowords_network.gexf", $datafile), $coword->getCowordsAsGexf($datafile));
+    file_put_contents(str_replace(".csv", "_frequencies.csv", $datafile), chr(239) . chr(187) . chr(191) . $coword->getWordsAsCsv());
+    file_put_contents(str_replace(".csv", "_cowords.csv", $datafile), chr(239) . chr(187) . chr(191) . $coword->getCowordsAsCsv());
+    file_put_contents(str_replace(".csv", "_cowords_network.gexf", $datafile), chr(239) . chr(187) . chr(191) . $coword->getCowordsAsGexf($datafile));
 }
 
 ?>
