@@ -23,7 +23,7 @@ require_once './common/functions.php';
 
     <body>
 
-        <h1>Twitter Analytics</h1>
+        <h1>Twitter Analytics - Random Tweets</h1>
 
         <table>
 
