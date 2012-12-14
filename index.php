@@ -179,7 +179,7 @@ if (defined('BASE_URL'))
         $curdate = strtotime($esc['datetime']['startdate']);
         $linedata = array();
 
-        $sql = "SELECT COUNT(text) as count, COUNT(DISTINCT from_user_name) as usercount, COUNT(DISTINCT location) as loccount,";
+        $sql = "SELECT COUNT(text) as count, COUNT(DISTINCT from_user_name) as usercount, COUNT(DISTINCT location) as loccount, COUNT(DISTINCT geo_lat) as geocount, ";
         if ($period == "day")
             $sql .= "DATE_FORMAT(t.created_at,'%d.%m') datepart ";
         else
@@ -198,6 +198,7 @@ if (defined('BASE_URL'))
             $linedata[$tmp]["tweets"] = 0;
             $linedata[$tmp]["users"] = 0;
             $linedata[$tmp]["locations"] = 0;
+            $linedata[$tmp]["geolocs"] = 0;
 
             $curdate = $thendate;
         }
@@ -206,6 +207,7 @@ if (defined('BASE_URL'))
             $linedata[$res['datepart']]["tweets"] = $res['count'];
             $linedata[$res['datepart']]["users"] = $res['usercount'];
             $linedata[$res['datepart']]["locations"] = $res['loccount'];
+            $linedata[$res['datepart']]["geolocs"] = $res['geocount'];
         }
         
         ?>
@@ -284,6 +286,7 @@ if (defined('BASE_URL'))
                 data.addColumn('number', 'Tweets');
                 data.addColumn('number', 'Users');
                 data.addColumn('number', 'Locations');
+                data.addColumn('number', 'Geo coded');
 		
 <?php
 echo "data.addRows(" . count($linedata) . ");";
@@ -296,6 +299,7 @@ foreach ($linedata as $key => $value) {
     echo "data.setValue(" . $counter . ", 1, " . $value["tweets"] . ");";
     echo "data.setValue(" . $counter . ", 2, " . $value["users"] . ");";
     echo "data.setValue(" . $counter . ", 3, " . $value["locations"] . ");";
+    echo "data.setValue(" . $counter . ", 4, " . $value["geolocs"] . ");";
 
     $counter++;
 }
@@ -376,6 +380,12 @@ foreach ($linedata as $key => $value) {
                 <div class="txt_desc">Creates a .csv file (open in Excel or similar) that contains a specified number of randomly selected tweets and information about them (user, date created, ...).</div>
                 <div class="txt_desc">Use: a random subset of tweets is a representative sample that can be manually classified and coded much more easily than the full set.</div>
                 <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('random_tweets');sendUrl('mod.random_tweets.php');return false;">launch</a></div>
+
+                <hr />
+                <h3>Tweets with geo location</h3>
+                <div class="txt_desc">Creates a .csv file (open in Excel or similar) that contains only tweets with a lat/lon.</div>
+                <div class="txt_desc"></div>
+                <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('location');sendUrl('mod.location.php');return false;">launch</a></div>
 
             </div>
 

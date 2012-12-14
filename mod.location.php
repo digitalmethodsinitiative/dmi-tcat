@@ -26,7 +26,7 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
 
     <body>
 
-        <h1>Twitter Analytics</h1>
+        <h1>Twitter Analytics - Geo location</h1>
 
         <?php
 // => gexf
@@ -40,17 +40,17 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
         $sql = "SELECT * FROM ".$esc['mysql']['dataset']."_tweets t WHERE geo_lat != 0 AND geo_lng != 0 AND ";
         $sql .= sqlSubset();
         
-        //print $sql."<br>";
+        //print $sql." - <br>";
         
         $sqlresults = mysql_query($sql);
         
         $content = "time,created_at,from_user_name,text,source,location,geo_lat,geo_lng\n";
         
         while ($res = mysql_fetch_assoc($sqlresults)) {
-            $content .= strtotime($res["created_at"]) . "," . $res["created_at"] . "," . $res["from_user_name"] . "," . validate($res["text"], "tweet") . ",\"" . strip_tags(html_entity_decode($res["source"])). "\",\"" . trim(strip_tags(html_entity_decode($res["location"]))). "\",".$res['geo_lat'].",".$res['geo_lng']."\n"; // @todo, add stuff like location // @todo character encoding
+            $content .= strtotime($res["created_at"]) . "," . $res["created_at"] . "," . $res["from_user_name"] . "," . validate($res["text"], "tweet") . ",\"" . strip_tags(html_entity_decode($res["source"])). "\",\"" . trim(strip_tags(html_entity_decode($res["location"]))). "\",".$res['geo_lat'].",".$res['geo_lng']."\n"; 
         }
-       print "<verbatim>$content</verbatim>"; 
-        file_put_contents($filename, $content);
+       //print "<code>$content</code>"; 
+        file_put_contents($filename,  chr(239) . chr(187) . chr(191) . $content);
         
         echo '<fieldset class="if_parameters">';
 
