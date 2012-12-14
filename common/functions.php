@@ -421,7 +421,7 @@ function validate(&$what, $how) {
             $what = mysql_real_escape_string($what);
             break;
         case "tweet":
-            $what = stripslashes(html_entity_decode(preg_replace("/[\n\t\r\s,]+/msi", " ", $what)));
+            $what = str_replace('"','""',stripslashes(html_entity_decode(preg_replace("/[\n\t\r\s,]+/msi", " ", $what)))); // @todo, escape of double quotes
             break;
         case "frequency":
             $what = preg_replace("/[^\d]/", "", $what);
