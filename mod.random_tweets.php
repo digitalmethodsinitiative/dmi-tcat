@@ -31,6 +31,7 @@ require_once './common/functions.php';
             <form action="<?php echo "/coword/" . $_SERVER["PHP_SELF"]; ?>">
                 <input type="hidden" name="dataset" value="<?php echo $dataset; ?>" />
                 <input type="hidden" name="query" value="<?php echo $query; ?>" />
+                <input type="hidden" name="exclude" value="<?php echo $exclude; ?>" />
                 <input type="hidden" name="from_user_name" value="<?php echo $from_user_name; ?>" />
                 <input type="hidden" name="startdate" value="<?php echo $startdate; ?>" />
                 <input type="hidden" name="enddate" value="<?php echo $enddate; ?>" />

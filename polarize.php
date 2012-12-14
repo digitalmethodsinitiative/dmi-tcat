@@ -18,7 +18,7 @@ $dataname = "acta";
 $datadir = "files";
 $includeRetweets = TRUE;
 $charges = loadCharges($datadir . '/' . $dataname . "_charges.csv");    // List of {host,charge}-combinations, where charge can be 'pro', 'con' or 'neutral'
-//getTweetUrls($dataset, $start, $end);
+//getTweetUrls($dataset, $start, $end); // @todo, adapt to new database (also import old tweets about acta)
 polarizeTweets($dataset, $charges, $start, $end, $includeRetweets);
 
 /*

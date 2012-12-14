@@ -43,6 +43,11 @@ if (isset($_GET['whattodo']) && !empty($_GET['whattodo']))
 else
     $whattodo = "";
 
+if (isset($_GET['keywordsToTrack']) && !empty($_GET['keywordsToTrack']))
+    $keywordsToTrack = $_GET['keywordsToTrack'];
+else
+    $keywordsToTrack = "";
+
 $keywords = array();
 $esc = array();
 
@@ -105,69 +110,69 @@ function frequencyTable($table, $toget, $sql_interval) {
     $sql .= " GROUP BY toget, datepart ORDER BY datepart ASC, count DESC";
     $rec = mysql_query($sql);
     while ($res = mysql_fetch_assoc($rec)) {
-	if($res['count']>$esc['shell']['minf'])
-        	$results[$res['datepart']][$res['toget']] = $res['count'];
+        if ($res['count'] > $esc['shell']['minf'])
+            $results[$res['datepart']][$res['toget']] = $res['count'];
     }
     return $results;
 }
 
 // here further sqlSubset selection is constructed
-function sqlSubset($table = "t",$period=FALSE) {
-error_reporting(E_ALL);
+function sqlSubset($table = "t", $period = FALSE) {
+    error_reporting(E_ALL);
     global $esc;
     $sql = "";
     if (!empty($esc['mysql']['from_user_name'])) {
-	if(strstr($esc['mysql']['from_user_name'],"AND")!==false) {
-        	$subqueries = explode(" AND ", $esc['mysql']['from_user_name']);
-        	foreach ($subqueries as $subquery) {
-        	    $sql .= "$table.from_user_name LIKE '%" . $subquery . "%' AND ";
-        	}
-	} elseif(strstr($esc['mysql']['from_user_name'],"OR")!==false) {
-        	$subqueries = explode(" OR ", $esc['mysql']['from_user_name']);
-		$sql .= "(";
-        	foreach ($subqueries as $subquery) {
-        	    $sql .= "$table.from_user_name LIKE '%" . $subquery . "%' OR ";
-        	}
-		$sql = substr($sql,0,-3).") AND ";
-	} else {
-		$sql .= "$table.from_user_name LIKE '%".$esc['mysql']['from_user_name']."%' AND ";
-	}	
+        if (strstr($esc['mysql']['from_user_name'], "AND") !== false) {
+            $subqueries = explode(" AND ", $esc['mysql']['from_user_name']);
+            foreach ($subqueries as $subquery) {
+                $sql .= "$table.from_user_name LIKE '%" . $subquery . "%' AND ";
+            }
+        } elseif (strstr($esc['mysql']['from_user_name'], "OR") !== false) {
+            $subqueries = explode(" OR ", $esc['mysql']['from_user_name']);
+            $sql .= "(";
+            foreach ($subqueries as $subquery) {
+                $sql .= "$table.from_user_name LIKE '%" . $subquery . "%' OR ";
+            }
+            $sql = substr($sql, 0, -3) . ") AND ";
+        } else {
+            $sql .= "$table.from_user_name LIKE '%" . $esc['mysql']['from_user_name'] . "%' AND ";
+        }
     }
     if (!empty($esc['mysql']['query'])) {
-	if(strstr($esc['mysql']['query'],"AND")!==false) {
-        	$subqueries = explode(" AND ", $esc['mysql']['query']);
-        	foreach ($subqueries as $subquery) {
-        	    $sql .= "$table.text LIKE '%" . $subquery . "%' AND ";
-        	}
-	} elseif(strstr($esc['mysql']['query'],"OR")!==false) {
-        	$subqueries = explode(" OR ", $esc['mysql']['query']);
-		$sql .= "(";
-        	foreach ($subqueries as $subquery) {
-        	    $sql .= "$table.text LIKE '%" . $subquery . "%' OR ";
-        	}
-		$sql = substr($sql,0,-3).") AND ";
-	} else {
-		$sql .= "$table.text LIKE '%".$esc['mysql']['query']."%' AND ";
-	}	
+        if (strstr($esc['mysql']['query'], "AND") !== false) {
+            $subqueries = explode(" AND ", $esc['mysql']['query']);
+            foreach ($subqueries as $subquery) {
+                $sql .= "$table.text LIKE '%" . $subquery . "%' AND ";
+            }
+        } elseif (strstr($esc['mysql']['query'], "OR") !== false) {
+            $subqueries = explode(" OR ", $esc['mysql']['query']);
+            $sql .= "(";
+            foreach ($subqueries as $subquery) {
+                $sql .= "$table.text LIKE '%" . $subquery . "%' OR ";
+            }
+            $sql = substr($sql, 0, -3) . ") AND ";
+        } else {
+            $sql .= "$table.text LIKE '%" . $esc['mysql']['query'] . "%' AND ";
+        }
     }
     if (!empty($esc['mysql']['exclude'])) {
-	if(strstr($esc['mysql']['exclude'],"AND")!==false) {
-        	$subqueries = explode(" AND ", $esc['mysql']['exclude']);
-        	foreach ($subqueries as $subquery) {
-        	    $sql .= "$table.text NOT LIKE '%" . $subquery . "%' AND ";
-        	}
-	} elseif(strstr($esc['mysql']['exclude'],"OR")!==false) {
-        	$subqueries = explode(" OR ", $esc['mysql']['exclude']);
-		$sql .= "(";
-        	foreach ($subqueries as $subquery) {
-        	    $sql .= "$table.text NOT LIKE '%" . $subquery . "%' OR ";
-        	}
-		$sql = substr($sql,0,-3).") AND ";
-	} else {
-		$sql .= "$table.text NOT LIKE '%".$esc['mysql']['exclude']."%' AND ";
-	}	
+        if (strstr($esc['mysql']['exclude'], "AND") !== false) {
+            $subqueries = explode(" AND ", $esc['mysql']['exclude']);
+            foreach ($subqueries as $subquery) {
+                $sql .= "$table.text NOT LIKE '%" . $subquery . "%' AND ";
+            }
+        } elseif (strstr($esc['mysql']['exclude'], "OR") !== false) {
+            $subqueries = explode(" OR ", $esc['mysql']['exclude']);
+            $sql .= "(";
+            foreach ($subqueries as $subquery) {
+                $sql .= "$table.text NOT LIKE '%" . $subquery . "%' OR ";
+            }
+            $sql = substr($sql, 0, -3) . ") AND ";
+        } else {
+            $sql .= "$table.text NOT LIKE '%" . $esc['mysql']['exclude'] . "%' AND ";
+        }
     }
-    if($period===FALSE)
+    if ($period === FALSE)
         $sql .= "$table.created_at >= '" . $esc['datetime']['startdate'] . "' AND $table.created_at <= '" . $esc['datetime']['enddate'] . "' ";
     else
         $sql .= $period;
@@ -206,7 +211,7 @@ function generate($what, $filename) {
     } elseif ($what == "hosts") {
         $results = frequencyTable("urls", "domain", $sql_interval);
     } elseif ($what == "mention") {
-        $results = frequencyTable("mentions","to_user",$sql_interval);
+        $results = frequencyTable("mentions", "to_user", $sql_interval);
         // get other things        
     } else {
         // @todo, this could also use database grouping
@@ -347,7 +352,8 @@ function generate($what, $filename) {
             $file .= "date,frequency,$what\n";
         foreach ($results as $group => $things) {
             foreach ($things as $thing => $count) {
-		if(empty($thing)) continue;
+                if (empty($thing))
+                    continue;
                 if ($count < $esc['shell']['minf'])
                     continue;
                 if ($what == "retweet")
@@ -383,7 +389,7 @@ function time_to_month($time) {
 function get_filename($what) {
     global $resultsdir, $esc;
     $exc = (empty($esc['shell']["exclude"])) ? "" : "-" . $esc['shell']["exclude"];
-    return $resultsdir . str_replace(" ", "_", $esc['shell']['datasetname']) . "_" . str_replace(" ","-",$esc['shell']["query"]) . $exc . "_" . $esc['date']["startdate"] . "_" . $esc['date']["enddate"] . "_" . $esc['shell']["from_user_name"] . "_" . $what . "_min" . $esc['shell']['minf'] . ".csv";
+    return $resultsdir . str_replace(" ", "_", $esc['shell']['datasetname']) . "_" . str_replace(" ", "-", $esc['shell']["query"]) . $exc . "_" . $esc['date']["startdate"] . "_" . $esc['date']["enddate"] . "_" . $esc['shell']["from_user_name"] . "_" . $what . "_min" . $esc['shell']['minf'] . ".csv";
 }
 
 // does some cleanup of data types
@@ -421,7 +427,7 @@ function validate(&$what, $how) {
             $what = mysql_real_escape_string($what);
             break;
         case "tweet":
-            $what = str_replace('"','""',stripslashes(html_entity_decode(preg_replace("/[\n\t\r\s,]+/msi", " ", $what)))); // @todo, escape of double quotes
+            $what = str_replace('"', '""', stripslashes(html_entity_decode(preg_replace("/[\n\t\r\s,]+/msi", " ", $what)))); // @todo, escape of double quotes
             break;
         case "frequency":
             $what = preg_replace("/[^\d]/", "", $what);

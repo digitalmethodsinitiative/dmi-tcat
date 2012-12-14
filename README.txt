@@ -1,12 +1,13 @@
 Notes on using ytk_analysis
 
 Todo:
+- alter database of yourTwapperKeeper and yourTwapperKeeper_Bernhard so that the new scripts can work with them
+    - adapt polarization to work on both databases
 - extract variability of association from mod.hashtag
-- Warning: urls have not been imported on temlab or localhost
+    - adapt to work on both types of databases
 - what is difference between absolute weighting and coocurrence weight normalization?
 - encoding of tweets (current coword class can only tokenize tweets which consists fully out of latin characters; allmost all other tweets are discarded.)
 - BASE_URL vs $branch=DMI_PRODUCTION
-- CowordOnTools.php calls coword (persistent version) but uses 100% CPU
 
 *******************************************************************************************
 Git repository
