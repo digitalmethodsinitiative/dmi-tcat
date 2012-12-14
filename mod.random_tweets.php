@@ -28,7 +28,7 @@ require_once './common/functions.php';
         <table>
 
 
-            <form action="<?php echo $_SERVER["PHP_SELF"]; ?>">
+            <form action="<?php echo "/coword/" . $_SERVER["PHP_SELF"]; ?>">
                 <input type="hidden" name="dataset" value="<?php echo $dataset; ?>" />
                 <input type="hidden" name="query" value="<?php echo $query; ?>" />
                 <input type="hidden" name="from_user_name" value="<?php echo $from_user_name; ?>" />
@@ -58,7 +58,7 @@ if ($samplesize > 0) {
 
     if (1 || !file_exists($filename)) {
 
-        $content = "time,created_at,from_user_name,text,source\n";
+        $content = "time,created_at,from_user_name,text,source,location,lat,lng\n";
 
         $sql = "SELECT * FROM " . $esc['mysql']['dataset'] . "_tweets t WHERE ";
         $sql .= sqlSubset();
@@ -66,10 +66,10 @@ if ($samplesize > 0) {
 
         $sqlresults = mysql_query($sql);
         while ($data = mysql_fetch_assoc($sqlresults)) {
-            $content .= strtotime($data["created_at"]) . "," . $data["created_at"] . "," . $data["from_user_name"] . "," . validate($data["text"], "tweet") . "," . strip_tags(html_entity_decode($data["source"])). "\n"; // @todo, add stuff like location // @todo character encoding
+            $content .= strtotime($data["created_at"]) . "," . $data["created_at"] . "," . $data["from_user_name"] . "," . validate($data["text"], "tweet") . ",\"" . strip_tags(html_entity_decode($data["source"])). "\",\"" . trim(strip_tags(html_entity_decode($data["location"]))). "\",".$data['geo_lat'].",".$data['geo_lng']."\n"; // @todo, add stuff like location // @todo character encoding
         }
 
-        file_put_contents($filename, $content);
+        file_put_contents($filename, chr(239) . chr(187) . chr(191) . $content);
     }
 
     echo '<p><a href="' . str_replace("#", urlencode("#"), str_replace("\"", "%22", $filename)) . '">' . $filename . '</a></p>';

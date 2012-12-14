@@ -92,13 +92,12 @@ function get_file($what) {
 /*
  * @var $toget specifies fieldname
  * @var $table specifies table name
- * @todo most likely we can do the lowering some other way
  */
 
 function frequencyTable($table, $toget, $sql_interval) {
     global $esc;
     $results = array();
-    $sql = "SELECT COUNT(LOWER($table.$toget)) AS count, LOWER($table.$toget) AS toget, ";
+    $sql = "SELECT COUNT($table.$toget) AS count, $table.$toget AS toget, ";
     $sql .= $sql_interval;
     $sql .= "FROM " . $esc['mysql']['dataset'] . "_$table $table, " . $esc['mysql']['dataset'] . "_tweets t ";
     $sql .= "WHERE t.id = $table.tweet_id AND ";
@@ -114,25 +113,60 @@ function frequencyTable($table, $toget, $sql_interval) {
 
 // here further sqlSubset selection is constructed
 function sqlSubset($table = "t",$period=FALSE) {
+error_reporting(E_ALL);
     global $esc;
     $sql = "";
     if (!empty($esc['mysql']['from_user_name'])) {
-        $subusers = explode(" OR ", $esc['mysql']['from_user_name']);
-        $sql .= "(";
-        for ($i = 0; $i < count($subusers); $i++) {
-            $subusers[$i] = "$table.from_user_name = '" . $subusers[$i] . "'";
-        }
-        $sql .= implode(" OR ", $subusers);
-        $sql .= ") AND ";
+	if(strstr($esc['mysql']['from_user_name'],"AND")!==false) {
+        	$subqueries = explode(" AND ", $esc['mysql']['from_user_name']);
+        	foreach ($subqueries as $subquery) {
+        	    $sql .= "$table.from_user_name LIKE '%" . $subquery . "%' AND ";
+        	}
+	} elseif(strstr($esc['mysql']['from_user_name'],"OR")!==false) {
+        	$subqueries = explode(" OR ", $esc['mysql']['from_user_name']);
+		$sql .= "(";
+        	foreach ($subqueries as $subquery) {
+        	    $sql .= "$table.from_user_name LIKE '%" . $subquery . "%' OR ";
+        	}
+		$sql = substr($sql,0,-3).") AND ";
+	} else {
+		$sql .= "$table.from_user_name LIKE '%".$esc['mysql']['from_user_name']."%' AND ";
+	}	
     }
     if (!empty($esc['mysql']['query'])) {
-        $subqueries = explode(" AND ", $esc['mysql']['query']);
-        foreach ($subqueries as $subquery) {
-            $sql .= "$table.text LIKE '%" . $subquery . "%' AND ";
-        }
+	if(strstr($esc['mysql']['query'],"AND")!==false) {
+        	$subqueries = explode(" AND ", $esc['mysql']['query']);
+        	foreach ($subqueries as $subquery) {
+        	    $sql .= "$table.text LIKE '%" . $subquery . "%' AND ";
+        	}
+	} elseif(strstr($esc['mysql']['query'],"OR")!==false) {
+        	$subqueries = explode(" OR ", $esc['mysql']['query']);
+		$sql .= "(";
+        	foreach ($subqueries as $subquery) {
+        	    $sql .= "$table.text LIKE '%" . $subquery . "%' OR ";
+        	}
+		$sql = substr($sql,0,-3).") AND ";
+	} else {
+		$sql .= "$table.text LIKE '%".$esc['mysql']['query']."%' AND ";
+	}	
     }
-    if (!empty($esc['mysql']['exclude']))
-        $sql .= "$table.text NOT LIKE '%" . $esc['mysql']['exclude'] . "%' AND ";
+    if (!empty($esc['mysql']['exclude'])) {
+	if(strstr($esc['mysql']['exclude'],"AND")!==false) {
+        	$subqueries = explode(" AND ", $esc['mysql']['exclude']);
+        	foreach ($subqueries as $subquery) {
+        	    $sql .= "$table.text NOT LIKE '%" . $subquery . "%' AND ";
+        	}
+	} elseif(strstr($esc['mysql']['exclude'],"OR")!==false) {
+        	$subqueries = explode(" OR ", $esc['mysql']['exclude']);
+		$sql .= "(";
+        	foreach ($subqueries as $subquery) {
+        	    $sql .= "$table.text NOT LIKE '%" . $subquery . "%' OR ";
+        	}
+		$sql = substr($sql,0,-3).") AND ";
+	} else {
+		$sql .= "$table.text NOT LIKE '%".$esc['mysql']['exclude']."%' AND ";
+	}	
+    }
     if($period===FALSE)
         $sql .= "$table.created_at >= '" . $esc['datetime']['startdate'] . "' AND $table.created_at <= '" . $esc['datetime']['enddate'] . "' ";
     else
@@ -223,6 +257,7 @@ function generate($what, $filename) {
                         $results[$group]['mentions'][] = $thing;
                     }
                     $results[$group]['users'][] = $from_user_names[$key];
+//var_dump($results);
                     break;
 
                 case "retweet":

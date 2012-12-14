@@ -239,7 +239,7 @@ function cohashtagsViaDatabase($sqlresults, $filename) {
         // print variability
         $csv = $cw->variabilityOfAssociationProfiles($word_frequencies);
         $fn = str_replace("hashtagCooc.gexf", "profileVariability.csv", $filename);
-        file_put_contents($fn, $csv);
+        file_put_contents($fn, chr(239) . chr(187) . chr(191) . $csv);
         echo '<fieldset class="if_parameters">';
         echo '<legend>variability of association profiles</legend>';
         echo '<p><a href="' . str_replace("#", urlencode("#"), str_replace("\"", "%22", $fn)) . '">' . $fn . '</a></p>';
