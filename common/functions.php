@@ -31,11 +31,11 @@ else
 if (isset($_GET['startdate']) && !empty($_GET['startdate']))
     $startdate = $_GET['startdate'];
 else
-    $startdate = strftime("%Y-%m-%d", date('U') - 86400);
+    $startdate = strftime("%Y-%m-%d", date('U') - (86400*2));
 if (isset($_GET['enddate']) && !empty($_GET['enddate']))
     $enddate = $_GET['enddate'];
 else
-    $enddate = strftime("%Y-%m-%d", date('U'));
+    $enddate = strftime("%Y-%m-%d", date('U')-86400);
 $u_startdate = $u_enddate = 0;
 
 if (isset($_GET['whattodo']) && !empty($_GET['whattodo']))
@@ -47,6 +47,11 @@ if (isset($_GET['keywordsToTrack']) && !empty($_GET['keywordsToTrack']))
     $keywordsToTrack = $_GET['keywordsToTrack'];
 else
     $keywordsToTrack = "";
+
+if (isset($_GET['showvis']) && !empty($_GET['showvis']))
+    $showvis = $_GET['showvis'];
+else
+    $showvis = "";
 
 $keywords = array();
 $esc = array();

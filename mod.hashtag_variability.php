@@ -1,7 +1,6 @@
 <?php
 require_once './common/config.php';
 require_once './common/functions.php';
-
 ?>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -13,6 +12,8 @@ require_once './common/functions.php';
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
         <link rel="stylesheet" href="css/main.css" type="text/css" />
+
+        <script type="text/javascript" src="./scripts/raphael-min.js"></script>
 
     </head>
 
@@ -73,7 +74,66 @@ require_once './common/functions.php';
         if (!empty($keywordsToTrack)) {
             //$keywordsToTrack = "acta,copy";
             //$keywordsToTrack = "#climatechange,#environment,#tcot,#climate_change,#dt,#globalwarming,#co2,#drought,#cleancloud,#flood,#health,#economics,#eco,#change,#copenhagen,#cop16,#cancun,#ows,#flooding"; // climate change keywords
-            variabilityOfAssociationProfiles($filename, $series, $keywordsToTrack);
+            $ap = variabilityOfAssociationProfiles($filename, $series, $keywordsToTrack);
+            ?>
+
+
+            <p>
+                <form>
+                    <input type="checkbox" onchange="changeInterface('labels',this.checked)" />Show labels in visualization
+                </form>
+                <script type="text/javascript">
+                     /*               	
+                     var _data = {
+                        "slice 1" : {
+                            "word 1" : 20,
+                            "word 2" : 20,
+                            "word 3" : 20
+                        },"slice 2" : {
+                            "word 1" : 10,
+                            "word 3" : 40,
+                            "word 2" : 20,
+                            "word 4" : 20
+                        },"slice 3" : {
+                            "word 2" : 20,
+                            "word 3" : 20,
+                            "word 4" : 40
+                        }, "slice 4" : {
+                            "word 2" : 20,
+                            "word 3" : 20,
+                            "word 4" : 40
+                        }
+                    }
+                    */
+                                
+    <?php
+    $ap[$word][$time][$coword] = $frequency;
+    $script_out = "var _data = {\n";
+    foreach ($ap as $word => $times) {
+        foreach ($times as $time => $cowords) {
+            if (empty($time))
+                continue;
+            $script_out .= "\t\"$time\" : {\n";
+            foreach ($cowords as $coword => $frequency) {
+                if ($frequency > 100)
+                    $script_out .= "\t\t\"$coword\" : $frequency,\n";
+            }
+            $script_out = substr($script_out, 0, -2);
+            $script_out .= "\n\t},\n";
+        }
+        $script_out = substr($script_out, 0, -2) . "}";
+    }
+    $script_out .= "\n}\n";
+    print $script_out;
+    ?>
+                                    	
+        
+                                    	
+                </script>
+<script type='text/javascript' src='./scripts/vis.js'></script>
+            </p>
+
+            <?php
         }
         ?>
 
@@ -137,6 +197,7 @@ function variabilityOfAssociationProfiles($filename, $series, $keywordsToTrack) 
         else
             $keywordsToTrack[$k] = $v;
     }
+    if(count($keywordsToTrack)>1) die('multple keyword tracking not implemented yet');
     $filename = str_replace(".gexf", "_" . escapeshellarg(implode("_", $keywordsToTrack)) . ".csv", $filename);
     // group per slice 
     // per keyword
@@ -185,6 +246,7 @@ function variabilityOfAssociationProfiles($filename, $series, $keywordsToTrack) 
         $times_keys = array_keys($times);
         for ($i = 1; $i < count($timeslices); $i++) {
             $im1 = $i - 1;
+            $stable[$word][$timeslices[$i]] = array_intersect(array_keys($v1), array_keys($v2));
             if (array_key_exists($timeslices[$im1], $times) === false)
                 continue;
             if (array_key_exists($timeslices[$i], $times) === false)
@@ -194,7 +256,6 @@ function variabilityOfAssociationProfiles($filename, $series, $keywordsToTrack) 
             $cos_sim[$word][$timeslices[$i]] = cosineSimilarity($v1, $v2);
             $change_out[$word][$timeslices[$i]] = change($v1, $v2);
             $change_in[$word][$timeslices[$i]] = change($v2, $v1);
-            $stable[$word][$timeslices[$i]] = array_intersect(array_keys($v1), array_keys($v2));
         }
     }
 
@@ -246,6 +307,8 @@ function variabilityOfAssociationProfiles($filename, $series, $keywordsToTrack) 
     echo '<legend>Your co-hashtag variability File</legend>';
     echo '<p><a href="' . str_replace("#", urlencode("#"), str_replace("\"", "%22", $filename)) . '">' . $filename . '</a></p>';
     echo '</fieldset>';
+
+    return $ap;
 }
 
 // calculates cosine measure between two frequency vectors
