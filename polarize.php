@@ -9,7 +9,14 @@
 
 include_once('common/config.php');
 include_once('common/functions.php');
-db_connect($hostname, $dbuser, $dbpass, $database); 
+
+$databases = array("default" => "yourTwapperKeeper", "extended" => "yourTwapperKeeper_Bernhard");
+$database = $databases['default'];
+$hostname = "localhost";
+$dbuser = "ytk";
+$dbpass = "9c7V854YHvhRq2BENur9sMME";
+//print $database."\n";
+db_connect($hostname, $dbuser, $dbpass, $database);
 
 $start = "2012-05-19 00:00:00";
 $end = "2012-06-22 23:59:59";
@@ -65,13 +72,19 @@ function polarizeTweets($dataset, $charges, $start, $end, $includeRetweets) {
     /*
      * Time for stats
      */
-
     // get total nr of tweets
-    $sql = "SELECT count(id) as count FROM ".$dataset."_tweets";
+    //$sql = "SELECT count(id) as count FROM ".$dataset."_tweets";
+    //if ($start != 0 && $end != 0)
+    //    $sql .= " WHERE created_at >= '$start' AND created_at <= '$end'";
+    $sql = "SELECT count(id) as count FROM " . $dataset;
     if ($start != 0 && $end != 0)
-        $sql .= " WHERE created_at >= '$start' AND created_at <= '$end'";
+        $sql .= " WHERE time >= " . strtotime($start) . " AND time <= " . strtotime($end);
     if (!$includeRetweets)
         $sql .= " AND lower(text) NOT LIKE 'rt%'";  // @todo, also unique the texts (native retweet)
+
+
+        
+//print $sql . "\n";
     $rec = mysql_query($sql);
     $res = mysql_fetch_assoc($rec);
     $nrOfTweets = $res['count'];
@@ -155,8 +168,7 @@ function polarizeTweets($dataset, $charges, $start, $end, $includeRetweets) {
     coword($datadir . "/" . $dataname . ($includeRetweets ? "" : "_noRT") . "_proTweets.csv");
     coword($datadir . "/" . $dataname . ($includeRetweets ? "" : "_noRT") . "_neutralTweets.csv");
     //simpleCoword($datadir . "/" . $dataname . ($includeRetweets ? "" : "_noRT") ."_nonPolarizedTweets.csv"); // will blow up ur computer
-    
-    
+
     /* calculate polarization */
     // load frequencies
     $pro = file($datadir . "/" . $dataname . ($includeRetweets ? "" : "_noRT") . "_proTweets_frequencies.csv");
@@ -172,18 +184,19 @@ function polarizeTweets($dataset, $charges, $start, $end, $includeRetweets) {
         $words[] = $e[0];
     }
     $words = array_unique($words);
-    $volume['pro'] = array_sum($frequency['pro']);
-    $volume['con'] = array_sum($frequency['con']);
-    $handle = fopen($datadir . "/" . $dataname . ($includeRetweets ? "" : "_noRT") . "_polarization.csv", "w");
     // calculate leaning, just as in Weber, Garimella and Borra (2012), equation 1
     foreach ($words as $word) {
         if (!isset($frequency['pro'][$word]))
             $frequency['pro'][$word] = 0;
         if (!isset($frequency['con'][$word]))
             $frequency['con'][$word] = 0;
-        $leaning[$word] = ($frequency['pro'][$word] / $volume['pro']) + (2 / ($volume['pro'] + $volume['con'])) / (($frequency['pro'][$word] / $volume['pro']) + ($frequency['con'][$word] / $volume['con']) + (4 / ($volume['pro'] + $volume['con'])));
-        fwrite($handle, $word . "," . $leaning[$word] . "\n");
+        $leaning[$word] = (($frequency['pro'][$word] / $tweetspros) + (2 / ($tweetspros + $tweetscons))) / (($frequency['pro'][$word] / $tweetspros) + ($frequency['con'][$word] / $tweetscons) + (4 / ($tweetspros + $tweetscons)));
     }
+    asort($leaning);
+    $handle = fopen($datadir . "/" . $dataname . ($includeRetweets ? "" : "_noRT") . "_polarization.csv", "w");
+    fwrite($handle, "word,polarization,pro tweets with word,anti tweets with word,sum of pro and anti tweets with word,pro tweets, anti tweets\n");
+    foreach ($leaning as $word => $polarization)
+        fwrite($handle, $word . "," . $leaning[$word] . "," . $frequency['pro'][$word] . "," . $frequency['con'][$word] . "," . ($frequency['pro'][$word] + $frequency['con'][$word]) . "," . $tweetspros . "," . $tweetscons . "\n");
     fclose($handle);
 }
 
