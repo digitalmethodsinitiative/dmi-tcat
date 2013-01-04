@@ -30,6 +30,7 @@ class Coword {
     public $cowords = array();  // holds coword frequencies
     public $document_word_frequencies = array(); // holds word frequencies per document
     public $simpleTokens;
+    public $countWordOncePerDocument;
 
     function __construct() {
         $this->hashtags_are_separate_words = FALSE;
@@ -39,6 +40,7 @@ class Coword {
         $this->min_word_frequency = 2;
         $this->punctuation = array("\s", "\.", ",", "!", "\?", ":", ";", "\/", "&", "\^", "\$", "\|", "`", "~", "=", "\+", "\*", "\"", "'", "\(", "\)", "\]", "\[", "{", "}", "<", ">");
         $this->simpleTokens = FALSE;
+        $this->countWordOncePerDocument = TRUE;
     }
 
     /*
@@ -177,7 +179,10 @@ class Coword {
     public function addWord($word, $count) {
         if (!isset($this->words[$word]))
             $this->words[$word] = 0;
-        $this->words[$word] += $count;  // within document weight @todo provide option to count each word only once per doc
+        if ($this->countWordOncePerDocument)
+            $this->words[$word] += 1;       // count word once per document
+        else
+            $this->words[$word] += $count;  // within document weight
     }
 
     function getWords() {
