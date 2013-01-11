@@ -1,5 +1,6 @@
 Notes on using ytk_analysis
 
+
 Todo:
 - alter database of yourTwapperKeeper and yourTwapperKeeper_Bernhard so that the new scripts can work with them
     - adapt polarization to work on both databases
