@@ -89,6 +89,7 @@ function block(_slice,_x,_y,_height,_label) {
     var _this = this;
 
 	this.slice = _slice;
+	this.labelID = _label;
     this.labelText = _label + " (" + _height + ")";
     this.x = _x;
     this.y = _y;
@@ -119,7 +120,7 @@ function block(_slice,_x,_y,_height,_label) {
                                             
     this.highlight = function() {
                                             	
-        console.log(this.labelText);
+        console.log(this.label);
                                             	
         for(var _line in _lines) {
             for(var i = 0; i < _lines[_line].length; i++) {
@@ -127,8 +128,8 @@ function block(_slice,_x,_y,_height,_label) {
             }
         }
                                             	
-        for(var i = 0; i < _lines[this.labelText].length; i++) {
-            _lines[this.labelText][i].color("#000");
+        for(var i = 0; i < _lines[this.labelID].length; i++) {
+            _lines[this.labelID][i].color("#000");
         }
     }
                                             
