@@ -1,7 +1,6 @@
 <?php
 require_once './common/config.php';
 require_once './common/functions.php';
-
 ?>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -13,6 +12,9 @@ require_once './common/functions.php';
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
         <link rel="stylesheet" href="css/main.css" type="text/css" />
+
+        <script type="text/javascript" src="./scripts/raphael-min.js"></script>
+        <script type='text/javascript' src='./scripts/jquery-1.7.1.min.js'></script>
 
     </head>
 
@@ -30,8 +32,12 @@ require_once './common/functions.php';
                 <input type="hidden" name="startdate" value="<?php echo $startdate; ?>" />
                 <input type="hidden" name="enddate" value="<?php echo $enddate; ?>" />
                 <tr>
-                    <td>Keywords for associational profile (separated by comma):</td>
+                    <td>Keyword to generate associational profile:</td>
                     <td><input type="text" name="keywordsToTrack" value="<?php echo $keywordsToTrack; ?>" /></td>
+                </tr>
+                <tr>
+                    <td>Minimum frequency for a word to be included</t>
+                    <td><input type="text" name="keywordFrequency" value="<?php echo $keywordFrequency; ?>" /></td>
                 </tr>
                 <tr>
                     <td><input type="submit" value="create file" /></td>
@@ -73,7 +79,75 @@ require_once './common/functions.php';
         if (!empty($keywordsToTrack)) {
             //$keywordsToTrack = "acta,copy";
             //$keywordsToTrack = "#climatechange,#environment,#tcot,#climate_change,#dt,#globalwarming,#co2,#drought,#cleancloud,#flood,#health,#economics,#eco,#change,#copenhagen,#cop16,#cancun,#ows,#flooding"; // climate change keywords
-            variabilityOfAssociationProfiles($filename, $series, $keywordsToTrack);
+            $ap = variabilityOfAssociationProfiles($filename, $series, $keywordsToTrack);
+            ?>
+
+
+            <p>
+                <form>
+                    <input type="checkbox" onchange="changeInterface('labels',this.checked)" />Show labels in visualization
+					<input type="checkbox" onchange="changeInterface('sorting',this.checked)" />Sort by size
+                </form>
+                <script type="text/javascript">
+                     /*               	
+                     var _data = {
+                        "slice 1" : {
+                            "word 1" : 20,
+                            "word 2" : 20,
+                            "word 3" : 20
+                        },"slice 2" : {
+                            "word 1" : 10,
+                            "word 3" : 40,
+                            "word 2" : 20,
+                            "word 4" : 20
+                        },"slice 3" : {
+                            "word 2" : 20,
+                            "word 3" : 20,
+                            "word 4" : 40
+                        }, "slice 4" : {
+                            "word 2" : 20,
+                            "word 3" : 20,
+                            "word 4" : 40
+                        }
+                    }
+                    */
+                                
+    <?php
+    $ap[$word][$time][$coword] = $frequency;
+    $script_out = "var _data = {\n";
+    foreach ($ap as $word => $times) {
+        foreach ($times as $time => $cowords) {
+            if (empty($time))
+                continue;
+            $script_out .= "\t\"$time\" : {\n";
+            $counter = 0;
+	    foreach ($cowords as $coword => $frequency) {
+                if ($frequency > $keywordFrequency) { // @todo
+                    	$counter++;
+			$script_out .= "\t\t\"$coword\" : $frequency,\n";
+		}
+            }
+            if($counter != 0) {
+	    	$script_out = substr($script_out, 0, -2);
+	    }
+            $script_out .= "\n\t},\n";
+        }
+        $script_out = substr($script_out, 0, -2) . "}";
+    }
+    $script_out .= "\n}\n";
+    print $script_out;
+    ?>
+                                    	
+        
+                                    	
+                </script>
+                
+                <p id="visualization"></p>
+				<p id="wordlist"></p>
+                <script type='text/javascript' src='./scripts/vis.js'></script>
+            </p>
+
+            <?php
         }
         ?>
 
@@ -137,6 +211,7 @@ function variabilityOfAssociationProfiles($filename, $series, $keywordsToTrack) 
         else
             $keywordsToTrack[$k] = $v;
     }
+    if(count($keywordsToTrack)>1) die('multple keyword tracking not implemented yet');
     $filename = str_replace(".gexf", "_" . escapeshellarg(implode("_", $keywordsToTrack)) . ".csv", $filename);
     // group per slice 
     // per keyword
@@ -178,28 +253,22 @@ function variabilityOfAssociationProfiles($filename, $series, $keywordsToTrack) 
     foreach ($words as $word => $times) {
         $documentsPerWords[$word] = count($times);
     }
-
     // calculate similarity and changes
-    $timeslices = array_keys($series);
     foreach ($ap as $word => $times) {
         $times_keys = array_keys($times);
-        for ($i = 1; $i < count($timeslices); $i++) {
+        for ($i = 1; $i < count($times_keys); $i++) {
             $im1 = $i - 1;
-            if (array_key_exists($timeslices[$im1], $times) === false)
-                continue;
-            if (array_key_exists($timeslices[$i], $times) === false)
-                continue;
             $v1 = $times[$times_keys[$im1]];
             $v2 = $times[$times_keys[$i]];
-            $cos_sim[$word][$timeslices[$i]] = cosineSimilarity($v1, $v2);
-            $change_out[$word][$timeslices[$i]] = change($v1, $v2);
-            $change_in[$word][$timeslices[$i]] = change($v2, $v1);
-            $stable[$word][$timeslices[$i]] = array_intersect(array_keys($v1), array_keys($v2));
+            $cos_sim[$word][$times_keys[$i]] = cosineSimilarity($v1, $v2);
+            $change_out[$word][$times_keys[$i]] = change($v1, $v2);
+            $change_in[$word][$times_keys[$i]] = change($v2, $v1);
+            $stable[$word][$times_keys[$i]] = array_intersect(array_keys($v1), array_keys($v2));
         }
     }
 
     // @todo, frequency
-    $out = "key\ttime\tdegree\tsimilarity\tassociational profile\tin\tout\tstable\n";
+    $out = "key\ttime\tdegree\tsimilarity\tassociational profile\tchange in\tchange out\tstable\n";
     foreach ($ap as $word => $times) {
         foreach ($times as $time => $profile) {
             if (isset($change_in[$word][$time])) {
@@ -246,6 +315,8 @@ function variabilityOfAssociationProfiles($filename, $series, $keywordsToTrack) 
     echo '<legend>Your co-hashtag variability File</legend>';
     echo '<p><a href="' . str_replace("#", urlencode("#"), str_replace("\"", "%22", $filename)) . '">' . $filename . '</a></p>';
     echo '</fieldset>';
+
+    return $ap;
 }
 
 // calculates cosine measure between two frequency vectors
