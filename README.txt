@@ -1,10 +1,12 @@
 Notes on using ytk_analysis
 
+
 Todo:
 - alter database of yourTwapperKeeper and yourTwapperKeeper_Bernhard so that the new scripts can work with them
     - adapt polarization to work on both databases
 - extract variability of association from mod.hashtag
     - adapt to work on both types of databases
+- retweets in linegraph
 - what is difference between absolute weighting and coocurrence weight normalization?
 - encoding of tweets (current coword class can only tokenize tweets which consists fully out of latin characters; allmost all other tweets are discarded.)
 - BASE_URL vs $branch=DMI_PRODUCTION
