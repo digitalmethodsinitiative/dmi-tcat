@@ -31,11 +31,11 @@ else
 if (isset($_GET['startdate']) && !empty($_GET['startdate']))
     $startdate = $_GET['startdate'];
 else
-    $startdate = strftime("%Y-%m-%d", date('U') - 86400);
+    $startdate = strftime("%Y-%m-%d", date('U') - (86400*2));
 if (isset($_GET['enddate']) && !empty($_GET['enddate']))
     $enddate = $_GET['enddate'];
 else
-    $enddate = strftime("%Y-%m-%d", date('U'));
+    $enddate = strftime("%Y-%m-%d", date('U')-86400);
 $u_startdate = $u_enddate = 0;
 
 if (isset($_GET['whattodo']) && !empty($_GET['whattodo']))
@@ -47,6 +47,16 @@ if (isset($_GET['keywordsToTrack']) && !empty($_GET['keywordsToTrack']))
     $keywordsToTrack = $_GET['keywordsToTrack'];
 else
     $keywordsToTrack = "";
+
+if (isset($_GET['keywordFrequency'])) 
+    $keywordFrequency = $_GET['keywordFrequency'];
+else
+    $keywordFrequency = 10;
+
+if (isset($_GET['showvis']) && !empty($_GET['showvis']))
+    $showvis = $_GET['showvis'];
+else
+    $showvis = "";
 
 $keywords = array();
 $esc = array();
@@ -497,6 +507,16 @@ function get_hash_tags($msg) {
 function get_all_datasets() {
 
     global $querybins; // defined in php.ini of twitter capture
+
+// include ytk imported tables as they are not in php.ini
+$tables = array();
+$select = "SHOW TABLES";
+$rec = mysql_query($select);
+while($res = mysql_fetch_row($rec)) {
+	if(preg_match("/^(ytk_.*?)_tweets$/",$res[0],$match)) {
+		$querybins[$match[1]] = $match[1];
+	}
+}
 
     $datasets = array();
 
