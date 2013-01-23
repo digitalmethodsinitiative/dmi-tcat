@@ -417,8 +417,15 @@ foreach ($linedata as $key => $value) {
                     <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('word_cooc');sendUrl('mod.word_cooc.php');return false;">launch with absolute weighting of coorccurrences</a></div>
                     <!--        <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('word_cooc&probabilityOfAssociation=1');sendUrl('mod.word_cooc.php');return false;">launch with cooccurrence weight normalization</a></div> -->
                 <?php } ?>
-            </div>
+</div>
+		<h2> Experimental</h2>
+<div class='if_export_block'>
 
+                <h3>Associational profile</h3>
+                <div class="txt_desc">Produces an associational profile as well as a time-encoded co-hashtag network.</div>
+                <div class="txt_desc">Use: explore shifts in hashtags associations.</div>
+                <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('hashtag_variability');sendUrl('mod.hashtag_variability.php');return false;">launch</a></div>
+                <hr />
 
             <div style="display:none" id="whattodo" />
 
