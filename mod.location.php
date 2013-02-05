@@ -44,10 +44,10 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
         
         $sqlresults = mysql_query($sql);
         
-        $content = "time,created_at,from_user_name,text,source,location,geo_lat,geo_lng\n";
+        $content = "time,created_at,from_user_name,from_user_tweetcount,from_user_followercount,from_user_lang,text,source,location,geo_lat,geo_lng\n";
         
         while ($res = mysql_fetch_assoc($sqlresults)) {
-            $content .= strtotime($res["created_at"]) . "," . $res["created_at"] . "," . $res["from_user_name"] . "," . validate($res["text"], "tweet") . ",\"" . strip_tags(html_entity_decode($res["source"])). "\",\"" . trim(strip_tags(html_entity_decode($res["location"]))). "\",".$res['geo_lat'].",".$res['geo_lng']."\n"; 
+            $content .= strtotime($res["created_at"]) . "," . $res["created_at"] . "," . $res["from_user_name"] . "," . $res["from_user_tweetcount"] . "," . $res["from_user_followercount"] . "," . $res["from_user_lang"] . "," . validate($res["text"], "tweet") . ",\"" . strip_tags(html_entity_decode($res["source"])). "\",\"" . trim(strip_tags(html_entity_decode($res["location"]))). "\",".$res['geo_lat'].",".$res['geo_lng']."\n"; 
         }
        //print "<code>$content</code>"; 
         file_put_contents($filename,  chr(239) . chr(187) . chr(191) . $content);
