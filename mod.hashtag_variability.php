@@ -124,7 +124,7 @@ require_once './common/functions.php';
 	    foreach ($cowords as $coword => $frequency) {
                 if ($frequency > $keywordFrequency) { // @todo
                     	$counter++;
-			$script_out .= "\t\t\"$coword\" : $frequency,\n";
+			$script_out .= "\t\t\"$coword\" : {\"frequency\":$frequency,\"specificity\":$frequency},\n";
 		}
             }
             if($counter != 0) {

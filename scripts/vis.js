@@ -28,24 +28,24 @@ for(var _slice in _data) {
     _barheights[_slice] = 0;
    	_dataarray[_slice] = new Array;
     for(var _word in _data[_slice]) {
-        _barheights[_slice] += _data[_slice][_word];
+        _barheights[_slice] += _data[_slice][_word]["frequency"];
         var _tmphash = new Array(_word, _data[_slice][_word]);
         //console.log(_tmphash);
         _dataarray[_slice].push(_tmphash);
-        _highestel = (_data[_slice][_word] > _highestel ) ? _data[_slice][_word]:_highestel;
-    	_lowestel = (_data[_slice][_word] < _lowestel) ? _data[_slice][_word]:_lowestel;
+        _highestel = (_data[_slice][_word]["frequency"] > _highestel ) ? _data[_slice][_word]["frequency"]:_highestel;
+    	_lowestel = (_data[_slice][_word]["frequency"] < _lowestel) ? _data[_slice][_word]["frequency"]:_lowestel;
     }
     
     _highest = (_barheights[_slice] > _highest ) ? _barheights[_slice]:_highest;
     _lowest = (_barheights[_slice] < _lowest) ? _barheights[_slice]:_lowest;
     
 	_dataarray[_slice].sort(function(a,b) {
-		return b[1] - a[1];
+		return b[1]["frequency"] - a[1]["frequency"];
 	});
 	
 	_dataSortSize[_slice] = new Object;				// clear old object and write new
     for(var _key in _dataarray[_slice]) {
-    	_dataSortSize[_slice][_dataarray[_slice][_key][0]] = _dataarray[_slice][_key][1];
+    	_dataSortSize[_slice][_dataarray[_slice][_key][0]] = _dataarray[_slice][_key][1]["frequency"];
     	//_data[_slice][_key][_dataarray[_key][0]] = _dataarray[_key][1];
     }
 }
@@ -56,7 +56,7 @@ var _cf = (_highestel * _pf) / 200;
 for(var _slice in _data) {
 	_barheights[_slice] = 0;
 	for(var _word in _data[_slice]) {
-		_data[_slice][_word] = Math.round(_data[_slice][_word] * _pf);
+		_data[_slice][_word] = Math.round(_data[_slice][_word]["frequency"] * _pf);
 		_dataSortSize[_slice][_word] = Math.round(_dataSortSize[_slice][_word] * _pf);
 		_barheights[_slice] += _data[_slice][_word];
 	}
