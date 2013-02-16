@@ -43,10 +43,10 @@ if (isset($_GET['whattodo']) && !empty($_GET['whattodo']))
 else
     $whattodo = "";
 
-if (isset($_GET['keywordsToTrack']) && !empty($_GET['keywordsToTrack']))
-    $keywordsToTrack = $_GET['keywordsToTrack'];
+if (isset($_GET['keywordToTrack']) && !empty($_GET['keywordToTrack']))
+    $keywordToTrack = trim(strtolower($_GET['keywordToTrack']));
 else
-    $keywordsToTrack = "";
+    $keywordToTrack = "";
 
 if (isset($_GET['keywordFrequency'])) 
     $keywordFrequency = $_GET['keywordFrequency'];
