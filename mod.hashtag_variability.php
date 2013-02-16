@@ -25,6 +25,7 @@ validate_all_variables();
         <h1>Twitter Analytics :: Associational profiles</h1>
         <fieldset class="if_parameters">
 
+
             <legend>Top tags</legend>
             <?php
             $title = "Top tags for";
@@ -630,6 +631,7 @@ validate_all_variables();
                                             //'max_document_frequency' => 90,
                                             'min_frequency' => 0, // 5 per avg of 5000 tweets
 //            'threshold_of_associations' => 0.2,
+
                                             'options[]' => 'urls, remove_stopwords',
                                         );
 
