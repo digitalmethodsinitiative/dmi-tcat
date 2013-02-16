@@ -13,16 +13,24 @@ validate_all_variables();
 
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
-        <link rel="stylesheet" href="css/main.css" type="text/css" />
+        <link rel="stylesheet" href="./css/main.css" type="text/css" />
+        <link rel="stylesheet" href="./css/tablesorter/blue/style.css" type="text/css" media="print, projection, screen" />
 
         <script type="text/javascript" src="./scripts/raphael-min.js"></script>
         <script type='text/javascript' src='./scripts/jquery-1.7.1.min.js'></script>
-
+        <script type="text/javascript" src="./scripts/tablesorter/jquery.tablesorter.min.js"></script> 
+        <script type="text/javascript">
+            $(document).ready(function() { 
+                $("#metrics").tablesorter(); 
+            }); 
+        </script>
     </head>
 
     <body>
 
         <h1>Twitter Analytics :: Associational profiles</h1>
+
+
         <fieldset class="if_parameters">
 
             <legend>Top tags</legend>
@@ -327,7 +335,9 @@ validate_all_variables();
 
                                     <?php
                                     if (isset($_REQUEST['tableOutput'])) {
-                                        print "<table><tr><td>date</td><td>word</td><td>frequency</td><td>cowordFrequency</td><td>specificity</td><td>cowordRatio</td></tr>";
+                                        print "<hr>Tip: Sort multiple columns simultaneously by holding down the shift key and clicking a second, third or even fourth column header! ";
+                                        print "<table id='metrics' class='tablesorter'>";
+                                        print "<thead><tr><th>date</th><th>word</th><th>frequency</th><th>cowordFrequency</th><th>specificity</th><th>cowordRatio</th></tr></thead>";
                                         foreach ($vis_data as $date => $words) {
                                             if (empty($words))
                                                 print "<tr><td>$date</td><td colspan='4'>no associations here</td></tr>";
