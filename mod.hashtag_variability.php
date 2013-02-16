@@ -25,7 +25,6 @@ validate_all_variables();
         <h1>Twitter Analytics :: Associational profiles</h1>
         <fieldset class="if_parameters">
 
-
             <legend>Top tags</legend>
             <?php
             $title = "Top tags for";
@@ -313,7 +312,7 @@ validate_all_variables();
                                         print $datadescription . "<bR>";
                                         ?>
 
-                                        <form id="vis_interface">
+                                        <form id="vis_interface">>
                                             <input type="checkbox" onchange="changeInterface('labels',this.checked)" />Show labels in visualization
                                             <input type="checkbox" onchange="changeInterface('sorting',this.checked)" />Sort by size
                                         </form>
@@ -631,7 +630,6 @@ validate_all_variables();
                                             //'max_document_frequency' => 90,
                                             'min_frequency' => 0, // 5 per avg of 5000 tweets
 //            'threshold_of_associations' => 0.2,
-
                                             'options[]' => 'urls, remove_stopwords',
                                         );
 
