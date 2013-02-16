@@ -1,11 +1,9 @@
 var _barwidth = 20;
-
-var _leftspacing = 20;
+var _leftspacing = 40;
 var _bottomspacing = 5;
-
 var _linedist = 2;
-
 var _anispeed = 700;
+var _colorMetric = "specificity";
 
                                  	
 var _slicecount = 0;
@@ -16,54 +14,19 @@ var _highest = 0;
 var _lowest = 100000000000000000000000000;
 var _highestel = 0;
 var _lowestel = 100000000000000000000000000;
+var _labels = false;
 
 
 var c_width = 1100;
 var c_height = 600;
 
-// finding the highest bar and ordering the words in each slice by their value
 
-for(var _slice in _data) {
-    _slicecount++;
-    _barheights[_slice] = 0;
-   	_dataarray[_slice] = new Array;
-    for(var _word in _data[_slice]) {
-        _barheights[_slice] += _data[_slice][_word]["frequency"];
-        var _tmphash = new Array(_word, _data[_slice][_word]);
-        //console.log(_tmphash);
-        _dataarray[_slice].push(_tmphash);
-        _highestel = (_data[_slice][_word]["frequency"] > _highestel ) ? _data[_slice][_word]["frequency"]:_highestel;
-    	_lowestel = (_data[_slice][_word]["frequency"] < _lowestel) ? _data[_slice][_word]["frequency"]:_lowestel;
-    }
-    
-    _highest = (_barheights[_slice] > _highest ) ? _barheights[_slice]:_highest;
-    _lowest = (_barheights[_slice] < _lowest) ? _barheights[_slice]:_lowest;
-    
-	_dataarray[_slice].sort(function(a,b) {
-		return b[1]["frequency"] - a[1]["frequency"];
-	});
-	
-	_dataSortSize[_slice] = new Object;				// clear old object and write new
-    for(var _key in _dataarray[_slice]) {
-    	_dataSortSize[_slice][_dataarray[_slice][_key][0]] = _dataarray[_slice][_key][1]["frequency"];
-    	//_data[_slice][_key][_dataarray[_key][0]] = _dataarray[_key][1];
-    }
-}
+createInterface();
 
-// calculating the pixelfactor, colorfactor and normalizing data
-var _pf = (c_height - 20) / _highest;
-var _cf = (_highestel * _pf) / 200;
-for(var _slice in _data) {
-	_barheights[_slice] = 0;
-	for(var _word in _data[_slice]) {
-		_data[_slice][_word] = Math.round(_data[_slice][_word]["frequency"] * _pf);
-		_dataSortSize[_slice][_word] = Math.round(_dataSortSize[_slice][_word] * _pf);
-		_barheights[_slice] += _data[_slice][_word];
-	}
-}
+var _pf = 0;	// pixelfactor
+var _cf = 0;	// colorfactor
 
-
-console.log(_data);
+calculateFactors();
 
 var _barspacing = (c_width - (_slicecount * _barwidth)) / (_slicecount - 1);
                                     	
@@ -73,31 +36,240 @@ var _lines = new Object;
 var _linescon = new Object;
 var _connectors = new Object;
 var _labels = new Object;
+
+var r = null;
+
+createCanvas();
+drawvis(_data);
+colorcode(_colorMetric);
+
+function createInterface(){
+	
+	var _ihtml = '<hr />'+
+				 'Color coding: <select onchange=\'colorcode(this.options[this.selectedIndex].value)\'>';
+	
+	
+	// finding the highest bar and ordering the words in each slice by their value
+
+	for(var _slice in _data) {
+	    _slicecount++;
+	    _barheights[_slice] = 0;
+	   	_dataarray[_slice] = new Array;
+	    for(var _word in _data[_slice]) {
+	        _barheights[_slice] += _data[_slice][_word]["frequency"];
+	        var _tmphash = new Array(_word, _data[_slice][_word]);
+	        //console.log(_tmphash);
+	        _dataarray[_slice].push(_tmphash);
+	        _highestel = (_data[_slice][_word]["frequency"] > _highestel ) ? _data[_slice][_word]["frequency"]:_highestel;
+	    	_lowestel = (_data[_slice][_word]["frequency"] < _lowestel) ? _data[_slice][_word]["frequency"]:_lowestel;
+	    }
+	    
+	    _highest = (_barheights[_slice] > _highest ) ? _barheights[_slice]:_highest;
+	    _lowest = (_barheights[_slice] < _lowest) ? _barheights[_slice]:_lowest;
+	    
+		_dataarray[_slice].sort(function(a,b) {
+			return b[1]["frequency"] - a[1]["frequency"];
+		});
+		
+		_dataSortSize[_slice] = new Object;				// clear old object and write new
+	    for(var _key in _dataarray[_slice]) {
+	    	
+	    	_dataSortSize[_slice][_dataarray[_slice][_key][0]] = new Object;
+	    	
+	    	for(var _metric in _dataarray[_slice][_key][1]) {
+	    		_dataSortSize[_slice][_dataarray[_slice][_key][0]][_metric] = _dataarray[_slice][_key][1][_metric];
+	    	}
+	    	//_dataSortSize[_slice][_dataarray[_slice][_key][0]]["frequency"] = _dataarray[_slice][_key][1]["frequency"];
+	    	//_dataSortSize[_slice][_dataarray[_slice][_key][0]]["specificity"] = _dataarray[_slice][_key][1]["specificity"];
+	    }
+	}
+	
+	
+	var _exit = false;
+	dance:
+	for (_slice in _data) {
+		for (_term in _data[_slice]) {
+			for(_metric in _data[_slice][_term]) {
+				var _selected = (_metric == _colorMetric) ? "selected":"";
+				_ihtml += '<option value="' + _metric + '" ' + _selected + '>' + _metric + '</option>';
+				_exit = true;
+			}
+			if(_exit == true) { break dance; }
+		}
+	}
+
+	_ihtml += '</select>'+
+			  '<input type="checkbox" onchange="changeInterface(\'labels\',this.checked)" /> Show labels '+
+			  '<input type="checkbox" onchange="changeInterface(\'sorting\',this.checked)" /> Sort by size';
+	
+	
+	$("#vis_interface").html(_ihtml);
+	
+}
+
+
+function calculateFactors(_forpf,_forcf) {
+
+	// calculating the pixelfactor, colorfactor and normalizing data
+	_pf = (c_height - 20) / _highest;
+	_cf = (_highestel * _pf) / 200;
+	for(var _slice in _data) {
+		_barheights[_slice] = 0;
+		for(var _word in _data[_slice]) {
+			_data[_slice][_word]["height"] = Math.round(_data[_slice][_word]["frequency"] * _pf);
+			_dataSortSize[_slice][_word]["height"] = Math.round(_dataSortSize[_slice][_word]["frequency"] * _pf);
+			_barheights[_slice] += _data[_slice][_word]["height"];
+		}
+	}
+}
+
+
+function createCanvas() {
                                     	
-var r = Raphael(document.getElementById("visualization"), c_width + 30, c_height);
-//r.path("M" + a(_leftspacing - 5) + " " + c_height + "L" + c_width + " " + c_height).attr({ stroke: "#000" });
-r.path("M" + a(_leftspacing - 5) + " " + a(c_height) + "L" + a(_leftspacing - 5) + " " + a(0)).attr({ stroke: "#000" });
+	r = Raphael(document.getElementById("visualization"), c_width + 30, c_height);
+	//r.path("M" + a(_leftspacing - 5) + " " + c_height + "L" + c_width + " " + c_height).attr({ stroke: "#000" });
+	r.path("M" + a(_leftspacing - 5) + " " + a(c_height) + "L" + a(_leftspacing - 5) + " " + a(0)).attr({ stroke: "#000" });
+	
+	
+	r.canvas.onclick = function() {
+		for(var _line in _lines) {
+			for(var i = 0; i < _lines[_line].length; i++) {
+				_lines[_line][i].color(_lines[_line][i].concol);
+				//console.log(_lines[_line][i].concol);
+			}
+		}
+	}
 
-this.label = r.text(13,(c_height - 8),"0").attr("text-anchor","end");
-this.label = r.text(13,5,_highest).attr("text-anchor","end");
-//r.path("M0 0L0 " + c_height).attr({stroke: "#000"});
+	
+	var _bottomLabel = r.text(30,(c_height - 9),"0").attr("text-anchor","end");
+	var _topLabel = r.text(30,20,_highest).attr("text-anchor","end");
+	//r.path("M0 0L0 " + c_height).attr({stroke: "#000"});
+}
 
 
 
-function block(_slice,_x,_y,_height,_label) {
+function drawvis(_data) {
+	
+	var i = 0;
+	var _wordlisthtml = "";
+	
+	_lines = new Object;
+	
+	for(var _slice in _data) {
+        
+		if(typeof(_slices[_slice]) == "undefined") {
+			_slices[_slice] = new Object;
+		}
+	                          		
+	    var j = 0;
+	    var _pos = 0;
+	    
+	    if(typeof(_labels[_slice]) == "undefined") {
+			_labels[_slice] = r.text(_leftspacing + _barspacing * i,5,_slice).attr("text-anchor","start");
+		}	
+	    
+	    for(var _block in _data[_slice]) {
+	    	
+	    	if(typeof(_slices[_slice][_block]) == "undefined") {
+				_slices[_slice][_block] = new block(_slice,_leftspacing + _barspacing * i, (c_height - _bottomspacing - _barheights[_slice] + _pos),_data[_slice][_block],_block);
+				_slices[_slice][_block].draw();
+	    	} else {
+	    		_slices[_slice][_block].move(c_height - _bottomspacing - _barheights[_slice] + _pos);
+	    	}
+            
+           	
+	        _pos += _data[_slice][_block]["height"];
+	        j++;
+	                                    			
+	        if(typeof(_lines[_block]) == "undefined") {
+	            _lines[_block] = new Array();
+	        }
+	                                    			
+	        _lines[_block].push(_slices[_slice][_block]);
+	    }
+                                    		
+    	i++;
+	}
+	
+	$("#wordlist").html(_wordlisthtml);
+	
+	//console.log(_lines);
+	
+	for(var _word in _lines) {
+		
+		if(typeof(_linescon[_word]) == "undefined") {
+			_linescon[_word] = new Array;
+		}
+		
+	    for(var i = 1; i < _lines[_word].length; i++) {
+	    	if(typeof(_linescon[_word][i - 1]) == "undefined") {
+				_linescon[_word][i - 1] = new connector(_lines[_word][i],_lines[_word][i-1]);
+				_linescon[_word][i - 1].draw();
+			} else {
+				_linescon[_word][i - 1].move();
+			}
+	    }
+	}
+}
+
+
+
+function colorcode(_sel) {
+	
+	_colorMetric = _sel;
+	
+	console.log(_sel);
+	
+	var _tmphighest = 0;
+	var _tmplowest = 10000000000000000;
+	
+	for(var _slice in _data) {
+		for(var _word in _data[_slice]) {
+			var _tmphighest = (parseInt(_data[_slice][_word][_colorMetric]) > _tmphighest) ? _data[_slice][_word][_colorMetric]:_tmphighest;
+			var _tmplowest = (parseInt(_data[_slice][_word][_colorMetric]) < _tmplowest) ? _data[_slice][_word][_colorMetric]:_tmplowest;
+		}
+	}
+    
+    //console.log(_tmplowest + " / " + _tmphighest);
+        	
+    var _cf = _tmphighest / 100;
+	
+	for(var _line in _lines) {
+        for(var i = 0; i < _lines[_line].length; i++) {
+        	
+        	var _tmpcol = "rgb(" + (Math.round(_lines[_line][i].values[_colorMetric] / _cf * 2)) + "," + (Math.round(200 - (_lines[_line][i].values[_colorMetric] / _cf * 2))) + "," + (Math.round(255 - (_lines[_line][i].values[_colorMetric] / _cf * 2))) + ")";
+        	
+        	//console.log(_lines[_line][i].values[_colorMetric] + " " + _tmpcol);
+        	_lines[_line][i].concol = _tmpcol;
+    		_lines[_line][i].color(_tmpcol);
+        }
+    }
+    
+    for(var _word in _linescon) {
+    	for(var _con in _linescon[_word]) {
+    		_linescon[_word][_con].color();
+    	}
+    }
+    
+}
+
+
+function block(_slice,_x,_y,_values,_label) {
                                     		
     var _this = this;
 
 	this.slice = _slice;
 	this.labelID = _label;
-    this.labelText = _label + " (" + _height + ")";
+    this.labelText = _label + " (" + _values["frequency"] + ")";
+    this.values = _values;
     this.x = _x;
     this.y = _y;
     this.width = _barwidth;
-    this.height = _height;
-    this.concol = "rgb(" + (Math.round(this.height / _cf)) + "," + (Math.round(200 - this.height / _cf)) + "," + (Math.round(255 - this.height / _cf)) + ")";
+    this.height = _values["height"];
+	this.concol = "#000";
+	this.labelon = false;
     
-    console.log("concol:" + this.concol + " " + _height);
+   // console.log("concol:" + this.concol + " " + this.height);
 
     this.draw = function() {
 
@@ -108,47 +280,47 @@ function block(_slice,_x,_y,_height,_label) {
         });
                                     						        
         _this.rect.node.onclick = function() {
-            _this.highlight();
+            window.setTimeout('_lines["' + _this.labelID + '"][0].highlight()',50);
         }
     }
     
 	this.move = function(_to) {
-		console.log(_to);
 		this.y = _to;
-		this.rect.animate({y:_to},_anispeed, "<");
+		if(this.labelon == true) { this.label.remove(); }
+		this.rect.animate({y:_to},_anispeed, "<",function() {
+			if(_this.labelon == true) { _this.showLabel() }; 	
+		});
 	}
                                             
-    this.highlight = function() {
-                                            	
-        console.log(this.label);
-                                            	
-        for(var _line in _lines) {
-            for(var i = 0; i < _lines[_line].length; i++) {
-                _lines[_line][i].color(_lines[_line][i].concol);
-            }
-        }
-                                            	
+    this.highlight = function() {                              	
         for(var i = 0; i < _lines[this.labelID].length; i++) {
             _lines[this.labelID][i].color("#000");
         }
     }
                                             
     this.color = function(_col) {
+    	
         _this.rect.attr({
             fill:_col
         });
     }
                                             
     this.showLabel = function() {
-        this.label = r.text(a(this.x) + _barwidth + _linedist, a(this.y + 5), this.labelText).attr("text-anchor","start");
+    	this.labelon = true;
+        this.label = r.text(a(this.x) + _barwidth + _linedist, a(this.y + (this.height / 2)), this.labelText).attr("text-anchor","start");
     }
                                             
     this.hideLabel = function() {
-        this.label.remove();
+		if(this.label) {
+			this.labelon = false;
+			this.label.remove();
+		}
     }
 }
 
 function connector(_obj1,_obj2) {
+	
+	var _this = this;
 	
 	this.obj1 = _obj1;
 	this.obj2 = _obj2;
@@ -158,16 +330,21 @@ function connector(_obj1,_obj2) {
    		this.calcpoly();
 	
 		this.line = r.path(this.poly).attr({
-			stroke: "#fff",
-	        fill: "0-" + this.obj2.concol + "-" + this.obj1.concol
+			stroke: "#fff"
+	   });
+	}
+	
+	this.color = function() {
+		_this.line.attr({
+	        fill: "0-" + _this.obj2.concol + "-" + _this.obj1.concol
 	    });
 	    
-	    this.line.node.style.opacity = 0.3;
+		_this.line.node.style.opacity = 0.3;
 	}
 	
 	this.calcpoly = function() {
 		
-		console.log(this.obj1.x + " " + this.obj2.x);
+		//console.log(this.obj1.x + " " + this.obj2.x);
                                         
 	    if(this.obj1.x < this.obj2.x) {
 	        var from_x = a(this.obj1.x + this.obj1.width);
@@ -213,76 +390,6 @@ function connector(_obj1,_obj2) {
 	}
 }
                                     	
-
-// draw visualization and wordlist
-                                    	
-
-
-drawvis(_data);
-
-function drawvis(_data) {
-	
-	var i = 0;
-	var _wordlisthtml = "";
-	
-	_lines = new Object;
-	
-	for(var _slice in _data) {
-        
-		if(typeof(_slices[_slice]) == "undefined") {
-			_slices[_slice] = new Object;
-		}
-	                          		
-	    var j = 0;
-	    var _pos = 0;
-	    
-	    if(typeof(_labels[_slice]) == "undefined") {
-			_labels[_slice] = r.text(_leftspacing + _barspacing * i,5,_slice).attr("text-anchor","start");
-		}	
-	    
-	    for(var _block in _data[_slice]) {
-	    	
-	    	if(typeof(_slices[_slice][_block]) == "undefined") {
-				_slices[_slice][_block] = new block(_slice,_leftspacing + _barspacing * i, (c_height - _bottomspacing - _barheights[_slice] + _pos),_data[_slice][_block],_block);
-				_slices[_slice][_block].draw();
-	    	} else {
-	    		_slices[_slice][_block].move(c_height - _bottomspacing - _barheights[_slice] + _pos);
-	    	}
-            
-           	
-	        _pos += _data[_slice][_block];
-	        j++;
-	                                    			
-	        if(typeof(_lines[_block]) == "undefined") {
-	            _lines[_block] = new Array();
-	        }
-	                                    			
-	        _lines[_block].push(_slices[_slice][_block]);
-	    }
-                                    		
-    	i++;
-	}
-	
-	$("#wordlist").html(_wordlisthtml);
-	
-	console.log(_lines);
-	
-	for(var _word in _lines) {
-		
-		if(typeof(_linescon[_word]) == "undefined") {
-			_linescon[_word] = new Array;
-		}
-		
-	    for(var i = 1; i < _lines[_word].length; i++) {
-	    	if(typeof(_linescon[_word][i - 1]) == "undefined") {
-				_linescon[_word][i - 1] = new connector(_lines[_word][i],_lines[_word][i-1]);
-				_linescon[_word][i - 1].draw();
-			} else {
-				_linescon[_word][i - 1].move();
-			}
-	    }
-	}
-}
                                     	
                                     	
 function pos_y(_v) {
@@ -315,5 +422,4 @@ function changeInterface(_what,_action) {
         }
     	
     }
- 	
 }
