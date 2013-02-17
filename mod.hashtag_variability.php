@@ -22,6 +22,14 @@ validate_all_variables();
         <script type="text/javascript">
             $(document).ready(function() { 
                 $("#metrics").tablesorter(); 
+                var Input = $('input[name=customInterval]');
+                var default_value = Input.val();
+
+                Input.focus(function() {
+                    if(Input.val() == default_value) Input.val("");
+                }).blur(function(){
+                    if(Input.val().length == 0) Input.val(default_value);
+                });
             }); 
         </script>
     </head>
@@ -49,7 +57,7 @@ validate_all_variables();
         </fieldset>
         <fieldset class="if_parameters">
 
-            <legend>Output settings</legend>
+            <legend>Associational profile settings</legend>
 
 
             <table>
@@ -73,13 +81,10 @@ validate_all_variables();
                             <input type='radio' name="interval" value="daily"<?php if (!isset($_REQUEST['interval']) || (isset($_REQUEST['interval']) && $_REQUEST['interval'] == 'daily')) print " CHECKED"; ?>>daily</input>
                             <input type='radio' name="interval" value="weekly"<?php if (isset($_REQUEST['interval']) && $_REQUEST['interval'] == 'weekly') print " CHECKED"; ?>>weekly</input>
                             <input type='radio' name="interval" value="monthly"<?php if (isset($_REQUEST['interval']) && $_REQUEST['interval'] == 'monthly') print " CHECKED"; ?>>monthly</input>
+                            <input type='radio' name="interval" value="custom"<?php if (isset($_REQUEST['interval']) && $_REQUEST['interval'] == 'custom') print " CHECKED"; ?>>custom:</input>
+                            <input type='text' name='customInterval' size='50' value='<?php if (isset($_REQUEST['customInterval'])&&!empty($_REQUEST['customInterval'])) print $_REQUEST['customInterval']; else print "YYYY-MM-DD;YYYY-MM-DD;...;YYYY-MM-DD"; ?>'></input>
                         </td>
                     </tr>
-                    <!--<Tr><td>Or specify a custom interval<br> e.g. 2012-01-01,2012-01-03,2012-01-05,2012-01-10 
-                        </td><td>
-                            <input tyep='text' name="interval_custom" value="<?php if (isset($_REQUEST['interval_custom'])) print $_REQUEST['interval_custom']; ?>"></input>
-                        </td>
-                    </tr>-->
                     <tr>
                         <td></td><td>
                             <input type='checkbox' name='timeseriesGexf'<?php if (isset($_REQUEST['timeseriesGexf'])) echo " CHECKED"; ?>>Generate co-hashtag time-series (GEXF file)</input>
@@ -90,7 +95,7 @@ validate_all_variables();
                             <input type='checkbox' name='cohashtagVariability'<?php if (isset($_REQUEST['cohashtagVariability'])) echo " CHECKED"; ?>>Generate co-hashtag variability file (Excel sheet with associational profiles thought up in London, May 2012)</input>
                         </td>
                     </tr>
-                    <tr><td></td><td><input type='checkbox' name='ratio'<?php if (isset($_REQUEST['ratio'])) echo " CHECKED"; ?>>Add daily co-word ratio (not present in visualization yet)</tr>
+                    <tr><td></td><td><input type='checkbox' name='ratio'<?php if (isset($_REQUEST['ratio'])) echo " CHECKED"; ?>>Also calculate co-word ratio.</tr>
                                 <tr><td></td><td><input type='checkbox' name='tableOutput'<?php if (isset($_REQUEST['tableOutput'])) echo " CHECKED"; ?>>Display table with (co-word-) frequency values, specificity, etc.</td></tr>
                                 <tr>
                                     <td></td><td><input type="submit" value="Get associational profile" /></td>
@@ -109,6 +114,31 @@ validate_all_variables();
 
 
                                 <?php
+                                // check custom interval
+                                // @todo, should be moved to functions.php
+                                if (isset($_REQUEST['interval']) && $_REQUEST['interval'] == 'custom' && isset($_REQUEST['customInterval'])) {
+                                    $intervalDates = explode(';', $_REQUEST['customInterval']);
+                                    $firstDate = $lastDate = false;
+                                    foreach ($intervalDates as $k => $date) {
+                                        $date = trim($date);
+                                        if (empty($date))
+                                            continue;
+                                        $intervalDates[$k] = $date;
+                                        if (!preg_match("/^\d{4}-\d{2}-\d{2}$/", $intervalDates[$k]))
+                                            die("<font size='+1' color='red'>custom interval not in right format</font>: YYYY-MM-DD;YYYY-MM-DD;...;YYYY-MM-DD");
+                                        if (!$firstDate)
+                                            $firstDate = $date;
+                                        $lastDate = $date;
+                                    }
+
+                                    if ($firstDate != $startdate)
+                                        die("<font size='+1' color='red'>custom interval should have the same start date as the selection</font>");
+                                    if ($lastDate > $enddate)
+                                        die("<font size='+1' color='red'>custom interval should have the same end date as the selection</font>");
+                                    
+                                    array_pop($intervalDates);  // we'll not be using the last date for grouping
+                                }
+
                                 $cowordTimeSeries = false;
                                 if (!empty($_REQUEST['timeseriesGexf']) || isset($_REQUEST['cohashtagVariability']))
                                     $cowordTimeSeries = true;
@@ -118,12 +148,12 @@ validate_all_variables();
                                     // get cowords from database
                                     $sql = "SELECT LOWER(A.text) AS h1, LOWER(B.text) AS h2 ";
                                     if (!empty($_REQUEST['interval'])) {
-                                        if ($_REQUEST['interval'] == "daily")
-                                            $sql .= ", DATE_FORMAT(t.created_at,'%Y-%m-%d') datepart "; // default daily
                                         if ($_REQUEST['interval'] == "weekly")
                                             $sql .= ", DATE_FORMAT(t.created_at,'%u') datepart ";
-                                        if ($_REQUEST['interval'] == "monthly")
+                                        elseif ($_REQUEST['interval'] == "monthly")
                                             $sql .= ", DATE_FORMAT(t.created_at,'%Y-%m') datepart ";
+                                        else // default daily
+                                            $sql .= ", DATE_FORMAT(t.created_at,'%Y-%m-%d') datepart ";
                                     } else
                                         $sql .= ", DATE_FORMAT(t.created_at,'%Y-%m-%d') datepart "; // default daily
                                     $sql .= "FROM " . $esc['mysql']['dataset'] . "_hashtags A, " . $esc['mysql']['dataset'] . "_hashtags B, " . $esc['mysql']['dataset'] . "_tweets t WHERE ";
@@ -140,7 +170,14 @@ validate_all_variables();
 
                                         $word = $res['h1'];
                                         $coword = $res['h2'];
-                                        if ($date !== $res['datepart']) {
+
+                                        if ($_REQUEST['interval'] == 'custom' && isset($_REQUEST['customInterval'])) {
+                                            if ($date !== groupByInterval($res['datepart'])) {
+                                                $date = groupByInterval($res['datepart']);
+                                                if ($cowordTimeSeries)
+                                                    $series[$date] = new Coword;
+                                            }
+                                        } elseif ($date !== $res['datepart']) {
                                             $date = $res['datepart'];
                                             if ($cowordTimeSeries)
                                                 $series[$date] = new Coword;
@@ -176,12 +213,12 @@ validate_all_variables();
                                     // get frequency (occurence) of hashtag in full selection
                                     $sql = "SELECT LOWER(A.text) AS h1, COUNT(LOWER(A.text)) AS frequency";
                                     if (!empty($_REQUEST['interval'])) {
-                                        if ($_REQUEST['interval'] == "daily")
-                                            $sql .= ", DATE_FORMAT(t.created_at,'%Y-%m-%d') datepart "; // default daily
                                         if ($_REQUEST['interval'] == "weekly")
                                             $sql .= ", DATE_FORMAT(t.created_at,'%u') datepart ";
-                                        if ($_REQUEST['interval'] == "monthly")
+                                        elseif ($_REQUEST['interval'] == "monthly")
                                             $sql .= ", DATE_FORMAT(t.created_at,'%Y-%m') datepart ";
+                                        else
+                                            $sql .= ", DATE_FORMAT(t.created_at,'%Y-%m-%d') datepart "; // default daily
                                     } else
                                         $sql .= ", DATE_FORMAT(t.created_at,'%Y-%m-%d') datepart "; // default daily
                                     $sql .= "FROM " . $esc['mysql']['dataset'] . "_hashtags A, " . $esc['mysql']['dataset'] . "_tweets t WHERE ";
@@ -195,8 +232,12 @@ validate_all_variables();
 
                                     while ($res = mysql_fetch_assoc($sqlresults)) {
                                         $date = $res['datepart'];
+                                        if ($_REQUEST['interval'] == 'custom' && isset($_REQUEST['customInterval']))
+                                            $date = groupByInterval($res['datepart']);
                                         $word = $res['h1'];
-                                        $frequency_word_interval[$date][$word] = $res['frequency'];
+                                        if (!isset($frequency_word_interval[$date][$word]))
+                                            $frequency_word_interval[$date][$word] = 0;
+                                        $frequency_word_interval[$date][$word] += $res['frequency'];
                                         // @todo @note $frequency_word_total is not currently used but can be for specificity (if specificity should not be based on interval)
                                         if (!isset($frequency_word_total[$word]))
                                             $frequency_word_total[$word] = 0;
@@ -207,12 +248,12 @@ validate_all_variables();
                                         // get number of tags co-occuring with focus word
                                         $sql = "SELECT LOWER(A.text) AS h1, LOWER(B.text) AS h2, COUNT(LOWER(A.text)) AS frequency";
                                         if (!empty($_REQUEST['interval'])) {
-                                            if ($_REQUEST['interval'] == "daily")
-                                                $sql .= ", DATE_FORMAT(t.created_at,'%Y-%m-%d') datepart "; // default daily
                                             if ($_REQUEST['interval'] == "weekly")
                                                 $sql .= ", DATE_FORMAT(t.created_at,'%u') datepart ";
-                                            if ($_REQUEST['interval'] == "monthly")
+                                            elseif ($_REQUEST['interval'] == "monthly")
                                                 $sql .= ", DATE_FORMAT(t.created_at,'%Y-%m') datepart ";
+                                            else
+                                                $sql .= ", DATE_FORMAT(t.created_at,'%Y-%m-%d') datepart "; // default daily
                                         } else
                                             $sql .= ", DATE_FORMAT(t.created_at,'%Y-%m-%d') datepart "; // default daily
                                         $sql .= "FROM " . $esc['mysql']['dataset'] . "_hashtags A, " . $esc['mysql']['dataset'] . "_hashtags B, " . $esc['mysql']['dataset'] . "_tweets t WHERE ";
@@ -233,7 +274,11 @@ validate_all_variables();
                                                 $word = $res['h1'];
                                             $cowordFrequency = $res['frequency'];
                                             $date = $res['datepart'];
-                                            $cowordRatio[$date][$word] = $cowordFrequency;
+                                            if ($_REQUEST['interval'] == 'custom' && isset($_REQUEST['customInterval']))
+                                                $date = groupByInterval($res['datepart']);
+                                            if (!isset($cowordRatio[$date][$word]))
+                                                $cowordRatio[$date][$word] = 0;
+                                            $cowordRatio[$date][$word] += $cowordFrequency;
                                         }
                                         foreach ($cowordRatio as $date => $cowordFrequencies) {
                                             $sum = array_sum($cowordFrequencies);
@@ -252,12 +297,12 @@ validate_all_variables();
                                     // intialize vis_data with all intervals
                                     $sql = "SELECT ";
                                     if (!empty($_REQUEST['interval'])) {
-                                        if ($_REQUEST['interval'] == "daily")
-                                            $sql .= "DATE_FORMAT(t.created_at,'%Y-%m-%d') datepart "; // default daily
                                         if ($_REQUEST['interval'] == "weekly")
                                             $sql .= "DATE_FORMAT(t.created_at,'%u') datepart ";
-                                        if ($_REQUEST['interval'] == "monthly")
+                                        elseif ($_REQUEST['interval'] == "monthly")
                                             $sql .= "DATE_FORMAT(t.created_at,'%Y-%m') datepart ";
+                                        else
+                                            $sql .= "DATE_FORMAT(t.created_at,'%Y-%m-%d') datepart "; // default daily
                                     } else
                                         $sql .= "DATE_FORMAT(t.created_at,'%Y-%m-%d') datepart "; // default daily
                                     $sql .= "FROM " . $esc['mysql']['dataset'] . "_tweets t WHERE ";
@@ -266,7 +311,10 @@ validate_all_variables();
                                     //print $sql."<bR>";
                                     $sqlresults = mysql_query($sql);
                                     while ($res = mysql_fetch_assoc($sqlresults)) {
-                                        $vis_data[$res['datepart']] = array();
+                                        $date = $res['datepart'];
+                                        if ($_REQUEST['interval'] == 'custom' && isset($_REQUEST['customInterval']))
+                                            $date = groupByInterval($res['datepart']);
+                                        $vis_data[$date] = array();
                                     }
                                     $excludeFromGraph = array();
                                     if (isset($_REQUEST['excludeFromGraph'])) {
@@ -274,7 +322,7 @@ validate_all_variables();
                                         foreach ($excludeFromGraph as $k => $v)
                                             $excludeFromGraph[$k] = trim($v);
                                     }
-                                    foreach ($ap[$keywordToTrack]as $date => $cowords) {
+                                    foreach ($ap[$keywordToTrack] as $date => $cowords) {
                                         foreach ($cowords as $word => $frequency_coword) {
                                             if ($frequency_coword_total[$word] >= $keywordFrequency) {
                                                 if (array_search($word, $excludeFromGraph) !== false)
@@ -381,14 +429,7 @@ validate_all_variables();
                                     $sql .= sqlSubset();
                                     $rec = mysql_query($sql);
                                     $res = mysql_fetch_assoc($rec);
-                                    // determine whether we should display intervals as days or hours
-                                    if (strtotime($res['max']) - strtotime($res['min']) < 86400 * 2) { // if smaller than 2 days we'll do hours
-                                        $interval = "hours";
-                                        $sql_interval = "DATE_FORMAT(t.created_at,'%Y-%m-%d %Hh') datepart ";
-                                    } else {
-                                        $interval = "days";
-                                        $sql_interval = "DATE_FORMAT(t.created_at,'%Y-%m-%d') datepart ";
-                                    }
+                                    $sql_interval = "DATE_FORMAT(t.created_at,'%Y-%m-%d') datepart ";
                                     $results = array();
                                     $sql = "SELECT COUNT(hashtags.text) AS count, LOWER(hashtags.text) AS toget, ";
                                     $sql .= $sql_interval;
@@ -669,5 +710,15 @@ validate_all_variables();
                                     // make GEXF time series
                                     $gexf = $cw->gexfTimeSeries(str_replace($resultsdir, "", $filename), $word_frequencies);
                                     file_put_contents($filename, $gexf);
+                                }
+
+                                function groupByInterval($date) {
+                                    global $intervalDates;
+                                    $returnDate = false;
+                                    foreach ($intervalDates as $intervalDate) {
+                                        if ($date >= $intervalDate)
+                                            $returnDate = $intervalDate;
+                                    }
+                                    return $returnDate;
                                 }
                                 ?>
