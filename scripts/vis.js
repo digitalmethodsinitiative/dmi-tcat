@@ -56,19 +56,19 @@ function createInterface(){
 	    _barheights[_slice] = 0;
 	   	_dataarray[_slice] = new Array;
 	    for(var _word in _data[_slice]) {
-	        _barheights[_slice] += _data[_slice][_word]["frequency"];
+	        _barheights[_slice] += _data[_slice][_word]["cowordFrequency"];
 	        var _tmphash = new Array(_word, _data[_slice][_word]);
 	        //console.log(_tmphash);
 	        _dataarray[_slice].push(_tmphash);
-	        _highestel = (_data[_slice][_word]["frequency"] > _highestel ) ? _data[_slice][_word]["frequency"]:_highestel;
-	    	_lowestel = (_data[_slice][_word]["frequency"] < _lowestel) ? _data[_slice][_word]["frequency"]:_lowestel;
+	        _highestel = (_data[_slice][_word]["cowordFrequency"] > _highestel ) ? _data[_slice][_word]["cowordFrequency"]:_highestel;
+	    	_lowestel = (_data[_slice][_word]["cowordFrequency"] < _lowestel) ? _data[_slice][_word]["cowordFrequency"]:_lowestel;
 	    }
 	    
 	    _highest = (_barheights[_slice] > _highest ) ? _barheights[_slice]:_highest;
 	    _lowest = (_barheights[_slice] < _lowest) ? _barheights[_slice]:_lowest;
 	    
 		_dataarray[_slice].sort(function(a,b) {
-			return b[1]["frequency"] - a[1]["frequency"];
+			return b[1]["cowordFrequency"] - a[1]["cowordFrequency"];
 		});
 		
 		_dataSortSize[_slice] = new Object;				// clear old object and write new
@@ -79,7 +79,7 @@ function createInterface(){
 	    	for(var _metric in _dataarray[_slice][_key][1]) {
 	    		_dataSortSize[_slice][_dataarray[_slice][_key][0]][_metric] = _dataarray[_slice][_key][1][_metric];
 	    	}
-	    	//_dataSortSize[_slice][_dataarray[_slice][_key][0]]["frequency"] = _dataarray[_slice][_key][1]["frequency"];
+	    	//_dataSortSize[_slice][_dataarray[_slice][_key][0]]["cowordFrequency"] = _dataarray[_slice][_key][1]["cowordFrequency"];
 	    	//_dataSortSize[_slice][_dataarray[_slice][_key][0]]["specificity"] = _dataarray[_slice][_key][1]["specificity"];
 	    }
 	}
@@ -116,8 +116,8 @@ function calculateFactors(_forpf,_forcf) {
 	for(var _slice in _data) {
 		_barheights[_slice] = 0;
 		for(var _word in _data[_slice]) {
-			_data[_slice][_word]["height"] = Math.round(_data[_slice][_word]["frequency"] * _pf);
-			_dataSortSize[_slice][_word]["height"] = Math.round(_dataSortSize[_slice][_word]["frequency"] * _pf);
+			_data[_slice][_word]["height"] = Math.round(_data[_slice][_word]["cowordFrequency"] * _pf);
+			_dataSortSize[_slice][_word]["height"] = Math.round(_dataSortSize[_slice][_word]["cowordFrequency"] * _pf);
 			_barheights[_slice] += _data[_slice][_word]["height"];
 		}
 	}
@@ -260,7 +260,7 @@ function block(_slice,_x,_y,_values,_label) {
 
 	this.slice = _slice;
 	this.labelID = _label;
-    this.labelText = _label + " (" + _values["frequency"] + ")";
+    this.labelText = _label + " (" + _values["cowordFrequency"] + ")";
     this.values = _values;
     this.x = _x;
     this.y = _y;
