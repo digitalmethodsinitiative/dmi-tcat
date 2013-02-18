@@ -48,10 +48,15 @@ if (isset($_GET['keywordToTrack']) && !empty($_GET['keywordToTrack']))
 else
     $keywordToTrack = "";
 
-if (isset($_GET['keywordFrequency'])) 
-    $keywordFrequency = $_GET['keywordFrequency'];
+if (isset($_GET['minimumCowordFrequencyOverall'])) 
+    $minimumCowordFrequencyOverall = $_GET['minimumCowordFrequencyOverall'];
 else
-    $keywordFrequency = 10;
+    $minimumCowordFrequencyOverall = 10;
+
+if (isset($_GET['minimumCowordFrequencyOverall'])) 
+    $minimumCowordFrequencyInterval = $_GET['minimumCowordFrequencyInterval'];
+else
+    $minimumCowordFrequencyInterval = 0;
 
 if (isset($_GET['showvis']) && !empty($_GET['showvis']))
     $showvis = $_GET['showvis'];
