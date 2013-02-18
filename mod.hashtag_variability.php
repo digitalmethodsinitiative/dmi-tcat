@@ -68,8 +68,12 @@ validate_all_variables();
                         <td><input type="text" name="keywordToTrack" value="<?php echo $keywordToTrack; ?>" /> </td>
                     </tr>
                     <tr>
-                        <td align='right'>Minimum co-word frequency (over all periods) for a word to be included</t>
-                            <td><input type="text" name="keywordFrequency" value="<?php echo $keywordFrequency; ?>" /></td>
+                        <td align='right'>Minimum co-word frequency <i>over all periods</i> for a word to be included</t>
+                            <td><input type="text" name="minimumCowordFrequencyOverall" value="<?php echo $minimumCowordFrequencyOverall; ?>" /></td>
+                    </tr>
+                    <tr>
+                        <td align='right'>Minimum co-word frequency <i>per period</i> for a word to be included</t>
+                            <td><input type="text" name="minimumCowordFrequencyInterval" value="<?php echo $minimumCowordFrequencyInterval; ?>" /></td>
                     </tr>
                     <tr>
                         <td align='right'>Words to exclude from the graph (comma separated)</t>
@@ -82,7 +86,7 @@ validate_all_variables();
                             <input type='radio' name="interval" value="weekly"<?php if (isset($_REQUEST['interval']) && $_REQUEST['interval'] == 'weekly') print " CHECKED"; ?>>weekly</input>
                             <input type='radio' name="interval" value="monthly"<?php if (isset($_REQUEST['interval']) && $_REQUEST['interval'] == 'monthly') print " CHECKED"; ?>>monthly</input>
                             <input type='radio' name="interval" value="custom"<?php if (isset($_REQUEST['interval']) && $_REQUEST['interval'] == 'custom') print " CHECKED"; ?>>custom:</input>
-                            <input type='text' name='customInterval' size='50' value='<?php if (isset($_REQUEST['customInterval'])&&!empty($_REQUEST['customInterval'])) print $_REQUEST['customInterval']; else print "YYYY-MM-DD;YYYY-MM-DD;...;YYYY-MM-DD"; ?>'></input>
+                            <input type='text' name='customInterval' size='50' value='<?php if (isset($_REQUEST['customInterval']) && !empty($_REQUEST['customInterval'])) print $_REQUEST['customInterval']; else print "YYYY-MM-DD;YYYY-MM-DD;...;YYYY-MM-DD"; ?>'></input>
                         </td>
                     </tr>
                     <tr>
@@ -95,7 +99,7 @@ validate_all_variables();
                             <input type='checkbox' name='cohashtagVariability'<?php if (isset($_REQUEST['cohashtagVariability'])) echo " CHECKED"; ?>>Generate co-hashtag variability file (Excel sheet with associational profiles thought up in London, May 2012)</input>
                         </td>
                     </tr>
-                    <tr><td></td><td><input type='checkbox' name='ratio'<?php if (isset($_REQUEST['ratio'])) echo " CHECKED"; ?>>Also calculate co-word ratio.</tr>
+                    <tr><td></td><td><input type='checkbox' name='normalizedCowordFrequency'<?php if (isset($_REQUEST['normalizedCowordFrequency'])) echo " CHECKED"; ?>>Also calculate normalized co-word frequency.</tr>
                                 <tr><td></td><td><input type='checkbox' name='tableOutput'<?php if (isset($_REQUEST['tableOutput'])) echo " CHECKED"; ?>>Display table with (co-word-) frequency values, specificity, etc.</td></tr>
                                 <tr>
                                     <td></td><td><input type="submit" value="Get associational profile" /></td>
@@ -135,7 +139,7 @@ validate_all_variables();
                                         die("<font size='+1' color='red'>custom interval should have the same start date as the selection</font>");
                                     if ($lastDate > $enddate)
                                         die("<font size='+1' color='red'>custom interval should have the same end date as the selection</font>");
-                                    
+
                                     array_pop($intervalDates);  // we'll not be using the last date for grouping
                                 }
 
@@ -244,7 +248,30 @@ validate_all_variables();
                                         $frequency_word_total[$word]+=$res['frequency'];
                                     }
 
-                                    if (isset($_REQUEST['ratio'])) {
+                                    // get number of tweets in interval
+                                    $sql = "SELECT COUNT(id) AS numberOfTweets";
+                                    if (!empty($_REQUEST['interval'])) {
+                                        if ($_REQUEST['interval'] == "weekly")
+                                            $sql .= ", DATE_FORMAT(t.created_at,'%u') datepart ";
+                                        elseif ($_REQUEST['interval'] == "monthly")
+                                            $sql .= ", DATE_FORMAT(t.created_at,'%Y-%m') datepart ";
+                                        else
+                                            $sql .= ", DATE_FORMAT(t.created_at,'%Y-%m-%d') datepart "; // default daily
+                                    } else
+                                        $sql .= ", DATE_FORMAT(t.created_at,'%Y-%m-%d') datepart "; // default daily
+                                    $sql .= "FROM " . $esc['mysql']['dataset'] . "_tweets t WHERE ";
+                                    $sql .= sqlSubset() . " ";
+                                    $sql .= "GROUP BY datepart ORDER BY datepart";
+                                    //print $sql."<bR>";
+                                    $sqlresults = mysql_query($sql);
+                                    while ($res = mysql_fetch_assoc($sqlresults)) {
+                                        $date = $res['datepart'];
+                                        if ($_REQUEST['interval'] == 'custom' && isset($_REQUEST['customInterval']))
+                                            $date = groupByInterval($res['datepart']);
+                                        $numberOfTweets[$date] = $res['numberOfTweets'];
+                                    }
+
+                                    if (isset($_REQUEST['normalizedCowordFrequency'])) {
                                         // get number of tags co-occuring with focus word
                                         $sql = "SELECT LOWER(A.text) AS h1, LOWER(B.text) AS h2, COUNT(LOWER(A.text)) AS frequency";
                                         if (!empty($_REQUEST['interval'])) {
@@ -266,7 +293,7 @@ validate_all_variables();
                                         //print $sql . "<br>";
                                         $sqlresults = mysql_query($sql);
 
-                                        $cowordRatio = array();
+                                        $normalizedCowordFrequency = array();
                                         while ($res = mysql_fetch_assoc($sqlresults)) {
                                             if ($res['h1'] == $keywordToTrack)
                                                 $word = $res['h2'];
@@ -276,17 +303,17 @@ validate_all_variables();
                                             $date = $res['datepart'];
                                             if ($_REQUEST['interval'] == 'custom' && isset($_REQUEST['customInterval']))
                                                 $date = groupByInterval($res['datepart']);
-                                            if (!isset($cowordRatio[$date][$word]))
-                                                $cowordRatio[$date][$word] = 0;
-                                            $cowordRatio[$date][$word] += $cowordFrequency;
+                                            if (!isset($normalizedCowordFrequency[$date][$word]))
+                                                $normalizedCowordFrequency[$date][$word] = 0;
+                                            $normalizedCowordFrequency[$date][$word] += $cowordFrequency;
                                         }
-                                        foreach ($cowordRatio as $date => $cowordFrequencies) {
+                                        foreach ($normalizedCowordFrequency as $date => $cowordFrequencies) {
                                             $sum = array_sum($cowordFrequencies);
                                             foreach ($cowordFrequencies as $word => $cowordFrequency)
-                                                $cowordRatio[$date][$word] = round(($cowordFrequency / $sum) * 100, 2);
+                                                $normalizedCowordFrequency[$date][$word] = round(($cowordFrequency / $sum) * 100, 2);
                                         }
-                                        //var_dump($cowordRatio); print "<br>";
-                                        // @note cowordRatio is calculated for all cowords, while the data_vis discards cowords which do not appear x amount of times over full period
+                                        //var_dump($normalizedCowordFrequency); print "<br>";
+                                        // @note normalizedCowordFrequency is calculated for all cowords, while the data_vis discards cowords which do not appear x amount of times over full period
                                         // @todo @note tf/idf as it incorporates likelihood of a query given the rest of the set, and does not just look locally (i.e. per interval)
                                         // @toponder what to compare it with full selection (shows overal likelihood) or compared to previous intervals (shows timely progress but has initialization problem)
                                     }
@@ -324,19 +351,19 @@ validate_all_variables();
                                     }
                                     foreach ($ap[$keywordToTrack] as $date => $cowords) {
                                         foreach ($cowords as $word => $frequency_coword) {
-                                            if ($frequency_coword_total[$word] >= $keywordFrequency) {
+                                            if ($frequency_coword_total[$word] >= $minimumCowordFrequencyOverall && $frequency_coword >= $minimumCowordFrequencyInterval) {
                                                 if (array_search($word, $excludeFromGraph) !== false)
                                                     continue;
                                                 $specificity = round(($frequency_coword / $frequency_word_interval[$date][$word]) * 100, 2); // @note, I am assuming specificity is dependent on the interval
                                                 $vis_data[$date][$word]['cowordFrequency'] = $frequency_coword;
-                                                $vis_data[$date][$word]['wordFrequency'] = $frequency_word_interval[$date][$word];   // @todo
-                                                $vis_data[$date][$word]['frequency'] = $frequency_coword;    // @todo
+                                                $vis_data[$date][$word]['wordFrequency'] = $frequency_word_interval[$date][$word];
                                                 $vis_data[$date][$word]['specificity'] = $specificity;
-                                                if (isset($_REQUEST['ratio']))
-                                                    $vis_data[$date][$word]['cowordRatio'] = $cowordRatio[$date][$word];
+                                                if (isset($_REQUEST['normalizedCowordFrequency']))
+                                                    $vis_data[$date][$word]['normalizedCowordFrequency'] = $normalizedCowordFrequency[$date][$word];
+                                                $vis_data[$date][$word]['normalizedWordFrequency'] = round(($frequency_word_interval[$date][$word] / $numberOfTweets[$date]) * 100, 2);
                                             }
                                             // else
-                                            //  print "skipping $word because {$frequency_coword_total[$word]} >= $keywordFrequency<bR>";   // @todo: to take into account for cowordRatio or not?
+                                            //  print "skipping $word because {$frequency_coword_total[$word]} >= $minimumCowordFrequencyOverall<bR>";   // @todo: to take into account for normalizedCowordFrequency or not?
                                         }
                                     }
 
@@ -357,7 +384,7 @@ validate_all_variables();
                                     <p>
                                         <?php
                                         // generate visualization
-                                        $datadescription = "Keywords co-occuring at least <i>$keywordFrequency</i> times with <i>$keywordToTrack</i> in ";
+                                        $datadescription = "Keywords co-occuring at least <i>$minimumCowordFrequencyOverall</i> times (overall) and at least <i>$minimumCowordFrequencyInterval</i> times (per interval) with <i>$keywordToTrack</i> in ";
                                         if (!empty($query))
                                             $datadescription .= " subselection <i>$query</i> of ";  // @todo but not in ...
                                         $datadescription .= "dataset <i>$dataset</i> ";
@@ -385,18 +412,19 @@ validate_all_variables();
                                     if (isset($_REQUEST['tableOutput'])) {
                                         print "<hr>Tip: Sort multiple columns simultaneously by holding down the shift key and clicking a second, third or even fourth column header! ";
                                         print "<table id='metrics' class='tablesorter'>";
-                                        print "<thead><tr><th>date</th><th>word</th><th>frequency</th><th>cowordFrequency</th><th>specificity</th><th>cowordRatio</th></tr></thead>";
+                                        print "<thead><tr><th>date</th><th>word</th><th>frequency</th><th>cowordFrequency</th><th>specificity</th><th>normalizedWordFrequency</th><th>normalizedCowordFrequency</th></tr></thead>";
                                         foreach ($vis_data as $date => $words) {
                                             if (empty($words))
-                                                print "<tr><td>$date</td><td colspan='4'>no associations here</td></tr>";
+                                                print "<tr><td>$date</td><td >no associations here</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>";
                                             foreach ($words as $word => $specs) {
                                                 $frequency = $specs['wordFrequency'];
+                                                $normalizedWordFrequency = $specs['normalizedWordFrequency'];
                                                 $frequency_coword = $specs['cowordFrequency'];
                                                 $specificity = $specs['specificity'];
-                                                if (isset($_REQUEST['ratio']))
-                                                    $cowordRatio = $specs['cowordRatio'];
+                                                if (isset($_REQUEST['normalizedCowordFrequency']))
+                                                    $normalizedCowordFrequency = $specs['normalizedCowordFrequency'];
                                                 else
-                                                    $cowordRatio = "";
+                                                    $normalizedCowordFrequency = "";
                                                 $highlight = "";
                                                 /* if ($specificity < 100.0 && $specificity > 70.0)
                                                   $highlight = " style='background-color:yellow'";
@@ -405,10 +433,10 @@ validate_all_variables();
                                                  * 
                                                  */
 
-                                                if ($frequency_coword_total[$word] >= $keywordFrequency)
-                                                    print "<tr><td>$date</td><td>$word</td><td>$frequency</td><td>$frequency_coword</td><td $highlight>$specificity</td><td>$cowordRatio</td></tr>";
+                                                if ($frequency_coword_total[$word] >= $minimumCowordFrequencyOverall && $frequency_coword >= $minimumCowordFrequencyInterval)
+                                                    print "<tr><td>$date</td><td>$word</td><td>$frequency</td><td>$frequency_coword</td><td $highlight>$specificity</td><td>$normalizedWordFrequency</td><td>$normalizedCowordFrequency</td></tr>";
                                                 else
-                                                    print "<tr><td>$date</td><td>$word</td><td colspan='3'>skipping because {$frequency_coword_total[$word]} < $keywordFrequency</td></tr>";
+                                                    print "<tr><td>$date</td><td>$word</td><td colspan='3'>skipping because {$frequency_coword_total[$word]} < $minimumCowordFrequencyOverall</td></tr>";
                                             }
                                         }
                                         print "</table>";
