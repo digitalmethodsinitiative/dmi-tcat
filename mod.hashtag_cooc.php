@@ -29,6 +29,40 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
         $exc = (empty($esc['shell']["exclude"])) ? "" : "-" . $esc['shell']["exclude"];
         $filename = $resultsdir . $esc['shell']["datasetname"] . "_" . $esc['shell']["query"] . $exc . "_" . $esc['date']["startdate"] . "_" . $esc['date']["enddate"] . "_" . $esc['shell']["from_user_name"] . (isset($_GET['probabilityOfAssociation']) ? "_normalizedAssociationWeight" : "") . "_hashtagCooc.gexf";
 
+        include_once('common/Coword.class.php');
+        $coword = new Coword;
+
+        // get hashtag counts
+        $sql = "SELECT LOWER(h.text) as h1, COUNT(LOWER(h.text)) as c ";
+        $sql .= "FROM " . $esc['mysql']['dataset'] . "_hashtags h, " . $esc['mysql']['dataset'] . "_tweets t ";
+        $sql .= "WHERE h.tweet_id = t.id ";
+        $sql .= "AND " . sqlSubset();
+        $sql .= "GROUP BY h1";
+        //print $sql . "<bR>";
+        $sqlresults = mysql_query($sql);
+        while ($res = mysql_fetch_assoc($sqlresults)) {
+            $frequencies[$res['h1']] = $res['c'];
+        }
+
+        // get user diversity per hasthag
+        $sql = "SELECT LOWER(h.text) as h1, COUNT(t.from_user_id) as c, COUNT(DISTINCT(t.from_user_id)) AS d ";
+        $sql .= "FROM " . $esc['mysql']['dataset'] . "_hashtags h, " . $esc['mysql']['dataset'] . "_tweets t ";
+        $sql .= "WHERE h.tweet_id = t.id ";
+        $sql .= "AND " . sqlSubset();
+        $sql .= "GROUP BY h1";
+        //print $sql . "<bR>";
+        $sqlresults = mysql_query($sql);
+        while ($res = mysql_fetch_assoc($sqlresults)) {
+            $word = $res['h1'];
+            $coword->usersForWord[$word] = $res['c'];
+            $coword->distinctUsersForWord[$word] = $res['d'];
+            $coword->userDiversity[$word] = round(($res['d'] / $res['c']) * 100, 2);
+            $coword->wordFrequencyDividedByUniqueUsers[$word] = round($frequencies[$word] / $res['d'], 2);
+            $coword->wordFrequencyMultipliedByUniqueUsers[$word] = $frequencies[$word] * $res['d'];
+        }
+
+        // do the actual job
+        // get cowords
         $sql = "SELECT LOWER(A.text) AS h1, LOWER(B.text) AS h2 ";
         $sql .= "FROM " . $esc['mysql']['dataset'] . "_hashtags A, " . $esc['mysql']['dataset'] . "_hashtags B, " . $esc['mysql']['dataset'] . "_tweets t WHERE ";
         $sql .= sqlSubset() . " AND ";
@@ -37,8 +71,6 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
         $sql .= "ORDER BY h1,h2";
 
         $sqlresults = mysql_query($sql);
-        include_once('common/Coword.class.php');
-        $coword = new Coword;
         while ($res = mysql_fetch_assoc($sqlresults)) {
             $coword->addWord($res['h1'], 1);
             $coword->addWord($res['h2'], 1);
