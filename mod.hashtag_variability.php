@@ -214,6 +214,44 @@ validate_all_variables();
                                         }
                                     }
 
+                                    // get user diversity per hasthag
+                                    $sql = "SELECT LOWER(h.text) as h1, COUNT(t.from_user_id) as c, COUNT(DISTINCT(t.from_user_id)) AS d ";
+                                    if (!empty($_REQUEST['interval'])) {
+                                        if ($_REQUEST['interval'] == "weekly")
+                                            $sql .= ", DATE_FORMAT(t.created_at,'%u') datepart ";
+                                        elseif ($_REQUEST['interval'] == "monthly")
+                                            $sql .= ", DATE_FORMAT(t.created_at,'%Y-%m') datepart ";
+                                        else // default daily
+                                            $sql .= ", DATE_FORMAT(t.created_at,'%Y-%m-%d') datepart ";
+                                    } else
+                                        $sql .= ", DATE_FORMAT(t.created_at,'%Y-%m-%d') datepart "; // default daily
+                                    $sql .= "FROM " . $esc['mysql']['dataset'] . "_hashtags h, " . $esc['mysql']['dataset'] . "_tweets t ";
+                                    $sql .= "WHERE h.tweet_id = t.id ";
+                                    $sql .= "AND " . sqlSubset();
+                                    $sql .= "GROUP BY datepart, h1";
+                                    print $sql . "<br>";
+                                    $sqlresults = mysql_query($sql);
+                                    $usersForWord = $userDiversity = array();
+                                    while ($res = mysql_fetch_assoc($sqlresults)) {
+                                        $date = $res['datepart'];
+                                        if ($_REQUEST['interval'] == 'custom' && isset($_REQUEST['customInterval']))
+                                            $date = groupByInterval($res['datepart']);
+                                        $word = $res['h1'];
+                                        if (!isset($userPerWord[$date][$word]))
+                                            $usersForWord[$date][$word] = 0;
+                                        $usersForWord[$date][$word] += $res['c'];
+                                        if (!isset($distinctUsersForWord[$date][$word]))
+                                            $distinctUsersForWord[$date][$word] = 0;
+                                        $distinctUsersForWord[$date][$word] += $res['d'];
+                                    }
+                                    foreach ($distinctUsersForWord as $date => $words) {
+                                        foreach ($words as $word => $distinctUserCount) {
+                                            // (number of unique users using the hashtag) / (frequency of use)
+                                            // This'll give you a value between 0 and 1 where the closer you get to 1 the more diverse its user base is.
+                                            $userDiversity[$date][$word] = round(($distinctUserCount / $usersForWord[$date][$word]) * 100, 2);
+                                        }
+                                    }
+
                                     // get frequency (occurence) of hashtag in full selection
                                     $sql = "SELECT LOWER(A.text) AS h1, COUNT(LOWER(A.text)) AS frequency";
                                     if (!empty($_REQUEST['interval'])) {
@@ -361,6 +399,10 @@ validate_all_variables();
                                                 if (isset($_REQUEST['normalizedCowordFrequency']))
                                                     $vis_data[$date][$word]['normalizedCowordFrequency'] = $normalizedCowordFrequency[$date][$word];
                                                 $vis_data[$date][$word]['normalizedWordFrequency'] = round(($frequency_word_interval[$date][$word] / $numberOfTweets[$date]) * 100, 2);
+                                                $vis_data[$date][$word]['distinctUsersForWord'] = $distinctUsersForWord[$date][$word];
+                                                $vis_data[$date][$word]['userDiversity'] = $userDiversity[$date][$word];
+                                                $vis_data[$date][$word]['wordFrequencyDividedByUniqueUsers'] = round($frequency_word_interval[$date][$word] / $distinctUsersForWord[$date][$word], 2);
+                                                $vis_data[$date][$word]['wordFrequencyMultipliedByUniqueUsers'] = $frequency_word_interval[$date][$word] * $distinctUsersForWord[$date][$word];
                                             }
                                             // else
                                             //  print "skipping $word because {$frequency_coword_total[$word]} >= $minimumCowordFrequencyOverall<bR>";   // @todo: to take into account for normalizedCowordFrequency or not?
@@ -412,10 +454,10 @@ validate_all_variables();
                                     if (isset($_REQUEST['tableOutput'])) {
                                         print "<hr>Tip: Sort multiple columns simultaneously by holding down the shift key and clicking a second, third or even fourth column header! ";
                                         print "<table id='metrics' class='tablesorter'>";
-                                        print "<thead><tr><th>date</th><th>word</th><th>frequency</th><th>cowordFrequency</th><th>specificity</th><th>normalizedWordFrequency</th><th>normalizedCowordFrequency</th></tr></thead>";
+                                        print "<thead><tr><th>date</th><th>word</th><th>frequency</th><th>cowordFrequency</th><th>specificity</th><th>normalizedWordFrequency</th><th>normalizedCowordFrequency</th><th>usersForWord</th><th>userDiversity</th><th>wordFrequencyDividedByUniqueUsers</th><th>wordFrequencyMultipliedByUniqueUsers</th>></tr></thead>";
                                         foreach ($vis_data as $date => $words) {
                                             if (empty($words))
-                                                print "<tr><td>$date</td><td >no associations here</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>";
+                                                print "<tr><td>$date</td><td >no associations here</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>";
                                             foreach ($words as $word => $specs) {
                                                 $frequency = $specs['wordFrequency'];
                                                 $normalizedWordFrequency = $specs['normalizedWordFrequency'];
@@ -425,6 +467,10 @@ validate_all_variables();
                                                     $normalizedCowordFrequency = $specs['normalizedCowordFrequency'];
                                                 else
                                                     $normalizedCowordFrequency = "";
+                                                $userDiversity = $specs['userDiversity'];
+                                                $usersForWord = $specs['distinctUsersForWord'];
+                                                $wordFrequencyDividedByUniqueUsers = $specs['wordFrequencyDividedByUniqueUsers'];
+                                                $wordFrequencyMultipliedByUniqueUsers = $specs['wordFrequencyMultipliedByUniqueUsers'];
                                                 $highlight = "";
                                                 /* if ($specificity < 100.0 && $specificity > 70.0)
                                                   $highlight = " style='background-color:yellow'";
@@ -434,7 +480,7 @@ validate_all_variables();
                                                  */
 
                                                 if ($frequency_coword_total[$word] >= $minimumCowordFrequencyOverall && $frequency_coword >= $minimumCowordFrequencyInterval)
-                                                    print "<tr><td>$date</td><td>$word</td><td>$frequency</td><td>$frequency_coword</td><td $highlight>$specificity</td><td>$normalizedWordFrequency</td><td>$normalizedCowordFrequency</td></tr>";
+                                                    print "<tr><td>$date</td><td>$word</td><td>$frequency</td><td>$frequency_coword</td><td $highlight>$specificity</td><td>$normalizedWordFrequency</td><td>$normalizedCowordFrequency</td><td>$usersForWord</td><td>$userDiversity</td><td>$wordFrequencyDividedByUniqueUsers</td><td>$wordFrequencyMultipliedByUniqueUsers</td></tr>";
                                                 else
                                                     print "<tr><td>$date</td><td>$word</td><td colspan='3'>skipping because {$frequency_coword_total[$word]} < $minimumCowordFrequencyOverall</td></tr>";
                                             }

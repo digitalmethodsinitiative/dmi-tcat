@@ -31,6 +31,11 @@ class Coword {
     public $document_word_frequencies = array(); // holds word frequencies per document
     public $simpleTokens;
     public $countWordOncePerDocument;
+    public $usersForWord = array();
+    public $distinctUsersForWord = array();
+    public $userDiversity = array();
+    public $wordFrequencyDividedByUniqueUsers = array();
+    public $wordFrequencyMultipliedByUniqueUsers = array();
 
     function __construct() {
         $this->hashtags_are_separate_words = FALSE;
@@ -233,10 +238,12 @@ class Coword {
                 $node1 = new GexfNode($word);
                 if (isset($this->words[$word]))
                     $node1->addNodeAttribute("word_frequency", $this->words[$word], $type = "int");
+                $this->addNodeExtraNodeAttributes($node1,$word);
                 $gexf->addNode($node1);
                 $node2 = new GexfNode($coword);
                 if (isset($this->words[$coword]))
                     $node2->addNodeAttribute("word_frequency", $this->words[$coword], $type = "int");
+                $this->addNodeExtraNodeAttributes($node2,$coword);
                 $gexf->addNode($node2);
                 $edge_id = $gexf->addEdge($node1, $node2, $coword_frequency);
             }
@@ -244,6 +251,19 @@ class Coword {
 
         $gexf->render();
         return $gexf->gexfFile;
+    }
+
+    public function addNodeExtraNodeAttributes(&$node,$word) {
+        if (isset($this->usersForWord[$word]))
+            $node->addNodeAttribute("usersForWord", $this->usersForWord[$word], $type = "int");
+        if (isset($this->distinctUsersForWord[$word]))
+            $node->addNodeAttribute("distinctUsersForWord", $this->distinctUsersForWord[$word], $type = "int");
+        if (isset($this->userDiversity[$word]))
+            $node->addNodeAttribute("userDiversity", $this->userDiversity[$word], $type = "float");
+        if (isset($this->wordFrequencyDividedByUniqueUsers[$word]))
+            $node->addNodeAttribute("wordFrequencyDividedByUniqueUsers", $this->wordFrequencyDividedByUniqueUsers[$word], $type = "float");
+        if (isset($this->wordFrequencyMultipliedByUniqueUsers[$word]))
+            $node->addNodeAttribute("wordFrequencyMultipliedByUniqueUsers", $this->wordFrequencyMultipliedByUniqueUsers[$word], $type = "int");
     }
 
     public function getExtract_only_hashtags() {
