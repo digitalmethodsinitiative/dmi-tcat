@@ -59,7 +59,7 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
         $sql .= "LENGTH(A.text)>1 AND LENGTH(B.text)>1 AND ";
         $sql .= "LOWER(A.text) < LOWER(B.text) AND A.tweet_id = t.id AND A.tweet_id = B.tweet_id ";
         $sql .= "ORDER BY h1,h2";
-
+//print $sql."<br>";
         $sqlresults = mysql_query($sql);
         while ($res = mysql_fetch_assoc($sqlresults)) {
             $coword->addWord($res['h1']);
