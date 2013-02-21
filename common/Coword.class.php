@@ -31,9 +31,9 @@ class Coword {
     public $document_word_frequencies = array(); // holds word frequencies per document
     public $simpleTokens;
     public $countWordOncePerDocument;
-    public $usersForWord = array();
     public $distinctUsersForWord = array();
     public $userDiversity = array();
+    public $wordFrequency = array();
     public $wordFrequencyDividedByUniqueUsers = array();
     public $wordFrequencyMultipliedByUniqueUsers = array();
 
@@ -181,7 +181,7 @@ class Coword {
         $this->min_word_length = $min_word_length;
     }
 
-    public function addWord($word, $count) {
+    public function addWord($word, $count=0) {
         if (!isset($this->words[$word]))
             $this->words[$word] = 0;
         if ($this->countWordOncePerDocument)
@@ -238,12 +238,12 @@ class Coword {
                 $node1 = new GexfNode($word);
                 if (isset($this->words[$word]))
                     $node1->addNodeAttribute("word_frequency", $this->words[$word], $type = "int");
-                $this->addNodeExtraNodeAttributes($node1,$word);
+                $this->addNodeExtraNodeAttributes($node1, $word);
                 $gexf->addNode($node1);
                 $node2 = new GexfNode($coword);
                 if (isset($this->words[$coword]))
                     $node2->addNodeAttribute("word_frequency", $this->words[$coword], $type = "int");
-                $this->addNodeExtraNodeAttributes($node2,$coword);
+                $this->addNodeExtraNodeAttributes($node2, $coword);
                 $gexf->addNode($node2);
                 $edge_id = $gexf->addEdge($node1, $node2, $coword_frequency);
             }
@@ -253,9 +253,11 @@ class Coword {
         return $gexf->gexfFile;
     }
 
-    public function addNodeExtraNodeAttributes(&$node,$word) {
-        if (isset($this->usersForWord[$word]))
-            $node->addNodeAttribute("usersForWord", $this->usersForWord[$word], $type = "int");
+    public function addNodeExtraNodeAttributes(&$node, $word) {
+        if (isset($this->wordFrequency[$word]))
+            $node->addNodeAttribute("wordFrequency", $this->wordFrequency[$word], $type = "int");
+        if (isset($this->cowords[$word]))
+            $node->addNodeAttribute("cowordFrequency", array_sum($this->cowords[$word]), $type = "int");
         if (isset($this->distinctUsersForWord[$word]))
             $node->addNodeAttribute("distinctUsersForWord", $this->distinctUsersForWord[$word], $type = "int");
         if (isset($this->userDiversity[$word]))
