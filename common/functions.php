@@ -31,11 +31,11 @@ else
 if (isset($_GET['startdate']) && !empty($_GET['startdate']))
     $startdate = $_GET['startdate'];
 else
-    $startdate = strftime("%Y-%m-%d", date('U') - (86400*2));
+    $startdate = strftime("%Y-%m-%d", date('U') - (86400 * 2));
 if (isset($_GET['enddate']) && !empty($_GET['enddate']))
     $enddate = $_GET['enddate'];
 else
-    $enddate = strftime("%Y-%m-%d", date('U')-86400);
+    $enddate = strftime("%Y-%m-%d", date('U') - 86400);
 $u_startdate = $u_enddate = 0;
 
 if (isset($_GET['whattodo']) && !empty($_GET['whattodo']))
@@ -48,12 +48,12 @@ if (isset($_GET['keywordToTrack']) && !empty($_GET['keywordToTrack']))
 else
     $keywordToTrack = "";
 
-if (isset($_GET['minimumCowordFrequencyOverall'])) 
+if (isset($_GET['minimumCowordFrequencyOverall']))
     $minimumCowordFrequencyOverall = $_GET['minimumCowordFrequencyOverall'];
 else
     $minimumCowordFrequencyOverall = 10;
 
-if (isset($_GET['minimumCowordFrequencyOverall'])) 
+if (isset($_GET['minimumCowordFrequencyOverall']))
     $minimumCowordFrequencyInterval = $_GET['minimumCowordFrequencyInterval'];
 else
     $minimumCowordFrequencyInterval = 0;
@@ -512,18 +512,17 @@ function get_hash_tags($msg) {
 function get_all_datasets() {
 
     global $querybins; // defined in php.ini of twitter capture
-
 // include ytk imported tables as they are not in php.ini
-$tables = array();
-$select = "SHOW TABLES";
-$rec = mysql_query($select);
-while($res = mysql_fetch_row($rec)) {
-	if(preg_match("/^(ytk_.*?)_tweets$/",$res[0],$match)) {
-		$querybins[$match[1]] = $match[1];
- 	} elseif(preg_match("/(user_.*?)_tweets$/",$res[0],$match)) {
-		$querybins[$match[1]] = $match[1];
-	}
-}
+    $tables = array();
+    $select = "SHOW TABLES";
+    $rec = mysql_query($select);
+    while ($res = mysql_fetch_row($rec)) {
+        if (preg_match("/^(ytk_.*?)_tweets$/", $res[0], $match)) {
+            $querybins[$match[1]] = $match[1];
+        } elseif (preg_match("/(user_.*?)_tweets$/", $res[0], $match)) {
+            $querybins[$match[1]] = $match[1];
+        }
+    }
 
     $datasets = array();
 
