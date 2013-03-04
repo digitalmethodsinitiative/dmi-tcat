@@ -53,7 +53,7 @@ require_once './common/Gexf.class.php';
         }
 
         $gexf = new Gexf();
-        $gexf->setTitle("Co-word " . $filename);
+        $gexf->setTitle("Hashtag - user " . $filename);
         $gexf->setEdgeType(GEXF_EDGE_UNDIRECTED);
         $gexf->setCreator("tools.digitalmethods.net");
 
