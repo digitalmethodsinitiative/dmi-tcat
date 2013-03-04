@@ -145,11 +145,10 @@ if (defined('BASE_URL'))
         $data = mysql_fetch_assoc($sqlresults);
         $numtweets = $data["count"];
         //print "numtweets $numtweets<bR>";
-
 // count links
-        $sql = "SELECT count(u.id) AS count FROM " . $esc['mysql']['dataset'] . "_urls u, ".$esc['mysql']['dataset']."_tweets t WHERE u.tweet_id = t.id AND ";
+        $sql = "SELECT count(u.id) AS count FROM " . $esc['mysql']['dataset'] . "_urls u, " . $esc['mysql']['dataset'] . "_tweets t WHERE u.tweet_id = t.id AND ";
         $sql .= sqlSubset();
-	//print $sql;
+        //print $sql;
         $sqlresults = mysql_query($sql);
         $numlinktweets = 0;
         if ($sqlresults && mysql_num_rows($sqlresults) > 0) {
@@ -157,9 +156,8 @@ if (defined('BASE_URL'))
             $numlinktweets = $res['count'];
         }
         //print "numlinktweets $numlinktweets<bR>";
-
 // see whether all URLs are loaded 
-	$sql = "SELECT count(u.id) as count FROM ". $esc['mysql']['dataset'] ."_urls u, ".$esc['mysql']['dataset']."_tweets t WHERE u.tweet_id = t.id AND u.url_followed != '' AND ";
+        $sql = "SELECT count(u.id) as count FROM " . $esc['mysql']['dataset'] . "_urls u, " . $esc['mysql']['dataset'] . "_tweets t WHERE u.tweet_id = t.id AND u.url_followed != '' AND ";
         $sql .= sqlSubset();
         $show_url_export = false;
         $rec = mysql_query($sql);
@@ -169,10 +167,10 @@ if (defined('BASE_URL'))
                 $show_url_export = true;
         }
         //print "share tweets " . $res['count'] . "<bR>";
-        if(0) {
-	print $sql . "<br>";
-	print $res['count']/$numlinktweets."<br>";
-	}
+        if (0) {
+            print $sql . "<br>";
+            print $res['count'] / $numlinktweets . "<br>";
+        }
 
 // get data for the line graph
         $period = ( (strtotime($esc['datetime']['enddate']) - strtotime($esc['datetime']['startdate'])) <= 86400 * 2) ? "hour" : "day"; // @todo
@@ -209,7 +207,6 @@ if (defined('BASE_URL'))
             $linedata[$res['datepart']]["locations"] = $res['loccount'];
             $linedata[$res['datepart']]["geolocs"] = $res['geocount'];
         }
-        
         ?>
 
         <fieldset class="if_parameters">
@@ -222,7 +219,7 @@ if (defined('BASE_URL'))
 
                     <table>
                         <tr>
-                            <td class="tbl_head" valign="top">Dataset:</td><td width="450"><?php echo $datasets[$dataset]['bin'] . " (" . preg_replace("/,/",", ", $datasets[$dataset]['keywords']) . ")"; ?>
+                            <td class="tbl_head" valign="top">Dataset:</td><td width="450"><?php echo $datasets[$dataset]['bin'] . " (" . preg_replace("/,/", ", ", $datasets[$dataset]['keywords']) . ")"; ?>
 
                             </td>
                         </tr>
@@ -349,7 +346,7 @@ foreach ($linedata as $key => $value) {
                 <div class="txt_desc">Use: see wether the users mentioned are also those who tweet a lot.</div>
                 <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('user-mention'); sendUrl('index.php');return false;">launch</a></div>
 
-                <?php if ($show_url_export) { ?>
+<?php if ($show_url_export) { ?>
                     <hr />
                     <h3>Url frequency</h3>
                     <div class="txt_desc">Creates a .csv file (open in Excel or similar) that contains the frequencies of tweeted URLs, per day (date range > 2 days) or per hour (date range 2 days or smaller).</div>
@@ -361,7 +358,7 @@ foreach ($linedata as $key => $value) {
                     <div class="txt_desc">Creates a .csv file (open in Excel or similar) that contains the frequencies of tweeted domain names, per day (date range > 2 days) or per hour (date range 2 days or smaller).</div>
                     <div class="txt_desc">Use: find out which sources (media, platforms, etc.) are referenced most ofter.</div>
                     <div class="txt_link"> &raquo;  <a href="" onclick="var minf = askFrequency(); $('#whattodo').val('hosts&minf='+minf); sendUrl('index.php');return false;">launch</a></div>
-                <?php } ?>
+<?php } ?>
 
             </div>
 
@@ -409,31 +406,39 @@ foreach ($linedata as $key => $value) {
                 <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('hashtag_cooc');sendUrl('mod.hashtag_cooc.php');return false;">launch</a></div><!-- with absolute weighting of cooccurrences</a></div>-->
                 <!-- <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('hashtag_cooc&probabilityOfAssociation=1');sendUrl('mod.hashtag_cooc.php');return false;">launch with cooccurrence weight normalization</a></div> -->
                 <hr />
-                <?php if ($show_coword) { ?>
+<?php if ($show_coword) { ?>
                     <h3>Co-word analysis</h3>
                     <div class="txt_desc">Produces an <a href="http://en.wikipedia.org/wiki/Graph_%28mathematics%29#Undirected_graph">undirected graph</a> (.gdf, open in gephi) based on co-word analysis of the words found in tweets. If two words appear in the same tweet, they are linked.
                         The more often they appear together, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>").</div>
                     <div class="txt_desc">Use: explore the relations between words, find and analyze sub-issues, distinguish between different types of words.</div>
                     <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('word_cooc');sendUrl('mod.word_cooc.php');return false;">launch with absolute weighting of coorccurrences</a></div>
                     <!--        <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('word_cooc&probabilityOfAssociation=1');sendUrl('mod.word_cooc.php');return false;">launch with cooccurrence weight normalization</a></div> -->
-                <?php } ?>
-</div>
-		<h2> Experimental</h2>
-<div class='if_export_block'>
+<?php } ?>
+            </div>
+            <h2> Experimental</h2>
+            <div class='if_export_block'>
 
                 <h3>Associational profile</h3>
                 <div class="txt_desc">Produces an associational profile as well as a time-encoded co-hashtag network.</div>
                 <div class="txt_desc">Use: explore shifts in hashtags associations.</div>
                 <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('hashtag_variability');sendUrl('mod.hashtag_variability.php');return false;">launch</a></div>
-                <hr />
 
+                <hr />
                 <h3>Hashtag-user analysis</h3>
                 <div class="txt_desc">Produces a <a href="http://en.wikipedia.org/wiki/Bipartite_graph">bipartite graph</a> (.gexf, open in gephi) based on co-occurence of hashtags and users. If a user wrote a tweet with a certain hashtag, there will be a link between that user and the hashtag.
                     The more often they appear together, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>").</div>
                 <div class="txt_desc">Use: explore the relations between users and hashtags, find and analyze which users group around which topics.</div>
                 <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('hashtag_user');sendUrl('mod.hashtag_user.php');return false;">launch</a></div>
-                <hr />
-            <div style="display:none" id="whattodo" />
+
+<?php if ($show_url_export) { ?>
+                    <hr />
+                    <h3>URL hashtag co-occurence</h3>
+                    <div class="txt_desc">Creates a .csv file (open in Excel or similar) that contains URLs and the number of times they have co-occured with a particular hashtag.</div>
+                    <div class="txt_desc">Use: get a grasp of how urls are qualified.</div>
+                    <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('url_hashtags'); sendUrl('mod.url_hashtags.php');return false;">launch</a></div>
+<?php } ?>
+
+                <div style="display:none" id="whattodo" />
 
         </fieldset>
 
