@@ -346,7 +346,7 @@ foreach ($linedata as $key => $value) {
                 <div class="txt_desc">Use: see wether the users mentioned are also those who tweet a lot.</div>
                 <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('user-mention'); sendUrl('index.php');return false;">launch</a></div>
 
-<?php if ($show_url_export) { ?>
+                <?php if ($show_url_export) { ?>
                     <hr />
                     <h3>Url frequency</h3>
                     <div class="txt_desc">Creates a .csv file (open in Excel or similar) that contains the frequencies of tweeted URLs, per day (date range > 2 days) or per hour (date range 2 days or smaller).</div>
@@ -358,7 +358,7 @@ foreach ($linedata as $key => $value) {
                     <div class="txt_desc">Creates a .csv file (open in Excel or similar) that contains the frequencies of tweeted domain names, per day (date range > 2 days) or per hour (date range 2 days or smaller).</div>
                     <div class="txt_desc">Use: find out which sources (media, platforms, etc.) are referenced most ofter.</div>
                     <div class="txt_link"> &raquo;  <a href="" onclick="var minf = askFrequency(); $('#whattodo').val('hosts&minf='+minf); sendUrl('index.php');return false;">launch</a></div>
-<?php } ?>
+                <?php } ?>
 
             </div>
 
@@ -406,14 +406,14 @@ foreach ($linedata as $key => $value) {
                 <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('hashtag_cooc');sendUrl('mod.hashtag_cooc.php');return false;">launch</a></div><!-- with absolute weighting of cooccurrences</a></div>-->
                 <!-- <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('hashtag_cooc&probabilityOfAssociation=1');sendUrl('mod.hashtag_cooc.php');return false;">launch with cooccurrence weight normalization</a></div> -->
                 <hr />
-<?php if ($show_coword) { ?>
+                <?php if ($show_coword) { ?>
                     <h3>Co-word analysis</h3>
                     <div class="txt_desc">Produces an <a href="http://en.wikipedia.org/wiki/Graph_%28mathematics%29#Undirected_graph">undirected graph</a> (.gdf, open in gephi) based on co-word analysis of the words found in tweets. If two words appear in the same tweet, they are linked.
                         The more often they appear together, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>").</div>
                     <div class="txt_desc">Use: explore the relations between words, find and analyze sub-issues, distinguish between different types of words.</div>
                     <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('word_cooc');sendUrl('mod.word_cooc.php');return false;">launch with absolute weighting of coorccurrences</a></div>
                     <!--        <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('word_cooc&probabilityOfAssociation=1');sendUrl('mod.word_cooc.php');return false;">launch with cooccurrence weight normalization</a></div> -->
-<?php } ?>
+                <?php } ?>
             </div>
             <h2> Experimental</h2>
             <div class='if_export_block'>
@@ -424,21 +424,28 @@ foreach ($linedata as $key => $value) {
                 <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('hashtag_variability');sendUrl('mod.hashtag_variability.php');return false;">launch</a></div>
 
                 <hr />
-                <h3>Hashtag-user analysis</h3>
+                <h3>Hashtag-user frequency</h3>
                 <div class="txt_desc">Produces a <a href="http://en.wikipedia.org/wiki/Bipartite_graph">bipartite graph</a> (.gexf, open in gephi) based on co-occurence of hashtags and users. If a user wrote a tweet with a certain hashtag, there will be a link between that user and the hashtag.
                     The more often they appear together, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>").</div>
                 <div class="txt_desc">Use: explore the relations between users and hashtags, find and analyze which users group around which topics.</div>
                 <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('hashtag_user');sendUrl('mod.hashtag_user.php');return false;">launch</a></div>
 
-<?php if ($show_url_export) { ?>
+                <hr />
+                <h3>Hashtag-mention frequency</h3>
+                <div class="txt_desc">Produces a <a href="http://en.wikipedia.org/wiki/Bipartite_graph">bipartite graph</a> (.gexf, open in gephi) based on co-occurence of hashtags and @replies. If an @reply co-occurs in a tweet with a certain hashtag, there will be a link between that @reply and the hashtag.
+                    The more often they appear together, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>").</div>
+                <div class="txt_desc">Use: explore the relational <i>activity</i> between mentioned users and hashtags, find and analyze which users are considered experts around which topics.</div>
+                <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('mention_hashtags');sendUrl('mod.mention_hashtags.php');return false;">launch</a></div>
+
+                <?php if ($show_url_export) { ?>
                     <hr />
                     <h3>URL hashtag co-occurence</h3>
                     <div class="txt_desc">Creates a .csv file (open in Excel or similar) that contains URLs and the number of times they have co-occured with a particular hashtag.</div>
                     <div class="txt_desc">Creates a .gexf file (open in Gephi) that contains a <a href="http://en.wikipedia.org/wiki/Bipartite_graph">bipartite graph</a> (.gexf, open in gephi) based on co-occurence of URLs and hashtags. If a URL co-occurs with a certain hashtag, there will be a link between that URL and the hashtag.
-                    The more often they appear together, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>").</div>
+                        The more often they appear together, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>").</div>
                     <div class="txt_desc">Use: get a grasp of how urls are qualified.</div>
                     <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('url_hashtags'); sendUrl('mod.url_hashtags.php');return false;">launch</a></div>
-<?php } ?>
+                <?php } ?>
 
                 <div style="display:none" id="whattodo" />
 
