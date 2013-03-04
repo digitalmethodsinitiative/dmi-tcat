@@ -520,6 +520,8 @@ $rec = mysql_query($select);
 while($res = mysql_fetch_row($rec)) {
 	if(preg_match("/^(ytk_.*?)_tweets$/",$res[0],$match)) {
 		$querybins[$match[1]] = $match[1];
+ 	} elseif(preg_match("/(user_.*?)_tweets$/",$res[0],$match)) {
+		$querybins[$match[1]] = $match[1];
 	}
 }
 
