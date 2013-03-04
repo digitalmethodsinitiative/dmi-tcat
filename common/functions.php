@@ -98,7 +98,7 @@ function get_file($what) {
     $filename = get_filename($what);
 
     // if the file does not exist yet, generate it
-    if (1 || !file_exists($filename)) // @todo 1
+    // if (1 || !file_exists($filename)) // @todo 1
         generate($what, $filename);
 
     // redirect to file
