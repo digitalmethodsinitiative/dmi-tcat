@@ -424,14 +424,14 @@ foreach ($linedata as $key => $value) {
                 <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('hashtag_variability');sendUrl('mod.hashtag_variability.php');return false;">launch</a></div>
 
                 <hr />
-                <h3>Hashtag-user frequency</h3>
+                <h3>Bipartite hashtag-user graph</h3>
                 <div class="txt_desc">Produces a <a href="http://en.wikipedia.org/wiki/Bipartite_graph">bipartite graph</a> (.gexf, open in gephi) based on co-occurence of hashtags and users. If a user wrote a tweet with a certain hashtag, there will be a link between that user and the hashtag.
                     The more often they appear together, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>").</div>
                 <div class="txt_desc">Use: explore the relations between users and hashtags, find and analyze which users group around which topics.</div>
                 <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('hashtag_user');sendUrl('mod.hashtag_user.php');return false;">launch</a></div>
 
                 <hr />
-                <h3>Hashtag-mention frequency</h3>
+                <h3>Bipartite hashtag-mention graph</h3>
                 <div class="txt_desc">Produces a <a href="http://en.wikipedia.org/wiki/Bipartite_graph">bipartite graph</a> (.gexf, open in gephi) based on co-occurence of hashtags and @replies. If an @reply co-occurs in a tweet with a certain hashtag, there will be a link between that @reply and the hashtag.
                     The more often they appear together, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>").</div>
                 <div class="txt_desc">Use: explore the relational <i>activity</i> between mentioned users and hashtags, find and analyze which users are considered experts around which topics.</div>
