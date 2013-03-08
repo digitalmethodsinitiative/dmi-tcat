@@ -46,7 +46,7 @@ colorcode(_colorMetric);
 function createInterface(){
 	
 	var _ihtml = '<hr />'+
-				 'Color coding: <select onchange=\'colorcode(this.options[this.selectedIndex].value)\'>';
+				 'Color coding: <select onchange=\'colorcode(this.options[this.selectedIndex].value);generate_permalink()\' name=\'vis_colorcoding\'>';
 	
 	
 	// finding the highest bar and ordering the words in each slice by their value
@@ -94,13 +94,13 @@ function createInterface(){
 				_ihtml += '<option value="' + _metric + '" ' + _selected + '>' + _metric + '</option>';
 				_exit = true;
 			}
-			if(_exit == true) { break dance; }
+			if(_exit == true) {break dance;}
 		}
 	}
 
 	_ihtml += '</select>'+
-			  '<input type="checkbox" onchange="changeInterface(\'labels\',this.checked)" /> Show labels '+
-			  '<input type="checkbox" onchange="changeInterface(\'sorting\',this.checked)" /> Sort by size';
+			  '<input type="checkbox" onchange="changeInterface(\'labels\',this.checked);generate_permalink()" id="vis_labels"/> Show labels '+
+			  '<input type="checkbox" onchange="changeInterface(\'sorting\',this.checked);generate_permalink()"  id="vis_sorting"/> Sort by size';
 	
 	
 	$("#vis_interface").html(_ihtml);
@@ -128,7 +128,7 @@ function createCanvas() {
                                     	
 	r = Raphael(document.getElementById("visualization"), c_width + 30, c_height);
 	//r.path("M" + a(_leftspacing - 5) + " " + c_height + "L" + c_width + " " + c_height).attr({ stroke: "#000" });
-	r.path("M" + a(_leftspacing - 5) + " " + a(c_height) + "L" + a(_leftspacing - 5) + " " + a(0)).attr({ stroke: "#000" });
+	r.path("M" + a(_leftspacing - 5) + " " + a(c_height) + "L" + a(_leftspacing - 5) + " " + a(0)).attr({stroke: "#000"});
 	
 	
 	r.canvas.onclick = function() {
@@ -286,9 +286,9 @@ function block(_slice,_x,_y,_values,_label) {
     
 	this.move = function(_to) {
 		this.y = _to;
-		if(this.labelon == true) { this.label.remove(); }
+		if(this.labelon == true) {this.label.remove();}
 		this.rect.animate({y:_to},_anispeed, "<",function() {
-			if(_this.labelon == true) { _this.showLabel() }; 	
+			if(_this.labelon == true) {_this.showLabel()}; 	
 		});
 	}
                                             
