@@ -128,11 +128,11 @@ validate_all_variables();
                     <tr>
                         <td align='right'>Choose interval
                         </td><td>
-                            <input type='radio' name="interval" value="daily"<?php if (!isset($_REQUEST['interval']) || (isset($_REQUEST['interval']) && $_REQUEST['interval'] == 'daily')) print " CHECKED"; ?>>daily</input>
-                            <input type='radio' name="interval" value="weekly"<?php if (isset($_REQUEST['interval']) && $_REQUEST['interval'] == 'weekly') print " CHECKED"; ?>>weekly</input>
-                            <input type='radio' name="interval" value="monthly"<?php if (isset($_REQUEST['interval']) && $_REQUEST['interval'] == 'monthly') print " CHECKED"; ?>>monthly</input>
-                            <input type='radio' name="interval" value="custom"<?php if (isset($_REQUEST['interval']) && $_REQUEST['interval'] == 'custom') print " CHECKED"; ?>>custom:</input>
-                            <input type='text' name='customInterval' size='50' value='<?php if (isset($_REQUEST['customInterval']) && !empty($_REQUEST['customInterval'])) print $_REQUEST['customInterval']; else print "YYYY-MM-DD;YYYY-MM-DD;...;YYYY-MM-DD"; ?>'></input>
+                            <input type='radio' name="interval" value="daily"<?php if ($interval == 'daily') print " CHECKED"; ?>>daily</input>
+                            <input type='radio' name="interval" value="weekly"<?php if ($interval == 'weekly') print " CHECKED"; ?>>weekly</input>
+                            <input type='radio' name="interval" value="monthly"<?php if ($interval == 'monthly') print " CHECKED"; ?>>monthly</input>
+                            <input type='radio' name="interval" value="custom"<?php if ($interval == 'custom') print " CHECKED"; ?>>custom:</input>
+                            <input type='text' name='customInterval' size='50' value='<?php if (!empty($intervalDates)) print $_REQUEST['customInterval']; else print "YYYY-MM-DD;YYYY-MM-DD;...;YYYY-MM-DD"; ?>'></input>
                         </td>
                     </tr>
                     <tr>
@@ -166,31 +166,6 @@ validate_all_variables();
 
 
                                             <?php
-                                            // check custom interval
-                                            // @todo, should be moved to functions.php
-                                            if (isset($_REQUEST['interval']) && $_REQUEST['interval'] == 'custom' && isset($_REQUEST['customInterval'])) {
-                                                $intervalDates = explode(';', $_REQUEST['customInterval']);
-                                                $firstDate = $lastDate = false;
-                                                foreach ($intervalDates as $k => $date) {
-                                                    $date = trim($date);
-                                                    if (empty($date))
-                                                        continue;
-                                                    $intervalDates[$k] = $date;
-                                                    if (!preg_match("/^\d{4}-\d{2}-\d{2}$/", $intervalDates[$k]))
-                                                        die("<font size='+1' color='red'>custom interval not in right format</font>: YYYY-MM-DD;YYYY-MM-DD;...;YYYY-MM-DD");
-                                                    if (!$firstDate)
-                                                        $firstDate = $date;
-                                                    $lastDate = $date;
-                                                }
-
-                                                if ($firstDate != $startdate)
-                                                    die("<font size='+1' color='red'>custom interval should have the same start date as the selection</font>");
-                                                if ($lastDate > $enddate)
-                                                    die("<font size='+1' color='red'>custom interval should have the same end date as the selection</font>");
-
-                                                array_pop($intervalDates);  // we'll not be using the last date for grouping
-                                            }
-
                                             $cowordTimeSeries = false;
                                             if (!empty($_REQUEST['timeseriesGexf']) || isset($_REQUEST['cohashtagVariability']))
                                                 $cowordTimeSeries = true;
@@ -215,7 +190,7 @@ validate_all_variables();
                                                     $word = $res['h1'];
                                                     $coword = $res['h2'];
 
-                                                    if ($_REQUEST['interval'] == 'custom' && isset($_REQUEST['customInterval'])) {
+                                                    if (!empty($intervalDates)) {
                                                         if ($date !== groupByInterval($res['datepart'])) {
                                                             $date = groupByInterval($res['datepart']);
                                                             if ($cowordTimeSeries)
@@ -267,7 +242,7 @@ validate_all_variables();
                                                 $usersForWord = $userDiversity = $distinctUsersForWord = array();
                                                 while ($res = mysql_fetch_assoc($sqlresults)) {
                                                     $date = $res['datepart'];
-                                                    if ($_REQUEST['interval'] == 'custom' && isset($_REQUEST['customInterval']))
+                                                    if (!empty($intervalDates))
                                                         $date = groupByInterval($res['datepart']);
                                                     $word = $res['h1'];
                                                     if (!isset($usersForWord[$date][$word]))
@@ -287,10 +262,11 @@ validate_all_variables();
 
                                                 // get frequency (occurence) of hashtag in full selection
                                                 $sql = "SELECT LOWER(A.text) AS h1, COUNT(LOWER(A.text)) AS frequency";
-                                                if (!empty($_REQUEST['interval'])) {
-                                                    if ($_REQUEST['interval'] == "weekly")
+                                                if ($interval!==false) {
+                                                    // @todo: hourly, yearly, overall
+                                                    if ($interval == "weekly")
                                                         $sql .= ", DATE_FORMAT(t.created_at,'%u') datepart ";
-                                                    elseif ($_REQUEST['interval'] == "monthly")
+                                                    elseif ($interval == "monthly")
                                                         $sql .= ", DATE_FORMAT(t.created_at,'%Y-%m') datepart ";
                                                     else
                                                         $sql .= ", DATE_FORMAT(t.created_at,'%Y-%m-%d') datepart "; // default daily
@@ -307,7 +283,7 @@ validate_all_variables();
 
                                                 while ($res = mysql_fetch_assoc($sqlresults)) {
                                                     $date = $res['datepart'];
-                                                    if ($_REQUEST['interval'] == 'custom' && isset($_REQUEST['customInterval']))
+                                                    if (!empty($intervalDates))
                                                         $date = groupByInterval($res['datepart']);
                                                     $word = $res['h1'];
                                                     if (!isset($frequency_word_interval[$date][$word]))
@@ -329,7 +305,7 @@ validate_all_variables();
                                                 $sqlresults = mysql_query($sql);
                                                 while ($res = mysql_fetch_assoc($sqlresults)) {
                                                     $date = $res['datepart'];
-                                                    if ($_REQUEST['interval'] == 'custom' && isset($_REQUEST['customInterval']))
+                                                    if (!empty($intervalDates))
                                                         $date = groupByInterval($res['datepart']);
                                                     $numberOfTweets[$date] = $res['numberOfTweets'];
                                                 }
@@ -356,7 +332,7 @@ validate_all_variables();
                                                             $word = $res['h1'];
                                                         $cowordFrequency = $res['frequency'];
                                                         $date = $res['datepart'];
-                                                        if ($_REQUEST['interval'] == 'custom' && isset($_REQUEST['customInterval']))
+                                                        if (!empty($intervalDates))
                                                             $date = groupByInterval($res['datepart']);
                                                         if (!isset($normalizedCowordFrequency[$date][$word]))
                                                             $normalizedCowordFrequency[$date][$word] = 0;
@@ -386,7 +362,7 @@ validate_all_variables();
                                                 $sqlresults = mysql_query($sql);
                                                 while ($res = mysql_fetch_assoc($sqlresults)) {
                                                     $date = $res['datepart'];
-                                                    if ($_REQUEST['interval'] == 'custom' && isset($_REQUEST['customInterval']))
+                                                    if (!empty($intervalDates))
                                                         $date = groupByInterval($res['datepart']);
                                                     $vis_data[$date] = array();
                                                 }
@@ -807,29 +783,5 @@ validate_all_variables();
                                                             // make GEXF time series
                                                             $gexf = $cw->gexfTimeSeries(str_replace($resultsdir, "", $filename), $word_frequencies);
                                                             file_put_contents($filename, $gexf);
-                                                        }
-
-                                                        function sqlInterval() {
-                                                            $sql = "";
-                                                            if (!empty($_REQUEST['interval'])) {
-                                                                if ($_REQUEST['interval'] == "weekly")
-                                                                    $sql .= "DATE_FORMAT(t.created_at,'%u') datepart ";
-                                                                elseif ($_REQUEST['interval'] == "monthly")
-                                                                    $sql .= "DATE_FORMAT(t.created_at,'%Y-%m') datepart ";
-                                                                else
-                                                                    $sql .= "DATE_FORMAT(t.created_at,'%Y-%m-%d') datepart "; // default daily
-                                                            } else
-                                                                $sql .= "DATE_FORMAT(t.created_at,'%Y-%m-%d') datepart "; // default daily
-                                                            return $sql;
-                                                        }
-
-                                                        function groupByInterval($date) {
-                                                            global $intervalDates;
-                                                            $returnDate = false;
-                                                            foreach ($intervalDates as $intervalDate) {
-                                                                if ($date >= $intervalDate)
-                                                                    $returnDate = $intervalDate;
-                                                            }
-                                                            return $returnDate;
                                                         }
                                                         ?>
