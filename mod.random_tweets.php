@@ -59,7 +59,7 @@ require_once './common/functions.php';
 
             if (1 || !file_exists($filename)) {
 
-                $header = "time,created_at,from_user_name,text,source,location,lat,lng,hashtags,urls\n";
+                $header = "time,created_at,from_user_name,from_user_lang,text,source,location,lat,lng,hashtags,urls\n";
 
                 $sql = "SELECT * FROM " . $esc['mysql']['dataset'] . "_tweets t WHERE ";
                 $sql .= sqlSubset();
@@ -68,7 +68,7 @@ require_once './common/functions.php';
                 $sqlresults = mysql_query($sql);
                 $content = array();
                 while ($data = mysql_fetch_assoc($sqlresults)) {
-                    $content[$data['id']] = strtotime($data["created_at"]) . "," . $data["created_at"] . "," . $data["from_user_name"] . "," . validate($data["text"], "tweet") . ",\"" . strip_tags(html_entity_decode($data["source"])) . "\",\"" . preg_replace("/[\r\t\n,]/"," ",trim(strip_tags(html_entity_decode($data["location"])))) . "\"," . $data['geo_lat'] . "," . $data['geo_lng'];
+                    $content[$data['id']] = strtotime($data["created_at"]) . "," . $data["created_at"] . "," . $data["from_user_name"] . "," . $data['from_user_lang'].",".validate($data["text"], "tweet") . ",\"" . strip_tags(html_entity_decode($data["source"])) . "\",\"" . preg_replace("/[\r\t\n,]/"," ",trim(strip_tags(html_entity_decode($data["location"])))) . "\"," . $data['geo_lat'] . "," . $data['geo_lng'];
                 }
 
                 // get hashtags

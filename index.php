@@ -70,6 +70,15 @@ if (defined('BASE_URL'))
         var minf = prompt("Specify the minimum frequency for data to be included in the export:","2");
         return minf;
     }
+    
+    function getInterval() {
+        var selected = $('[name="interval"]:checked');
+        var selectedValue = "";
+        if (selected.length > 0)
+            selectedValue = selected.val();
+        var inter = "&interval="+selectedValue+"&customInterval="+$('[name="customInterval"]').val();
+        return inter;
+    }
 	
         </script>
 
@@ -180,7 +189,7 @@ if (defined('BASE_URL'))
 
         $sql = "SELECT COUNT(text) as count, COUNT(DISTINCT from_user_name) as usercount, COUNT(DISTINCT location) as loccount, COUNT(DISTINCT geo_lat) as geocount, ";
         if ($period == "day")
-            $sql .= "DATE_FORMAT(t.created_at,'%d.%m') datepart ";
+            $sql .= "DATE_FORMAT(t.created_at,'%Y.%d.%m') datepart ";
         else
             $sql .= "DATE_FORMAT(t.created_at,'%d. %H:00h') datepart ";
         $sql .= "FROM " . $esc['mysql']['dataset'] . "_tweets t WHERE ";
@@ -192,7 +201,7 @@ if (defined('BASE_URL'))
         while ($curdate < strtotime($esc['datetime']['enddate'])) {
             $thendate = ($period == "day") ? $curdate + 86400 : $curdate + 3600;
 
-            $tmp = ($period == "day") ? strftime("%d.%m", $curdate) : strftime("%d. %H:%M", $curdate) . "h";
+            $tmp = ($period == "day") ? strftime("%Y.%d.%m", $curdate) : strftime("%d. %H:%M", $curdate) . "h";
             $linedata[$tmp] = array();
             $linedata[$tmp]["tweets"] = 0;
             $linedata[$tmp]["users"] = 0;
@@ -330,42 +339,62 @@ foreach ($linedata as $key => $value) {
 
             <div class="if_export_block">
 
+                <div class='txt_desc' style='background-color: #eee; padding: 5px;'>Select how the frequencies should be calculated:
+                    <form>
+                        <input type='radio' name="interval" value="overall"<?php if ($interval == 'overall') print " CHECKED"; ?>>overall</input>
+                        <input type='radio' name="interval" value="hourly"<?php if ($interval == 'hourly') print " CHECKED"; ?>>per hour</input>
+                        <input type='radio' name="interval" value="daily"<?php if ($interval == 'daily') print " CHECKED"; ?>>per day</input>
+                        <input type='radio' name="interval" value="weekly"<?php if ($interval == 'weekly') print " CHECKED"; ?>>per week</input>
+                        <input type='radio' name="interval" value="monthly"<?php if ($interval == 'monthly') print " CHECKED"; ?>>per month</input>
+                        <input type='radio' name="interval" value="yearly"<?php if ($interval == 'yearly') print " CHECKED"; ?>>per year</input>
+                        <input type='radio' name="interval" value="custom"<?php if ($interval == 'custom') print " CHECKED"; ?>>custom:</input>
+                        <input type='text' name='customInterval' size='50' value='<?php if (!empty($intervalDates)) print $_REQUEST['customInterval']; else print "YYYY-MM-DD;YYYY-MM-DD;...;YYYY-MM-DD"; ?>'></input>
+                    </form>
+                </div>
+
                 <h3>Hashtag frequency</h3>
-                <div class="txt_desc">Creates a .csv file (open in Excel or similar) that contains hashtag (#hashtag) frequencies, per day (date range > 2 days) or per hour (date range 2 days or smaller).</div>
+                <div class="txt_desc">Creates a .csv file (open in Excel or similar) that contains hashtag (#hashtag) frequencies.</div>
                 <div class="txt_desc">Use: find out which hashtags are most often associated with your subject.</div>
-                <div class="txt_link"> &raquo;  <a href="index.php?" onclick="var minf = askFrequency(); $('#whattodo').val('hashtag&minf='+minf); sendUrl('index.php');return false;">launch</a></div>
+                <div class="txt_link"> &raquo;  <a href="index.php?" onclick="var minf = askFrequency(); $('#whattodo').val('hashtag&minf='+minf+getInterval()); sendUrl('index.php');return false;">launch</a></div>
 
                 <hr />
                 <h3>User mention frequency</h3>
-                <div class="txt_desc">Creates a .csv file (open in Excel or similar) that lists usernames and the number of times they were mentioned by others, per day (date range > 2 days) or per hour (date range 2 days or smaller).</div>
+                <div class="txt_desc">Creates a .csv file (open in Excel or similar) that lists usernames and the number of times they were mentioned by others.</div>
                 <div class="txt_desc">Use: find out which users are "influentials".</div>
-                <div class="txt_link"> &raquo;  <a href="" onclick="var minf = askFrequency(); $('#whattodo').val('mention&minf='+minf); sendUrl('index.php');return false;">launch</a></div>
+                <div class="txt_link"> &raquo;  <a href="" onclick="var minf = askFrequency(); $('#whattodo').val('mention&minf='+minf+getInterval()); sendUrl('index.php');return false;">launch</a></div>
 
                 <hr />
                 <h3>User tweet frequency</h3>
-                <div class="txt_desc">Creates a .csv file (open in Excel or similar) that lists usernames and how many tweets they posted, per day (date range > 2 days) or per hour (date range 2 days or smaller).</div>
+                <div class="txt_desc">Creates a .csv file (open in Excel or similar) that lists usernames and how many tweets they posted.</div>
                 <div class="txt_desc">Use: find the most active tweeters, see if the dataset is dominated by certain twitterati.</div>
-                <div class="txt_link"> &raquo;  <a href="" onclick="var minf = askFrequency(); $('#whattodo').val('user&minf='+minf); sendUrl('index.php');return false;">launch</a></div>
+                <div class="txt_link"> &raquo;  <a href="" onclick="var minf = askFrequency(); $('#whattodo').val('user&minf='+minf+getInterval()); sendUrl('index.php');return false;">launch</a></div>
 
                 <hr />
                 <h3>User tweet+mention frequency</h3>
-                <div class="txt_desc">Creates a .csv file (open in Excel or similar) that lists usernames and both tweet and mention frequencies, per day (date range > 2 days) or per hour (date range 2 days or smaller).</div>
+                <div class="txt_desc">Creates a .csv file (open in Excel or similar) that lists usernames and both tweet and mention frequencies.</div>
                 <div class="txt_desc">Use: see wether the users mentioned are also those who tweet a lot.</div>
-                <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('user-mention'); sendUrl('index.php');return false;">launch</a></div>
+                <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('user-mention'+getInterval()); sendUrl('index.php');return false;">launch</a></div>
 
                 <?php if ($show_url_export) { ?>
                     <hr />
                     <h3>Url frequency</h3>
-                    <div class="txt_desc">Creates a .csv file (open in Excel or similar) that contains the frequencies of tweeted URLs, per day (date range > 2 days) or per hour (date range 2 days or smaller).</div>
+                    <div class="txt_desc">Creates a .csv file (open in Excel or similar) that contains the frequencies of tweeted URLs.</div>
                     <div class="txt_desc">Use: find out which contents (articles, videos, etc.) are referenced most often.</div>
-                    <div class="txt_link"> &raquo;  <a href="" onclick="var minf = askFrequency(); $('#whattodo').val('urls&minf='+minf); sendUrl('index.php');return false;">launch</a></div>
+                    <div class="txt_link"> &raquo;  <a href="" onclick="var minf = askFrequency(); $('#whattodo').val('urls&minf='+minf+getInterval()); sendUrl('index.php');return false;">launch</a></div>
 
                     <hr />
                     <h3>Host name frequency</h3>
-                    <div class="txt_desc">Creates a .csv file (open in Excel or similar) that contains the frequencies of tweeted domain names, per day (date range > 2 days) or per hour (date range 2 days or smaller).</div>
+                    <div class="txt_desc">Creates a .csv file (open in Excel or similar) that contains the frequencies of tweeted domain names.</div>
                     <div class="txt_desc">Use: find out which sources (media, platforms, etc.) are referenced most ofter.</div>
-                    <div class="txt_link"> &raquo;  <a href="" onclick="var minf = askFrequency(); $('#whattodo').val('hosts&minf='+minf); sendUrl('index.php');return false;">launch</a></div>
+                    <div class="txt_link"> &raquo;  <a href="" onclick="var minf = askFrequency(); $('#whattodo').val('hosts&minf='+minf+getInterval()); sendUrl('index.php');return false;">launch</a></div>
                 <?php } ?>
+
+                <hr/>
+                <h3>Identical tweet frequency</h3>
+                <div class="txt_desc">Creates a .csv file (open in Excel or similar) that contains tweets and the number of times they have been retweeted indentically, per day (date range > 2 days) or per hour (date range 2 days or smaller).</div>
+                <div class="txt_desc">Use: get a grasp of the most "popular" content.</div>
+                <div class="txt_link"> &raquo;  <a href="" onclick="var minf = askFrequency(); $('#whattodo').val('retweet&minf='+minf+getInterval()); sendUrl('index.php');return false;">launch</a></div>
+
 
             </div>
 
@@ -374,12 +403,6 @@ foreach ($linedata as $key => $value) {
 
             <div class="if_export_block">
 
-                <h3>Identical tweet frequency</h3>
-                <div class="txt_desc">Creates a .csv file (open in Excel or similar) that contains tweets and the number of times they have been retweeted indentically, per day (date range > 2 days) or per hour (date range 2 days or smaller).</div>
-                <div class="txt_desc">Use: get a grasp of the most "popular" content.</div>
-                <div class="txt_link"> &raquo;  <a href="" onclick="var minf = askFrequency(); $('#whattodo').val('retweet&minf='+minf); sendUrl('index.php');return false;">launch</a></div>
-
-                <hr />
                 <h3>Random set of tweets</h3>
                 <div class="txt_desc">Creates a .csv file (open in Excel or similar) that contains a specified number of randomly selected tweets and information about them (user, date created, ...).</div>
                 <div class="txt_desc">Use: a random subset of tweets is a representative sample that can be manually classified and coded much more easily than the full set.</div>

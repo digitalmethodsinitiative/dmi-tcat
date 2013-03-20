@@ -63,10 +63,40 @@ if (isset($_GET['showvis']) && !empty($_GET['showvis']))
 else
     $showvis = "";
 
+$interval = "daily";
+if (isset($_REQUEST['interval'])) {
+    if (in_array($_REQUEST['interval'], array('hourly', 'daily', 'weekly', 'monthly', 'yearly', 'overall', 'custom')))
+        $interval = $_REQUEST['interval'];
+}
+// check custom interval
+$intervalDates = array();
+if ($interval == "custom" && isset($_REQUEST['customInterval'])) {
+    $intervalDates = explode(';', $_REQUEST['customInterval']);
+    $firstDate = $lastDate = false;
+    foreach ($intervalDates as $k => $date) {
+        $date = trim($date);
+        if (empty($date))
+            continue;
+        $intervalDates[$k] = $date;
+        if (!preg_match("/^\d{4}-\d{2}-\d{2}$/", $intervalDates[$k]))
+            die("<font size='+1' color='red'>custom interval not in right format</font>: YYYY-MM-DD;YYYY-MM-DD;...;YYYY-MM-DD");
+        if (!$firstDate)
+            $firstDate = $date;
+        $lastDate = $date;
+    }
+
+    if ($firstDate != $startdate)
+        die("<font size='+1' color='red'>custom interval should have the same start date as the selection</font>");
+    if ($lastDate > $enddate)
+        die("<font size='+1' color='red'>custom interval should have the same end date as the selection</font>");
+
+    array_pop($intervalDates);  // we'll not be using the last date for grouping
+}
+
+
 $keywords = array();
 $esc = array();
 
-// TODO, include switch for database
 // define punctuation symbols
 $punctuation = array("\s", "\.", ",", "!", "\?", ":", ";", "\/", "\\", "#", "@", "&", "\^", "\$", "\|", "`", "~", "=", "\+", "\*", "\"", "'", "\(", "\)", "\]", "\[", "\{", "\}", "<", ">", "�");
 
@@ -97,9 +127,7 @@ function get_file($what) {
     global $database;
     $filename = get_filename($what);
 
-    // if the file does not exist yet, generate it
-    // if (1 || !file_exists($filename)) // @todo 1
-        generate($what, $filename);
+    generate($what, $filename);
 
     // redirect to file
     $location = str_replace("index.php", "", BASE_URL) . str_replace("#", "%23", $filename);
@@ -114,19 +142,25 @@ function get_file($what) {
  * @var $table specifies table name
  */
 
-function frequencyTable($table, $toget, $sql_interval) {
-    global $esc;
+function frequencyTable($table, $toget) {
+    global $esc, $intervalDates;
     $results = array();
     $sql = "SELECT COUNT($table.$toget) AS count, $table.$toget AS toget, ";
-    $sql .= $sql_interval;
+    $sql .= sqlInterval();
     $sql .= "FROM " . $esc['mysql']['dataset'] . "_$table $table, " . $esc['mysql']['dataset'] . "_tweets t ";
     $sql .= "WHERE t.id = $table.tweet_id AND ";
     $sql .= sqlSubset();
     $sql .= " GROUP BY toget, datepart ORDER BY datepart ASC, count DESC";
     $rec = mysql_query($sql);
+    $date = false;
     while ($res = mysql_fetch_assoc($rec)) {
-        if ($res['count'] > $esc['shell']['minf'])
-            $results[$res['datepart']][$res['toget']] = $res['count'];
+        if ($res['count'] > $esc['shell']['minf']) {
+            if (!empty($intervalDates))
+                $date = groupByInterval($res['datepart']);
+            else
+                $date = $res['datepart'];
+            $results[$date][$res['toget']] = $res['count'];
+        }
     }
     return $results;
 }
@@ -194,9 +228,44 @@ function sqlSubset($table = "t", $period = FALSE) {
     return $sql;
 }
 
+// define intervals for the data selection
+function sqlInterval() {
+    global $interval;
+    switch ($interval) {
+        case "hourly":
+            return "DATE_FORMAT(t.created_at,'%Y-%m-%d %Hh') datepart ";
+            break;
+        case "weekly":
+            return "DATE_FORMAT(t.created_at,'%Y %u') datepart ";
+            break;
+        case "monthly":
+            return "DATE_FORMAT(t.created_at,'%Y-%m') datepart ";
+            break;
+        case "yearly":
+            return "DATE_FORMAT(t.created_at,'%Y') datepart ";
+            break;
+        case "overall":
+            return "DATE_FORMAT(t.created_at,'overall') datepart ";
+            break;
+        default:
+            return "DATE_FORMAT(t.created_at,'%Y-%m-%d') datepart "; // default daily (also used for custom)
+    }
+}
+
+// used for custom and 'overall' intervals
+function groupByInterval($date) {
+    global $intervalDates;
+    $returnDate = false;
+    foreach ($intervalDates as $intervalDate) {
+        if ($date >= $intervalDate)
+            $returnDate = $intervalDate;
+    }
+    return $returnDate;
+}
+
 // generates the datafiles, only used if the file does not exist yet
 function generate($what, $filename) {
-    global $tsv, $network, $esc, $titles, $database;
+    global $tsv, $network, $esc, $titles, $database, $interval;
 
     // initialize variables
     $tweets = $times = $from_user_names = $results = $urls = $urls_expanded = $hosts = $hashtags = array();
@@ -208,25 +277,16 @@ function generate($what, $filename) {
     //print $sql . "<bR>";
     $rec = mysql_query($sql);
     $res = mysql_fetch_assoc($rec);
-    // determine whether we should display intervals as days or hours
-    if (strtotime($res['max']) - strtotime($res['min']) < 86400 * 2) { // if smaller than 2 days we'll do hours
-        $interval = "hours";
-        $sql_interval = "DATE_FORMAT(t.created_at,'%Y-%m-%d %Hh') datepart ";
-    } else {
-        $interval = "days";
-        $sql_interval = "DATE_FORMAT(t.created_at,'%Y-%m-%d') datepart ";
-    }
-
 
     // get frequencies
     if ($what == "hashtag") {
-        $results = frequencyTable("hashtags", "text", $sql_interval);
+        $results = frequencyTable("hashtags", "text");
     } elseif ($what == "urls") {
-        $results = frequencyTable("urls", "url_followed", $sql_interval);
+        $results = frequencyTable("urls", "url_followed");
     } elseif ($what == "hosts") {
-        $results = frequencyTable("urls", "domain", $sql_interval);
+        $results = frequencyTable("urls", "domain");
     } elseif ($what == "mention") {
-        $results = frequencyTable("mentions", "to_user", $sql_interval);
+        $results = frequencyTable("mentions", "to_user");
         // get other things        
     } else {
         // @todo, this could also use database grouping
@@ -250,12 +310,28 @@ function generate($what, $filename) {
         foreach ($tweets as $key => $tweet) {
             $time = $times[$key];
 
-            if ($interval == "days")
-                $group = time_to_day($time);
-            elseif ($interval == "hours")
-                $group = time_to_hour($time);
-            elseif ($interval == "months")
-                $group = time_to_month($time);
+            switch ($interval) {
+                case "hourly":
+                    $group = strftime("%Y-%m-%d %Hh", strtotime($time));
+                    break;
+                case "weekly":
+                    $group = strftime("%Y-%m-%d %u", strtotime($time));
+                    break;
+                case "monthly":
+                    $group = strftime("%Y-%m", strtotime($time));
+                    break;
+                case "yearly":
+                    $group = strftime("%Y-%m", strtotime($time));
+                    break;
+                case "overall":
+                    $group = "overall";
+                    break;
+                case "custom":
+                    $group = groupByInterval(strftime("%Y-%m-%d", strtotime($time)));
+                    break;
+                default:
+                    $group = strftime("%Y-%m-%d", strtotime($time)); // default daily
+            }
 
             switch ($what) {
                 //case "hashtag":
@@ -385,26 +461,11 @@ function generate($what, $filename) {
     file_put_contents($filename, chr(239) . chr(187) . chr(191) . $file);   // write BOM
 }
 
-// formats time as days
-function time_to_day($time) {
-    return strftime("%Y-%m-%d", strtotime($time));
-}
-
-// formats time as hours
-function time_to_hour($time) {
-    return strftime("%Y-%m-%d %H" . "h", strtotime($time));
-}
-
-// formats time as months
-function time_to_month($time) {
-    return strftime("%Y-%m-%d", strtotime($time));
-}
-
 // constructs the filename and validates the variables
 function get_filename($what) {
-    global $resultsdir, $esc;
+    global $resultsdir, $esc,$interval;
     $exc = (empty($esc['shell']["exclude"])) ? "" : "-" . $esc['shell']["exclude"];
-    return $resultsdir . str_replace(" ", "_", $esc['shell']['datasetname']) . "_" . str_replace(" ", "-", $esc['shell']["query"]) . $exc . "_" . $esc['date']["startdate"] . "_" . $esc['date']["enddate"] . "_" . $esc['shell']["from_user_name"] . "_" . $what . "_min" . $esc['shell']['minf'] . ".csv";
+    return $resultsdir . str_replace(" ", "_", $esc['shell']['datasetname']) . "_" . str_replace(" ", "-", $esc['shell']["query"]) . $exc . "_" . $esc['date']["startdate"] . "_" . $esc['date']["enddate"] . "_" . $esc['shell']["from_user_name"] . "_" . $what . "_min" . $esc['shell']['minf'] . "_groupedBy".ucwords($interval).".csv";
 }
 
 // does some cleanup of data types
@@ -512,7 +573,7 @@ function get_hash_tags($msg) {
 // @todo add groups in select form
 function get_all_datasets() {
 
-    global $querybins,$queryarchives; // defined in php.ini of twitter capture
+    global $querybins, $queryarchives; // defined in php.ini of twitter capture
 // include ytk imported tables as they are not in php.ini
     $tables = array();
     $select = "SHOW TABLES";
@@ -545,7 +606,7 @@ function get_all_datasets() {
             $datasets[$bin] = $row;
         }
     }
-    foreach($queryarchives as $bin => $keywords) {
+    foreach ($queryarchives as $bin => $keywords) {
         // get nr of results per table
         $sql2 = "SELECT count(id) AS notweets,MIN(created_at) AS min,MAX(created_at) AS max  FROM " . $bin . "_tweets";
         $rec2 = mysql_query($sql2);
@@ -570,10 +631,10 @@ function get_total_nr_of_tweets() {
     $count = 0;
     while ($res = mysql_fetch_row($rec)) {
         if (preg_match("/_tweets$/", $res[0], $match)) {
-                $sql = "SELECT COUNT(id) FROM ".$res[0];
-                $rec2 = mysql_query($sql);
-                $res2 = mysql_fetch_row($rec2);
-                $count += $res2[0];
+            $sql = "SELECT COUNT(id) FROM " . $res[0];
+            $rec2 = mysql_query($sql);
+            $res2 = mysql_fetch_row($rec2);
+            $count += $res2[0];
         }
     }
     return $count;
