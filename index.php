@@ -97,7 +97,9 @@ if (defined('BASE_URL'))
                     echo '<option value="' . $key . '" ' . $v . '>' . $set["bin"] . ' --- ' . $set["notweets"] . ' tweets from ' . $set['mintime'] . ' to ' . $set['maxtime'] . '</option>';
                 }
 
-                echo "</select>";
+                echo "</select> ";
+                $count = get_total_nr_of_tweets();
+                print "<table style='float:right'><tr><td>" . number_format($count, 0, ",", ".") . " tweets archived so far (and counting)</td></tr></table>";
                 ?>
 
                 <h3>Select parameters:</h3>
@@ -105,15 +107,15 @@ if (defined('BASE_URL'))
                 <table>
 
                     <tr>
-                        <td class="tbl_head">Query: </td><td><input type="text" id="ipt_query" name="query" value="<?php echo $query; ?>" /> (empty: containing any text)</td>
+                        <td class="tbl_head">Query: </td><td><input type="text" id="ipt_query" name="query" value="<?php echo $query; ?>" /> (empty: containing any text*)</td>
                     </tr>
 
                     <tr>
-                        <td class="tbl_head">Exclude: </td><td><input type="text" id="ipt_exclude" name="exclude"  value="<?php echo $exclude; ?>" /> (empty: exclude nothing)</td>
+                        <td class="tbl_head">Exclude: </td><td><input type="text" id="ipt_exclude" name="exclude"  value="<?php echo $exclude; ?>" /> (empty: exclude nothing*)</td>
                     </tr>
 
                     <tr>
-                        <td class="tbl_head">From user: </td><td><input type="text" id="ipt_from_user" name="from_user_name"  value="<?php echo $from_user_name; ?>" /> (empty: from any user)</td>
+                        <td class="tbl_head">From user: </td><td><input type="text" id="ipt_from_user" name="from_user_name"  value="<?php echo $from_user_name; ?>" /> (empty: from any user*)</td>
                     </tr>
 
                     <tr>
@@ -127,11 +129,10 @@ if (defined('BASE_URL'))
                     <tr>
                         <td><input type="button" onclick="sendUrl()" value="update overview" /></td>
                     </tr>
-
+                    <tr><td colspan='2'>*  You can also do AND <b>or</b> OR queries, although you cannot mix AND and OR in the same query.</td></tr>
                 </table>
 
             </form>
-
         </fieldset>
 
         <?php
@@ -163,7 +164,7 @@ if (defined('BASE_URL'))
         $rec = mysql_query($sql);
         if ($rec && mysql_num_rows($rec) > 0) {
             $res = mysql_fetch_assoc($rec);
-            if ($res['count'] / $numlinktweets > 0.9)
+            if ($numlinktweets !== 0 && $res['count'] / $numlinktweets > 0.9)
                 $show_url_export = true;
         }
         //print "share tweets " . $res['count'] . "<bR>";
@@ -207,6 +208,12 @@ if (defined('BASE_URL'))
             $linedata[$res['datepart']]["locations"] = $res['loccount'];
             $linedata[$res['datepart']]["geolocs"] = $res['geocount'];
         }
+
+        // see whether the relations table exists
+        $show_relations_export = FALSE;
+        $sql = "SHOW TABLES LIKE '" . $esc['mysql']['dataset'] . "_relations'";
+        if (mysql_num_rows(mysql_query($sql)) == 1)
+            $show_relations_export = TRUE;
         ?>
 
         <fieldset class="if_parameters">
@@ -439,7 +446,7 @@ foreach ($linedata as $key => $value) {
 
                 <?php if ($show_url_export) { ?>
                     <hr />
-                    <h3>URL hashtag co-occurence</h3>
+                    <h3>Bipartite hashtag-URL graph</h3>
                     <div class="txt_desc">Creates a .csv file (open in Excel or similar) that contains URLs and the number of times they have co-occured with a particular hashtag.</div>
                     <div class="txt_desc">Creates a .gexf file (open in Gephi) that contains a <a href="http://en.wikipedia.org/wiki/Bipartite_graph">bipartite graph</a> (.gexf, open in gephi) based on co-occurence of URLs and hashtags. If a URL co-occurs with a certain hashtag, there will be a link between that URL and the hashtag.
                         The more often they appear together, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>").</div>
@@ -447,10 +454,18 @@ foreach ($linedata as $key => $value) {
                     <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('url_hashtags'); sendUrl('mod.url_hashtags.php');return false;">launch</a></div>
                 <?php } ?>
 
-                <div style="display:none" id="whattodo" />
+                <?php if ($show_relations_export) { ?>
+                    <hr />
+                    <h3>Follower graph</h3>
+                    <div class="txt_desc">Produces a <a href="http://en.wikipedia.org/wiki/Directed_graph">directed graph</a> (.gexf, open in gephi) based on follower (friend) relations between users. If a user is friends with another one, a directed link is created.
+                        <div class="txt_desc">Use: explore the follower network of a set of users, find shared followees.</div>
+                        <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('relations'); sendUrl('mod.relations.php');return false;">launch</a></div>
+                    <?php } ?>
 
-        </fieldset>
+                    <div style="display:none" id="whattodo" />
+
+                    </fieldset>
 
 
-    </body>
-</html>
+                    </body>
+                    </html>
