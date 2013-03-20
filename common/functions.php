@@ -140,51 +140,51 @@ function sqlSubset($table = "t", $period = FALSE) {
         if (strstr($esc['mysql']['from_user_name'], "AND") !== false) {
             $subqueries = explode(" AND ", $esc['mysql']['from_user_name']);
             foreach ($subqueries as $subquery) {
-                $sql .= "$table.from_user_name LIKE '%" . $subquery . "%' AND ";
+                $sql .= "LOWER($table.from_user_name) LIKE '%" . $subquery . "%' AND ";
             }
         } elseif (strstr($esc['mysql']['from_user_name'], "OR") !== false) {
             $subqueries = explode(" OR ", $esc['mysql']['from_user_name']);
             $sql .= "(";
             foreach ($subqueries as $subquery) {
-                $sql .= "$table.from_user_name LIKE '%" . $subquery . "%' OR ";
+                $sql .= "LOWER($table.from_user_name) LIKE '%" . $subquery . "%' OR ";
             }
             $sql = substr($sql, 0, -3) . ") AND ";
         } else {
-            $sql .= "$table.from_user_name LIKE '%" . $esc['mysql']['from_user_name'] . "%' AND ";
+            $sql .= "LOWER($table.from_user_name) LIKE '%" . $esc['mysql']['from_user_name'] . "%' AND ";
         }
     }
     if (!empty($esc['mysql']['query'])) {
         if (strstr($esc['mysql']['query'], "AND") !== false) {
             $subqueries = explode(" AND ", $esc['mysql']['query']);
             foreach ($subqueries as $subquery) {
-                $sql .= "$table.text LIKE '%" . $subquery . "%' AND ";
+                $sql .= "LOWER($table.text) LIKE '%" . $subquery . "%' AND ";
             }
         } elseif (strstr($esc['mysql']['query'], "OR") !== false) {
             $subqueries = explode(" OR ", $esc['mysql']['query']);
             $sql .= "(";
             foreach ($subqueries as $subquery) {
-                $sql .= "$table.text LIKE '%" . $subquery . "%' OR ";
+                $sql .= "LOWER($table.text) LIKE '%" . $subquery . "%' OR ";
             }
             $sql = substr($sql, 0, -3) . ") AND ";
         } else {
-            $sql .= "$table.text LIKE '%" . $esc['mysql']['query'] . "%' AND ";
+            $sql .= "LOWER($table.text) LIKE '%" . $esc['mysql']['query'] . "%' AND ";
         }
     }
     if (!empty($esc['mysql']['exclude'])) {
         if (strstr($esc['mysql']['exclude'], "AND") !== false) {
             $subqueries = explode(" AND ", $esc['mysql']['exclude']);
             foreach ($subqueries as $subquery) {
-                $sql .= "$table.text NOT LIKE '%" . $subquery . "%' AND ";
+                $sql .= "LOWER($table.text) NOT LIKE '%" . $subquery . "%' AND ";
             }
         } elseif (strstr($esc['mysql']['exclude'], "OR") !== false) {
             $subqueries = explode(" OR ", $esc['mysql']['exclude']);
             $sql .= "(";
             foreach ($subqueries as $subquery) {
-                $sql .= "$table.text NOT LIKE '%" . $subquery . "%' OR ";
+                $sql .= "LOWER($table.text) NOT LIKE '%" . $subquery . "%' OR ";
             }
             $sql = substr($sql, 0, -3) . ") AND ";
         } else {
-            $sql .= "$table.text NOT LIKE '%" . $esc['mysql']['exclude'] . "%' AND ";
+            $sql .= "LOWER($table.text) NOT LIKE '%" . $esc['mysql']['exclude'] . "%' AND ";
         }
     }
     if ($period === FALSE)
@@ -509,9 +509,10 @@ function get_hash_tags($msg) {
 }
 
 // get listing of all datasets
+// @todo add groups in select form
 function get_all_datasets() {
 
-    global $querybins; // defined in php.ini of twitter capture
+    global $querybins,$queryarchives; // defined in php.ini of twitter capture
 // include ytk imported tables as they are not in php.ini
     $tables = array();
     $select = "SHOW TABLES";
@@ -520,6 +521,8 @@ function get_all_datasets() {
         if (preg_match("/^(ytk_.*?)_tweets$/", $res[0], $match)) {
             $querybins[$match[1]] = $match[1];
         } elseif (preg_match("/(user_.*?)_tweets$/", $res[0], $match)) {
+            $querybins[$match[1]] = $match[1];
+        } elseif (preg_match("/(sample_.*?)_tweets$/", $res[0], $match)) {
             $querybins[$match[1]] = $match[1];
         }
     }
@@ -542,8 +545,38 @@ function get_all_datasets() {
             $datasets[$bin] = $row;
         }
     }
+    foreach($queryarchives as $bin => $keywords) {
+        // get nr of results per table
+        $sql2 = "SELECT count(id) AS notweets,MIN(created_at) AS min,MAX(created_at) AS max  FROM " . $bin . "_tweets";
+        $rec2 = mysql_query($sql2);
+        if ($rec2 && mysql_num_rows($rec2) > 0) {
+            $res2 = mysql_fetch_assoc($rec2);
+            $row['bin'] = $bin;
+            $row['notweets'] = $res2['notweets'];
+            $row['mintime'] = $res2['min'];
+            $row['maxtime'] = $res2['max'];
+            $row['keywords'] = $keywords;
+            // return datasets
+            $datasets[$bin] = $row;
+        }
+    }
     asort($datasets);
     return $datasets;
+}
+
+function get_total_nr_of_tweets() {
+    $select = "SHOW TABLES";
+    $rec = mysql_query($select);
+    $count = 0;
+    while ($res = mysql_fetch_row($rec)) {
+        if (preg_match("/_tweets$/", $res[0], $match)) {
+                $sql = "SELECT COUNT(id) FROM ".$res[0];
+                $rec2 = mysql_query($sql);
+                $res2 = mysql_fetch_row($rec2);
+                $count += $res2[0];
+        }
+    }
+    return $count;
 }
 
 function xml_escape($stuff) {
