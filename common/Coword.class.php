@@ -181,13 +181,27 @@ class Coword {
         $this->min_word_length = $min_word_length;
     }
 
-    public function addWord($word, $count=0) {
+    public function addWord($word, $count = 0) {
         if (!isset($this->words[$word]))
             $this->words[$word] = 0;
         if ($this->countWordOncePerDocument)
             $this->words[$word] += 1;       // count word once per document
         else
             $this->words[$word] += $count;  // within document weight
+    }
+
+    // removes connections with a degree < $mindegree
+    // @todo, does not check whether after application there are still words left without connections // only necessary if $this->words is requested
+    public function applyMinDegree($mindegree) {
+        foreach($this->cowords as $word => $connections) {
+            foreach($connections as $coword => $freq) {
+                if($freq < $mindegree) {
+                    unset($this->cowords[$word][$coword]);
+                    if(empty($this->cowords[$word]))
+                        unset($this->cowords[$word]);
+                }
+            }
+        }
     }
 
     function getWords() {
