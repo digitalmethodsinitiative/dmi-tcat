@@ -70,7 +70,10 @@ if (defined('BASE_URL'))
         var minf = prompt("Specify the minimum frequency for data to be included in the export:","2");
         return minf;
     }
-    
+    function askDegree() {
+        var minf = prompt("Specify the minimum degree for nodes to be included in the export:","0");
+        return minf;
+    }
     function getInterval() {
         var selected = $('[name="interval"]:checked');
         var selectedValue = "";
@@ -433,7 +436,7 @@ foreach ($linedata as $key => $value) {
                 <div class="txt_desc">Produces an <a href="http://en.wikipedia.org/wiki/Graph_%28mathematics%29#Undirected_graph">undirected graph</a> (.gdf, open in gephi) based on co-word analysis of hashtags. If two hashtags appear in the same tweet, they are linked.
                     The more often they appear together, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>").</div>
                 <div class="txt_desc">Use: explore the relations between hashtags, find and analyze sub-issues, distinguish between different types of hashtags (event related, qualifiers, etc.).</div>
-                <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('hashtag_cooc');sendUrl('mod.hashtag_cooc.php');return false;">launch</a></div><!-- with absolute weighting of cooccurrences</a></div>-->
+                <div class="txt_link"> &raquo; <a href="" onclick="var minf = askDegree(); $('#whattodo').val('hashtag_cooc&minf='+minf);sendUrl('mod.hashtag_cooc.php');return false;">launch</a></div><!-- with absolute weighting of cooccurrences</a></div>-->
                 <!-- <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('hashtag_cooc&probabilityOfAssociation=1');sendUrl('mod.hashtag_cooc.php');return false;">launch with cooccurrence weight normalization</a></div> -->
                 <hr />
                 <?php if ($show_coword) { ?>
