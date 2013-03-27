@@ -89,8 +89,6 @@ if ($interval == "custom" && isset($_REQUEST['customInterval'])) {
         die("<font size='+1' color='red'>custom interval should have the same start date as the selection</font>");
     if ($lastDate > $enddate)
         die("<font size='+1' color='red'>custom interval should have the same end date as the selection</font>");
-
-    array_pop($intervalDates);  // we'll not be using the last date for grouping
 }
 
 
@@ -257,8 +255,14 @@ function groupByInterval($date) {
     global $intervalDates;
     $returnDate = false;
     foreach ($intervalDates as $intervalDate) {
-        if ($date >= $intervalDate)
+        if ($date >= $intervalDate) {
             $returnDate = $intervalDate;
+            $key = array_search($returnDate, $intervalDates);
+            if ($key == count($intervalDates) - 1) // check whether it is last date
+                $returnDate = $intervalDates[count($intervalDates) - 2] . " until " . $returnDate;
+            else
+                $returnDate = $returnDate . " until " . $intervalDates[$key + 1];
+        }
     }
     return $returnDate;
 }
@@ -442,6 +446,7 @@ function generate($what, $filename) {
         else
             $file .= "date,frequency,$what\n";
         foreach ($results as $group => $things) {
+            arsort($things);
             foreach ($things as $thing => $count) {
                 if (empty($thing))
                     continue;
@@ -463,9 +468,9 @@ function generate($what, $filename) {
 
 // constructs the filename and validates the variables
 function get_filename($what) {
-    global $resultsdir, $esc,$interval;
+    global $resultsdir, $esc, $interval, $intervalDates;
     $exc = (empty($esc['shell']["exclude"])) ? "" : "-" . $esc['shell']["exclude"];
-    return $resultsdir . str_replace(" ", "_", $esc['shell']['datasetname']) . "_" . str_replace(" ", "-", $esc['shell']["query"]) . $exc . "_" . $esc['date']["startdate"] . "_" . $esc['date']["enddate"] . "_" . $esc['shell']["from_user_name"] . "_" . $what . "_min" . $esc['shell']['minf'] . "_groupedBy".ucwords($interval).".csv";
+    return $resultsdir . str_replace(" ", "_", $esc['shell']['datasetname']) . "_" . str_replace(" ", "-", $esc['shell']["query"]) . $exc . "_" . $esc['date']["startdate"] . "_" . $esc['date']["enddate"] . "_" . $esc['shell']["from_user_name"] . "_" . $what . "_min" . $esc['shell']['minf'] . "_groupedBy" . ucwords($interval) . ($interval == "custom" ? implode("_", $intervalDates) : "") . ".csv";
 }
 
 // does some cleanup of data types
