@@ -172,11 +172,12 @@ if (defined('BASE_URL'))
 // see whether all URLs are loaded 
         $sql = "SELECT count(u.id) as count FROM " . $esc['mysql']['dataset'] . "_urls u, " . $esc['mysql']['dataset'] . "_tweets t WHERE u.tweet_id = t.id AND u.url_followed != '' AND ";
         $sql .= sqlSubset();
+        //print $sql."<bR>";
         $show_url_export = false;
         $rec = mysql_query($sql);
         if ($rec && mysql_num_rows($rec) > 0) {
             $res = mysql_fetch_assoc($rec);
-            if ($numlinktweets !== 0 && $res['count'] / $numlinktweets > 0.9)
+            if ($numlinktweets !== 0 && $res['count'] / $numlinktweets > 0.8)
                 $show_url_export = true;
         }
         //print "share tweets " . $res['count'] . "<bR>";
@@ -266,7 +267,6 @@ if (defined('BASE_URL'))
                         <tr>
                             <td class="tbl_head">Number of tweets:</td><td><?php echo $numtweets; ?></td>
                         </tr>
-
                     </table>
 
                 </div>	
@@ -483,15 +483,20 @@ foreach ($linedata as $key => $value) {
                 <?php if ($show_relations_export) { ?>
                     <hr />
                     <h3>Follower graph</h3>
-                    <div class="txt_desc">Produces a <a href="http://en.wikipedia.org/wiki/Directed_graph">directed graph</a> (.gexf, open in gephi) based on follower (friend) relations between users. If a user is friends with another one, a directed link is created.
+                    <div class="txt_desc">Produces a <a href="http://en.wikipedia.org/wiki/Directed_graph">directed graph</a> (.gexf, open in gephi) based on follower (friend) relations between users. If a user is friends with another one, a directed link is created.</div>
                         <div class="txt_desc">Use: explore the follower network of a set of users, find shared followees.</div>
                         <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('relations'); sendUrl('mod.relations.php');return false;">launch</a></div>
                     <?php } ?>
 
-                    <div style="display:none" id="whattodo" />
+                    <hr />
+                    <h3>User stats</h3>
+                    <div class="txt_desc">Creates a .csv file (open in Excel or similar) that contains the min, max, average and median for: number of tweets per user, users per day, urls per user, number of followers, number of friends, nr of tweets</div>
+                        <div class="txt_desc">Use: get a better feel for the users in your data set.</div>
+                        <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('user.stats'); sendUrl('mod.user.stats.php');return false;">launch</a></div>
+                        <div style="display:none" id="whattodo" />
 
-                    </fieldset>
+                        </fieldset>
 
 
-                    </body>
-                    </html>
+                        </body>
+                        </html>
