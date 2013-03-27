@@ -37,14 +37,6 @@ require_once './common/functions.php';
         $filename_locations = str_replace("userStats","locations",$filename);
         $filename_languages = str_replace("userStats","languages",$filename);
         
-        // number of users
-        $sql = "SELECT count(distinct(from_user_id)) as count FROM " . $esc['mysql']['dataset'] . "_tweets t WHERE ";
-        $sql .= sqlSubset();
-        //print $sql . "<br>";
-        $sqlresults = mysql_query($sql);
-        $data = mysql_fetch_assoc($sqlresults);
-        $numusers = $data["count"];
-        
         // tweets per user
         $sql = "SELECT count(distinct(id)) AS count, from_user_id FROM " . $esc['mysql']['dataset'] . "_tweets t WHERE ";
         $sql .= sqlSubset();

@@ -185,6 +185,13 @@ if (defined('BASE_URL'))
             print $sql . "<br>";
             print $res['count'] / $numlinktweets . "<br>";
         }
+        // number of users
+        $sql = "SELECT count(distinct(from_user_id)) as count FROM " . $esc['mysql']['dataset'] . "_tweets t WHERE ";
+        $sql .= sqlSubset();
+        //print $sql . "<br>";
+        $sqlresults = mysql_query($sql);
+        $data = mysql_fetch_assoc($sqlresults);
+        $numusers = $data["count"];
 
 // get data for the line graph
         $period = ( (strtotime($esc['datetime']['enddate']) - strtotime($esc['datetime']['startdate'])) <= 86400 * 2) ? "hour" : "day"; // @todo
@@ -266,6 +273,9 @@ if (defined('BASE_URL'))
 
                         <tr>
                             <td class="tbl_head">Number of tweets:</td><td><?php echo $numtweets; ?></td>
+                        </tr>
+                        <tr>
+                            <td class="tbl_head">Number of distinct users:</td><td><?php echo $numusers; ?></td>
                         </tr>
                     </table>
 
