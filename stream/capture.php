@@ -157,10 +157,10 @@ function processtweets($tweetbucket) {
 			
 			// adding the expanded url to the tweets text to search in them like twiter does
 			foreach($data["entities"]["urls"] as $url) {
-				$data["text"] .= " " . $url["expanded_url"];
+				$data["text"] .= " [[" . $url["expanded_url"]."]]";
 			}
 			
-			$data["text"] = strtolower($data["text"]);
+			//$data["text"] = strtolower($data["text"]);
 			
 			
 			$found = false;
@@ -179,7 +179,7 @@ function processtweets($tweetbucket) {
 					$all = true;
 					
 					foreach($tmplist as $tmp) {
-						if(!preg_match("/".$tmp."/", $data["text"])) {
+						if(!preg_match("/".$tmp."/i", $data["text"])) {
 							$all = false;
 							break;
 						}
@@ -193,7 +193,7 @@ function processtweets($tweetbucket) {
 					// treet quoted queries as single words
 					$query = preg_replace("/\'/","", $query);
 				
-					if(preg_match("/".$query."/",$data["text"])) {
+					if(preg_match("/".$query."/i",$data["text"])) {
 						$pass = true;
 					}
 				}
