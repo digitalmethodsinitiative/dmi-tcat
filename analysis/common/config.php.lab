@@ -1,0 +1,52 @@
+<?php
+
+/*
+ * URL root in which ytk_analysis resides
+ */
+define('BASE_URL', 'https://lab.digitalmethods.net/~brieder/ytk_analysis/');
+
+/*
+ * Location of the coword machine
+ */
+define('COWORD_URL', 'https://tools.digitalmethods.net/beta/coword/');
+
+/*
+ * MySQL database connection information
+ */
+$databases = array("default" => "yourTwapperKeeper","extended"=>"yourTwapperKeeper_Bernhard");
+$dbname = $databases['default'];
+$dbhost = "82.94.190.198";
+$dbuser = "ytk";
+$dbpass = "9c7V854YHvhRq2BENur9sMME";
+
+/*
+ * Where to cache results
+ */
+$resultsdir = "files/";
+
+/*
+ * Whether to cache results
+ */
+$cacheresults = true;
+
+/*
+ * Time zone
+ */
+date_default_timezone_set("Europe/London");
+
+/*
+ * Error reporting verbosity
+ */
+error_reporting(E_ALL);
+
+/*
+ * How long the script is allowed to run
+ */
+ini_set("max_execution_time", "50000");
+
+/*
+ * How much memory the script is allowed to take
+ */
+ini_set("memory_limit", "2G");
+
+?>

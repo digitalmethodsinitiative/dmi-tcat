@@ -1,0 +1,45 @@
+<?php
+mb_internal_encoding("UTF-8"); 
+include_once('/var/www/twitter/capture/stream/ini.php');
+
+date_default_timezone_set("Europe/London");
+/*
+ * URL root in which analysis resides
+ */
+define('BASE_URL', 'https://tools.digitalmethods.net/coword/twitter/analysis/');
+
+/*
+ * Location of the coword machine
+ */
+define('COWORD_URL', 'https://tools.digitalmethods.net/coword/tools/beta/coword/');
+
+/*
+ * Where to cache results
+ */
+$resultsdir = "files/";
+
+/*
+ * Whether to cache results
+ */
+$cacheresults = false;
+
+/*
+ * Time zone
+ */
+date_default_timezone_set("Europe/London");
+
+/*
+ * Error reporting verbosity
+ */
+error_reporting(E_ALL);
+
+/*
+ * How long the script is allowed to run
+ */
+ini_set("max_execution_time", "50000");
+
+/*
+ * How much memory the script is allowed to take
+ */
+ini_set("memory_limit", "30G");
+?>
