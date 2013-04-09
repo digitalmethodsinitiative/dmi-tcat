@@ -2,28 +2,22 @@ Notes on using ytk_analysis
 
 
 Todo:
-- alter database of yourTwapperKeeper and yourTwapperKeeper_Bernhard so that the new scripts can work with them
-    - adapt polarization to work on both databases
-- extract variability of association from mod.hashtag
-    - adapt to work on both types of databases
 - retweets in linegraph
-- what is difference between absolute weighting and coocurrence weight normalization?
-- encoding of tweets (current coword class can only tokenize tweets which consists fully out of latin characters; allmost all other tweets are discarded.)
 - BASE_URL vs $branch=DMI_PRODUCTION
 
 *******************************************************************************************
 Git repository
 *******************************************************************************************
-Init
-    git clone ssh://username@lab.digitalmethods.net/home/git/ytk_analysis
+Clone
+    git clone ssh://username@lab.digitalmethods.net/home/git/dmi-tcat.git
 
 
 *******************************************************************************************
 Config
 *******************************************************************************************
 Modify config.php to reflect your setup, after copying a template file
-    cp common/config.php.local common/config.php
-    mkdir files; chown 777;
+    cp dmi-tcat/config.php.local dmi-tcat/config.php
+    mkdir cache; chown 777;
 
 *******************************************************************************************
 Logging in to coword.digitalmethods.net
@@ -32,6 +26,7 @@ Open first terminal screen and set up tunnel to the coword machine (via temlab.d
     ssh -L4022:coword:22 temlab.digitalmethods.net
 Open second terminal to ssh into the coword machine
     ssh -p4022 localhost
+    OR point your code editor to work with sftp/scp on port 4022
 
 
 *******************************************************************************************
