@@ -24,7 +24,7 @@ if (isset($_GET['samplesize']) && !empty($_GET['samplesize']))
     $samplesize = $_GET['samplesize'];
 else
     $samplesize = "1000";
-if (isset($_GET['minf']) && !empty($_GET['minf']))
+if (isset($_GET['minf']) && preg_match("/^\d+$/",$_GET['minf'])!==false)
     $minf = $_GET['minf'];
 else
     $minf = 2;
@@ -505,6 +505,8 @@ function validate(&$what, $how) {
             break;
         // escape non-mysql chars
         case "mysql":
+            if(substr($what,0,1)=="[" && substr($what,-1)=="]") // allow for queries with spaces
+                    $what = substr($what,1,-1);
             $what = mysql_real_escape_string($what);
             break;
         case "tweet":
