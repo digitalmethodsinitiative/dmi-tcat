@@ -22,7 +22,7 @@ $start = "2012-05-19 00:00:00";
 $end = "2012-06-22 23:59:59";
 $dataset = "z_501";
 $dataname = "acta";
-$datadir = "files";
+$datadir = $resultsdir;
 $includeRetweets = TRUE;
 $charges = loadCharges($datadir . '/' . $dataname . "_charges.csv");    // List of {host,charge}-combinations, where charge can be 'pro', 'con' or 'neutral'
 //getTweetUrls($dataset, $start, $end); // @todo, adapt to new database (also import old tweets about acta)
