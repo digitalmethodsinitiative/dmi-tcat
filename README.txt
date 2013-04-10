@@ -17,7 +17,7 @@ Config
 *******************************************************************************************
 Modify config.php to reflect your setup, after copying a template file
     cp dmi-tcat/config.php.local dmi-tcat/config.php
-    mkdir cache; chown 777;
+mkdir dmi-tcat/analysis/cache; chown 777;
 
 *******************************************************************************************
 Logging in to coword.digitalmethods.net
