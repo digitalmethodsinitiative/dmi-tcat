@@ -744,8 +744,8 @@ validate_all_variables();
                                                             foreach ($dataPerDay as $day => $texts) {
                                                                 print count($texts) . " " . $day . "<br/>";
 
-                                                                if (!defined('BASE_URL'))
-                                                                    die('define BASE_URL');
+                                                                if (!defined('ANALYSIS_URL'))
+                                                                    die('define ANALYSIS_URL');
                                                                 $url = COWORD_URL;
 
                                                                 $params = array(
