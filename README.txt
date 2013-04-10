@@ -21,7 +21,7 @@ Make crontab for capturing tweets from the stream (controller.php then checks ea
 * * * * * php /var/www/dmi-tcat/capture/stream/controller.php
 
 Make crontab for expanding URLs
-0 * * * * . /home/eelke/urlexpand.sh
+0 * * * * . /var/www/dmi-tcat/helpers/urlexpand.sh
 
 
 *******************************************************************************************
