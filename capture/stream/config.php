@@ -1,9 +1,9 @@
 <?php
 
-include_once('../../config.php');
-include_once('../../querybins.php');
+include_once('/var/www/dmi-tcat/config.php');
+include_once('/var/www/dmi-tcat/querybins.php');
 
-$path_local = dirname(__FILE__);
+$path_local = getcwd()."/";
 
 // +++++ database connection functions +++++
 
