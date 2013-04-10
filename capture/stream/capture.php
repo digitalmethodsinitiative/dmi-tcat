@@ -3,7 +3,7 @@
 // ----- params -----
 set_time_limit(0);
 error_reporting(E_ALL);
-include "ini.php";
+include "config.php";
 
 
 // ----- connection -----
@@ -14,7 +14,7 @@ connectsocket();
 
 function connectsocket() {
 
-	global $user,$pass,$querybins,$path_local;
+	global $twitter_user,$twitter_pass,$querybins,$path_local;
 
 	//echo "<pre>";
 
@@ -69,7 +69,7 @@ function connectsocket() {
 	
 		$request = "POST /1.1/statuses/filter.json?" . http_build_query($query) . " HTTP/1.1\r\n";
 		$request .= "Host: stream.twitter.com\r\n";
-		$request .= "Authorization: Basic " . base64_encode($user . ':' . $pass) . "\r\n\r\n";
+		$request .= "Authorization: Basic " . base64_encode($twitter_user . ':' . $twitter_pass) . "\r\n\r\n";
 				
 		fwrite($fp, $request);
 		stream_set_timeout($fp, 90);

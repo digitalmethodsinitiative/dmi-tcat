@@ -1,6 +1,6 @@
 <?php
 
-include_once('ini.php');
+include_once('config.php');
 
 list($count_q,$count_qb) = count_bins($querybins);
 print "Active: $count_q queries, $count_qb bins\n";
