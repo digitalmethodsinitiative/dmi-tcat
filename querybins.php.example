@@ -1,0 +1,13 @@
+<?php
+
+// Non-space separated languages, such as CJK and Arabic, are currently unsupported.
+// https://dev.twitter.com/docs/streaming-apis/parameters#track
+$querybins = array(
+				"globalwarming" => "global warming,globalwarming,climate,climatechange,drought,flood", 
+				);
+
+$queryarchives = array(
+				"oscars" => "oscars,oscar,academy award,#bestdressed,theacademy,oscarroadtrip,#oscaring,#oscarnoms,#oscarfever,'red carpet',redcarpet",
+				);				
+?>
+
