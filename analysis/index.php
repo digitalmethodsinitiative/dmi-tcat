@@ -1,8 +1,8 @@
 <?php
 // todo: ask Erik how to protect cells in CSV for mod.random_tweets.php
 
-require_once './common/config.php';
-require_once './common/functions.php';
+require_once 'common/config.php';
+require_once 'common/functions.php';
 
 $show_coword = FALSE;
 
@@ -49,8 +49,8 @@ $datasets = get_all_datasets();
                 }
                 var _url = 
 <?php
-if (defined('BASE_URL'))
-    print '"' . BASE_URL . '"';
+if (defined('ANALYSIS_URL'))
+    print '"' . ANALYSIS_URL . '"';
 ?>
             + _file +
             "?dataset=" + $("#ipt_dataset").val() +
