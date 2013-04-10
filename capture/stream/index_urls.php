@@ -1,6 +1,6 @@
 <?php 
 
-include "ini.php";
+include "config.php";
 
 dbconnect();
 	
