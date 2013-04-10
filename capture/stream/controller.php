@@ -1,8 +1,10 @@
 <?php
 
+include_once('config.php');
+
 $idletime = 150; 
 
-$procfile = file_get_contents("/var/www/twitter/capture/stream/logs/procinfo");
+$procfile = file_get_contents(BASE_FILE."capture/stream/logs/procinfo");
 
 $tmp = explode("|", $procfile);
 $pid = $tmp[0];
@@ -26,20 +28,20 @@ if(in_array($pid,$proclist)) {
 		
 		sleep(16);
 		
-		passthru("php /var/www/twitter/capture/stream/capture.php > /dev/null 2>&1 &");
+		passthru("php ".BASE_FILE."capture/stream/capture.php > /dev/null 2>&1 &");
 	}
 	
 } else {
 
 	logit("controller.log","script was not running - starting");
 	
-	passthru("php /var/www/twitter/capture/stream/capture.php > /dev/null 2>&1 &");
+	passthru("php ".BASE_FILE."capture/stream/capture.php > /dev/null 2>&1 &");
 }
 
 
 function logit($file,$message) {
 	
-	$file = "/var/www/twitter/capture/stream/logs/" . $file;
+	$file = BASE_FILE."capture/stream/logs/" . $file;
 	$message = date("Y-m-d H:i:s") . " " . $message . "\n";
 	file_put_contents($file, $message, FILE_APPEND);
 }
