@@ -16,7 +16,9 @@ Clone
 Config
 *******************************************************************************************
 Modify config.php to reflect your setup, after copying a template file
-    cp dmi-tcat/config.php.local dmi-tcat/config.php
+    cp dmi-tcat/config.php.example dmi-tcat/config.php
+Add queries to be captured with the stream
+    cp dmi-tcat/querybins.php.example dmi-tcat/querybins.php
 mkdir dmi-tcat/analysis/cache; chown 777;
 
 *******************************************************************************************
