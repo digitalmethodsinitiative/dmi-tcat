@@ -128,7 +128,7 @@ function get_file($what) {
     generate($what, $filename);
 
     // redirect to file
-    $location = str_replace("index.php", "", BASE_URL) . str_replace("#", "%23", $filename);
+    $location = str_replace("index.php", "", ANALYSIS_URL) . str_replace("#", "%23", $filename);
     if (defined('LOCATION'))
         $location = LOCATION . $location;
     header("Content-type: text/csv");
