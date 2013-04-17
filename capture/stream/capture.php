@@ -1,5 +1,5 @@
 <?php
-
+if($argc<1) die; // only run from command line
 // ----- params -----
 set_time_limit(0);
 error_reporting(E_ALL);
