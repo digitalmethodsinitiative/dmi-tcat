@@ -106,7 +106,7 @@ if (defined('ANALYSIS_URL'))
 
                     $v = ($key == $dataset) ? 'selected="selected"' : "";
 
-                    echo '<option value="' . $key . '" ' . $v . '>' . $set["bin"] . ' --- ' . $set["notweets"] . ' tweets from ' . $set['mintime'] . ' to ' . $set['maxtime'] . '</option>';
+                    echo '<option value="' . $key . '" ' . $v . '>' . $set["bin"] . ' --- ' . number_format($set["notweets"], 0, ",", ".") . ' tweets from ' . $set['mintime'] . ' to ' . $set['maxtime'] . '</option>';
                 }
 
                 echo "</select> ";
