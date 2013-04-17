@@ -1,11 +1,11 @@
 <?php
-
+if($argc<1) die; // only run from command line
 include_once('../config.php');
 
 // specify the name of the bin here (make sure to also add it toe querybins.php)
 $bin_name = 'user_swedish_media';
 // specify dir with the user timelines (json)
-$dir = '/Users/erik/Sites/sylvester/user_swedish_media';
+$dir = '/tmp/user_swedish_media';
 
 
 $dbh = new PDO("mysql:host=$hostname;dbname=twittercapture", $dbuser, $dbpass);

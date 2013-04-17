@@ -1,5 +1,5 @@
 <?php
-
+if($argc<1) die; // only run from command line
 include_once('config.php');
 
 $idletime = 150; 
