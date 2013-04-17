@@ -272,10 +272,10 @@ if (defined('ANALYSIS_URL'))
                         </tr>
 
                         <tr>
-                            <td class="tbl_head">Number of tweets:</td><td><?php echo $numtweets; ?></td>
+                            <td class="tbl_head">Number of tweets:</td><td><?php echo number_format($numtweets, 0, ",", "."); ?></td>
                         </tr>
                         <tr>
-                            <td class="tbl_head">Number of distinct users:</td><td><?php echo $numusers; ?></td>
+                            <td class="tbl_head">Number of distinct users:</td><td><?php echo number_format($numusers, 0, ",", "."); ?></td>
                         </tr>
                     </table>
 
