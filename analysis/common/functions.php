@@ -172,17 +172,17 @@ function sqlSubset($table = "t", $period = FALSE) {
         if (strstr($esc['mysql']['from_user_name'], "AND") !== false) {
             $subqueries = explode(" AND ", $esc['mysql']['from_user_name']);
             foreach ($subqueries as $subquery) {
-                $sql .= "LOWER($table.from_user_name) LIKE '%" . $subquery . "%' AND ";
+                $sql .= "LOWER($table.from_user_name) = LOWER('" . $subquery . "') AND ";
             }
         } elseif (strstr($esc['mysql']['from_user_name'], "OR") !== false) {
             $subqueries = explode(" OR ", $esc['mysql']['from_user_name']);
             $sql .= "(";
             foreach ($subqueries as $subquery) {
-                $sql .= "LOWER($table.from_user_name) LIKE '%" . $subquery . "%' OR ";
+                $sql .= "LOWER($table.from_user_name) = LOWER('" . $subquery . "') OR ";
             }
             $sql = substr($sql, 0, -3) . ") AND ";
         } else {
-            $sql .= "LOWER($table.from_user_name) LIKE '%" . $esc['mysql']['from_user_name'] . "%' AND ";
+            $sql .= "LOWER($table.from_user_name) = LOWER('" . $esc['mysql']['from_user_name'] . "') AND ";
         }
     }
     if (!empty($esc['mysql']['query'])) {
