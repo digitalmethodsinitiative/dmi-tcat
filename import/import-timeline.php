@@ -2,10 +2,10 @@
 if($argc<1) die; // only run from command line
 include_once('../config.php');
 
-// specify the name of the bin here (make sure to also add it toe querybins.php)
-$bin_name = 'user_swedish_media';
+// specify the name of the bin here 
+$bin_name = 'user_wcit';
 // specify dir with the user timelines (json)
-$dir = '/tmp/user_swedish_media';
+$dir = '/tmp/user_wcit';
 
 
 $dbh = new PDO("mysql:host=$hostname;dbname=twittercapture", $dbuser, $dbpass);
@@ -145,7 +145,7 @@ class Tweet {
             } else {
                 $this->{$name} = $value;
             }
-        } elseif($name == "favorite_count" || $name == "lang") {
+        } elseif($name == "favorite_count" || $name == "lang" || $name == "withheld_scope" || $name == "status" || $name == "withheld_in_countries" || $name == "withheld_copyright") {
             //print $name ." not available as a database field\n";
             return;
         } else {
