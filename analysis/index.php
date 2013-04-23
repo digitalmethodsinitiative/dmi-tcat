@@ -177,7 +177,7 @@ if (defined('ANALYSIS_URL'))
         $rec = mysql_query($sql);
         if ($rec && mysql_num_rows($rec) > 0) {
             $res = mysql_fetch_assoc($rec);
-            if ($numlinktweets !== 0 && $res['count'] / $numlinktweets > 0.8)
+            if ($numlinktweets !== 0 && $res['count'] / $numlinktweets > 0.5)
                 $show_url_export = true;
         }
         //print "share tweets " . $res['count'] . "<bR>";
