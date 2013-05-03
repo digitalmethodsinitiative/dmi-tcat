@@ -18,22 +18,23 @@ $esc['mysql']['dataset'] = "penw";
 $result = mysql_query("SHOW TABLES LIKE '" . $esc['mysql']['dataset'] . "_klout'");
 if (mysql_num_rows($result) == 0) {
     $sql = "CREATE TABLE " . $esc['mysql']['dataset'] . "_klout (
-			id int(11) NOT NULL AUTO_INCREMENT,
-			last_updated datetime NOT NULL,
-			from_user_name varchar(255) NOT NULL,
-			from_user_id int(11) NOT NULL,
-			kloutid bigint,
-                        kloutscore FLOAT NOT NULL,
-                        daychanges FLOAT NOT NULL,
-                        weekchanges FLOAT NOT NULL,
-                        monthchanges FLOAT NOT NULL,
-                        topics VARCHAR(255),
-                        http_code smallint,
-			PRIMARY KEY (id),
-			KEY `from_user_name` (`from_user_name`),
-			KEY `from_user_id` (`from_user_name`),
-			KEY `kloutid` (`kloutid`)
-			) ENGINE=MyISAM  DEFAULT CHARSET=utf8";
+        id int(11) NOT NULL AUTO_INCREMENT,
+        last_updated datetime NOT NULL,
+        from_user_name varchar(255) NOT NULL,
+        from_user_id int(11) NOT NULL,
+        kloutid bigint,
+        kloutscore FLOAT NOT NULL,
+        daychanges FLOAT NOT NULL,
+        weekchanges FLOAT NOT NULL,
+        monthchanges FLOAT NOT NULL,
+        topics VARCHAR(255),
+        http_code smallint,
+        PRIMARY KEY (id),
+        KEY `from_user_name` (`from_user_name`),
+        KEY `from_user_id` (`from_user_name`),
+        KEY `kloutid` (`kloutid`),
+        KEY `last_updated` (`last_updated`)
+        ) ENGINE=MyISAM  DEFAULT CHARSET=utf8";
     $sqlresults = mysql_query($sql) or die(mysql_error());
 }
 
@@ -105,21 +106,10 @@ while ($res = mysql_fetch_assoc($rec)) {
     $kloutTopics = mysql_real_escape_string(implode(", ", $kloutTopics));
 
     $lastUpdated = strftime("%Y-%m-%d %H:%M:%S", date('U'));
-    $sql2 = "SELECT id FROM " . $esc['mysql']['dataset'] . "_klout k WHERE from_user_name = '" . mysql_real_escape_string($from_user_name) . "'";
-    $rec2 = mysql_query($sql2);
-    if ($rec2 && mysql_num_rows($rec2) > 0) {
-        $res2 = mysql_fetch_assoc($rec2);
-        $update = "UPDATE " . $esc['mysql']['dataset'] . "_klout ";
-        $update .= "SET from_user_id = $from_user_id, from_user_name = '" . mysql_real_escape_string($from_user_name) . "', kloutid = '$kloutid', kloutscore = '$kloutScore', daychanges = '$kloutDayChanges', weekchanges = '$kloutWeekChanges', monthchanges = '$kloutMonthChanges', topics = '$kloutTopics', last_updated = '$lastUpdated', http_code = '$http_code'";
-        $update .= "WHERE id = " . $res2['id'];
-        print $update . "\n";
-        mysql_query($update); // @todo error handling
-    } else {
-        $insert = "INSERT INTO " . $esc['mysql']['dataset'] . "_klout ";
-        $insert .= "(from_user_id, from_user_name, kloutid, kloutscore, daychanges, weekchanges, monthchanges, topics, last_updated, http_code) ";
-        $insert .= "VALUES ($from_user_id, '$from_user_name', '$kloutid', '$kloutScore','$kloutDayChanges','$kloutWeekChanges','$kloutMonthChanges','$kloutTopics','$lastUpdated', '$http_code')";
-        print $insert . "\n";
-        mysql_query($insert); // @todo error handling
-    }
+    $insert = "REPLACE INTO " . $esc['mysql']['dataset'] . "_klout ";
+    $insert .= "(from_user_id, from_user_name, kloutid, kloutscore, daychanges, weekchanges, monthchanges, topics, last_updated, http_code) ";
+    $insert .= "VALUES ($from_user_id, '$from_user_name', '$kloutid', '$kloutScore','$kloutDayChanges','$kloutWeekChanges','$kloutMonthChanges','$kloutTopics','$lastUpdated', '$http_code')";
+    print $insert . "\n";
+    mysql_query($insert) or die(mysql_error());
 }
 ?>
