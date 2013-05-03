@@ -38,6 +38,7 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
         $filename = $resultsdir . $esc['shell']["datasetname"] . "_" . $esc['shell']["query"] . $exc . "_" . $esc['date']["startdate"] . "_" . $esc['date']["enddate"] . "_" . $esc['shell']["from_user_name"] . "_geo.csv";
         
         $sql = "SELECT * FROM ".$esc['mysql']['dataset']."_tweets t WHERE geo_lat != 0 AND geo_lng != 0 AND ";
+        // @todo, add sqlinterval()
         $sql .= sqlSubset();
         
         //print $sql." - <br>";
