@@ -28,6 +28,7 @@ if (mysql_num_rows($result) == 0) {
                         weekchanges FLOAT NOT NULL,
                         monthchanges FLOAT NOT NULL,
                         topics VARCHAR(255),
+                        http_code smallint,
 			PRIMARY KEY (id),
 			KEY `from_user_name` (`from_user_name`),
 			KEY `from_user_id` (`from_user_name`),
@@ -44,7 +45,7 @@ $sql .= "WHERE k.from_user_id IS NULL OR k.last_updated <= '" . strftime("%Y-%m-
 $rec = mysql_query($sql);
 while ($res = mysql_fetch_assoc($rec)) {
 
-    $kloutid = $kloutScore = $kloutDayChanges = $kloutWeekChanges = $kloutMonthChanges = 0;
+    $kloutid = $kloutScore = $kloutDayChanges = $kloutWeekChanges = $kloutMonthChanges = $http_code = 0;
     $kloutTopics = array();
 
     $from_user_id = $res['from_user_id'];
@@ -54,11 +55,11 @@ while ($res = mysql_fetch_assoc($rec)) {
     // klout score
     if (empty($kloutid))
         $kloutid = $klout->KloutIDLookupByName($network, $from_user_name);
-    print $from_user_name . " - " . var_export($kloutid, 1) . "\n";
+    $http_code = $klout->http_code;
+    print $from_user_name . " - " . var_export($kloutid, 1) . " - " . $http_code . "\n";
 
 
     if (!empty($kloutid)) { // @todo this assumes that on line 60 of KloutAPIv2-PHP/KloutAPIv2.class.php the following is added: if($ResultString === NULL) return $ResultString;
-
         $result = $klout->KloutUserInfluence($kloutid);
 
         $kloutScore = ceil($klout->KloutScore($kloutid));
@@ -100,7 +101,7 @@ while ($res = mysql_fetch_assoc($rec)) {
          */
     } else
         $kloutid = 0;
-    
+
     $kloutTopics = mysql_real_escape_string(implode(", ", $kloutTopics));
 
     $lastUpdated = strftime("%Y-%m-%d %H:%M:%S", date('U'));
@@ -109,14 +110,14 @@ while ($res = mysql_fetch_assoc($rec)) {
     if ($rec2 && mysql_num_rows($rec2) > 0) {
         $res2 = mysql_fetch_assoc($rec2);
         $update = "UPDATE " . $esc['mysql']['dataset'] . "_klout ";
-        $update .= "SET from_user_id = $from_user_id, from_user_name = '" . mysql_real_escape_string($from_user_name) . "', kloutid = '$kloutid', kloutscore = '$kloutScore', daychanges = '$kloutDayChanges', weekchanges = '$kloutWeekChanges', monthchanges = '$kloutMonthChanges', topics = '$kloutTopics', last_updated = '$lastUpdated'";
+        $update .= "SET from_user_id = $from_user_id, from_user_name = '" . mysql_real_escape_string($from_user_name) . "', kloutid = '$kloutid', kloutscore = '$kloutScore', daychanges = '$kloutDayChanges', weekchanges = '$kloutWeekChanges', monthchanges = '$kloutMonthChanges', topics = '$kloutTopics', last_updated = '$lastUpdated', http_code = '$http_code'";
         $update .= "WHERE id = " . $res2['id'];
         print $update . "\n";
         mysql_query($update); // @todo error handling
     } else {
         $insert = "INSERT INTO " . $esc['mysql']['dataset'] . "_klout ";
-        $insert .= "(from_user_id, from_user_name, kloutid, kloutscore, daychanges, weekchanges, monthchanges, topics, last_updated) ";
-        $insert .= "VALUES ($from_user_id, '$from_user_name', '$kloutid', '$kloutScore','$kloutDayChanges','$kloutWeekChanges','$kloutMonthChanges','$kloutTopics','$lastUpdated')";
+        $insert .= "(from_user_id, from_user_name, kloutid, kloutscore, daychanges, weekchanges, monthchanges, topics, last_updated, http_code) ";
+        $insert .= "VALUES ($from_user_id, '$from_user_name', '$kloutid', '$kloutScore','$kloutDayChanges','$kloutWeekChanges','$kloutMonthChanges','$kloutTopics','$lastUpdated', '$http_code')";
         print $insert . "\n";
         mysql_query($insert); // @todo error handling
     }
