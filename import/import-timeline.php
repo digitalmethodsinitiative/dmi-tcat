@@ -3,9 +3,9 @@ if($argc<1) die; // only run from command line
 include_once('../config.php');
 
 // specify the name of the bin here 
-$bin_name = 'user_wcit';
+$bin_name = '';
 // specify dir with the user timelines (json)
-$dir = '/tmp/user_wcit';
+$dir = '';
 
 
 $dbh = new PDO("mysql:host=$hostname;dbname=twittercapture", $dbuser, $dbpass);
