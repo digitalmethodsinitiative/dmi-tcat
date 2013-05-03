@@ -15,6 +15,14 @@ $twitter_user = '';
 $twitter_pass = '';
 
 /*
+ * Twitter API keys
+ */
+$twitter_consumer_key = "";
+$twitter_consumer_secret = "";
+$twitter_user_token = "";
+$twitter_user_secret = "";
+
+/*
  * Klout account info
  */
 $kloutapi_key = "";
