@@ -6,56 +6,46 @@ if($argc < 1) die;
 // ----- params -----
 set_time_limit(0);
 error_reporting(E_ALL);
-include "config.php";
 
+// ----- includes -----
+include "../../config.php";							// load base config file
+include "../../querybins.php";						// load base config file
+include "../../common/functions.php";				// load base functions file
+include "../common/functions.php";					// load capture function file
+$path_local = BASE_FILE . "capture/stream/";
 
 // ----- connection -----
-dbconnect();
-checktables();
-connectsocket();
+dbconnect();						// connect to database
+checktables();						// check whether all tables specified in querybins.php exist in the database
+connectsocket();					// establish persistent connection and collect tweets
 
 
+// function connects to streaming API and receives tweets
 function connectsocket() {
 
 	global $twitter_user,$twitter_pass,$querybins,$path_local;
 
 	logit("error.log","connecting to API socket");
-	$pid = getmypid();
+
+	$pid = getmypid();															// procinfo file is checked controller.php - we only want one instance of capture.php running
 	file_put_contents($path_local . "logs/procinfo", $pid . "|" . time());
 
-	$wait = 5000000;
-
-	$tweetcounter = 0;
+	// initiate variables
 	$tweetbucket = array();
-
-	// prepare queries
-
 	$querylist = array();
 
-	//print_r($querybins);
-
+	// create the list of queries from querybins.php
 	foreach($querybins as $binname => $bin) {
-		//echo $bin . "|";
 		$queries = explode(",", $bin);
 		foreach($queries as $query) {
 			$querylist[$query] = preg_replace("/\'/", "", $query);
 		}
 		$querybins[$binname] = $queries;
 	}
-
-
-
-	//print_r($querylist);
-	//print_r($querybins);
-
 	$query = array("track" => implode(",", $querylist));
 
 
-
-	//print_r($query);
-	flush();
-
-
+	// connect to streaming API
 	// Twitter recommends 90 seconds timeout
 	// https://dev.twitter.com/docs/streaming-apis/connecting
 	$fp = fsockopen("ssl://stream.twitter.com", 443, $errno, $errstr, 90);
@@ -79,11 +69,10 @@ function connectsocket() {
         $timeout = 90; 					// timeout if idle (http://php.net/manual/en/function.feof.php)
         $start = microtime(true);
 
-
+		// this loop receives line separated JSONs from the API
 		while(!safe_feof($fp,$start) && (microtime(true) - $start) < $timeout) {
 
 			$json = fgets($fp);
-
 			$data = json_decode($json, true);
 
 			if(isset($data["disconnect"])) {
@@ -92,10 +81,9 @@ function connectsocket() {
 
 			if($data) {
 
-				$tweetcounter++;
-
 				$tweetbucket[] = $data;
 
+				// process tweets if 100 are selected
 				if(count($tweetbucket) == 100) {
 					processtweets($tweetbucket);
 					$tweetbucket = array();
@@ -110,13 +98,7 @@ function connectsocket() {
 }
 
 
-function safe_feof($fp, &$start = NULL) {
-	//global $start;
-	$start = microtime(true);
-	return feof($fp);
-}
-
-
+// function receives a bucket of tweets, sorts them according to bins and inserts into DB
 function processtweets($tweetbucket) {
 
 	global $querybins,$path_local;
@@ -137,19 +119,16 @@ function processtweets($tweetbucket) {
 				$data["text"] .= " [[" . $url["expanded_url"]."]]";
 			}
 
-			//$data["text"] = strtolower($data["text"]);
-
-
-			$found = false;
 
 			// we check for every query in the bin if they fit
+			$found = false;
+
 			foreach($queries as $query) {
 
+				$pass = false;
 				$query = strtolower($query);
 
-				$pass = false;
-
-				// check for queries with two words, but go around quoted tweets
+				// check for queries with two words, but go around quoted queries
 				if(preg_match("/ /",$query) && !preg_match("/\'/",$query)) {
 					$tmplist = explode(" ", $query);
 
@@ -182,7 +161,16 @@ function processtweets($tweetbucket) {
 				}
 			}
 
-			// if the tweet does not fit in the current bin, go to the next one
+			// ["retweeted_status"]["id_str"] => retweet_id
+			// => from_user_utcoffset int(11),
+			// from_user_timezone varchar(255) NOT NULL,
+			// from_user_verified
+			// from_user_listed
+			// from_user_description
+			// from_user_url
+
+
+			// if the tweet does not fit in the current bin, go to the next tweet
 			if($found == false) { continue; }
 
 			//from_user_lang 	from_user_tweetcount 	from_user_followercount 	from_user_realname
@@ -195,7 +183,13 @@ function processtweets($tweetbucket) {
 			$t["from_user_tweetcount"] = $data["user"]["statuses_count"];
 			$t["from_user_followercount"] = $data["user"]["followers_count"];
 			$t["from_user_friendcount"] = $data["user"]["friends_count"];
+			$t["from_user_listed"] = $data["user"]["listed_count"];
 			$t["from_user_realname"] = addslashes($data["user"]["name"]);
+			$t["from_user_utcoffset"] = $data["user"]["utc_offset"];
+			$t["from_user_timezone"] = $data["user"]["time_zone"];
+			$t["from_user_description"] = addslashes($data["user"]["description"]);
+			$t["from_user_url"] = addslashes($data["user"]["url"]);
+			$t["from_user_verified"] = $data["user"]["verified"];
 			$t["source"] = addslashes($data["source"]);
 			$t["location"] = addslashes($data["user"]["location"]);
 			$t["geo_lat"] = 0;
@@ -205,9 +199,14 @@ function processtweets($tweetbucket) {
 				$t["geo_lng"] = $data["geo"]["coordinates"][1];
 			}
 			$t["text"] = addslashes($data["text"]);
+			$t["retweet_id"] = null;
+			if(isset($data["retweeted_status"])) {
+				$t["retweet_id"] = $data["retweeted_status"]["id_str"];
+			}
 			$t["to_user_id"] = $data["in_reply_to_user_id_str"];
 			$t["to_user_name"] = addslashes($data["in_reply_to_screen_name"]);
 			$t["in_reply_to_status_id"] = $data["in_reply_to_status_id_str"];
+			$t["filter_level"] = $data["filter_level"];
 
 			$list_tweets[] = "('" . implode("','",$t) . "')";
 
@@ -259,7 +258,7 @@ function processtweets($tweetbucket) {
 
 		if(count($list_tweets) > 0) {
 
-			$sql = "INSERT IGNORE INTO ".$binname."_tweets (id,created_at,from_user_name,from_user_id,from_user_lang,from_user_tweetcount,from_user_followercount,from_user_friendcount,from_user_realname,source,location,geo_lat,geo_lng,text,to_user_id,to_user_name,in_reply_to_status_id) VALUES ". implode(",", $list_tweets);
+			$sql = "INSERT IGNORE INTO ".$binname."_tweets (id,created_at,from_user_name,from_user_id,from_user_lang,from_user_tweetcount,from_user_followercount,from_user_friendcount,from_user_listed,from_user_realname,from_user_utcoffset,from_user_timezone,from_user_description,from_user_url,from_user_verified,source,location,geo_lat,geo_lng,text,retweet_id,to_user_id,to_user_name,in_reply_to_status_id,filter_level) VALUES ". implode(",", $list_tweets);
 
 			$sqlresults = mysql_query($sql);
 			if(!$sqlresults) {
@@ -305,99 +304,9 @@ function logit($file,$message) {
 	file_put_contents($file, $message, FILE_APPEND);
 }
 
-function checktables() {
-
-	global $querybins;
-
-	$tables = array();
-
-	$sql = "SHOW TABLES";
-	$sqlresults = mysql_query($sql);
-
-	while($data = mysql_fetch_assoc($sqlresults)) {
-		$tables[] = $data["Tables_in_twittercapture"];
-	}
-
-	foreach($querybins as $bin => $content) {
-
-		if(!in_array($bin . "_tweets", $tables)) {
-
-			$sql = "CREATE TABLE " . $bin . "_hashtags (
-			id int(11) NOT NULL AUTO_INCREMENT,
-			tweet_id bigint(20) NOT NULL,
-			created_at datetime NOT NULL,
-			from_user_name varchar(255) NOT NULL,
-			from_user_id int(11) NOT NULL,
-			`text` varchar(255) NOT NULL,
-			PRIMARY KEY (id),
-			KEY `created_at` (`created_at`),
-			KEY `tweet_id` (`tweet_id`),
-			KEY `text` (`text`)
-			) ENGINE=MyISAM  DEFAULT CHARSET=utf8";
-
-			$sqlresults = mysql_query($sql) or die (mysql_error());
-
-			$sql = "CREATE TABLE " . $bin . "_mentions (
-			id int(11) NOT NULL AUTO_INCREMENT,
-			tweet_id bigint(20) NOT NULL,
-			created_at datetime NOT NULL,
-			from_user_name varchar(255) NOT NULL,
-			from_user_id int(11) NOT NULL,
-			to_user varchar(255) NOT NULL,
-			to_user_id int(11) NOT NULL,
-			PRIMARY KEY (id),
-			KEY `created_at` (`created_at`),
-			KEY `tweet_id` (`tweet_id`)
-			) ENGINE=MyISAM  DEFAULT CHARSET=utf8;";
-
-			$sqlresults = mysql_query($sql) or die (mysql_error());
-
-			$sql = "CREATE TABLE " . $bin . "_tweets (
-			id bigint(20) NOT NULL,
-			created_at datetime NOT NULL,
-			from_user_name varchar(255) NOT NULL,
-			from_user_id int(11) NOT NULL,
-			from_user_lang varchar(16) NOT NULL,
-			from_user_tweetcount int(11) NOT NULL,
-			from_user_followercount int(11) NOT NULL,
-			from_user_friendcount int(11) NOT NULL,
-			from_user_realname varchar(64) NOT NULL,
-			`source` varchar(255) NOT NULL,
-			`location` varchar(64) NOT NULL,
-			`geo_lat` float(10,6) NOT NULL,
-			`geo_lng` float(10,6) NOT NULL,
-			`text` varchar(255) NOT NULL,
-			to_user_id int(11) NOT NULL,
-			to_user_name varchar(255) NOT NULL,
-			in_reply_to_status_id bigint(20) NOT NULL,
-			PRIMARY KEY (id),
-			KEY `created_at` (`created_at`),
-			FULLTEXT KEY `text` (`text`)
-			) ENGINE=MyISAM DEFAULT CHARSET=utf8;";
-
-			$sqlresults = mysql_query($sql) or die (mysql_error());
-
-			$sql = "CREATE TABLE " . $bin . "_urls (
-			id int(11) NOT NULL AUTO_INCREMENT,
-			tweet_id bigint(20) NOT NULL,
-			created_at datetime NOT NULL,
-			from_user_name varchar(255) NOT NULL,
-			from_user_id int(11) NOT NULL,
-			url varchar(255) NOT NULL,
-			url_expanded varchar(255) NOT NULL,
-			url_followed varchar(255) NOT NULL,
-			domain varchar(255) NOT NULL,
-			error_code varchar(64) NOT NULL,
-			PRIMARY KEY (id),
-			KEY `created_at` (`created_at`),
-			KEY `domain` (`domain`),
-			KEY `url_followed` (`url_followed`),
-			KEY `url_expanded` (`url_expanded`)
-			) ENGINE=MyISAM  DEFAULT CHARSET=utf8;";
-
-			$sqlresults = mysql_query($sql) or die (mysql_error());
-		}
-	}
+function safe_feof($fp, &$start = NULL) {
+	$start = microtime(true);
+	return feof($fp);
 }
 
 
