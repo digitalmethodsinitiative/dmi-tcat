@@ -32,14 +32,14 @@ require_once './common/Gexf.class.php';
         $coword->countWordOncePerDocument = FALSE;
 
         // get hashtag-user relations
-        $sql = "SELECT LOWER(A.text) AS h1, LOWER(A.from_user_name) AS user ";
+        $sql = "SELECT LOWER(A.text) AS h1, LOWER(A.from_user_name) AS user, LOWER(t.from_user_lang) AS language, LOWER(t.location) AS location ";
         $sql .= "FROM " . $esc['mysql']['dataset'] . "_hashtags A, " . $esc['mysql']['dataset'] . "_tweets t WHERE ";
         $sql .= sqlSubset() . " AND ";
         $sql .= "LENGTH(A.text)>1 AND ";
         $sql .= "A.tweet_id = t.id ";
-        //print $sql."<br>";
 
         $sqlresults = mysql_query($sql);
+        $languages = $locations = array();
         while ($res = mysql_fetch_assoc($sqlresults)) {
             if (!isset($userHashtags[$res['user']][$res['h1']]))
                 $userHashtags[$res['user']][$res['h1']] = 0;
@@ -50,6 +50,8 @@ require_once './common/Gexf.class.php';
             if (!isset($hashtagCount[$res['h1']]))
                 $hashtagCount[$res['h1']] = 0;
             $hashtagCount[$res['h1']]++;
+            $languages[$res['user']] = $res['language'];
+            $locations[$res['user']] = $res['location'];
         }
 
         $gexf = new Gexf();
@@ -63,6 +65,8 @@ require_once './common/Gexf.class.php';
                 $node1->addNodeAttribute("type", 'user', $type = "string");
                 $node1->addNodeAttribute("userFrequency", $userCount[$user], $type = "int");
                 $node1->addNodeAttribute("hashtagFrequency", 0, $type = "int");
+                $node1->addNodeAttribute("language", $languages[$user], $type = "string");
+                $node1->addNodeAttribute("location", $locations[$user], $type = "string");
                 $gexf->addNode($node1);
                 $node2 = new GexfNode($hashtag);
                 $node2->addNodeAttribute("type", 'hashtag', $type = "string");
