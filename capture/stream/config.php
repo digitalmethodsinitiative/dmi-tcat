@@ -1,9 +1,9 @@
 <?php
 
-include_once('/var/www/dmi-tcat/config.php');
-include_once('/var/www/dmi-tcat/querybins.php');
+include_once("/var/www/dmi-tcat/config.php");
+include_once("/var/www/dmi-tcat/querybins.php");
 
-$path_local = getcwd()."/";
+$path_local = "/var/www/dmi-tcat/capture/stream/";
 
 // +++++ database connection functions +++++
 
@@ -18,5 +18,5 @@ function dbclose() {
 	global $db;
 	mysql_close($db);
 }
-	
+
 ?>
