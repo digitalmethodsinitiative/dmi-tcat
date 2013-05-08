@@ -24,7 +24,7 @@ if (isset($_GET['samplesize']) && !empty($_GET['samplesize']))
     $samplesize = $_GET['samplesize'];
 else
     $samplesize = "1000";
-if (isset($_GET['minf']) && preg_match("/^\d+$/",$_GET['minf'])!==false)
+if (isset($_GET['minf']) && preg_match("/^\d+$/", $_GET['minf']) !== false)
     $minf = $_GET['minf'];
 else
     $minf = 2;
@@ -505,8 +505,8 @@ function validate(&$what, $how) {
             break;
         // escape non-mysql chars
         case "mysql":
-            if(substr($what,0,1)=="[" && substr($what,-1)=="]") // allow for queries with spaces
-                    $what = substr($what,1,-1);
+            if (substr($what, 0, 1) == "[" && substr($what, -1) == "]") // allow for queries with spaces
+                $what = substr($what, 1, -1);
             $what = mysql_real_escape_string($what);
             break;
         case "tweet":
@@ -721,6 +721,53 @@ function variance($array) {
 function stdev($array) {
     $stdev = sqrt(variance($array));
     return $stdev;
+}
+
+function array_firstQuartile($array) {    //get the first quartile of an array
+    $count = count($array);
+    sort($array);
+    $n = $count * 0.25;
+    if (ceil($n) == $n)
+        return ($array[$n - 1] + $array[$n]) / 2;
+    else
+        return $array[ceil($n) - 1];
+}
+
+function array_thirdQuartile($array) {    //get the third quartile value of an array
+    $count = count($array);
+    sort($array);
+    $n = $count * 0.75;
+    if (ceil($n) == $n)
+        return ($array[$n - 1] + $array[$n]) / 2;
+    else
+        return $array[ceil($n) - 1];
+}
+
+function array_truncatedMean($array, $fraction = 0.25) {
+    $count = count($array);
+    sort($array);
+    $first = $count * $fraction;
+    if (ceil($first) != $first)
+        $first = ceil($first) - 1;
+    $last = $count * (1 - $fraction);
+    if (ceil($last) != $last)
+        $last = ceil($last) - 1;
+    
+    $array_truncated = array_slice($array, $first, ($last - $first));
+    $avg = round(average($array_truncated),2);
+    return $avg;
+}
+
+function stats_summary($array) {
+    $stats = array();
+    $stats['min'] = min($array);
+    $stats['max'] = max($array);
+    $stats['avg'] = round(average($array), 2);
+    $stats['median'] = median($array);
+    $stats['Q1'] = array_firstQuartile($array);
+    $stats['Q3'] = array_thirdQuartile($array);
+    $stats['truncatedMean'] = array_truncatedMean($array);
+    return $stats;
 }
 
 ?>
