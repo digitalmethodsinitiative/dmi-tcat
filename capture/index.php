@@ -57,7 +57,7 @@ while($data = mysql_fetch_assoc($sqlresults)) {
 
 		$tabledata[preg_replace("/_tweets/", "", $data["Tables_in_twittercapture"])] = mysql_fetch_assoc($sql2results);
 
-		print_r($data2);
+		//print_r($data2);
 	}
 }
 
