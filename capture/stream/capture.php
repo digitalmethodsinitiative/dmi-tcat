@@ -84,7 +84,7 @@ function connectsocket() {
 				$tweetbucket[] = $data;
 
 				// process tweets if 100 are selected
-				if(count($tweetbucket) == 100) {
+				if(count($tweetbucket) == 1) {
 					processtweets($tweetbucket);
 					$tweetbucket = array();
 				}
@@ -100,6 +100,7 @@ function connectsocket() {
 
 // function receives a bucket of tweets, sorts them according to bins and inserts into DB
 function processtweets($tweetbucket) {
+
 
 	global $querybins,$path_local;
 
@@ -126,7 +127,6 @@ function processtweets($tweetbucket) {
 			foreach($queries as $query) {
 
 				$pass = false;
-				$query = strtolower($query);
 
 				// check for queries with two words, but go around quoted queries
 				if(preg_match("/ /",$query) && !preg_match("/\'/",$query)) {
@@ -186,7 +186,7 @@ function processtweets($tweetbucket) {
 			$t["from_user_listed"] = $data["user"]["listed_count"];
 			$t["from_user_realname"] = addslashes($data["user"]["name"]);
 			$t["from_user_utcoffset"] = $data["user"]["utc_offset"];
-			$t["from_user_timezone"] = $data["user"]["time_zone"];
+			$t["from_user_timezone"] = addslashes($data["user"]["time_zone"]);
 			$t["from_user_description"] = addslashes($data["user"]["description"]);
 			$t["from_user_url"] = addslashes($data["user"]["url"]);
 			$t["from_user_verified"] = $data["user"]["verified"];
@@ -308,6 +308,5 @@ function safe_feof($fp, &$start = NULL) {
 	$start = microtime(true);
 	return feof($fp);
 }
-
 
 ?>
