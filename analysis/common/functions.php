@@ -12,6 +12,10 @@ if (isset($_GET['query']) && !empty($_GET['query']))
     $query = $_GET['query'];
 else
     $query = "";
+if (isset($_GET['url_query']) && !empty($_GET['url_query']))
+    $url_query = $_GET['url_query'];
+else
+    $url_query = "";
 if (isset($_GET['exclude']) && !empty($_GET['exclude']))
     $exclude = $_GET['exclude'];
 else
@@ -146,8 +150,8 @@ function frequencyTable($table, $toget) {
     $sql = "SELECT COUNT($table.$toget) AS count, $table.$toget AS toget, ";
     $sql .= sqlInterval();
     $sql .= "FROM " . $esc['mysql']['dataset'] . "_$table $table, " . $esc['mysql']['dataset'] . "_tweets t ";
-    $sql .= "WHERE t.id = $table.tweet_id AND ";
-    $sql .= sqlSubset();
+    $where = "t.id = $table.tweet_id AND";
+    $sql .= sqlSubset($where);
     $sql .= " GROUP BY toget, datepart ORDER BY datepart ASC, count DESC";
     $rec = mysql_query($sql);
     $date = false;
@@ -164,65 +168,99 @@ function frequencyTable($table, $toget) {
 }
 
 // here further sqlSubset selection is constructed
-function sqlSubset($table = "t", $period = FALSE) {
+function sqlSubset($where = NULL) {
     error_reporting(E_ALL);
     global $esc;
     $sql = "";
+    if (!empty($esc['mysql']['url_query']) && strstr($where, "u.") == false)
+        $sql .= ", " . $esc['mysql']['dataset'] . "_urls u";
+    $sql .= " WHERE ";
+    if (!empty($where))
+        $sql .= $where;
     if (!empty($esc['mysql']['from_user_name'])) {
         if (strstr($esc['mysql']['from_user_name'], "AND") !== false) {
             $subqueries = explode(" AND ", $esc['mysql']['from_user_name']);
             foreach ($subqueries as $subquery) {
-                $sql .= "LOWER($table.from_user_name) = LOWER('" . $subquery . "') AND ";
+                $sql .= "LOWER(t.from_user_name) = LOWER('" . $subquery . "') AND ";
             }
         } elseif (strstr($esc['mysql']['from_user_name'], "OR") !== false) {
             $subqueries = explode(" OR ", $esc['mysql']['from_user_name']);
             $sql .= "(";
             foreach ($subqueries as $subquery) {
-                $sql .= "LOWER($table.from_user_name) = LOWER('" . $subquery . "') OR ";
+                $sql .= "LOWER(t.from_user_name) = LOWER('" . $subquery . "') OR ";
             }
             $sql = substr($sql, 0, -3) . ") AND ";
         } else {
-            $sql .= "LOWER($table.from_user_name) = LOWER('" . $esc['mysql']['from_user_name'] . "') AND ";
+            $sql .= "LOWER(t.from_user_name) = LOWER('" . $esc['mysql']['from_user_name'] . "') AND ";
         }
     }
     if (!empty($esc['mysql']['query'])) {
         if (strstr($esc['mysql']['query'], "AND") !== false) {
             $subqueries = explode(" AND ", $esc['mysql']['query']);
             foreach ($subqueries as $subquery) {
-                $sql .= "LOWER($table.text) LIKE '%" . $subquery . "%' AND ";
+                $sql .= "LOWER(t.text) LIKE '%" . $subquery . "%' AND ";
             }
         } elseif (strstr($esc['mysql']['query'], "OR") !== false) {
             $subqueries = explode(" OR ", $esc['mysql']['query']);
             $sql .= "(";
             foreach ($subqueries as $subquery) {
-                $sql .= "LOWER($table.text) LIKE '%" . $subquery . "%' OR ";
+                $sql .= "LOWER(t.text) LIKE '%" . $subquery . "%' OR ";
             }
             $sql = substr($sql, 0, -3) . ") AND ";
         } else {
-            $sql .= "LOWER($table.text) LIKE '%" . $esc['mysql']['query'] . "%' AND ";
+            $sql .= "LOWER(t.text) LIKE '%" . $esc['mysql']['query'] . "%' AND ";
+        }
+    }
+    if (!empty($esc['mysql']['url_query'])) {
+        if (strstr($where, "u.") == false)
+            $sql .= " u.tweet_id = t.id AND ";
+        if (strstr($esc['mysql']['url_query'], "AND") !== false) {
+            $subqueries = explode(" AND ", $esc['mysql']['url_query']);
+            foreach ($subqueries as $subquery) {
+                $sql .= "(";
+                $sql .= "(LOWER(u.url_followed) LIKE '%" . $subquery . "%') OR ";
+                $sql .= "(LOWER(u.url_expanded) LIKE '%" . $subquery . "%')";
+                $sql .= ")";
+                $sql .= " AND ";
+            }
+        } elseif (strstr($esc['mysql']['url_query'], "OR") !== false) {
+            $subqueries = explode(" OR ", $esc['mysql']['url_query']);
+            $sql .= "(";
+            foreach ($subqueries as $subquery) {
+                $sql .= "(";
+                $sql .= "(LOWER(u.url_followed) LIKE '%" . $subquery . "%') OR ";
+                $sql .= "(LOWER(u.url_expanded) LIKE '%" . $subquery . "%')";
+                $sql .= ")";
+                $sql .= " OR ";
+            }
+            $sql = substr($sql, 0, -3) . ") AND ";
+        } else {
+            $subquery = $esc['mysql']['url_query'];
+            $sql .= "(";
+            $sql .= "(LOWER(u.url_followed) LIKE '%" . $subquery . "%') OR ";
+            $sql .= "(LOWER(u.url_expanded) LIKE '%" . $subquery . "%')";
+            $sql .= ") AND ";
         }
     }
     if (!empty($esc['mysql']['exclude'])) {
         if (strstr($esc['mysql']['exclude'], "AND") !== false) {
             $subqueries = explode(" AND ", $esc['mysql']['exclude']);
             foreach ($subqueries as $subquery) {
-                $sql .= "LOWER($table.text) NOT LIKE '%" . $subquery . "%' AND ";
+                $sql .= "LOWER(t.text) NOT LIKE '%" . $subquery . "%' AND ";
             }
         } elseif (strstr($esc['mysql']['exclude'], "OR") !== false) {
             $subqueries = explode(" OR ", $esc['mysql']['exclude']);
             $sql .= "(";
             foreach ($subqueries as $subquery) {
-                $sql .= "LOWER($table.text) NOT LIKE '%" . $subquery . "%' OR ";
+                $sql .= "LOWER(t.text) NOT LIKE '%" . $subquery . "%' OR ";
             }
             $sql = substr($sql, 0, -3) . ") AND ";
         } else {
-            $sql .= "LOWER($table.text) NOT LIKE '%" . $esc['mysql']['exclude'] . "%' AND ";
+            $sql .= "LOWER(t.text) NOT LIKE '%" . $esc['mysql']['exclude'] . "%' AND ";
         }
     }
-    if ($period === FALSE)
-        $sql .= "$table.created_at >= '" . $esc['datetime']['startdate'] . "' AND $table.created_at <= '" . $esc['datetime']['enddate'] . "' ";
-    else
-        $sql .= $period;
+    $sql .= " t.created_at >= '" . $esc['datetime']['startdate'] . "' AND t.created_at <= '" . $esc['datetime']['enddate'] . "' ";
+    //print $sql."<br>"; die;
     return $sql;
 }
 
@@ -276,7 +314,7 @@ function generate($what, $filename) {
     $file = "";
 
     // determine interval
-    $sql = "SELECT MIN(created_at) AS min, MAX(created_at) AS max FROM " . $esc['mysql']['dataset'] . "_tweets t WHERE ";
+    $sql = "SELECT MIN(t.created_at) AS min, MAX(t.created_at) AS max FROM " . $esc['mysql']['dataset'] . "_tweets t ";
     $sql .= sqlSubset();
     //print $sql . "<bR>";
     $rec = mysql_query($sql);
@@ -294,7 +332,7 @@ function generate($what, $filename) {
         // get other things        
     } else {
         // @todo, this could also use database grouping
-        $sql = "SELECT id,text,created_at,from_user_name FROM " . $esc['mysql']['dataset'] . "_tweets t WHERE ";
+        $sql = "SELECT id,text,created_at,from_user_name FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
 
         // get slice and its min and max time
@@ -376,10 +414,12 @@ function generate($what, $filename) {
             }
         }
         // count frequency of occurence of thing, per interval
-        foreach ($results as $group => $things) {
-            $counted_things = array_count_values($things);
-            arsort($counted_things);
-            $results[$group] = $counted_things;
+        if ($what != "user-mention") {
+            foreach ($results as $group => $things) {
+                $counted_things = array_count_values($things);
+                arsort($counted_things);
+                $results[$group] = $counted_things;
+            }
         }
     }
 
@@ -524,11 +564,12 @@ function validate(&$what, $how) {
 // make sure that we have all the right types and values
 // also make sure one cannot do a mysql injection attack
 function validate_all_variables() {
-    global $esc, $query, $dataset, $exclude, $from_user_name, $startdate, $enddate, $databases, $connection, $keywords, $database, $minf;
+    global $esc, $query, $url_query, $dataset, $exclude, $from_user_name, $startdate, $enddate, $databases, $connection, $keywords, $database, $minf;
 
     // validate and escape all user input
     $esc['mysql']['dataset'] = validate($dataset, "mysql");
     $esc['mysql']['query'] = validate($query, "mysql");
+    $esc['mysql']['url_query'] = validate($url_query, "mysql");
     $esc['mysql']['exclude'] = validate($exclude, "mysql");
     $esc['mysql']['from_user_name'] = validate($from_user_name, "mysql");
 
@@ -600,7 +641,7 @@ function get_all_datasets() {
     foreach ($querybins as $bin => $keywords) {
 
         // get nr of results per table
-        $sql2 = "SELECT count(id) AS notweets,MIN(created_at) AS min,MAX(created_at) AS max  FROM " . $bin . "_tweets";
+        $sql2 = "SELECT count(t.id) AS notweets,MIN(t.created_at) AS min,MAX(t.created_at) AS max  FROM " . $bin . "_tweets t ";
         $rec2 = mysql_query($sql2);
         if ($rec2 && mysql_num_rows($rec2) > 0) {
             $res2 = mysql_fetch_assoc($rec2);
@@ -615,7 +656,7 @@ function get_all_datasets() {
     }
     foreach ($queryarchives as $bin => $keywords) {
         // get nr of results per table
-        $sql2 = "SELECT count(id) AS notweets,MIN(created_at) AS min,MAX(created_at) AS max  FROM " . $bin . "_tweets";
+        $sql2 = "SELECT count(t.id) AS notweets,MIN(t.created_at) AS min,MAX(t.created_at) AS max  FROM " . $bin . "_tweets t ";
         $rec2 = mysql_query($sql2);
         if ($rec2 && mysql_num_rows($rec2) > 0) {
             $res2 = mysql_fetch_assoc($rec2);
@@ -752,9 +793,9 @@ function array_truncatedMean($array, $fraction = 0.25) {
     $last = $count * (1 - $fraction);
     if (ceil($last) != $last)
         $last = ceil($last) - 1;
-    
+
     $array_truncated = array_slice($array, $first, ($last - $first));
-    $avg = round(average($array_truncated),2);
+    $avg = round(average($array_truncated), 2);
     return $avg;
 }
 
