@@ -37,8 +37,8 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
         // get user diversity per hasthag
         $sql = "SELECT LOWER(h.text) as h1, COUNT(t.from_user_id) as c, COUNT(DISTINCT(t.from_user_id)) AS d ";
         $sql .= "FROM " . $esc['mysql']['dataset'] . "_hashtags h, " . $esc['mysql']['dataset'] . "_tweets t ";
-        $sql .= "WHERE h.tweet_id = t.id ";
-        $sql .= "AND " . sqlSubset();
+        $where = "h.tweet_id = t.id AND ";
+        $sql .= sqlSubset($where);
         $sql .= "GROUP BY h1";
         //print $sql . "<bR>";
         $sqlresults = mysql_query($sql);
@@ -54,7 +54,7 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
         // do the actual job
         // get cowords
         $sql = "SELECT LOWER(A.text) AS h1, LOWER(B.text) AS h2 ";
-        $sql .= "FROM " . $esc['mysql']['dataset'] . "_hashtags A, " . $esc['mysql']['dataset'] . "_hashtags B, " . $esc['mysql']['dataset'] . "_tweets t WHERE ";
+        $sql .= "FROM " . $esc['mysql']['dataset'] . "_hashtags A, " . $esc['mysql']['dataset'] . "_hashtags B, " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset() . " AND ";
         $sql .= "LENGTH(A.text)>1 AND LENGTH(B.text)>1 AND ";
         $sql .= "LOWER(A.text) < LOWER(B.text) AND A.tweet_id = t.id AND A.tweet_id = B.tweet_id ";

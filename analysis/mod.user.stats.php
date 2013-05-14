@@ -37,7 +37,7 @@ require_once './common/functions.php';
         $filename_languages = str_replace("userStats", "languages", $filename);
 
         // tweets per user
-        $sql = "SELECT count(distinct(id)) AS count, from_user_id FROM " . $esc['mysql']['dataset'] . "_tweets t WHERE ";
+        $sql = "SELECT count(distinct(t.id)) AS count, t.from_user_id FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
         $sql .= "GROUP BY from_user_id";
         //print $sql . "<br>";
@@ -50,7 +50,7 @@ require_once './common/functions.php';
             $stats['tweets_per_user'] = stats_summary($array);
 
         // users per day
-        $sql = "SELECT count(distinct(from_user_id)) AS count, DATE_FORMAT(t.created_at,'%Y-%m-%d') day FROM " . $esc['mysql']['dataset'] . "_tweets t WHERE ";
+        $sql = "SELECT count(distinct(t.from_user_id)) AS count, DATE_FORMAT(t.created_at,'%Y-%m-%d') day FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
         $sql .= "GROUP BY day";
         //print $sql . "<br>";
@@ -62,9 +62,9 @@ require_once './common/functions.php';
         if (!empty($array))
             $stats['users_per_day'] = stats_summary($array);
 
-        $sql = "SELECT count(distinct(u.url)) AS count, u.from_user_id FROM " . $esc['mysql']['dataset'] . "_urls u, " . $esc['mysql']['dataset'] . "_tweets t WHERE ";
-        $sql .= "t.id = u.tweet_id AND ";
-        $sql .= sqlSubset();
+        $sql = "SELECT count(distinct(u.url)) AS count, u.from_user_id FROM " . $esc['mysql']['dataset'] . "_urls u, " . $esc['mysql']['dataset'] . "_tweets t ";
+        $where = "t.id = u.tweet_id AND ";
+        $sql .= sqlSubset($where);
         $sql .= "GROUP BY from_user_id";
         //print $sql."<br>";
         $sqlresults = mysql_query($sql);
@@ -76,7 +76,7 @@ require_once './common/functions.php';
             $stats['urls_per_user'] = stats_summary($array);
 
         // select latest user info
-        $sql = "SELECT max(created_at), from_user_id, from_user_followercount, from_user_friendcount, from_user_tweetcount FROM " . $esc['mysql']['dataset'] . "_tweets t WHERE ";
+        $sql = "SELECT max(t.created_at), t.from_user_id, t.from_user_followercount, t.from_user_friendcount, t.from_user_tweetcount FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
         $sql .= "GROUP BY from_user_id";
         //print $sql."<bR>";
@@ -107,7 +107,7 @@ require_once './common/functions.php';
         echo '</fieldset>';
 
         // interface language, user-defined location
-        $sql = "SELECT max(created_at), from_user_id, from_user_lang, location FROM " . $esc['mysql']['dataset'] . "_tweets t WHERE ";
+        $sql = "SELECT max(t.created_at), t.from_user_id, t.from_user_lang, t.location FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
         $sql .= "GROUP BY from_user_id";
         $sqlresults = mysql_query($sql);

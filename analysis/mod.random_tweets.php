@@ -61,7 +61,7 @@ require_once './common/functions.php';
 
                 $header = "time,created_at,from_user_name,from_user_lang,text,source,location,lat,lng,hashtags,urls\n";
 
-                $sql = "SELECT * FROM " . $esc['mysql']['dataset'] . "_tweets t WHERE ";
+                $sql = "SELECT * FROM " . $esc['mysql']['dataset'] . "_tweets t ";
                 $sql .= sqlSubset();
                 $sql .= "ORDER BY RAND() LIMIT " . $samplesize;
 
@@ -80,8 +80,8 @@ require_once './common/functions.php';
                 }
 
                 // get urls
-                $sql = "SELECT tweet_id,url_followed FROM " . $esc['mysql']['dataset'] . "_urls WHERE ";
-                $sql .= "tweet_id IN (" . implode(",", array_keys($content)) . ")";
+                $sql = "SELECT u.tweet_id,u.url_followed FROM " . $esc['mysql']['dataset'] . "_urls WHERE ";
+                $sql .= "u.tweet_id IN (" . implode(",", array_keys($content)) . ")";
                 //print $sql . "<br>";
                 $sqlresults = mysql_query($sql);
                 $urls = array();

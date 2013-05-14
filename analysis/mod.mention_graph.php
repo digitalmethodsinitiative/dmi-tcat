@@ -46,8 +46,9 @@ if (1 || !file_exists($filename)) {
 
     while ($numresults == 10000) {
 
-        $sql = "SELECT m.from_user_name,m.to_user FROM " . $esc['mysql']['dataset'] . "_mentions m, ".$esc['mysql']['dataset']."_tweets t WHERE m.tweet_id = t.id AND ";
-        $sql .= sqlSubset();
+        $sql = "SELECT m.from_user_name,m.to_user FROM " . $esc['mysql']['dataset'] . "_mentions m, ".$esc['mysql']['dataset']."_tweets t ";
+        $where = "m.tweet_id = t.id AND ";
+        $sql .= sqlSubset($where);
         $sql .= " LIMIT " . $cur . "," . $numresults;
 //print $sql."<br>";
         $sqlresults = mysql_query($sql);
