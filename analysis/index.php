@@ -161,11 +161,11 @@ if (defined('ANALYSIS_URL'))
         $data = mysql_fetch_assoc($sqlresults);
         $numtweets = $data["count"];
         //print "numtweets $numtweets<bR>";
-// count links
-        $sql = "SELECT count(u.id) AS count FROM " . $esc['mysql']['dataset'] . "_urls u, " . $esc['mysql']['dataset'] . "_tweets t ";
+        // count tweet containing links
+        $sql = "SELECT count(distinct(t.id)) AS count FROM " . $esc['mysql']['dataset'] . "_urls u, " . $esc['mysql']['dataset'] . "_tweets t ";
         $where = "u.tweet_id = t.id AND ";
         $sql .= sqlSubset($where);
-        //print $sql;
+        //print $sql."<Br>";
         $sqlresults = mysql_query($sql);
         $numlinktweets = 0;
         if ($sqlresults && mysql_num_rows($sqlresults) > 0) {
