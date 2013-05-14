@@ -36,7 +36,7 @@ require_once './common/functions.php';
         $filename = $resultsdir . $esc['shell']["datasetname"] . "_" . $esc['shell']["query"] . $exc . "_" . $esc['date']["startdate"] . "_" . $esc['date']["enddate"] . "_" . $esc['shell']["from_user_name"] . "_userList.csv";
 
         // tweets per user
-        $sql = "SELECT from_user_id,from_user_name,from_user_lang,from_user_tweetcount,from_user_followercount,from_user_friendcount,from_user_listed,from_user_utcoffset,from_user_verified,count(distinct(id)) AS count FROM " . $esc['mysql']['dataset'] . "_tweets t ";
+        $sql = "SELECT from_user_id,from_user_name,from_user_lang,from_user_tweetcount,from_user_followercount,from_user_friendcount,from_user_listed,from_user_utcoffset,from_user_verified,count(distinct(id)) AS count FROM " . $esc['mysql']['dataset'] . "_tweets t WHERE ";
         $sql .= sqlSubset();
         $sql .= "GROUP BY from_user_id";
         //print $sql . "<br>";
