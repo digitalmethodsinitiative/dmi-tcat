@@ -8,9 +8,6 @@ require_once '../../config.php';
 require_once BASE_FILE . 'analysis/common/functions.php';
 require_once 'KloutAPIv2-PHP/KloutAPIv2.class.php';
 
-$klout = new KloutAPIv2($kloutapi_key);
-$network = "twitter";
-
 // @todo, think of way on how to know what bin to do
 $esc['mysql']['dataset'] = "penw";
 
@@ -41,7 +38,7 @@ if (mysql_num_rows($result) == 0) {
 // select user names for which we do not have a klout score yet or for which the klout score is outdated
 $sql = "SELECT DISTINCT(t.from_user_id), t.from_user_name, k.kloutid FROM " . $esc['mysql']['dataset'] . "_tweets t ";
 $sql .= "LEFT JOIN " . $esc['mysql']['dataset'] . "_klout k ON t.from_user_id = k.from_user_id ";
-$sql .= "WHERE k.from_user_id IS NULL OR k.last_updated <= '" . strftime("%Y-%m-%d %H:%M:%S", date('U') - (86400 * 31)) . "'";
+$sql .= "WHERE k.from_user_id IS NULL OR k.last_updated <= '" . strftime("%Y-%m-%d %H:%M:%S", date('U') - (86400 * 31)) . "'"; // @todo and http_code != 404 (spam acounts)
 
 $rec = mysql_query($sql);
 while ($res = mysql_fetch_assoc($rec)) {
@@ -54,6 +51,8 @@ while ($res = mysql_fetch_assoc($rec)) {
     $kloutid = $res['kloutid'];
 
     // klout score
+    $klout = new KloutAPIv2($kloutapi_key);
+    $network = "twitter";
     if (empty($kloutid))
         $kloutid = $klout->KloutIDLookupByName($network, $from_user_name);
     $http_code = $klout->http_code;
@@ -61,12 +60,12 @@ while ($res = mysql_fetch_assoc($rec)) {
 
 
     if (!empty($kloutid)) { // @todo this assumes that on line 60 of KloutAPIv2-PHP/KloutAPIv2.class.php the following is added: if($ResultString === NULL) return $ResultString;
-        $result = $klout->KloutUserInfluence($kloutid);
-
-        $kloutScore = ceil($klout->KloutScore($kloutid));
-        $kloutDayChanges = $klout->KloutScoreChanges($kloutid, "day");
-        $kloutWeekChanges = $klout->KloutScoreChanges($kloutid, "week");
-        $kloutMonthChanges = $klout->KloutScoreChanges($kloutid, "month");
+        
+        $userScore = json_decode($klout->KloutUserScore($kloutid));
+        $kloutScore = ceil($userScore->score);
+        $kloutDayChanges = $userScore->scoreDelta->dayChange;
+        $kloutWeekChanges = $userScore->scoreDelta->weekChange;
+        $kloutMonthChanges = $userScore->scoreDelta->monthChange;
 
         // topics
         $result = $klout->KloutUserTopics($kloutid);
@@ -81,6 +80,7 @@ while ($res = mysql_fetch_assoc($rec)) {
 
         /*
           // persons influencers / influencees
+          $result = $klout->KloutUserInfluence($kloutid);
           $influencers = json_decode($result);
           foreach ($influencers->myInfluencers as $influencer):
           $handle = $klout->KloutUser($influencer->entity->payload->kloutId);
