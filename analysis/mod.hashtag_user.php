@@ -33,7 +33,7 @@ require_once './common/Gexf.class.php';
 
         // get hashtag-user relations
         $sql = "SELECT LOWER(A.text) AS h1, LOWER(A.from_user_name) AS user, LOWER(t.from_user_lang) AS language, LOWER(t.location) AS location ";
-        $sql .= "FROM " . $esc['mysql']['dataset'] . "_hashtags A, " . $esc['mysql']['dataset'] . "_tweets t WHERE ";
+        $sql .= "FROM " . $esc['mysql']['dataset'] . "_hashtags A, " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset() . " AND ";
         $sql .= "LENGTH(A.text)>1 AND ";
         $sql .= "A.tweet_id = t.id ";

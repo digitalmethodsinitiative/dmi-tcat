@@ -55,6 +55,7 @@ if (defined('ANALYSIS_URL'))
             + _file +
             "?dataset=" + $("#ipt_dataset").val() +
             "&query=" + escape($("#ipt_query").val()) +
+            "&url_query=" + escape($("#ipt_url_query").val()) +
             "&exclude=" + escape($("#ipt_exclude").val()) +
             "&from_user_name=" + $("#ipt_from_user").val() +
             "&startdate=" + $("#ipt_startdate").val() +
@@ -129,7 +130,9 @@ if (defined('ANALYSIS_URL'))
                     <tr>
                         <td class="tbl_head">From user: </td><td><input type="text" id="ipt_from_user" name="from_user_name"  value="<?php echo $from_user_name; ?>" /> (empty: from any user*)</td>
                     </tr>
-
+                    <tr>
+                        <td class="tbl_head">URL (or part of URL): </td><td><input type="text" id="ipt_url_query" name="url_query"  value="<?php echo $url_query; ?>" /> (empty: any or all URLs*)</td>
+                    </tr>
                     <tr>
                         <td class="tbl_head">Startdate:</td><td><input type="text" id="ipt_startdate" name="startdate" value="<?php echo $startdate; ?>" /> (YYYY-MM-DD)</td>
                     </tr>
@@ -151,7 +154,7 @@ if (defined('ANALYSIS_URL'))
         validate_all_variables();
 
 // count current subsample
-        $sql = "SELECT count(distinct(id)) as count FROM " . $esc['mysql']['dataset'] . "_tweets t WHERE ";
+        $sql = "SELECT count(distinct(t.id)) as count FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
         //print $sql . "<br>";
         $sqlresults = mysql_query($sql);
@@ -159,8 +162,9 @@ if (defined('ANALYSIS_URL'))
         $numtweets = $data["count"];
         //print "numtweets $numtweets<bR>";
 // count links
-        $sql = "SELECT count(u.id) AS count FROM " . $esc['mysql']['dataset'] . "_urls u, " . $esc['mysql']['dataset'] . "_tweets t WHERE u.tweet_id = t.id AND ";
-        $sql .= sqlSubset();
+        $sql = "SELECT count(u.id) AS count FROM " . $esc['mysql']['dataset'] . "_urls u, " . $esc['mysql']['dataset'] . "_tweets t ";
+        $where = "u.tweet_id = t.id AND ";
+        $sql .= sqlSubset($where);
         //print $sql;
         $sqlresults = mysql_query($sql);
         $numlinktweets = 0;
@@ -170,8 +174,9 @@ if (defined('ANALYSIS_URL'))
         }
         //print "numlinktweets $numlinktweets<bR>";
 // see whether all URLs are loaded 
-        $sql = "SELECT count(u.id) as count FROM " . $esc['mysql']['dataset'] . "_urls u, " . $esc['mysql']['dataset'] . "_tweets t WHERE u.tweet_id = t.id AND u.url_followed != '' AND ";
-        $sql .= sqlSubset();
+        $sql = "SELECT count(u.id) as count FROM " . $esc['mysql']['dataset'] . "_urls u, " . $esc['mysql']['dataset'] . "_tweets t ";
+        $where = "u.tweet_id = t.id AND u.url_followed != '' AND ";
+        $sql .= sqlSubset($where);
         //print $sql."<bR>";
         $show_url_export = false;
         $rec = mysql_query($sql);
@@ -186,7 +191,7 @@ if (defined('ANALYSIS_URL'))
             print $res['count'] / $numlinktweets . "<br>";
         }
         // number of users
-        $sql = "SELECT count(distinct(from_user_id)) as count FROM " . $esc['mysql']['dataset'] . "_tweets t WHERE ";
+        $sql = "SELECT count(distinct(t.from_user_id)) as count FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
         //print $sql . "<br>";
         $sqlresults = mysql_query($sql);
@@ -198,12 +203,12 @@ if (defined('ANALYSIS_URL'))
         $curdate = strtotime($esc['datetime']['startdate']);
         $linedata = array();
 
-        $sql = "SELECT COUNT(text) as count, COUNT(DISTINCT from_user_name) as usercount, COUNT(DISTINCT location) as loccount, COUNT(DISTINCT geo_lat) as geocount, ";
+        $sql = "SELECT COUNT(t.text) as count, COUNT(DISTINCT(t.from_user_name)) as usercount, COUNT(DISTINCT(t.location)) as loccount, COUNT(DISTINCT(t.geo_lat)) as geocount, ";
         if ($period == "day")
             $sql .= "DATE_FORMAT(t.created_at,'%Y.%d.%m') datepart ";
         else
             $sql .= "DATE_FORMAT(t.created_at,'%d. %H:00h') datepart ";
-        $sql .= "FROM " . $esc['mysql']['dataset'] . "_tweets t WHERE ";
+        $sql .= "FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
         $sql .= "GROUP BY datepart";
         //print $sql."<br>";
@@ -262,7 +267,9 @@ if (defined('ANALYSIS_URL'))
                         <tr>
                             <td class="tbl_head">From user:</td><td><?php echo $from_user_name; ?></td>
                         </tr>
-
+                        <tr>
+                            <td class="tbl_head">(Part of) URL:</td><td><?php echo $url_query; ?></td>
+                        </tr>
                         <tr>
                             <td class="tbl_head">Startdate:</td><td><?php echo $startdate; ?></td>
                         </tr>
@@ -501,19 +508,19 @@ foreach ($linedata as $key => $value) {
                     <hr />
                     <h3>Follower graph</h3>
                     <div class="txt_desc">Produces a <a href="http://en.wikipedia.org/wiki/Directed_graph">directed graph</a> (.gexf, open in gephi) based on follower (friend) relations between users. If a user is friends with another one, a directed link is created.</div>
-                        <div class="txt_desc">Use: explore the follower network of a set of users, find shared followees.</div>
-                        <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('relations'); sendUrl('mod.relations.php');return false;">launch</a></div>
-                    <?php } ?>
+                    <div class="txt_desc">Use: explore the follower network of a set of users, find shared followees.</div>
+                    <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('relations'); sendUrl('mod.relations.php');return false;">launch</a></div>
+                <?php } ?>
 
-                    <hr />
-                    <h3>User stats</h3>
-                    <div class="txt_desc">Creates a .csv file (open in Excel or similar) that contains the min, max, average and median for: number of tweets per user, users per day, urls per user, number of followers, number of friends, nr of tweets</div>
-                        <div class="txt_desc">Use: get a better feel for the users in your data set.</div>
-                        <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('user.stats'); sendUrl('mod.user.stats.php');return false;">launch</a></div>
-                        <div style="display:none" id="whattodo" />
+                <hr />
+                <h3>User stats</h3>
+                <div class="txt_desc">Creates a .csv file (open in Excel or similar) that contains the min, max, average and median for: number of tweets per user, users per day, urls per user, number of followers, number of friends, nr of tweets</div>
+                <div class="txt_desc">Use: get a better feel for the users in your data set.</div>
+                <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('user.stats'); sendUrl('mod.user.stats.php');return false;">launch</a></div>
+                <div style="display:none" id="whattodo" />
 
-                        </fieldset>
+        </fieldset>
 
 
-                        </body>
-                        </html>
+    </body>
+</html>

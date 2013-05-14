@@ -6,7 +6,7 @@ validate_all_variables();
 
 $exc = (empty($esc['shell']["exclude"])) ? "" : "-" . $esc['shell']["exclude"];
 
-$sql = "SELECT * FROM ".$esc['mysql']['dataset']."_tweets t WHERE ";
+$sql = "SELECT * FROM ".$esc['mysql']['dataset']."_tweets t ";
 $sql .= sqlSubset();
 
 //print $sql." - <br>";

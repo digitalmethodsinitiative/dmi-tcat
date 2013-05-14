@@ -37,10 +37,9 @@ require_once './common/Gexf.class.php';
 
 
         $sql = "SELECT m.to_user AS user, LOWER(h.text) AS hashtag FROM ";
-        $sql .= $esc['mysql']['dataset'] . "_mentions m, " . $esc['mysql']['dataset'] . "_tweets t, " . $esc['mysql']['dataset'] . "_hashtags h WHERE ";
-        $sql .= "t.id = m.tweet_id AND m.tweet_id = h.tweet_id AND ";
-        $sql .= "LENGTH(h.text)>1 AND ";
-        $sql .= sqlSubset();
+        $sql .= $esc['mysql']['dataset'] . "_mentions m, " . $esc['mysql']['dataset'] . "_tweets t, " . $esc['mysql']['dataset'] . "_hashtags h ";
+        $where = "t.id = m.tweet_id AND m.tweet_id = h.tweet_id AND LENGTH(h.text)>1 AND ";
+        $sql .= sqlSubset($where);
         //print $sql."<Br>";
 
         $sqlresults = mysql_query($sql);

@@ -34,9 +34,9 @@ require_once './common/Gexf.class.php';
         $filename = $resultsdir . $esc['shell']["datasetname"] . "_" . $esc['shell']["query"] . $exc . "_" . $esc['date']["startdate"] . "_" . $esc['date']["enddate"] . "_" . $esc['shell']["from_user_name"] . "_hostHashtag.csv";
 
         $sql = "SELECT COUNT(LOWER(h.text)) AS frequency, LOWER(h.text) AS hashtag, u.domain AS domain FROM ";
-        $sql .= $esc['mysql']['dataset'] . "_tweets t, " . $esc['mysql']['dataset'] . "_hashtags h, " . $esc['mysql']['dataset'] . "_urls u WHERE ";
-        $sql .= "t.id = h.tweet_id AND h.tweet_id = u.tweet_id AND u.url_followed !='' AND ";
-        $sql .= sqlSubset();
+        $sql .= $esc['mysql']['dataset'] . "_tweets t, " . $esc['mysql']['dataset'] . "_hashtags h, " . $esc['mysql']['dataset'] . "_urls u ";
+        $where = "t.id = h.tweet_id AND h.tweet_id = u.tweet_id AND u.url_followed !='' AND ";
+        $sql .= sqlSubset($where);
         $sql .= " GROUP BY u.domain, LOWER(h.text) ORDER BY frequency DESC";
         //print $sql." - <br>";
 
