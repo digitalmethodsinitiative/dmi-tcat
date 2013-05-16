@@ -517,8 +517,14 @@ foreach ($linedata as $key => $value) {
                 <div class="txt_desc">Creates a .csv file (open in Excel or similar) that contains the min, max, average and median for: number of tweets per user, users per day, urls per user, number of followers, number of friends, nr of tweets</div>
                 <div class="txt_desc">Use: get a better feel for the users in your data set.</div>
                 <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('user.stats'); sendUrl('mod.user.stats.php');return false;">launch</a></div>
-                <div style="display:none" id="whattodo" />
 
+                <hr />
+                <h3>User list</h3>
+                <div class="txt_desc">Creates a .csv file (open in Excel or similar) that lists users and their number of tweets, number of followers, number of friends, how many times they are listed, their UTC time offset, whether the user has a verified account and how many times they appear in the data set.</div>
+                <div class="txt_desc">Use: get a better feel for the users in your data set.</div>
+                <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('user.list'); sendUrl('mod.user.list.php');return false;">launch</a></div>
+                
+                <div style="display:none" id="whattodo" />
         </fieldset>
 
 
