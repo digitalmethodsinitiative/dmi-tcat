@@ -79,7 +79,7 @@ function checktables() {
 			KEY `created_at` (`created_at`),
 			KEY `from_user_name` (`from_user_name`),
 			KEY `retweet_id` (`retweet_id`),
-			FULLTEXT KEY `text` (`from_user_description`),
+			FULLTEXT KEY `from_user_description` (`from_user_description`),
 			FULLTEXT KEY `text` (`text`)
 			) ENGINE=MyISAM DEFAULT CHARSET=utf8;";
 
@@ -99,8 +99,8 @@ function checktables() {
 			PRIMARY KEY (id),
 			KEY `created_at` (`created_at`),
 			KEY `domain` (`domain`),
-			KEY `url_followed` (`url_followed`),
-			KEY `url_expanded` (`url_expanded`)
+			FULLTEXT KEY `url_followed` (`url_followed`),
+			FULLTEXT KEY `url_expanded` (`url_expanded`)
 			) ENGINE=MyISAM  DEFAULT CHARSET=utf8;";
 
 			$sqlresults = mysql_query($sql) or die (mysql_error());
