@@ -8,7 +8,7 @@ require_once './common/functions.php';
 
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
-        <title>Twitter Analytics :: User stats</title>
+        <title>Twitter Analytics :: User list</title>
 
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
@@ -36,26 +36,25 @@ require_once './common/functions.php';
         $filename = $resultsdir . $esc['shell']["datasetname"] . "_" . $esc['shell']["query"] . $exc . "_" . $esc['date']["startdate"] . "_" . $esc['date']["enddate"] . "_" . $esc['shell']["from_user_name"] . "_userList.csv";
 
         // tweets per user
-        $sql = "SELECT from_user_id,from_user_name,from_user_lang,from_user_tweetcount,from_user_followercount,from_user_friendcount,from_user_listed,from_user_utcoffset,from_user_verified,count(distinct(id)) AS count FROM " . $esc['mysql']['dataset'] . "_tweets t WHERE ";
+        $sql = "SELECT from_user_id,from_user_name,from_user_realname,from_user_lang,from_user_tweetcount,from_user_followercount,from_user_friendcount,from_user_listed,from_user_utcoffset,from_user_verified,count(distinct(id)) AS count,from_user_description,from_user_url FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
-        $sql .= "GROUP BY from_user_id";
-        //print $sql . "<br>";
+        $sql .= "GROUP BY from_user_id"; // @todo, does this assure most recent user stats?
         $sqlresults = mysql_query($sql);
         $array = array();
         while ($res = mysql_fetch_assoc($sqlresults)) {
-            $array[] = $res;
+            $array[] = preg_replace("/[\n\r\t]/"," ",str_replace(","," ",$res));
         }
 
 
-        $content = "from_user_id,from_user_name,from_user_lang,from_user_tweetcount,from_user_followercount,from_user_friendcount,from_user_listed,from_user_utcoffset,from_user_verified,count\n";
+        $content = "from_user_id,from_user_name,from_user_realname,from_user_lang,from_user_tweetcount,from_user_followercount,from_user_friendcount,from_user_listed,from_user_utcoffset,from_user_verified,tweetsInSelection,from_user_description,from_user_url\n";
         foreach($array as $a) {
-            $content .= $a["from_user_id"].",".$a["from_user_name"].",".$a["from_user_lang"].",".$a["from_user_tweetcount"].",".$a["from_user_followercount"].",".$a["from_user_friendcount"].",".$a["from_user_listed"].",".$a["from_user_utcoffset"].",".$a["from_user_verified"].",".$a["count"] . "\n";
+            $content .= $a["from_user_id"].",".$a["from_user_name"].",".$a["from_user_realname"].",".$a["from_user_lang"].",".$a["from_user_tweetcount"].",".$a["from_user_followercount"].",".$a["from_user_friendcount"].",".$a["from_user_listed"].",".$a["from_user_utcoffset"].",".$a["from_user_verified"].",".$a["count"] . ",".$a['from_user_description'].",".$a['from_user_url']."\n";
         }
 
         file_put_contents($filename,  chr(239) . chr(187) . chr(191) . $content);
 
         echo '<fieldset class="if_parameters">';
-        echo '<legend>User stats</legend>';
+        echo '<legend>User list</legend>';
         echo '<p><a href="' . str_replace("#", urlencode("#"), str_replace("\"", "%22", $filename)) . '">' . $filename . '</a></p>';
         echo '</fieldset>';
 
