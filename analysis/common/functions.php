@@ -150,7 +150,7 @@ function frequencyTable($table, $toget) {
     $sql = "SELECT COUNT($table.$toget) AS count, $table.$toget AS toget, ";
     $sql .= sqlInterval();
     $sql .= "FROM " . $esc['mysql']['dataset'] . "_$table $table, " . $esc['mysql']['dataset'] . "_tweets t ";
-    $where = "t.id = $table.tweet_id AND";
+    $where = "t.id = $table.tweet_id AND ";
     $sql .= sqlSubset($where);
     $sql .= " GROUP BY toget, datepart ORDER BY datepart ASC, count DESC";
     $rec = mysql_query($sql);
