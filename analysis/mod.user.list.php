@@ -32,20 +32,24 @@ require_once './common/functions.php';
         validate_all_variables();
 // Output format: {dataset}_{query}_{startdate}_{enddate}_{from_user_name}_{output type}.{filetype}
 
+		//print_r($esc);
+
         $exc = (empty($esc['shell']["exclude"])) ? "" : "-" . $esc['shell']["exclude"];
         $filename = $resultsdir . $esc['shell']["datasetname"] . "_" . $esc['shell']["query"] . $exc . "_" . $esc['date']["startdate"] . "_" . $esc['date']["enddate"] . "_" . $esc['shell']["from_user_name"] . "_userList.csv";
 
         // tweets per user
-        $sql = "SELECT from_user_id,from_user_name,from_user_lang,from_user_tweetcount,from_user_followercount,from_user_friendcount,from_user_listed,from_user_utcoffset,from_user_verified,count(distinct(id)) AS count FROM " . $esc['mysql']['dataset'] . "_tweets t WHERE ";
+        $sql = "SELECT t.from_user_id,t.from_user_name,t.from_user_lang,t.from_user_tweetcount,t.from_user_followercount,t.from_user_friendcount,t.from_user_listed,t.from_user_utcoffset,t.from_user_verified,count(distinct(t.id)) AS count FROM " . $esc['mysql']['dataset'] . "_tweets t ";
+        //$sql = "SELECT count(distinct(t.id)) AS count, t.from_user_id FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
         $sql .= "GROUP BY from_user_id";
-        //print $sql . "<br>";
+		//print $sql . "<br>";
         $sqlresults = mysql_query($sql);
         $array = array();
         while ($res = mysql_fetch_assoc($sqlresults)) {
             $array[] = $res;
         }
 
+		//print_r($array);
 
         $content = "from_user_id,from_user_name,from_user_lang,from_user_tweetcount,from_user_followercount,from_user_friendcount,from_user_listed,from_user_utcoffset,from_user_verified,count\n";
         foreach($array as $a) {
@@ -58,8 +62,6 @@ require_once './common/functions.php';
         echo '<legend>User stats</legend>';
         echo '<p><a href="' . str_replace("#", urlencode("#"), str_replace("\"", "%22", $filename)) . '">' . $filename . '</a></p>';
         echo '</fieldset>';
-
-
 
         ?>
 
