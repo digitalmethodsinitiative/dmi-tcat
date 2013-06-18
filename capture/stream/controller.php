@@ -29,7 +29,7 @@ if(in_array($pid,$proclist)) {
 
 		logit("controller.log","script was idle for more than " . $idletime . " seconds - killing and starting");
 
-		sleep(16);
+		sleep(2);
 
 		passthru("php ".BASE_FILE."capture/stream/capture.php > /dev/null 2>&1 &");
 	}
