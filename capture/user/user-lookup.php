@@ -5,8 +5,8 @@ define('LOOKUP_SIZE', 100);
 require_once '../../config.php';
 require_once BASE_FILE . 'analysis/common/functions.php';
 
-require 'tmhOAuth/tmhOAuth.php';
-require 'tmhOAuth/tmhUtilities.php';
+require BASE_FILE.'capture/common/tmhOAuth/tmhOAuth.php';
+require BASE_FILE.'capture/common/tmhOAuth/tmhUtilities.php';
 $tmhOAuth = new tmhOAuth(array(
             "consumer_key" => $twitter_consumer_key,
             "consumer_secret" => $twitter_consumer_secret,
@@ -95,7 +95,7 @@ while ($res = mysql_fetch_assoc($rec)) {
 $paging = ceil(count($ids) / LOOKUP_SIZE);
 $users = array();
 for ($i = 0; $i < $paging; $i++) {
-    print "doing $i\n";
+    print strftime("%Y-%m-%d %H:%M:%S",date('U'))." doing $i\n";
     $set = array_slice($ids, $i * LOOKUP_SIZE, LOOKUP_SIZE);
 
     $tmhOAuth->request('GET', $tmhOAuth->url('1/users/lookup'), array(

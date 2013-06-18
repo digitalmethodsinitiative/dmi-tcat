@@ -100,7 +100,8 @@ function checktables() {
 			KEY `created_at` (`created_at`),
 			KEY `domain` (`domain`),
 			FULLTEXT KEY `url_followed` (`url_followed`),
-			FULLTEXT KEY `url_expanded` (`url_expanded`)
+			FULLTEXT KEY `url_expanded` (`url_expanded`),
+			KEY `tweet_id` (`tweet_id`)
 			) ENGINE=MyISAM  DEFAULT CHARSET=utf8;";
 
 			$sqlresults = mysql_query($sql) or die (mysql_error());
