@@ -28,7 +28,7 @@ if (mysql_num_rows($result) == 0) {
         http_code smallint,
         PRIMARY KEY (id),
         KEY `from_user_name` (`from_user_name`),
-        KEY `from_user_id` (`from_user_name`),
+        KEY `from_user_id` (`from_user_id`),
         KEY `kloutid` (`kloutid`),
         KEY `last_updated` (`last_updated`)
         ) ENGINE=MyISAM  DEFAULT CHARSET=utf8";
@@ -56,7 +56,7 @@ while ($res = mysql_fetch_assoc($rec)) {
     if (empty($kloutid))
         $kloutid = $klout->KloutIDLookupByName($network, $from_user_name);
     $http_code = $klout->http_code;
-    print $from_user_name . " - " . var_export($kloutid, 1) . " - " . $http_code . "\n";
+    print strftime("%Y-%m-%d %H:%M:%S",date('U'))." - ".$from_user_name . " - " . var_export($kloutid, 1) . " - " . $http_code . "\n";
 
 
     if (!empty($kloutid)) { // @todo this assumes that on line 60 of KloutAPIv2-PHP/KloutAPIv2.class.php the following is added: if($ResultString === NULL) return $ResultString;
