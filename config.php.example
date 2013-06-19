@@ -5,8 +5,8 @@
  */
 $dbuser =	""; 
 $dbpass =	"";
-$database =	""; 
-$hostname =	"";					
+$database =	"twittercapture"; 
+$hostname =	"localhost";					
 
 /*
  * Twitter API keys
