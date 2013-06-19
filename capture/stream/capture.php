@@ -64,11 +64,10 @@ function stream() {
 
 function streamCallback($data, $length, $metrics) {
     global $tweetbucket;
-    if (isset($data["disconnect"])) {
-        $discerror = implode(",", $data["disconnect"]);
-        logit("error.log", "connection dropped or timed out - error " . $discerror);
-    }
     $data = json_decode($data, true);
+    if (isset($data["disconnect"])) {
+        logit("error.log", "connection dropped or timed out - error " . var_export($data['disconnect'],true));
+    }
     if ($data) {
         $tweetbucket[] = $data;
         if (count($tweetbucket) == 100) {
