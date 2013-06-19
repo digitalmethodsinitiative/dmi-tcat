@@ -6,8 +6,10 @@ db_connect($hostname, $dbuser, $dbpass, $database);
 // catch parameters
 if (isset($_GET['dataset']) && !empty($_GET['dataset']))
     $dataset = $_GET['dataset'];
-else
-    $dataset = "tibet";
+else {
+    reset($querybins);
+    $dataset = key($querybins);
+}
 if (isset($_GET['query']) && !empty($_GET['query']))
     $query = $_GET['query'];
 else
@@ -35,11 +37,11 @@ else
 if (isset($_GET['startdate']) && !empty($_GET['startdate']))
     $startdate = $_GET['startdate'];
 else
-    $startdate = strftime("%Y-%m-%d", date('U') - (86400 * 2));
+    $startdate = strftime("%Y-%m-%d", date('U') - (86400));
 if (isset($_GET['enddate']) && !empty($_GET['enddate']))
     $enddate = $_GET['enddate'];
 else
-    $enddate = strftime("%Y-%m-%d", date('U') - 86400);
+    $enddate = strftime("%Y-%m-%d", date('U'));
 $u_startdate = $u_enddate = 0;
 
 if (isset($_GET['whattodo']) && !empty($_GET['whattodo']))
