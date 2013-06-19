@@ -9,8 +9,8 @@ function checktables() {
 	$sql = "SHOW TABLES";
 	$sqlresults = mysql_query($sql);
 
-	while($data = mysql_fetch_assoc($sqlresults)) {
-		$tables[] = $data["Tables_in_twittercapture"];
+	while($data = mysql_fetch_row($sqlresults)) {
+		$tables[] = $data[0];
 	}
 
 	foreach($querybins as $bin => $content) {
