@@ -70,7 +70,7 @@ function streamCallback($data, $length, $metrics) {
     }
     if ($data) {
         $tweetbucket[] = $data;
-        if (count($tweetbucket) == 100) {
+        if (count($tweetbucket) == 10) {
             processtweets($tweetbucket);
             $tweetbucket = array();
         }

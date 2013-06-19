@@ -5,7 +5,7 @@ if($argc < 1) die;
 
 include_once("../../config.php");
 
-$idletime = 150;
+$idletime = 300;
 
 $pid = 0;
 $running = false;
