@@ -9,12 +9,6 @@ $database =	"";
 $hostname =	"";					
 
 /*
- * Twitter account info
- */
-$twitter_user = '';
-$twitter_pass = '';
-
-/*
  * Twitter API keys
  */
 $twitter_consumer_key = "";
@@ -66,10 +60,5 @@ ini_set("memory_limit", "30G");
  * Set encoding
  */
 mb_internal_encoding("UTF-8"); 
-
-/*
- * Location of the coword machine
- */
-define('COWORD_URL', 'http://example.com/coword/');
 
 ?>
