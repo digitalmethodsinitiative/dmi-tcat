@@ -24,9 +24,9 @@ if(file_exists(BASE_FILE."capture/stream/logs/procinfo")) {
 
 	// check whether the process has been idle for too long
 	logit("controller.log","script called - pid:" . $pid . "  idle:" . (time() - $last));
-	if(!$running || ( $last < time() - $idletime)) {
+	if($running && ( $last < time() - $idletime)) {
 
-		if($running) exec("kill " . $pid);
+		exec("kill " . $pid);
 
 		logit("controller.log","script was idle for more than " . $idletime . " seconds - killing and starting");
 
