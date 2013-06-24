@@ -47,7 +47,7 @@ require_once './common/functions.php';
         </table>
 
         <?php
-        if ($samplesize > 0) {
+        if ($mysql['samplesize'] > 0) {
 
             echo '<fieldset class="if_parameters">';
 
@@ -55,7 +55,7 @@ require_once './common/functions.php';
 
             validate_all_variables();
             $exc = (empty($esc['shell']["exclude"])) ? "" : "-" . $esc['shell']["exclude"];
-            $filename = $resultsdir . $esc['shell']["datasetname"] . "_" . $esc['shell']["query"] . $exc . "_" . $esc['date']["startdate"] . "_" . $esc['date']["enddate"] . "_" . $esc['shell']["from_user_name"] . "_" . $samplesize . "randomTweets.csv";
+            $filename = $resultsdir . $esc['shell']["datasetname"] . "_" . $esc['shell']["query"] . $exc . "_" . $esc['date']["startdate"] . "_" . $esc['date']["enddate"] . "_" . $esc['shell']["from_user_name"] . "_" . $esc['shell']['samplesize'] . "randomTweets.csv";
 
             if (1 || !file_exists($filename)) {
 
@@ -63,7 +63,7 @@ require_once './common/functions.php';
 
                 $sql = "SELECT * FROM " . $esc['mysql']['dataset'] . "_tweets t ";
                 $sql .= sqlSubset();
-                $sql .= "ORDER BY RAND() LIMIT " . $samplesize;
+                $sql .= "ORDER BY RAND() LIMIT " . $esc['mysql']['samplesize'];
 
                 $sqlresults = mysql_query($sql);
                 $content = array();

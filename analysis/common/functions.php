@@ -54,15 +54,10 @@ if (isset($_GET['keywordToTrack']) && !empty($_GET['keywordToTrack']))
 else
     $keywordToTrack = "";
 
-if (isset($_GET['minimumCowordFrequencyOverall']))
+if (isset($_GET['minimumCowordFrequencyOverall']) && preg_match("/^\d+$/",$_GET['minimumCowordFrequencyOverall']))
     $minimumCowordFrequencyOverall = $_GET['minimumCowordFrequencyOverall'];
 else
-    $minimumCowordFrequencyOverall = 10;
-
-if (isset($_GET['minimumCowordFrequencyOverall']))
-    $minimumCowordFrequencyInterval = $_GET['minimumCowordFrequencyInterval'];
-else
-    $minimumCowordFrequencyInterval = 0;
+    $minimumCowordFrequencyOverall = 0;
 
 if (isset($_GET['showvis']) && !empty($_GET['showvis']))
     $showvis = $_GET['showvis'];
@@ -566,7 +561,7 @@ function validate(&$what, $how) {
 // make sure that we have all the right types and values
 // also make sure one cannot do a mysql injection attack
 function validate_all_variables() {
-    global $esc, $query, $url_query, $dataset, $exclude, $from_user_name, $startdate, $enddate, $databases, $connection, $keywords, $database, $minf;
+    global $esc, $query, $url_query, $dataset, $exclude, $from_user_name, $startdate, $enddate, $databases, $connection, $keywords, $database, $minf, $samplesize, $keywordToTrack;
 
     // validate and escape all user input
     $esc['mysql']['dataset'] = validate($dataset, "mysql");
@@ -574,15 +569,19 @@ function validate_all_variables() {
     $esc['mysql']['url_query'] = validate($url_query, "mysql");
     $esc['mysql']['exclude'] = validate($exclude, "mysql");
     $esc['mysql']['from_user_name'] = validate($from_user_name, "mysql");
+    $esc['mysql']['keywordToTrack'] = validate($keywordToTrack, "mysql");
+    $esc['mysql']['samplesize'] = validate($samplesize, 'frequency');
 
-    $esc['shell']['dataset'] = validate($dataset, "mysql");
-    $esc['shell']['query'] = validate($query, "mysql");
-    $esc['shell']['exclude'] = validate($exclude, "mysql");
-    $esc['shell']['from_user_name'] = validate($from_user_name, "mysql");
+    $esc['shell']['dataset'] = validate($dataset, "shell");
+    $esc['shell']['query'] = validate($query, "shell");
+    $esc['shell']['exclude'] = validate($exclude, "shell");
+    $esc['shell']['from_user_name'] = validate($from_user_name, "shell");
+    $esc['shell']['keywordToTrack'] = validate($keywordToTrack, "shell");
 
     $esc['shell']['datasetname'] = validate($dataset, "shell");
 
     $esc['shell']['minf'] = validate($minf, 'frequency');
+    $esc['shell']['samplesize'] = validate($samplesize, 'frequency');
 
     $esc['date']['startdate'] = validate($startdate, "startdate");
     $esc['date']['enddate'] = validate($enddate, "enddate");
