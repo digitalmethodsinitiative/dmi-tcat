@@ -455,12 +455,6 @@ foreach ($linedata as $key => $value) {
             <h2> Experimental</h2>
             <div class='if_export_block'>
 
-                <h3>Associational profile</h3>
-                <div class="txt_desc">Produces an associational profile as well as a time-encoded co-hashtag network.</div>
-                <div class="txt_desc">Use: explore shifts in hashtags associations.</div>
-                <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('hashtag_variability');sendUrl('mod.hashtag_variability.php');return false;">launch</a></div>
-
-                <hr />
                 <h3>Bipartite hashtag-user graph</h3>
                 <div class="txt_desc">Produces a <a href="http://en.wikipedia.org/wiki/Bipartite_graph">bipartite graph</a> (.gexf, open in gephi) based on co-occurence of hashtags and users. If a user wrote a tweet with a certain hashtag, there will be a link between that user and the hashtag.
                     The more often they appear together, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>").</div>
