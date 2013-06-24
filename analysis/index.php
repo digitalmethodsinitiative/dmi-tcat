@@ -1,10 +1,7 @@
 <?php
-// todo: ask Erik how to protect cells in CSV for mod.random_tweets.php
 
 require_once 'common/config.php';
 require_once 'common/functions.php';
-
-$show_coword = FALSE;
 
 $datasets = get_all_datasets();
 ?>
@@ -453,17 +450,7 @@ foreach ($linedata as $key => $value) {
                 <div class="txt_desc">Produces an <a href="http://en.wikipedia.org/wiki/Graph_%28mathematics%29#Undirected_graph">undirected graph</a> (.gdf, open in gephi) based on co-word analysis of hashtags. If two hashtags appear in the same tweet, they are linked.
                     The more often they appear together, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>").</div>
                 <div class="txt_desc">Use: explore the relations between hashtags, find and analyze sub-issues, distinguish between different types of hashtags (event related, qualifiers, etc.).</div>
-                <div class="txt_link"> &raquo; <a href="" onclick="var mind = askDegree(); $('#whattodo').val('hashtag_cooc&minf='+mind);sendUrl('mod.hashtag_cooc.php');return false;">launch</a></div><!-- with absolute weighting of cooccurrences</a></div>-->
-                <!-- <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('hashtag_cooc&probabilityOfAssociation=1');sendUrl('mod.hashtag_cooc.php');return false;">launch with cooccurrence weight normalization</a></div> -->
-                <hr />
-                <?php if ($show_coword) { ?>
-                    <h3>Co-word analysis</h3>
-                    <div class="txt_desc">Produces an <a href="http://en.wikipedia.org/wiki/Graph_%28mathematics%29#Undirected_graph">undirected graph</a> (.gdf, open in gephi) based on co-word analysis of the words found in tweets. If two words appear in the same tweet, they are linked.
-                        The more often they appear together, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>").</div>
-                    <div class="txt_desc">Use: explore the relations between words, find and analyze sub-issues, distinguish between different types of words.</div>
-                    <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('word_cooc');sendUrl('mod.word_cooc.php');return false;">launch with absolute weighting of coorccurrences</a></div>
-                    <!--        <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('word_cooc&probabilityOfAssociation=1');sendUrl('mod.word_cooc.php');return false;">launch with cooccurrence weight normalization</a></div> -->
-                <?php } ?>
+                <div class="txt_link"> &raquo; <a href="" onclick="var mind = askDegree(); $('#whattodo').val('hashtag_cooc&minf='+mind);sendUrl('mod.hashtag_cooc.php');return false;">launch</a></div>
             </div>
             <h2> Experimental</h2>
             <div class='if_export_block'>
