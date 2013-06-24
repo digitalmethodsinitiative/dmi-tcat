@@ -6,9 +6,9 @@ include_once('../../config.php');
 
 db_connect($hostname, $dbuser, $dbpass, $database);
 
-$lists = array("penw_nieuws"=>"nieuws","penw_politiek"=>"politiek","penw_kunstencultuur"=>"kunst en cultuur","penw_journalisten"=>"journalisten");
+$lists = array("list_file_name"=>"list_db_name");
 foreach($lists as $file => $list) {
-	$fil = file("/home/erik/".$file);
+	$fil = file("/tmp/".$file);
 	foreach($fil as $f) {
 		$sql = "INSERT INTO penw_lijsten (list, from_user_id) VALUES ('$list',".trim($f).")";
 		mysql_query($sql) or die(mysql_error());
