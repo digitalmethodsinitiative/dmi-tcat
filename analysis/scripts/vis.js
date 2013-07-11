@@ -423,3 +423,16 @@ function changeInterface(_what,_action) {
     	
     }
 }
+
+function encode_as_img_and_link() {
+
+	 $("svg").attr({ version: '1.1' , xmlns:"http://www.w3.org/2000/svg"});
+	 var svg = $("#visualization").html();
+	 var b64 = window.btoa(unescape(encodeURIComponent(svg)));
+	 
+	 // Works in recent Webkit(Chrome)
+	 $("#svgdown").html($('<img style="width:25px;height:25px;" src="data:image/svg+xml;base64,\n'+b64+'" alt="file.svg"/>'));
+	
+	 // Works in Firefox 3.6 and Webit and possibly any browser which supports the data-uri
+	 $("#svgdown").html($('<a style="width:25px;height:25px;" href-lang="image/svg+xml" href="data:image/svg+xml;base64,\n'+b64+'" title="file.svg">Download</a>'));
+}
