@@ -33,7 +33,6 @@ validate_all_variables();
 
 $exc = (empty($esc['shell']["exclude"])) ? "" : "-" . $esc['shell']["exclude"];
 $filename = $resultsdir . $esc['shell']['datasetname'] . "_" . $esc['shell']["query"] . $exc . "_" . $esc['date']["startdate"] . "_" . $esc['date']["enddate"] . "_" . $esc['shell']["from_user_name"] . "_mentionGraph.gdf";
-
 if (1 || !file_exists($filename)) {
 //if(true) {
 
@@ -56,6 +55,7 @@ if (1 || !file_exists($filename)) {
         while ($data = mysql_fetch_assoc($sqlresults)) {
 
             $data["from_user_name"] = strtolower($data["from_user_name"]);
+            $data["to_user"] = strtolower($data["to_user"]);
 
             if (!isset($users[$data["from_user_name"]])) {
 
