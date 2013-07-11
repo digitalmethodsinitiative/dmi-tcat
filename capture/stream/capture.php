@@ -6,7 +6,6 @@ if ($argc < 1)
 set_time_limit(0);
 error_reporting(E_ALL);
 include_once "../../config.php";
-$path_local = BASE_FILE."/capture/stream/";
 include_once BASE_FILE . "/querybins.php";
 include_once BASE_FILE . '/common/functions.php';
 include_once BASE_FILE . '/capture/common/functions.php';
@@ -19,6 +18,7 @@ $tweetbucket = array();
 // ----- connection -----
 dbconnect();
 checktables();
+//connectsocket();
 stream();
 
 function stream() {
@@ -27,9 +27,7 @@ function stream() {
 
     logit("error.log", "connecting to API socket");
     $pid = getmypid();
-    //file_put_contents($path_local . "logs/procinfo", $pid . "|" . time());
-    file_put_contents(BASE_FILE."capture/stream/logs/procinfo",$pid."|".time());
-
+    file_put_contents($path_local . "logs/procinfo", $pid . "|" . time());
 
     $tweetbucket = array();
 
@@ -64,13 +62,14 @@ function stream() {
 
 function streamCallback($data, $length, $metrics) {
     global $tweetbucket;
-    $data = json_decode($data, true);
     if (isset($data["disconnect"])) {
-        logit("error.log", "connection dropped or timed out - error " . var_export($data['disconnect'],true));
+        $discerror = implode(",", $data["disconnect"]);
+        logit("error.log", "connection dropped or timed out - error " . $discerror);
     }
+    $data = json_decode($data, true);
     if ($data) {
         $tweetbucket[] = $data;
-        if (count($tweetbucket) == 10) {
+        if (count($tweetbucket) == 100) {
             processtweets($tweetbucket);
             $tweetbucket = array();
         }
@@ -224,21 +223,17 @@ function processtweets($tweetbucket) {
 
 
         if (count($list_tweets) > 0) {
-	    //logit("error.log","list tweets $binname ".strftime("%T",date('U')));
             //print "List tweets $binname " . PHP_EOL . PHP_EOL;
             //var_export($list_tweets);
             //print PHP_EOL;
             $sql = "INSERT IGNORE INTO " . $binname . "_tweets (id,created_at,from_user_name,from_user_id,from_user_lang,from_user_tweetcount,from_user_followercount,from_user_friendcount,from_user_realname,source,location,geo_lat,geo_lng,text,to_user_id,to_user_name,in_reply_to_status_id) VALUES " . implode(",", $list_tweets);
-	    //logit("error.log",$sql);
+
             $sqlresults = mysql_query($sql);
             if (!$sqlresults) {
                 logit("error.log", "insert error: " . $sql);
             } else {
                 $pid = getmypid();
-		
-                //file_put_contents($path_local . "logs/procinfo", $pid . "|" . time());
-		//logit("error.log",filemtime(BASE_FILE."capture/stream/logs/procinfo"));
-    		file_put_contents(BASE_FILE."capture/stream/logs/procinfo",$pid."|".time());
+                file_put_contents($path_local . "logs/procinfo", $pid . "|" . time());
             }
         }
 
