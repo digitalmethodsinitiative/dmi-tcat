@@ -98,10 +98,11 @@ for ($i = 0; $i < $paging; $i++) {
     print strftime("%Y-%m-%d %H:%M:%S",date('U'))." doing $i\n";
     $set = array_slice($ids, $i * LOOKUP_SIZE, LOOKUP_SIZE);
 
-    $tmhOAuth->request('GET', $tmhOAuth->url('1/users/lookup'), array(
+    $tmhOAuth->request('GET', $tmhOAuth->url('1.1/users/lookup'), array(
         'user_id' => implode(',', $set)
     ));
     //var_export($set);
+var_dump($tmhOAuth->response);
     sleep(1);
 
     // check the rate limit
