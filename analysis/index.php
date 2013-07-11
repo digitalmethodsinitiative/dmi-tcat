@@ -71,6 +71,10 @@ if (defined('ANALYSIS_URL'))
         var minf = prompt("Specify the minimum frequency for data to be included in the export:","2");
         return minf;
     }
+    function askRetweetFrequency() {
+        var minf = prompt("Specify the minimum times a tweet should be retweeted for it to be included in the export:","4");
+        return minf;
+    }
     function askInteractionFrequency() {
         var minf = prompt("Specify the minimum frequency for data to be included in the export:","4");
         return minf;
@@ -157,7 +161,7 @@ if (defined('ANALYSIS_URL'))
         <?php
         validate_all_variables();
 
-// count current subsample
+        // count current subsample
         $sql = "SELECT count(distinct(t.id)) as count FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
         //print $sql . "<br>";
@@ -204,7 +208,7 @@ if (defined('ANALYSIS_URL'))
         $data = mysql_fetch_assoc($sqlresults);
         $numusers = $data["count"];
 
-// get data for the line graph
+        // get data for the line graph
         $period = ( (strtotime($esc['datetime']['enddate']) - strtotime($esc['datetime']['startdate'])) <= 86400 * 2) ? "hour" : "day"; // @todo
         $curdate = strtotime($esc['datetime']['startdate']);
         $linedata = array();
@@ -233,7 +237,7 @@ if (defined('ANALYSIS_URL'))
 
             $curdate = $thendate;
         }
-        
+
         // overwrite found dates
         while ($res = mysql_fetch_assoc($rec)) {
             $linedata[$res['datepart']]["tweets"] = $res['count'];
@@ -241,28 +245,28 @@ if (defined('ANALYSIS_URL'))
             $linedata[$res['datepart']]["locations"] = $res['loccount'];
             $linedata[$res['datepart']]["geolocs"] = $res['geocount'];
         }
-        
-		
-        if(isset($_GET["query"])) {
-	
-	        $sql = "SELECT COUNT(t.text) as count, ";
-	        if ($period == "day")
-	            $sql .= "DATE_FORMAT(t.created_at,'%Y.%d.%m') datepart ";
-	        else
-	            $sql .= "DATE_FORMAT(t.created_at,'%d. %H:00h') datepart ";
-	        $sql .= "FROM " . $esc['mysql']['dataset'] . "_tweets t ";
-	        $sql .= "WHERE t.created_at >= '" . $esc['datetime']['startdate'] . "' AND t.created_at <= '" . $esc['datetime']['enddate'] . "' ";
-	        $sql .= "GROUP BY datepart";
-	        //print $sql."<br>";
-	        $rec = mysql_query($sql);
-			
-			// overwrite found dates
-	        while ($res = mysql_fetch_assoc($rec)) {
-	            $linedata[$res['datepart']]["full"] = $res['count'];
-	        }
-		}
-        
-        
+
+
+        if (isset($_GET['query']) && $_GET["query"] != "") {
+
+            $sql = "SELECT COUNT(t.text) as count, ";
+            if ($period == "day")
+                $sql .= "DATE_FORMAT(t.created_at,'%Y.%d.%m') datepart ";
+            else
+                $sql .= "DATE_FORMAT(t.created_at,'%d. %H:00h') datepart ";
+            $sql .= "FROM " . $esc['mysql']['dataset'] . "_tweets t ";
+            $sql .= "WHERE t.created_at >= '" . $esc['datetime']['startdate'] . "' AND t.created_at <= '" . $esc['datetime']['enddate'] . "' ";
+            $sql .= "GROUP BY datepart";
+            //print $sql."<br>";
+            $rec = mysql_query($sql);
+
+            // overwrite found dates
+            while ($res = mysql_fetch_assoc($rec)) {
+                $linedata[$res['datepart']]["full"] = $res['count'];
+            }
+        }
+
+
 
         // see whether the relations table exists
         $show_relations_export = FALSE;
@@ -303,11 +307,9 @@ if (defined('ANALYSIS_URL'))
                         <tr>
                             <td class="tbl_head">Startdate:</td><td><?php echo $startdate; ?></td>
                         </tr>
-
                         <tr>
                             <td class="tbl_head">Enddate:</td><td><?php echo $enddate; ?></td>
                         </tr>
-
                         <tr>
                             <td class="tbl_head">Number of tweets:</td><td><?php echo number_format($numtweets, 0, ",", "."); ?></td>
                         </tr>
@@ -340,9 +342,9 @@ if (defined('ANALYSIS_URL'))
             <hr />
 
             <div id="if_panel_linegraph"></div>
-            
+
             <br />
-            
+
             <div id="if_panel_linegraph_norm"></div>
 
             <script type="text/javascript">
@@ -377,35 +379,37 @@ foreach ($linedata as $key => $value) {
       
             </script>
 
-<?php if(isset($_GET["query"])) { ?>
-	        
-            <script type="text/javascript">
+            <?php if (isset($_GET['query']) && $_GET["query"] != "") { ?>
 
-            var data = new google.visualization.DataTable();
-	
-            data.addColumn('string', 'Date');
-            data.addColumn('number', 'Norm Query (%)');
-					
-			<?php
-			echo "data.addRows(" . count($linedata) . ");";
-			
-			$counter = 0;
-			
-			foreach ($linedata as $key => $value) {
-			
-			    echo "data.setValue(" . $counter . ", 0, '" . $key . "');";
-			    echo "data.setValue(" . $counter . ", 1, " . round($value["tweets"] / $value["full"] * 100) . ");";
-			
-			    $counter++;
-			}
-			?>
-		
-		    var chart = new google.visualization.LineChart(document.getElementById('if_panel_linegraph_norm'));
-		    chart.draw(data, {width:1000, height:160, fontSize:9, hAxis:{slantedTextAngle:90, slantedText:true}, vAxis:{minValue:0,maxValue:100}, chartArea:{left:50,top:10,width:850,height:100}});
-      
-            </script>
+                <script type="text/javascript">
 
-<?php } ?>
+                    var data = new google.visualization.DataTable();
+                    	
+                    data.addColumn('string', 'Date');
+                    data.addColumn('number', 'Norm Query (%)');
+                    					
+    <?php
+    echo "data.addRows(" . count($linedata) . ");";
+
+    $counter = 0;
+
+    foreach ($linedata as $key => $value) {
+
+        $norm = ($value["full"] == 0 || !isset($value['tweets'])) ? 0 : round($value["tweets"] / $value["full"] * 100);
+
+        echo "data.setValue(" . $counter . ", 0, '" . $key . "');";
+        echo "data.setValue(" . $counter . ", 1, " . $norm . ");";
+
+        $counter++;
+    }
+    ?>
+                    		
+        var chart = new google.visualization.LineChart(document.getElementById('if_panel_linegraph_norm'));
+        chart.draw(data, {width:1000, height:160, fontSize:9, hAxis:{slantedTextAngle:90, slantedText:true}, vAxis:{minValue:0,maxValue:100}, chartArea:{left:50,top:10,width:850,height:100}});
+                          
+                </script>
+
+            <?php } ?>
 
             <div class="txt_desc"><br />Date and time are in GMT (London).</div>
 
@@ -489,7 +493,7 @@ foreach ($linedata as $key => $value) {
                 <h3>Export all tweets from selection</h3>
                 <div class="txt_desc">Creates a .csv file (open in Excel or similar) that contains all tweets and information about them (user, date created, ...).</div>
                 <div class="txt_desc">Use: spend time with your data.</div>
-                <div class="txt_link"> &raquo;  <a href="" onclick="sendUrl('mod.export_tweets.php');return false;">launch</a></div>
+                <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('export_tweets');sendUrl('mod.export_tweets.php');return false;">launch</a></div>
 
                 <hr />
 
@@ -538,10 +542,18 @@ foreach ($linedata as $key => $value) {
             <h2> Experimental</h2>
             <div class='if_export_block'>
 
-                <h3>Associational profile</h3>
+                <h3>Associational profile (hashtags)</h3>
                 <div class="txt_desc">Produces an associational profile as well as a time-encoded co-hashtag network.</div>
                 <div class="txt_desc">Use: explore shifts in hashtags associations.</div>
                 <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('hashtag_variability');sendUrl('mod.hashtag_variability.php');return false;">launch</a></div>
+
+                <?php if (isset($_GET['dataset']) && $_GET['dataset'] == "privacy") { ?>
+                    <hr />
+                    <h3>Associational profile (words)</h3>
+                    <div class="txt_desc">Produces an associational profile as well as a time-encoded co-word network. Nouns etc are extracted via <a href='http://www.ark.cs.cmu.edu/TweetNLP/' target="_blank">TweetNLP</a></div>
+                    <div class="txt_desc">Use: explore shifts in word associations.</div>
+                    <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('word_variability');sendUrl('mod.word_variability.php');return false;">launch</a></div>
+                <?php } ?>
 
                 <hr />
                 <h3>Bipartite hashtag-user graph</h3>
@@ -583,6 +595,12 @@ foreach ($linedata as $key => $value) {
                 <?php } ?>
 
                 <hr />
+                <h3>Tweet stats</h3>
+                <div class="txt_desc">Creates a .csv file (open in Excel or similar) that contains the number of tweets, number of tweets with links, number of tweets with hashtags, number of tweets with mentions, number of tweets starting with 'RT @'</div>
+                <div class="txt_desc">Use: get a feel for the overall characteristics of you data set.</div>
+                <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('tweet.stats'); sendUrl('mod.tweet.stats.php');return false;">launch</a></div>
+
+                <hr />
                 <h3>User stats</h3>
                 <div class="txt_desc">Creates a .csv file (open in Excel or similar) that contains the min, max, average and median for: number of tweets per user, users per day, urls per user, number of followers, number of friends, nr of tweets</div>
                 <div class="txt_desc">Use: get a better feel for the users in your data set.</div>
@@ -593,7 +611,7 @@ foreach ($linedata as $key => $value) {
                 <div class="txt_desc">Creates a .csv file (open in Excel or similar) that lists users and their number of tweets, number of followers, number of friends, how many times they are listed, their UTC time offset, whether the user has a verified account and how many times they appear in the data set.</div>
                 <div class="txt_desc">Use: get a better feel for the users in your data set.</div>
                 <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('user.list'); sendUrl('mod.user.list.php');return false;">launch</a></div>
-                
+
                 <hr />
                 <h3>Hashtag-User activity</h3>
                 <div class="txt_desc">Creates a .csv file (open in Excel or similar) that lists hashtags, the number of tweets with that hashtag, the numnber of distinct users tweeting with that hashtag, the number of distinct mentions tweeted together with the hashtag, and the total number of mentions tweeted together with the hashtag.</div>
@@ -606,6 +624,14 @@ foreach ($linedata as $key => $value) {
                 <div class="txt_desc">Produces a <a href="http://en.wikipedia.org/wiki/Directed_graph">directed graph</a> (.gdf, open in gephi) based on interactions between users. If a tweet was written in reply to another one, a directed link is created.</div>
                 <div class="txt_desc">Use: analyze patterns in communication, find "hubs" and "communities", categorize user accounts.</div>
                 <div class="txt_link"> &raquo; <a href="" onclick="var minf = askInteractionFrequency(); $('#whattodo').val('interaction_graph&minf='+minf);sendUrl('mod.interaction_graph.php');return false;">launch</a></div>
+
+                <hr />
+
+                <h3>List each individual retweet</h3>
+                <div class="txt_desc">Creates a .csv file (open in Excel or similar) that lists all retweets (and all the tweets metadata like follower_count) chronologically.</div>
+                <div class="txt_desc">Use: reconstruct retweet chains.</div>
+                <div class="txt_desc"><b>Warning:</b> This script is slow. Small datasets only!</div>
+                <div class="txt_link"> &raquo; <a href="" onclick="var minf = askRetweetFrequency(); $('#whattodo').val('retweets_chain&minf='+minf);sendUrl('mod.retweets_chain.php');return false;">launch</a></div>
 
                 <div style="display:none" id="whattodo" />
         </fieldset>
