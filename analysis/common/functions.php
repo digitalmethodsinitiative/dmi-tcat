@@ -670,8 +670,6 @@ function get_all_datasets() {
     $datasets = array();
 
     foreach ($querybins as $bin => $keywords) {
-        if($bin == "actualiteitenprogrammas" || $bin == "penw" || $bin == "eurocrisis" || $bin == "islam") continue;
-
         // get nr of results per table
         $sql2 = "SELECT count(t.id) AS notweets,MIN(t.created_at) AS min,MAX(t.created_at) AS max  FROM " . $bin . "_tweets t ";
         $rec2 = mysql_query($sql2);
