@@ -1,21 +1,9 @@
 <?php
 
 /**
- * Stopword list.
- * 
- * @author "Erik Borra" <erik@digitalmethods.net>
- * @package dmi
- * @subpackage common
- * @category textproc
- */
-
-/**
  * Class for stopword removal.
  * 
  * @author "Erik Borra" <erik@digitalmethods.net>
- * @package dmi
- * @subpackage common
- * @category textproc
  */
 class Stopwords {
 
