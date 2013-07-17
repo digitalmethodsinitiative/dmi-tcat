@@ -13,7 +13,8 @@ $tmhOAuth = new tmhOAuth(array(
             "user_token" => $twitter_user_token,
             "user_secret" => $twitter_user_token
         ));
-$esc['mysql']['dataset'] = "penw"; // @todo, think of way on how to know what bin to do
+$esc['mysql']['dataset'] = ""; // insert binname here @todo, think of way on how to know what bin to do
+if($esc['mysql']['dataset']=="") die('no dataset specified');
 
 function check_rate_limit($response) {
     $headers = $response['headers'];
@@ -98,7 +99,7 @@ for ($i = 0; $i < $paging; $i++) {
     print strftime("%Y-%m-%d %H:%M:%S",date('U'))." doing $i\n";
     $set = array_slice($ids, $i * LOOKUP_SIZE, LOOKUP_SIZE);
 
-    $tmhOAuth->request('GET', $tmhOAuth->url('1/users/lookup'), array(
+    $tmhOAuth->request('GET', $tmhOAuth->url('1.1/users/lookup'), array(
         'user_id' => implode(',', $set)
     ));
     //var_export($set);

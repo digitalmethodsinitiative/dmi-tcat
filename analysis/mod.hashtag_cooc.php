@@ -24,6 +24,8 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
 
         <?php
         validate_all_variables();
+        if(empty($esc['shell']['minf'])) $esc['shell']['minf'] = 4;
+        
 // Output format: {dataset}_{query}_{startdate}_{enddate}_{from_user_name}_{output type}.{filetype}
 
         $exc = (empty($esc['shell']["exclude"])) ? "" : "-" . $esc['shell']["exclude"];

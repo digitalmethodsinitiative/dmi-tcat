@@ -24,7 +24,7 @@ require_once './common/functions.php';
     <body>
 
         <h1>Twitter Analytics - Random Tweets</h1>
-
+<!--
         <table>
 
 
@@ -45,6 +45,7 @@ require_once './common/functions.php';
             </form>
 
         </table>
+-->
 
         <?php
         if ($samplesize > 0) {
@@ -85,9 +86,11 @@ require_once './common/functions.php';
                 //print $sql . "<br>";
                 $sqlresults = mysql_query($sql);
                 $urls = array();
-                while ($data = mysql_fetch_assoc($sqlresults)) {
-                    $urls[$data['tweet_id']][] = $data['url_followed'];
-                }
+		if($sqlresults) {
+        	        while ($data = mysql_fetch_assoc($sqlresults)) {
+        	            $urls[$data['tweet_id']][] = $data['url_followed'];
+        	        }
+		}
 
                 $out = $header;
                 foreach ($content as $id => $line) {

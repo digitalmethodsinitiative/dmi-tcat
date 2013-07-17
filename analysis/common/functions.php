@@ -37,11 +37,11 @@ else
 if (isset($_GET['startdate']) && !empty($_GET['startdate']))
     $startdate = $_GET['startdate'];
 else
-    $startdate = strftime("%Y-%m-%d", date('U') - (86400));
+    $startdate = strftime("%Y-%m-%d", date('U') - (86400 * 2));
 if (isset($_GET['enddate']) && !empty($_GET['enddate']))
     $enddate = $_GET['enddate'];
 else
-    $enddate = strftime("%Y-%m-%d", date('U'));
+    $enddate = strftime("%Y-%m-%d", date('U') - 86400);
 $u_startdate = $u_enddate = 0;
 
 if (isset($_GET['whattodo']) && !empty($_GET['whattodo']))
@@ -53,6 +53,11 @@ if (isset($_GET['keywordToTrack']) && !empty($_GET['keywordToTrack']))
     $keywordToTrack = trim(strtolower($_GET['keywordToTrack']));
 else
     $keywordToTrack = "";
+
+if (isset($_GET['from_user_lang']) && !empty($_GET['from_user_lang']))
+    $from_user_lang = trim(strtolower($_GET['from_user_lang']));
+else
+    $from_user_lang = "";
 
 if (isset($_GET['minimumCowordFrequencyOverall']))
     $minimumCowordFrequencyOverall = $_GET['minimumCowordFrequencyOverall'];
@@ -259,6 +264,23 @@ function sqlSubset($where = NULL) {
             $sql = substr($sql, 0, -3) . ") AND ";
         } else {
             $sql .= "LOWER(t.text) NOT LIKE '%" . $esc['mysql']['exclude'] . "%' AND ";
+        }
+    }
+    if (!empty($esc['mysql']['from_user_lang'])) {
+        if (strstr($esc['mysql']['from_user_lang'], "AND") !== false) {
+            $subqueries = explode(" AND ", $esc['mysql']['from_user_lang']);
+            foreach ($subqueries as $subquery) {
+                $sql .= "from_user_lang = '" . $subquery . "' AND ";
+            }
+        } elseif (strstr($esc['mysql']['from_user_lang'], "OR") !== false) {
+            $subqueries = explode(" OR ", $esc['mysql']['from_user_lang']);
+            $sql .= "(";
+            foreach ($subqueries as $subquery) {
+                $sql .= "from_user_lang = '" . $subquery . "' OR ";
+            }
+            $sql = substr($sql, 0, -3) . ") AND ";
+        } else {
+            $sql .= "from_user_lang = '" . $esc['mysql']['from_user_lang'] . "' AND ";
         }
     }
     $sql .= " t.created_at >= '" . $esc['datetime']['startdate'] . "' AND t.created_at <= '" . $esc['datetime']['enddate'] . "' ";
@@ -543,7 +565,12 @@ function validate(&$what, $how) {
             break;
         // escape shell cmd chars
         case "shell":
-            $what = escapeshellcmd($what);
+            $what = str_replace(" ","_",$what);
+            if(strlen($what)>100) {
+                $what = escapeshellcmd(substr($what,0,100))."...";
+            } else {
+                $what = escapeshellcmd($what);
+            }
             break;
         // escape non-mysql chars
         case "mysql":
@@ -566,7 +593,7 @@ function validate(&$what, $how) {
 // make sure that we have all the right types and values
 // also make sure one cannot do a mysql injection attack
 function validate_all_variables() {
-    global $esc, $query, $url_query, $dataset, $exclude, $from_user_name, $startdate, $enddate, $databases, $connection, $keywords, $database, $minf;
+    global $esc, $query, $url_query, $dataset, $exclude, $from_user_name, $startdate, $enddate, $databases, $connection, $keywords, $database, $minf, $from_user_lang;
 
     // validate and escape all user input
     $esc['mysql']['dataset'] = validate($dataset, "mysql");
@@ -574,11 +601,13 @@ function validate_all_variables() {
     $esc['mysql']['url_query'] = validate($url_query, "mysql");
     $esc['mysql']['exclude'] = validate($exclude, "mysql");
     $esc['mysql']['from_user_name'] = validate($from_user_name, "mysql");
+    $esc['mysql']['from_user_lang'] = validate($from_user_lang, "mysql");
 
     $esc['shell']['dataset'] = validate($dataset, "mysql");
     $esc['shell']['query'] = validate($query, "mysql");
     $esc['shell']['exclude'] = validate($exclude, "mysql");
-    $esc['shell']['from_user_name'] = validate($from_user_name, "mysql");
+    $esc['shell']['from_user_name'] = validate($from_user_name, "shell");
+    // @todo shell + filenames for from_user_lang
 
     $esc['shell']['datasetname'] = validate($dataset, "shell");
 
@@ -641,7 +670,6 @@ function get_all_datasets() {
     $datasets = array();
 
     foreach ($querybins as $bin => $keywords) {
-
         // get nr of results per table
         $sql2 = "SELECT count(t.id) AS notweets,MIN(t.created_at) AS min,MAX(t.created_at) AS max  FROM " . $bin . "_tweets t ";
         $rec2 = mysql_query($sql2);
@@ -683,8 +711,10 @@ function get_total_nr_of_tweets() {
         if (preg_match("/_tweets$/", $res[0], $match)) {
             $sql = "SELECT COUNT(id) FROM " . $res[0];
             $rec2 = mysql_query($sql);
-            $res2 = mysql_fetch_row($rec2);
-            $count += $res2[0];
+            if($rec2) {
+                $res2 = mysql_fetch_row($rec2);
+                $count += $res2[0];
+            }
         }
     }
     return $count;
