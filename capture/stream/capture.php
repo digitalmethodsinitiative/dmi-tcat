@@ -16,7 +16,6 @@ include "../common/functions.php";					// load capture function file
 $path_local = BASE_FILE . "capture/stream/";
 
 require BASE_FILE . 'capture/common/tmhOAuth/tmhOAuth.php';
-require BASE_FILE . 'capture/common/tmhOAuth/tmhUtilities.php';
 
 // ----- connection -----
 dbconnect();						// connect to database
@@ -50,8 +49,8 @@ function stream() {
     $tmhOAuth = new tmhOAuth(array(
                 'consumer_key' => $twitter_consumer_key,
                 'consumer_secret' => $twitter_consumer_secret,
-                'user_token' => $twitter_user_token,
-                'user_secret' => $twitter_user_secret,
+                'token' => $twitter_user_token,
+                'secret' => $twitter_user_secret,
             ));
 
     $method = 'https://stream.twitter.com/1/statuses/filter.json';
@@ -80,7 +79,7 @@ function streamCallback($data, $length, $metrics) {
 }
 
 // function receives a bucket of tweets, sorts them according to bins and inserts into DB
-function processtweets($tweetbucket) {
+function processtweets($tweetbucket) { // @todo, should use tweet entity in capture/common/functions.php
 
 
 	global $querybins,$path_local;

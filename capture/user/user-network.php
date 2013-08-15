@@ -9,15 +9,8 @@ include_once "../../config.php";
 include_once BASE_FILE . '/common/functions.php';
 include_once BASE_FILE . '/capture/common/functions.php';
 
-require BASE_FILE . 'capture/common/tmhOAuth_new/tmhOAuth.php';
+require BASE_FILE . '/capture/common/tmhOAuth/tmhOAuth.php';
 
-
-$twitter_keys = array(
-    array("twitter_consumer_key" => "",
-        "twitter_consumer_secret" => "",
-        "twitter_user_token" => "",
-        "twitter_user_secret" => "")
-);
 $current_key = 0;
 $out_handle = fopen("/tmp/network", "a");
 

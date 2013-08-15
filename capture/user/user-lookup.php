@@ -6,17 +6,16 @@ require_once '../../config.php';
 require_once BASE_FILE . 'analysis/common/functions.php';
 
 require BASE_FILE.'capture/common/tmhOAuth/tmhOAuth.php';
-require BASE_FILE.'capture/common/tmhOAuth/tmhUtilities.php';
 $tmhOAuth = new tmhOAuth(array(
             "consumer_key" => $twitter_consumer_key,
             "consumer_secret" => $twitter_consumer_secret,
-            "user_token" => $twitter_user_token,
-            "user_secret" => $twitter_user_token
+            "token" => $twitter_user_token,
+            "secret" => $twitter_user_token
         ));
 $esc['mysql']['dataset'] = ""; // insert binname here @todo, think of way on how to know what bin to do
 if($esc['mysql']['dataset']=="") die('no dataset specified');
 
-function check_rate_limit($response) {
+function check_rate_limit($response) {  // @todo, loop over keys
     $headers = $response['headers'];
     print 'x-ratelimit-remaining ' . print_r($headers['x-ratelimit-remaining'], 1) . "\n";
     if ($headers['x-ratelimit-remaining'] == 0) :
@@ -99,7 +98,7 @@ for ($i = 0; $i < $paging; $i++) {
     print strftime("%Y-%m-%d %H:%M:%S",date('U'))." doing $i\n";
     $set = array_slice($ids, $i * LOOKUP_SIZE, LOOKUP_SIZE);
 
-    $tmhOAuth->request('GET', $tmhOAuth->url('1.1/users/lookup'), array(
+    $tmhOAuth->user_request('GET', $tmhOAuth->url('1.1/users/lookup'), array(
         'user_id' => implode(',', $set)
     ));
     //var_export($set);
