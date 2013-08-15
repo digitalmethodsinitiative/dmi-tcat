@@ -1,0 +1,42 @@
+README
+======
+
+What this library does
+----------------------
+
+Provides wrappers for php applications to make requests to resources on Klout.
+
+What are the basic methods?
+---------------------------
+
+	KloutIDLookupByName($network,$id)
+	 * Looks up a Klout ID from a Network Screen Name
+	 * $network The Network
+	 * $screenname The Network Screen Name to look up
+
+	KloutIDLookupByID($network,$id)
+	 * Looks up a Klout ID from a Network ID
+	 * $network The Network
+	 * $id The Network ID to look up
+
+	KloutIDLookupReverse($network,$id)
+	 * Looks up network details from Klout ID
+	 * $id The Klout ID to look up
+
+
+	KloutUser($id)
+	 * Looks up Klout User Details and Score
+	 * $id The Klout ID to look up
+
+	KloutUserScore($id)
+	 * Looks up Klout User Score
+	 * $id The Klout ID to look up
+		
+	KloutUserTopics($id)
+	 * Looks up Klout User Topics
+	 * $id The Klout ID to look up
+		
+	KloutUserInfluence($id)
+	 * Looks up Klout User Influencers
+	 * $id The Klout ID to look up
+
