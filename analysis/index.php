@@ -503,8 +503,10 @@ foreach ($linedata as $key => $value) {
                 <h3>Export all tweets from selection</h3>
                 <div class="txt_desc">Creates a .csv file (open in Excel or similar) that contains all tweets and information about them (user, date created, ...).</div>
                 <div class="txt_desc">Use: spend time with your data.</div>
-                <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('export_tweets');sendUrl('mod.export_tweets.php');return false;">launch</a></div>
-
+                <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('export_tweets');sendUrl('mod.export_tweets.php');return false;">export</a></div>
+                <?php if ($show_url_export) { ?>
+                    <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('export_tweets&includeUrls=1');sendUrl('mod.export_tweets.php');return false;">export with URLs</a> (much slower)</div>
+                <?php } ?>
                 <hr />
 
                 <h3>List each individual retweet</h3>

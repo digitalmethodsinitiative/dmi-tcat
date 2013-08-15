@@ -35,7 +35,10 @@ require_once './common/functions.php';
         $filename = $resultsdir . $esc['shell']["datasetname"] . "_" . $esc['shell']["query"] . $exc . "_" . $esc['date']["startdate"] . "_" . $esc['date']["enddate"] . "_" . $esc['shell']["from_user_name"] . "_" . "fullExport.csv";
 
 
-        $header = "id,time,created_at,from_user_name,from_user_lang,text,source,location,lat,lng,from_user_follower_count,from_user_friend_count,from_user_realname,to_user_name,in_reply_to_status_id,from_user_listed,from_user_utcoffset,from_user_timezone,from_user_description,from_user_url,from_user_verified,filter_level\n";
+        $header = "id,time,created_at,from_user_name,from_user_lang,text,source,location,lat,lng,from_user_follower_count,from_user_friend_count,from_user_realname,to_user_name,in_reply_to_status_id,from_user_listed,from_user_utcoffset,from_user_timezone,from_user_description,from_user_url,from_user_verified,filter_level";
+        if (isset($_GET['includeUrls']) && $_GET['includeUrls'] == 1)
+            $header .= ",urls,urls_expanded,urls_followed,domains";
+        $header .= "\n";
 
         $sql = "SELECT * FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
@@ -65,7 +68,27 @@ require_once './common/functions.php';
                         "\"" . preg_replace("/[\r\t\n,]/", " ", trim(strip_tags(html_entity_decode($data['from_user_description'])))) . "\"," .
                         "\"" . preg_replace("/[\r\t\n,]/", " ", trim($data['from_user_url'])) . "\"," .
                         $data['from_user_verified'] . "," .
-                        $data['filter_level'] . "\n";
+                        $data['filter_level'];
+                if (isset($_GET['includeUrls']) && $_GET['includeUrls'] == 1) {
+                    $urls = $expanded = $followed = $domain = "";
+                    $sql2 = "SELECT url, url_expanded, url_followed, domain FROM " . $esc['mysql']['dataset'] . "_urls WHERE tweet_id = " . $data['id'];
+                    $rec2 = mysql_query($sql2);
+                    if (mysql_num_rows($rec2) > 0) {
+                        $res2 = mysql_fetch_assoc($rec2);
+                        $urls = $res2['url'] . " ; ";
+                        $expanded = $res2['url_expanded'] . " ; ";
+                        $followed = $res2['url_followed'] . " ; ";
+                        $domain = $res2['domain'] . " ; ";
+                    }
+                    if (!empty($urls)) {
+                        $urls = substr($urls, 0, -3);
+                        $expanded = substr($expanded, 0, -3);
+                        $followed = substr($followed, 0, -3);
+                        $domain = substr($domain, 0, -3);
+                    }
+                    $out .= "," . $urls . "," . $expanded . "," . $followed . "," . $domain;
+                }
+                $out .= "\n";
             }
         }
 
