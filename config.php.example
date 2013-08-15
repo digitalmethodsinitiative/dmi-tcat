@@ -3,18 +3,29 @@
 /*
  * Database credentials
  */
-$dbuser =	""; 
-$dbpass =	"";
-$database =	"twittercapture"; 
-$hostname =	"localhost";					
+$dbuser = "";
+$dbpass = "";
+$database = "twittercapture";
+$hostname = "localhost";
 
 /*
  * Twitter API keys
  */
+
+// Main key, used for capturing from streaming API
 $twitter_consumer_key = "";
 $twitter_consumer_secret = "";
 $twitter_user_token = "";
 $twitter_user_secret = "";
+
+// List of additional keys to loop over when there is a limited amount of requests per key, e.g. search
+$twitter_keys = array(
+    array("twitter_consumer_key" => "",
+        "twitter_consumer_secret" => "",
+        "twitter_user_token" => "",
+        "twitter_user_secret" => "",
+    )
+);
 
 /*
  * Klout account info
@@ -34,7 +45,7 @@ define('BASE_URL', 'http://example.com/dmi-tcat/');
 /*
  * URL root in which analysis resides
  */
-define('ANALYSIS_URL', BASE_URL.'analysis/');
+define('ANALYSIS_URL', BASE_URL . 'analysis/');
 
 /*
  * Time zone
@@ -59,6 +70,5 @@ ini_set("memory_limit", "30G");
 /*
  * Set encoding
  */
-mb_internal_encoding("UTF-8"); 
-
+mb_internal_encoding("UTF-8");
 ?>
