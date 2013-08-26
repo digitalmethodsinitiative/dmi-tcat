@@ -1,4 +1,5 @@
 <?php
+error_reporting(E_ALL);
 
 function checktables() {
 
@@ -15,7 +16,8 @@ function checktables() {
 
     foreach ($querybins as $bin => $content) {
         if (!in_array($bin . "_tweets", $tables)) {
-            create_bin($bin);
+            $dbh = pdo_connect();
+            create_bin($bin,$dbh);
         }
     }
 }
