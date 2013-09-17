@@ -9,6 +9,11 @@ $database = "twittercapture";
 $hostname = "localhost";
 
 /*
+ * Mail address in case capture/stream/controller.php detects that capture/stream/capture.php has been idle for too long
+ */
+$mail_to = "";
+
+/*
  * Twitter API keys
  */
 
