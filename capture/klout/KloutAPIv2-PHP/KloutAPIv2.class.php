@@ -24,6 +24,9 @@ class KloutAPIv2 {
         
 	/** @var String $KloutKey */
 	private $KloutKey;
+        
+        public $info;
+        public $response;
 	
 	/**
 	 * Constructor for the API
@@ -244,6 +247,9 @@ class KloutAPIv2 {
 		$result=curl_exec($ch);
 		$info=curl_getinfo($ch);
 		curl_close($ch);
+                
+                $this->response = $result;
+                $this->info = $info;
 		
 		return $result;
 	}
