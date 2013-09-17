@@ -84,6 +84,7 @@ function create_bin($bin_name, $dbh) {
                 from_user_description varchar(255),
                 from_user_url varchar(2048),
                 from_user_verified bool DEFAULT false,
+                from_user_profile_image_url varchar(400),
                 source varchar(512),
                 location varchar(64),
                 geo_lat float(10,6),
