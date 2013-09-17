@@ -124,18 +124,18 @@ if (defined('ANALYSIS_URL'))
                 <table>
 
                     <tr>
-                        <td class="tbl_head">Query: </td><td><input type="text" id="ipt_query" name="query" value="<?php echo $query; ?>" /> (empty: containing any text*)</td>
+                        <td class="tbl_head">Query: </td><td><input type="text" id="ipt_query" name="query" value="<?php echo $query; ?>" /> (empty: containing any text)</td>
                     </tr>
 
                     <tr>
-                        <td class="tbl_head">Exclude: </td><td><input type="text" id="ipt_exclude" name="exclude"  value="<?php echo $exclude; ?>" /> (empty: exclude nothing*)</td>
+                        <td class="tbl_head">Exclude: </td><td><input type="text" id="ipt_exclude" name="exclude"  value="<?php echo $exclude; ?>" /> (empty: exclude nothing)</td>
                     </tr>
 
                     <tr>
-                        <td class="tbl_head">From user: </td><td><input type="text" id="ipt_from_user" name="from_user_name"  value="<?php echo $from_user_name; ?>" /> (empty: from any user*)</td>
+                        <td class="tbl_head">From user: </td><td><input type="text" id="ipt_from_user" name="from_user_name"  value="<?php echo $from_user_name; ?>" /> (empty: from any user)</td>
                     </tr>
                     <tr>
-                        <td class="tbl_head">URL (or part of URL): </td><td><input type="text" id="ipt_url_query" name="url_query"  value="<?php echo $url_query; ?>" /> (empty: any or all URLs*)</td>
+                        <td class="tbl_head">URL (or part of URL): </td><td><input type="text" id="ipt_url_query" name="url_query"  value="<?php echo $url_query; ?>" /> (empty: any or all URLs)</td>
                     </tr>
                     <tr>
                         <td class="tbl_head">Startdate:</td><td><input type="text" id="ipt_startdate" name="startdate" value="<?php echo $startdate; ?>" /> (YYYY-MM-DD)</td>
@@ -148,7 +148,6 @@ if (defined('ANALYSIS_URL'))
                     <tr>
                         <td><input type="submit" value="update overview" /></td>
                     </tr>
-                    <tr><td colspan='2'>*  You can also do AND <b>or</b> OR queries, although you cannot mix AND and OR in the same query.</td></tr>
                 </table>
 
             </form>
