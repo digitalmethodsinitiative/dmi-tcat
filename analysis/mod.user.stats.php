@@ -37,111 +37,130 @@ require_once './common/functions.php';
         $filename_languages = str_replace("userStats", "languages", $filename);
 
         // tweets per user
-        $sql = "SELECT count(distinct(t.id)) AS count, t.from_user_id FROM " . $esc['mysql']['dataset'] . "_tweets t ";
+        $sql = "SELECT count(distinct(t.id)) AS count, t.from_user_id, ";
+        $sql .= sqlInterval();
+        $sql .= " FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
-        $sql .= "GROUP BY from_user_id";
+        $sql .= "GROUP BY datepart, from_user_id";
         //print $sql . "<br>";
         $sqlresults = mysql_query($sql);
         $array = array();
         while ($res = mysql_fetch_assoc($sqlresults)) {
-            $array[$res['from_user_id']] = $res['count'];
+            $array[$res['datepart']][$res['from_user_id']] = $res['count'];
         }
-        if (!empty($array))
-            $stats['tweets_per_user'] = stats_summary($array);
+        if (!empty($array)) {
+            foreach ($array as $date => $ar)
+                $stats[$date]['tweets_per_user'] = stats_summary($ar);
+        }
 
-        // users per day
-        $sql = "SELECT count(distinct(t.from_user_id)) AS count, DATE_FORMAT(t.created_at,'%Y-%m-%d') day FROM " . $esc['mysql']['dataset'] . "_tweets t ";
+        // users per interval
+        $sql = "SELECT count(distinct(t.from_user_id)) AS count, ";
+        $sql .= sqlInterval();
+        $sql .= " FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
-        $sql .= "GROUP BY day";
+        $sql .= "GROUP BY datepart";
         //print $sql . "<br>";
         $sqlresults = mysql_query($sql);
         $array = array();
         while ($res = mysql_fetch_assoc($sqlresults)) {
-            $array[$res['day']] = $res['count'];
+            $array[$res['datepart']] = $res['count'];
         }
-        if (!empty($array))
-            $stats['users_per_day'] = stats_summary($array);
+        if (!empty($array)) {
+            $stats['all dates']['users_per_date'] = stats_summary($array);
+        }
 
-        $sql = "SELECT count(distinct(u.url)) AS count, u.from_user_id FROM " . $esc['mysql']['dataset'] . "_urls u, " . $esc['mysql']['dataset'] . "_tweets t ";
+        // urls per user per interval
+        $sql = "SELECT count(distinct(u.url)) AS count, u.from_user_id, ";
+        $sql .= sqlInterval();
+        $sql .= " FROM " . $esc['mysql']['dataset'] . "_urls u, " . $esc['mysql']['dataset'] . "_tweets t ";
         $where = "t.id = u.tweet_id AND ";
         $sql .= sqlSubset($where);
-        $sql .= "GROUP BY from_user_id";
+        $sql .= "GROUP BY datepart, from_user_id";
         //print $sql."<br>";
         $sqlresults = mysql_query($sql);
         $array = array();
         while ($res = mysql_fetch_assoc($sqlresults)) {
-            $array[$res['from_user_id']] = $res['count'];
+            $array[$res['datepart']][$res['from_user_id']] = $res['count'];
         }
-        if (!empty($array))
-            $stats['urls_per_user'] = stats_summary($array);
+        if (!empty($array)) {
+            foreach ($array as $date => $ar)
+                $stats[$date]['urls_per_user'] = stats_summary($ar);
+        }
 
-        // select latest user info
-        $sql = "SELECT max(t.created_at), t.from_user_id, t.from_user_followercount, t.from_user_friendcount, t.from_user_tweetcount FROM " . $esc['mysql']['dataset'] . "_tweets t ";
+        // select latest user info per interval
+        $sql = "SELECT max(t.created_at), t.from_user_id, t.from_user_followercount, t.from_user_friendcount, t.from_user_tweetcount, ";
+        $sql .= sqlInterval();
+        $sql .= " FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
-        $sql .= "GROUP BY from_user_id";
+        $sql .= "GROUP BY datepart, from_user_id";
         //print $sql."<bR>";
         $sqlresults = mysql_query($sql);
         $array = array();
         while ($res = mysql_fetch_assoc($sqlresults)) {
-            $array['followercount'][$res['from_user_id']] = $res['from_user_followercount'];
-            $array['friendcount'][$res['from_user_id']] = $res['from_user_friendcount'];
-            $array['tweetcount'][$res['from_user_id']] = $res['from_user_tweetcount'];
+            $array[$res['datepart']]['followercount'][$res['from_user_id']] = $res['from_user_followercount'];
+            $array[$res['datepart']]['friendcount'][$res['from_user_id']] = $res['from_user_friendcount'];
+            $array[$res['datepart']]['tweetcount'][$res['from_user_id']] = $res['from_user_tweetcount'];
         }
-        if (!empty($array)) {   // @todo initialize these vars
-            $stats['followercount'] = stats_summary($array['followercount']);
-            $stats['friendcount'] = stats_summary($array['friendcount']);
-            $stats['tweetcount'] = stats_summary($array['tweetcount']);
+        if (!empty($array)) {
+            foreach ($array as $date => $ar) {
+                $stats[$date]['followercount'] = stats_summary($ar['followercount']);
+                $stats[$date]['friendcount'] = stats_summary($ar['friendcount']);
+                $stats[$date]['tweetcount'] = stats_summary($ar['tweetcount']);
+            }
         }
 
         // @todo: aantal retweets
 
-        $content = "what,min,max,avg,Q1,median,Q3,25%TrimmedMean\n";
-        foreach ($stats as $what => $stat) {
-            $content.="$what," . $stat['min'] . "," . $stat['max'] . "," . $stat['avg'] . "," . $stat['Q1'] . "," . $stat['median'] . "," . $stat['Q3'] . "," . $stat['truncatedMean'] . "\n";
+        $content = "date,what,min,max,avg,Q1,median,Q3,25%TrimmedMean\n";
+        foreach ($stats as $date => $datestats) {
+            foreach ($datestats as $what => $stat) {
+                $content.="$date,$what," . $stat['min'] . "," . $stat['max'] . "," . $stat['avg'] . "," . $stat['Q1'] . "," . $stat['median'] . "," . $stat['Q3'] . "," . $stat['truncatedMean'] . "\n";
+            }
         }
         file_put_contents($filename, chr(239) . chr(187) . chr(191) . $content);
+        
+          echo '<fieldset class="if_parameters">';
+          echo '<legend>User stats</legend>';
+          echo '<p><a href="' . str_replace("#", urlencode("#"), str_replace("\"", "%22", $filename)) . '">' . $filename . '</a></p>';
+          echo '</fieldset>';
+/*
+          // interface language, user-defined location
+          $sql = "SELECT max(t.created_at), t.from_user_id, t.from_user_lang, t.location FROM " . $esc['mysql']['dataset'] . "_tweets t ";
+          $sql .= sqlSubset();
+          $sql .= "GROUP BY from_user_id";
+          $sqlresults = mysql_query($sql);
+          $locations = $languages = array();
+          while ($res = mysql_fetch_assoc($sqlresults)) {
+          $locations[] = $res['location'];
+          $languages[] = $res['from_user_lang'];
+          }
 
-        echo '<fieldset class="if_parameters">';
-        echo '<legend>User stats</legend>';
-        echo '<p><a href="' . str_replace("#", urlencode("#"), str_replace("\"", "%22", $filename)) . '">' . $filename . '</a></p>';
-        echo '</fieldset>';
+          $locations = array_count_values($locations);
+          arsort($locations);
+          $contents = "location,frequency\n";
+          foreach ($locations as $location => $frequency)
+          $contents .= preg_replace("/[\r\n\s\t,]+/im", " ", trim($location)) . ",$frequency\n";
 
-        // interface language, user-defined location
-        $sql = "SELECT max(t.created_at), t.from_user_id, t.from_user_lang, t.location FROM " . $esc['mysql']['dataset'] . "_tweets t ";
-        $sql .= sqlSubset();
-        $sql .= "GROUP BY from_user_id";
-        $sqlresults = mysql_query($sql);
-        $locations = $languages = array();
-        while ($res = mysql_fetch_assoc($sqlresults)) {
-            $locations[] = $res['location'];
-            $languages[] = $res['from_user_lang'];
-        }
+          file_put_contents($filename_locations, chr(239) . chr(187) . chr(191) . $contents);
 
-        $locations = array_count_values($locations);
-        arsort($locations);
-        $contents = "location,frequency\n";
-        foreach ($locations as $location => $frequency)
-            $contents .= preg_replace("/[\r\n\s\t,]+/im", " ", trim($location)) . ",$frequency\n";
+          echo '<fieldset class="if_parameters">';
+          echo '<legend>Locations </legend>';
+          echo '<p><a href="' . str_replace("#", urlencode("#"), str_replace("\"", "%22", $filename_locations)) . '">' . $filename_locations . '</a></p>';
+          echo '</fieldset>';
 
-        file_put_contents($filename_locations, chr(239) . chr(187) . chr(191) . $contents);
+          $languages = array_count_values($languages);
+          arsort($languages);
+          $contents = "language,frequency\n";
+          foreach ($languages as $language => $frequency)
+          $contents .= preg_replace("/[\r\n\s\t]+/", "", $language) . ",$frequency\n";
 
-        echo '<fieldset class="if_parameters">';
-        echo '<legend>Locations </legend>';
-        echo '<p><a href="' . str_replace("#", urlencode("#"), str_replace("\"", "%22", $filename_locations)) . '">' . $filename_locations . '</a></p>';
-        echo '</fieldset>';
+          file_put_contents($filename_languages, chr(239) . chr(187) . chr(191) . $contents);
 
-        $languages = array_count_values($languages);
-        arsort($languages);
-        $contents = "language,frequency\n";
-        foreach ($languages as $language => $frequency)
-            $contents .= preg_replace("/[\r\n\s\t]+/", "", $language) . ",$frequency\n";
-
-        file_put_contents($filename_languages, chr(239) . chr(187) . chr(191) . $contents);
-
-        echo '<fieldset class="if_parameters">';
-        echo '<legend>Languages </legend>';
-        echo '<p><a href="' . str_replace("#", urlencode("#"), str_replace("\"", "%22", $filename_languages)) . '">' . $filename_languages . '</a></p>';
-        echo '</fieldset>';
+          echo '<fieldset class="if_parameters">';
+          echo '<legend>Languages </legend>';
+          echo '<p><a href="' . str_replace("#", urlencode("#"), str_replace("\"", "%22", $filename_languages)) . '">' . $filename_languages . '</a></p>';
+          echo '</fieldset>';
+         */
         ?>
 
     </body>
