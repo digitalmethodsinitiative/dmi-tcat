@@ -26,13 +26,7 @@ require_once './common/functions.php';
         <h1>Twitter Analytics - Export Tweets</h1>
 
         <?php
-        echo '<fieldset class="if_parameters">';
-
-        echo '<legend>Your File</legend>';
-
         validate_all_variables();
-        $exc = (empty($esc['shell']["exclude"])) ? "" : "-" . $esc['shell']["exclude"];
-        $filename = $resultsdir . $esc['shell']["datasetname"] . "_" . $esc['shell']["query"] . $exc . "_" . $esc['date']["startdate"] . "_" . $esc['date']["enddate"] . "_" . $esc['shell']["from_user_name"] . "_" . "fullExport.csv";
 
 
         $header = "id,time,created_at,from_user_name,from_user_lang,text,source,location,lat,lng,from_user_follower_count,from_user_friend_count,from_user_realname,to_user_name,in_reply_to_status_id,from_user_listed,from_user_utcoffset,from_user_timezone,from_user_description,from_user_url,from_user_verified,filter_level";
@@ -92,11 +86,12 @@ require_once './common/functions.php';
             }
         }
 
+        $filename = get_filename_for_export("fullExport");
         file_put_contents($filename, chr(239) . chr(187) . chr(191) . $out);
 
-
+        echo '<fieldset class="if_parameters">';
+        echo '<legend>Your File</legend>';
         echo '<p><a href="' . str_replace("#", urlencode("#"), str_replace("\"", "%22", $filename)) . '">' . $filename . '</a></p>';
-
         echo '</fieldset>';
         ?>
 

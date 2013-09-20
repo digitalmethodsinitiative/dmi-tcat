@@ -26,11 +26,6 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
         validate_all_variables();
         if(empty($esc['shell']['minf'])) $esc['shell']['minf'] = 4;
         
-// Output format: {dataset}_{query}_{startdate}_{enddate}_{from_user_name}_{output type}.{filetype}
-
-        $exc = (empty($esc['shell']["exclude"])) ? "" : "-" . $esc['shell']["exclude"];
-        $filename = $resultsdir . $esc['shell']["datasetname"] . "_" . $esc['shell']["query"] . $exc . "_" . $esc['date']["startdate"] . "_" . $esc['date']["enddate"] . "_" . $esc['shell']["from_user_name"] . (isset($_GET['probabilityOfAssociation']) ? "_normalizedAssociationWeight" : "") . "_minDegreeOf".$esc['shell']['minf']."_hashtagCooc.gexf";
-
         include_once('common/Coword.class.php');
         $coword = new Coword;
         $coword->countWordOncePerDocument = FALSE;
@@ -71,6 +66,8 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
         unset($coword->words); // as we are adding words manually the frequency would be messed up
         if ($esc['shell']['minf'] > 0)
             $coword->applyMinDegree($esc['shell']['minf']);
+        
+        $filename = get_filename_for_export("hashtagCooc",(isset($_GET['probabilityOfAssociation']) ? "_normalizedAssociationWeight" : "") . "_minDegreeOf".$esc['shell']['minf'],"gexf");
         file_put_contents($filename, $coword->getCowordsAsGexf($filename));
 
         echo '<fieldset class="if_parameters">';

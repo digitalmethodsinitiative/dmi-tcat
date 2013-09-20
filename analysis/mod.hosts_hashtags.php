@@ -28,10 +28,7 @@ require_once './common/Gexf.class.php';
 
         <?php
         validate_all_variables();
-// Output format: {dataset}_{query}_{startdate}_{enddate}_{from_user_name}_{output type}.{filetype}
-
-        $exc = (empty($esc['shell']["exclude"])) ? "" : "-" . $esc['shell']["exclude"];
-        $filename = $resultsdir . $esc['shell']["datasetname"] . "_" . $esc['shell']["query"] . $exc . "_" . $esc['date']["startdate"] . "_" . $esc['date']["enddate"] . "_" . $esc['shell']["from_user_name"] . "_hostHashtag.csv";
+        $filename = get_filename_for_export("hostHashtag");
 
         $sql = "SELECT COUNT(LOWER(h.text)) AS frequency, LOWER(h.text) AS hashtag, u.domain AS domain FROM ";
         $sql .= $esc['mysql']['dataset'] . "_tweets t, " . $esc['mysql']['dataset'] . "_hashtags h, " . $esc['mysql']['dataset'] . "_urls u ";
@@ -57,8 +54,8 @@ require_once './common/Gexf.class.php';
 
         echo '</fieldset>';
 
-        
-        
+
+
         $gexf = new Gexf();
         $gexf->setTitle("URL-hashtag " . $filename);
         $gexf->setEdgeType(GEXF_EDGE_UNDIRECTED);

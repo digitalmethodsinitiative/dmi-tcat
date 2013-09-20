@@ -26,13 +26,7 @@ require_once './common/functions.php';
         <h1>Twitter Analytics :: Tweet Stats</h1>
 
         <?php
-// => gexf
-// => time
         validate_all_variables();
-// Output format: {dataset}_{query}_{startdate}_{enddate}_{from_user_name}_{output type}.{filetype}
-
-        $exc = (empty($esc['shell']["exclude"])) ? "" : "-" . $esc['shell']["exclude"];
-        $filename = $resultsdir . $esc['shell']["datasetname"] . "_" . $esc['shell']["query"] . $exc . "_" . $esc['date']["startdate"] . "_" . $esc['date']["enddate"] . "_" . $esc['shell']["from_user_name"] . "_tweetStats.csv";
 
         $numtweets = $numlinktweets = $numTweetsWithHashtag = $numTweetsWithMentions = $numRetweets = $numReplies = array();
 
@@ -121,11 +115,8 @@ require_once './common/functions.php';
                 $numReplies[$data['datepart']] = $data["count"];
             }
         }
-
-        echo '<fieldset class="if_parameters">';
-        echo '<legend>Tweet stats </legend>';
-        echo '<p>';
-        print "<table><thead><th>Date</th><th>Number of tweets</th><th>Number of tweets with links</th><th>Number of tweets with hashtags</th><th>Number of tweets with mentions</th><th>Number of retweets</th><th>Number of replies</th></tr></thead><tbody>";
+        
+        $content = "Date,Number of tweets,Number of tweets with links,Number of tweets with hashtags,Number of tweets with mentions,Number of retweets,Number of replies\n";
         foreach ($numtweets as $date => $tweetcount) {
             $linkcount = $hashtagcount = $mentioncount = $retweetcount = $replycount = 0;
             if (isset($numlinktweets[$date]))
@@ -138,11 +129,21 @@ require_once './common/functions.php';
                 $retweetcount = $numretweets[$date];
             if (isset($numReplies[$date]))
                 $replycount = $numReplies[$date];
-            print "<tr><td>$date</td><td>$tweetcount</td><td>$linkcount</td><td>$hashtagcount</td><td>$mentioncount</td><td>$retweetcount</td><td>$replycount</td></tr>";
+            $content .= "$date,$tweetcount,$linkcount,$hashtagcount,$mentioncount,$retweetcount,$replycount\n";
         }
-        print "</tbody></table>";
-        echo '</p>';
+
+        $filename = get_filename_for_export("tweetStats");
+        file_put_contents($filename,chr(239) . chr(187) . chr(191) . $content);
+        echo '<fieldset class="if_parameters">';
+
+        echo '<legend>Tweet stats</legend>';
+
+        echo '<p><a href="' . str_replace("#", urlencode("#"), str_replace("\"", "%22", $filename)) . '">' . $filename . '</a></p>';
+
         echo '</fieldset>';
+        
+        
+        
         ?>
 
     </body>

@@ -31,9 +31,6 @@ require_once './common/Gexf.class.php';
 
         $min_nr_of_nodes = $esc['shell']['minf'];
 
-        $exc = (empty($esc['shell']["exclude"])) ? "" : "-" . $esc['shell']["exclude"];
-        $filename = $resultsdir . $esc['shell']['datasetname'] . "_" . $esc['shell']["query"] . $exc . "_" . $esc['date']["startdate"] . "_" . $esc['date']["enddate"] . "_" . $esc['shell']["from_user_name"] . "_interactionGraph_min" . $esc['shell']['minf'] . "Nodes.gexf";
-
         // get all tweets which have in_reply_to_status_id set
         $sql = "SELECT id, created_at, from_user_name, text, in_reply_to_status_id, from_user_lang, from_user_tweetcount, from_user_followercount, from_user_friendcount, from_user_listed, source  FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
@@ -167,7 +164,7 @@ require_once './common/Gexf.class.php';
 
         // @todo percentage of different structures (pure stars, pure chains, mixed structure). Ratio between average degree and number of nodes.
 
-
+        $filename = get_filename_for_export("interactionGraph", "min" . $esc['shell']['minf'] . "nodes", "gexf");
         $gexf = new Gexf();
         $gexf->setTitle("interaction graph " . $filename);
         $gexf->setEdgeType(GEXF_EDGE_DIRECTED);
@@ -216,7 +213,7 @@ require_once './common/Gexf.class.php';
                 $node1->addNodeAttribute('indegree', $indegree[$in_reply_to_status_id], 'integer');
             if (isset($outdegree[$in_reply_to_status_id]))
                 $node1->addNodeAttribute('outdegree', $outdegree[$in_reply_to_status_id], 'integer');
-            
+
             if (isset($network_types[$in_reply_to_status_id]))
                 $node1->addNodeAttribute('network_type', $network_types[$in_reply_to_status_id], 'string');
             $gexf->addNode($node1);

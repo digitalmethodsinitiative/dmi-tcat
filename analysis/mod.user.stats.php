@@ -26,15 +26,11 @@ require_once './common/functions.php';
         <h1>Twitter Analytics :: User Stats</h1>
 
         <?php
-// => gexf
-// => time
         validate_all_variables();
-// Output format: {dataset}_{query}_{startdate}_{enddate}_{from_user_name}_{output type}.{filetype}
 
-        $exc = (empty($esc['shell']["exclude"])) ? "" : "-" . $esc['shell']["exclude"];
-        $filename = $resultsdir . $esc['shell']["datasetname"] . "_" . $esc['shell']["query"] . $exc . "_" . $esc['date']["startdate"] . "_" . $esc['date']["enddate"] . "_" . $esc['shell']["from_user_name"] . "_userStats.csv";
-        $filename_locations = str_replace("userStats", "locations", $filename);
-        $filename_languages = str_replace("userStats", "languages", $filename);
+        $filename = get_filename_for_export("userStats");
+        $filename_locations = get_filename_for_export("locations");
+        $filename_languages = get_filename_for_export("languages");
 
         // tweets per user
         $sql = "SELECT count(distinct(t.id)) AS count, t.from_user_id, ";
@@ -118,12 +114,12 @@ require_once './common/functions.php';
             }
         }
         file_put_contents($filename, chr(239) . chr(187) . chr(191) . $content);
-        
-          echo '<fieldset class="if_parameters">';
-          echo '<legend>User stats</legend>';
-          echo '<p><a href="' . str_replace("#", urlencode("#"), str_replace("\"", "%22", $filename)) . '">' . $filename . '</a></p>';
-          echo '</fieldset>';
-/*
+
+        echo '<fieldset class="if_parameters">';
+        echo '<legend>User stats</legend>';
+        echo '<p><a href="' . str_replace("#", urlencode("#"), str_replace("\"", "%22", $filename)) . '">' . $filename . '</a></p>';
+        echo '</fieldset>';
+        /*
           // interface language, user-defined location
           $sql = "SELECT max(t.created_at), t.from_user_id, t.from_user_lang, t.location FROM " . $esc['mysql']['dataset'] . "_tweets t ";
           $sql .= sqlSubset();

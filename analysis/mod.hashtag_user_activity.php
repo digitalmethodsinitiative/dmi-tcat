@@ -22,10 +22,6 @@ require_once './common/Gexf.class.php';
 
         <?php
         validate_all_variables();
-// Output format: {dataset}_{query}_{startdate}_{enddate}_{from_user_name}_{output type}.{filetype}
-
-        $exc = (empty($esc['shell']["exclude"])) ? "" : "-" . $esc['shell']["exclude"];
-        $filename = $resultsdir . $esc['shell']["datasetname"] . "_" . $esc['shell']["query"] . $exc . "_" . $esc['date']["startdate"] . "_" . $esc['date']["enddate"] . "_" . $esc['shell']["from_user_name"] . (isset($_GET['probabilityOfAssociation']) ? "_normalizedAssociationWeight" : "") . "_hashtagUserActivity.csv";
 
         // select nr of users in subset
         $sql = "SELECT count(id) AS count FROM " . $esc['mysql']['dataset'] . "_tweets t ";
@@ -89,6 +85,7 @@ require_once './common/Gexf.class.php';
             $contents .= "$hashtag,$count," . $hashtagDistinctUsers[$hashtag] . "," . (isset($hashtagDistinctMentions[$hashtag]) ? $hashtagDistinctMentions[$hashtag] : 0) . "," . (isset($hashtagMentions[$hashtag]) ? $hashtagMentions[$hashtag] : 0) . ",$nrOfTweets,$nrOfUsers\n";
         }
 
+        $filename = get_filename_for_export("hashtagUserActivity", (isset($_GET['probabilityOfAssociation']) ? "_normalizedAssociationWeight" : ""));
         file_put_contents($filename, chr(239) . chr(187) . chr(191) . $contents);
 
         echo '<fieldset class="if_parameters">';

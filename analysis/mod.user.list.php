@@ -26,13 +26,8 @@ require_once './common/functions.php';
         <h1>Twitter Analytics :: User Stats</h1>
 
         <?php
-// => gexf
-// => time
-        validate_all_variables();
-// Output format: {dataset}_{query}_{startdate}_{enddate}_{from_user_name}_{output type}.{filetype}
 
-        $exc = (empty($esc['shell']["exclude"])) ? "" : "-" . $esc['shell']["exclude"];
-        $filename = $resultsdir . $esc['shell']["datasetname"] . "_" . $esc['shell']["query"] . $exc . "_" . $esc['date']["startdate"] . "_" . $esc['date']["enddate"] . "_" . $esc['shell']["from_user_name"] . "_userList.csv";
+        validate_all_variables();
 
         // tweets per user
         $sql = "SELECT t.from_user_id,t.from_user_name,t.from_user_lang,t.from_user_tweetcount,t.from_user_followercount,t.from_user_friendcount,t.from_user_listed,t.from_user_utcoffset,t.from_user_verified,count(distinct(t.id)) as tweetcount, ";
@@ -153,6 +148,7 @@ require_once './common/functions.php';
             }
         }
 
+        $filename = get_filename_for_export("user.list");
         file_put_contents($filename, chr(239) . chr(187) . chr(191) . $content);
 
         echo '<fieldset class="if_parameters">';

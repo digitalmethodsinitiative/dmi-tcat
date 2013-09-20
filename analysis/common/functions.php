@@ -565,9 +565,10 @@ function validate(&$what, $how) {
             break;
         // escape shell cmd chars
         case "shell":
-            $what = str_replace(" ","_",$what);
-            if(strlen($what)>100) {
-                $what = escapeshellcmd(substr($what,0,100))."...";
+            //$what = str_replace(" ", "_", str_replace("/","$what);
+            $what = preg_replace("/[\/ ]/", "_", $what);
+            if (strlen($what) > 100) {
+                $what = escapeshellcmd(substr($what, 0, 100)) . "...";
             } else {
                 $what = escapeshellcmd($what);
             }
@@ -605,8 +606,10 @@ function validate_all_variables() {
 
     $esc['shell']['dataset'] = validate($dataset, "mysql");
     $esc['shell']['query'] = validate($query, "mysql");
+    $esc['shell']['url_query'] = validate($url_query, "mysql");
     $esc['shell']['exclude'] = validate($exclude, "mysql");
     $esc['shell']['from_user_name'] = validate($from_user_name, "shell");
+    $esc['shell']['from_user_lang'] = validate($from_user_lang, "mysql");
     // @todo shell + filenames for from_user_lang
 
     $esc['shell']['datasetname'] = validate($dataset, "shell");
@@ -617,6 +620,30 @@ function validate_all_variables() {
     $esc['date']['enddate'] = validate($enddate, "enddate");
     $esc['datetime']['startdate'] = $esc['date']['startdate'] . " 00:00:00";
     $esc['datetime']['enddate'] = $esc['date']['enddate'] . " 23:59:59";
+}
+
+// Output format: {dataset}-{startdate}-{enddate}-{query}-{exclude}-{from_user_name}-{from_user_lang}-{url_query}-{module_name}-{module_settings}-{hash}.{filetype}
+function get_filename_for_export($module, $settings = "", $filetype = "csv") {
+    global $resultsdir, $esc;
+
+    // get software vesion
+    exec('git rev-parse --verify HEAD 2> /dev/null', $output);
+    $hash = substr($output[0], 0, 10); // first 10 characters (instead of all 40) should be enough to have no collisions
+    // construct filename
+    $filename = $resultsdir;
+    $filename .= $esc['shell']["datasetname"];
+    $filename .= "-" . str_replace("-","",$esc['date']["startdate"]);
+    $filename .= "-" . str_replace("-","",$esc['date']["enddate"]);
+    $filename .= "-" . $esc['shell']["query"];
+    $filename .= "-" . $esc['shell']["exclude"];
+    $filename .= "-" . $esc['shell']["from_user_name"];
+    $filename .= "-" . $esc['shell']["from_user_lang"];
+    $filename .= "-" . $esc['shell']["url_query"];
+    $filename .= "-" . $module;
+    $filename .= "-" . $settings;
+    $filename .= "-" . $hash;   // sofware version
+    $filename .= "." . $filetype;
+    return $filename;
 }
 
 // get all @replies in a message
@@ -711,7 +738,7 @@ function get_total_nr_of_tweets() {
         if (preg_match("/_tweets$/", $res[0], $match)) {
             $sql = "SELECT COUNT(id) FROM " . $res[0];
             $rec2 = mysql_query($sql);
-            if($rec2) {
+            if ($rec2) {
                 $res2 = mysql_fetch_row($rec2);
                 $count += $res2[0];
             }

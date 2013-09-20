@@ -29,14 +29,8 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
         <h1>Twitter Analytics - Geo location</h1>
 
         <?php
-// => gexf
-// => time
         validate_all_variables();
-// Output format: {dataset}_{query}_{startdate}_{enddate}_{from_user_name}_{output type}.{filetype}
 
-        $exc = (empty($esc['shell']["exclude"])) ? "" : "-" . $esc['shell']["exclude"];
-        $filename = $resultsdir . $esc['shell']["datasetname"] . "_" . $esc['shell']["query"] . $exc . "_" . $esc['date']["startdate"] . "_" . $esc['date']["enddate"] . "_" . $esc['shell']["from_user_name"] . "_geo.csv";
-        
         $sql = "SELECT * FROM ".$esc['mysql']['dataset']."_tweets t ";
         $where = "geo_lat != 0 AND geo_lng != 0 AND ";
         // @todo, add sqlinterval()
@@ -51,7 +45,8 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
         while ($res = mysql_fetch_assoc($sqlresults)) {
             $content .= strtotime($res["created_at"]) . "," . $res["created_at"] . "," . $res["from_user_name"] . "," . $res["from_user_tweetcount"] . "," . $res["from_user_followercount"] . "," . $res["from_user_lang"] . "," . validate($res["text"], "tweet") . ",\"" . strip_tags(html_entity_decode($res["source"])). "\",\"" . trim(strip_tags(html_entity_decode($res["location"]))). "\",".$res['geo_lat'].",".$res['geo_lng']."\n"; 
         }
-       //print "<code>$content</code>"; 
+       
+        $filename = get_filename_for_export("location");
         file_put_contents($filename,  chr(239) . chr(187) . chr(191) . $content);
         
         echo '<fieldset class="if_parameters">';

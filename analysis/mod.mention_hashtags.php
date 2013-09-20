@@ -27,14 +27,9 @@ require_once './common/Gexf.class.php';
         <h1>Twitter Analytics :: Mention - Hashtags</h1>
 
         <?php
-// => gexf
-// => time
-
         validate_all_variables();
 
-        $exc = (empty($esc['shell']["exclude"])) ? "" : "-" . $esc['shell']["exclude"];
-        $filename = $resultsdir . $esc['shell']['datasetname'] . "_" . $esc['shell']["query"] . $exc . "_" . $esc['date']["startdate"] . "_" . $esc['date']["enddate"] . "_" . $esc['shell']["from_user_name"] . "_mentionHashtags.gexf";
-
+        $filename = get_filename_for_export("mentionHashtags", "", "gexf");
 
         $sql = "SELECT m.to_user AS user, LOWER(h.text) AS hashtag FROM ";
         $sql .= $esc['mysql']['dataset'] . "_mentions m, " . $esc['mysql']['dataset'] . "_tweets t, " . $esc['mysql']['dataset'] . "_hashtags h ";

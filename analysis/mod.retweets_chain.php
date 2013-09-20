@@ -31,9 +31,6 @@ require_once './common/functions.php';
         if (isset($_GET['minf']) || !preg_match("/^\d+$/", $min_nr_of_nodes))
             $min_nr_of_nodes = 4;
 
-        $exc = (empty($esc['shell']["exclude"])) ? "" : "-" . $esc['shell']["exclude"];
-        $filename = $resultsdir . $esc['shell']["datasetname"] . "_" . $esc['shell']["query"] . $exc . "_" . $esc['date']["startdate"] . "_" . $esc['date']["enddate"] . "_" . $esc['shell']["from_user_name"] . "_" . "retweets_chain.csv";
-        //print strftime("%T", date('U')) . "<br>";
         // get identical tweets
         $sql = "SELECT text, COUNT(text) AS count FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
@@ -124,8 +121,8 @@ require_once './common/functions.php';
 
         echo '<legend>Your File</legend>';
 
+        $filename = get_filename_for_export("retweets_chain", $min_nr_of_nodes);
         file_put_contents($filename, chr(239) . chr(187) . chr(191) . $out);
-
 
         echo '<p><a href="' . str_replace("#", urlencode("#"), str_replace("\"", "%22", $filename)) . '">' . $filename . '</a></p>';
 

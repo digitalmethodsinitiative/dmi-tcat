@@ -489,7 +489,7 @@ foreach ($linedata as $key => $value) {
 
                     <h3>Host name frequency</h3>
                     <div class="txt_desc">Creates a .csv file (open in Excel or similar) that contains the frequencies of tweeted domain names.</div>
-                    <div class="txt_desc">Use: find out which sources (media, platforms, etc.) are referenced most ofter.</div>
+                    <div class="txt_desc">Use: find out which sources (media, platforms, etc.) are referenced most often.</div>
                     <div class="txt_link"> &raquo;  <a href="" onclick="var minf = askFrequency(); $('#whattodo').val('hosts&minf='+minf+getInterval()); sendUrl('index.php');return false;">launch</a></div>
                 <?php } ?>
 
