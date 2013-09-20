@@ -12,7 +12,7 @@ if (isset($_GET['minf'])&&!empty($_GET['minf'])) {
     $minf = $_GET['minf'];
     $sql = "SELECT count(id) as cnt, from_user_name FROM " . $esc['mysql']['dataset'] . "_tweets t ";
     $sql .= sqlSubset();
-    $sql .= " GROUP BY from_user_name ORDER"; 
+    $sql .= " GROUP BY from_user_name"; 
     $rec = mysql_query($sql);
     while ($res = mysql_fetch_assoc($rec)) {
         if ($res['cnt'] >= $minf)
