@@ -102,7 +102,7 @@ if (defined('ANALYSIS_URL'))
 
         <fieldset class="if_parameters">
 
-            <legend>Data Selection</legend>
+            <legend>Data selection</legend>
 
             <h3>Select the dataset:</h3>
 
@@ -277,18 +277,18 @@ if (defined('ANALYSIS_URL'))
                         </tr>
 
                         <tr>
-                            <td class="tbl_head">Search query:</td><td><?php echo $query; ?></td>
+                            <td class="tbl_head">Search query:</td><td><?php echo $esc['mysql']['query']; ?></td>
                         </tr>
 
                         <tr>
-                            <td class="tbl_head">Exclude:</td><td><?php echo $exclude; ?></td>
+                            <td class="tbl_head">Exclude:</td><td><?php echo $esc['mysql']['exclude']; ?></td>
                         </tr>
 
                         <tr>
-                            <td class="tbl_head">From user:</td><td><?php echo $from_user_name; ?></td>
+                            <td class="tbl_head">From user:</td><td><?php echo $esc['mysql']['from_user_name']; ?></td>
                         </tr>
                         <tr>
-                            <td class="tbl_head">(Part of) URL:</td><td><?php echo $url_query; ?></td>
+                            <td class="tbl_head">(Part of) URL:</td><td><?php echo $esc['mysql']['url_query']; ?></td>
                         </tr>
                         <tr>
                             <td class="tbl_head">Startdate:</td><td><?php echo $startdate; ?></td>
@@ -370,10 +370,10 @@ foreach ($linedata as $key => $value) {
                 <script type="text/javascript">
 
                     var data = new google.visualization.DataTable();
-                                                                                                    	
+                                                                                                                	
                     data.addColumn('string', 'Date');
                     data.addColumn('number', 'Norm Query (%)');
-                                                                                                    					
+                                                                                                                					
     <?php
     echo "data.addRows(" . count($linedata) . ");";
 
@@ -389,10 +389,10 @@ foreach ($linedata as $key => $value) {
         $counter++;
     }
     ?>
-                                                                                                    		
+                                                                                                                		
         var chart = new google.visualization.LineChart(document.getElementById('if_panel_linegraph_norm'));
         chart.draw(data, {width:1000, height:160, fontSize:9, hAxis:{slantedTextAngle:90, slantedText:true}, vAxis:{minValue:0,maxValue:100}, chartArea:{left:50,top:10,width:850,height:100}});
-                                                                                                          
+                                                                                                                      
                 </script>
 
             <?php } ?>
@@ -406,12 +406,14 @@ foreach ($linedata as $key => $value) {
 
             <legend>Export selected data</legend>
 
-            <p class="txt_desc">All scripts use this output format: {dataset}_{query}{-exclude}_{startdate}_{enddate}_{from_user_name}_{output type}.{filetype}</p> <!-- @todo update -->
+            <p class="txt_desc">All exports have the following filename convention: {dataset}-{startdate}-{enddate}-{query}-{exclude}-{from_user_name}-{from_user_lang}-{url_query}-{module_name}-{module_settings}-{dmi-tcat_version}.{filetype}</p>
             <h2>Tweet statistics and activity metrics</h2>
 
             <div class="if_export_block">
 
-                <div class='txt_desc' style='background-color: #eee; padding: 5px;'>Select how the frequencies should be calculated:
+                <div class="txt_desc">All statistics and activity metrics come as a .csv file which you can open in Excel or similar.</div>
+
+                <div class='txt_desc' style='background-color: #eee; padding: 5px;'>Here you can select how the statistics should be grouped:
                     <form>
                         <input type='radio' name="interval" value="overall"<?php if ($interval == 'overall') print " CHECKED"; ?>>overall</input>
                         <input type='radio' name="interval" value="hourly"<?php if ($interval == 'hourly') print " CHECKED"; ?>>per hour</input>
@@ -423,57 +425,59 @@ foreach ($linedata as $key => $value) {
                         <input type='text' name='customInterval' size='50' value='<?php if (!empty($intervalDates)) print $_REQUEST['customInterval']; else print "YYYY-MM-DD;YYYY-MM-DD;...;YYYY-MM-DD"; ?>'></input>
                     </form>
                 </div>
+
                 <h3>Tweet stats</h3>
-                <div class="txt_desc">Displays number of tweets, number of tweets with links, number of tweets with hashtags, number of tweets with mentions, number of retweets, and number of replies</div>
+
+                <div class="txt_desc">Contains the number of tweets, number of tweets with links, number of tweets with hashtags, number of tweets with mentions, number of retweets, and number of replies</div>
                 <div class="txt_desc">Use: get a feel for the overall characteristics of you data set.</div>
                 <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('tweet.stats'+getInterval()); sendUrl('mod.tweet.stats.php');return false;">launch</a></div>
 
                 <hr />
 
                 <h3>User stats (overall)</h3>
-                <div class="txt_desc">Creates a .csv file (open in Excel or similar) that contains the min, max, average, Q1, median, Q3, and trimmed mean for: number of tweets per user, urls per user, number of followers, number of friends, nr of tweets, unique users per time interval</div>
+                <div class="txt_desc">Contains the min, max, average, Q1, median, Q3, and trimmed mean for: number of tweets per user, urls per user, number of followers, number of friends, nr of tweets, unique users per time interval</div>
                 <div class="txt_desc">Use: get a better feel for the users in your data set.</div>
                 <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('user.stats'+getInterval()); sendUrl('mod.user.stats.php');return false;">launch</a></div>
 
                 <hr />
 
                 <h3>User stats (individual)</h3>
-                <div class="txt_desc">Creates a .csv file (open in Excel or similar) that lists users and their number of tweets, number of followers, number of friends, how many times they are listed, their UTC time offset, whether the user has a verified account and how many times they appear in the data set.</div>
+                <div class="txt_desc">Lists users and their number of tweets, number of followers, number of friends, how many times they are listed, their UTC time offset, whether the user has a verified account and how many times they appear in the data set.</div>
                 <div class="txt_desc">Use: get a better feel for the users in your data set.</div>
                 <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('user.list'+getInterval()); sendUrl('mod.user.list.php');return false;">launch</a></div>
 
                 <hr/>
 
                 <h3>Hashtag frequency</h3>
-                <div class="txt_desc">Creates a .csv file (open in Excel or similar) that contains hashtag (#hashtag) frequencies.</div>
+                <div class="txt_desc">Contains hashtag frequencies.</div>
                 <div class="txt_desc">Use: find out which hashtags are most often associated with your subject.</div>
                 <div class="txt_link"> &raquo;  <a href="index.php?" onclick="var minf = askFrequency(); $('#whattodo').val('hashtag&minf='+minf+getInterval()); sendUrl('index.php');return false;">launch</a></div>
 
                 <hr />
 
                 <h3>Hashtag-user activity</h3>
-                <div class="txt_desc">Creates a .csv file (open in Excel or similar) that lists hashtags, the number of tweets with that hashtag, the numnber of distinct users tweeting with that hashtag, the number of distinct mentions tweeted together with the hashtag, and the total number of mentions tweeted together with the hashtag.</div>
+                <div class="txt_desc">Lists hashtags, the number of tweets with that hashtag, the numnber of distinct users tweeting with that hashtag, the number of distinct mentions tweeted together with the hashtag, and the total number of mentions tweeted together with the hashtag.</div>
                 <div class="txt_desc">Use: explor user-hashtag activity.</div>
                 <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('mod.hashtag_user_activity'); sendUrl('mod.hashtag_user_activity.php');return false;">launch</a></div>
 
                 <hr />
 
                 <h3>User visibility (mention frequency)</h3>
-                <div class="txt_desc">Creates a .csv file (open in Excel or similar) that lists usernames and the number of times they were mentioned by others.</div>
+                <div class="txt_desc">Lists usernames and the number of times they were mentioned by others.</div>
                 <div class="txt_desc">Use: find out which users are "influentials".</div>
                 <div class="txt_link"> &raquo;  <a href="" onclick="var minf = askFrequency(); $('#whattodo').val('mention&minf='+minf+getInterval()); sendUrl('index.php');return false;">launch</a></div>
 
                 <hr />
 
                 <h3>User activity (tweet frequency)</h3>
-                <div class="txt_desc">Creates a .csv file (open in Excel or similar) that lists usernames and how many tweets they posted.</div>
+                <div class="txt_desc">Lists usernames and the amount of tweets posted.</div>
                 <div class="txt_desc">Use: find the most active tweeters, see if the dataset is dominated by certain twitterati.</div>
                 <div class="txt_link"> &raquo;  <a href="" onclick="var minf = askFrequency(); $('#whattodo').val('user&minf='+minf+getInterval()); sendUrl('index.php');return false;">launch</a></div>
 
                 <hr />
 
                 <h3>User activity + visibility (tweet+mention frequency)</h3>
-                <div class="txt_desc">Creates a .csv file (open in Excel or similar) that lists usernames and both tweet and mention frequencies.</div>
+                <div class="txt_desc">Lists usernames with both tweet and mention counts.</div>
                 <div class="txt_desc">Use: see wether the users mentioned are also those who tweet a lot.</div>
                 <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('user-mention'+getInterval()); sendUrl('index.php');return false;">launch</a></div>
 
@@ -481,14 +485,14 @@ foreach ($linedata as $key => $value) {
                     <hr />
 
                     <h3>Url frequency</h3>
-                    <div class="txt_desc">Creates a .csv file (open in Excel or similar) that contains the frequencies of tweeted URLs.</div>
+                    <div class="txt_desc">Contains the frequencies of tweeted URLs.</div>
                     <div class="txt_desc">Use: find out which contents (articles, videos, etc.) are referenced most often.</div>
                     <div class="txt_link"> &raquo;  <a href="" onclick="var minf = askFrequency(); $('#whattodo').val('urls&minf='+minf+getInterval()); sendUrl('index.php');return false;">launch</a></div>
 
                     <hr />
 
                     <h3>Host name frequency</h3>
-                    <div class="txt_desc">Creates a .csv file (open in Excel or similar) that contains the frequencies of tweeted domain names.</div>
+                    <div class="txt_desc">Contains the frequencies of tweeted domain names.</div>
                     <div class="txt_desc">Use: find out which sources (media, platforms, etc.) are referenced most often.</div>
                     <div class="txt_link"> &raquo;  <a href="" onclick="var minf = askFrequency(); $('#whattodo').val('hosts&minf='+minf+getInterval()); sendUrl('index.php');return false;">launch</a></div>
                 <?php } ?>
@@ -496,7 +500,7 @@ foreach ($linedata as $key => $value) {
                 <hr/>
 
                 <h3>Identical tweet frequency</h3>
-                <div class="txt_desc">Creates a .csv file (open in Excel or similar) that contains tweets and the number of times they have been retweeted indentically, per day (date range > 2 days) or per hour (date range 2 days or smaller).</div>
+                <div class="txt_desc">Contains tweets and the number of times they have been retweeted indentically, per day (date range > 2 days) or per hour (date range 2 days or smaller).</div>
                 <div class="txt_desc">Use: get a grasp of the most "popular" content.</div>
                 <div class="txt_link"> &raquo;  <a href="" onclick="var minf = askFrequency(); $('#whattodo').val('retweet&minf='+minf+getInterval()); sendUrl('index.php');return false;">launch</a></div>
 
@@ -507,15 +511,17 @@ foreach ($linedata as $key => $value) {
 
             <div class="if_export_block">
 
+                <div class="txt_desc">All tweet exports come as a .csv file which you can open in Excel or similar.</div>
+
                 <h3>Random set of tweets from selection</h3>
-                <div class="txt_desc">Creates a .csv file (open in Excel or similar) that contains 1000 randomly selected tweets and information about them (user, date created, ...).</div>
+                <div class="txt_desc">Contains 1000 randomly selected tweets and information about them (user, date created, ...).</div>
                 <div class="txt_desc">Use: a random subset of tweets is a representative sample that can be manually classified and coded much more easily than the full set.</div>
                 <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('random_tweets');sendUrl('mod.random_tweets.php');return false;">launch</a></div>
 
                 <hr />
 
                 <h3>Export all tweets from selection</h3>
-                <div class="txt_desc">Creates a .csv file (open in Excel or similar) that contains all tweets and information about them (user, date created, ...).</div>
+                <div class="txt_desc">Contains all tweets and information about them (user, date created, ...).</div>
                 <div class="txt_desc">Use: spend time with your data.</div>
                 <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('export_tweets');sendUrl('mod.export_tweets.php');return false;">export</a></div>
                 <?php if ($show_url_export) { ?>
@@ -524,7 +530,7 @@ foreach ($linedata as $key => $value) {
                 <hr />
 
                 <h3>List each individual retweet</h3>
-                <div class="txt_desc">Creates a .csv file (open in Excel or similar) that lists all retweets (and all the tweets metadata like follower_count) chronologically.</div>
+                <div class="txt_desc">Lists all retweets (and all the tweets metadata like follower_count) chronologically.</div>
                 <div class="txt_desc">Use: reconstruct retweet chains.</div>
                 <div class="txt_desc"><b>Warning:</b> This script is slow. Small datasets only!</div>
                 <div class="txt_link"> &raquo; <a href="" onclick="var minf = askRetweetFrequency(); $('#whattodo').val('retweets_chain&minf='+minf);sendUrl('mod.retweets_chain.php');return false;">launch</a></div>
@@ -532,7 +538,7 @@ foreach ($linedata as $key => $value) {
                 <hr />
 
                 <h3>Only tweets with lat/lon</h3>
-                <div class="txt_desc">Creates a .csv file (open in Excel or similar) that contains only geo-located tweets.</div>
+                <div class="txt_desc">Contains only geo-located tweets.</div>
                 <div class="txt_desc"></div>
                 <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('location');sendUrl('mod.location.php');return false;">launch</a></div>
 
@@ -541,8 +547,10 @@ foreach ($linedata as $key => $value) {
 
             <div class="if_export_block">
 
+                <div class="txt_desc">All network exports come as .gexf or .gdf files which you can open in <a href='http://www.gephi.org'>Gephi</a> or similar.</div>
+
                 <h3>Social graph by mentions</h3>
-                <div class="txt_desc">Produces a <a href="http://en.wikipedia.org/wiki/Directed_graph">directed graph</a> (.gdf, open in gephi) based on interactions between users. If a users mentions another one, a directed link is created.
+                <div class="txt_desc">Produces a <a href="http://en.wikipedia.org/wiki/Directed_graph">directed graph</a> based on interactions between users. If a users mentions another one, a directed link is created.
                     The more often a user mentions another, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>"). The "count" value contains the number of tweets for each user in the specified period.</div>
                 <div class="txt_desc">Use: analyze patterns in communication, find "hubs" and "communities", categorize user accounts.</div>
                 <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('mention_graph');sendUrl('mod.mention_graph.php');return false;">launch</a></div>
@@ -550,7 +558,7 @@ foreach ($linedata as $key => $value) {
                 <hr />
 
                 <h3>Social graph by in_reply_to_status_id</h3>
-                <div class="txt_desc">Produces a <a href="http://en.wikipedia.org/wiki/Directed_graph">directed graph</a> (.gdf, open in gephi) based on interactions between users. If a tweet was written in reply to another one, a directed link is created.</div>
+                <div class="txt_desc">Produces a <a href="http://en.wikipedia.org/wiki/Directed_graph">directed graph</a> based on interactions between users. If a tweet was written in reply to another one, a directed link is created.</div>
                 <div class="txt_desc">Use: analyze patterns in communication, find "hubs" and "communities", categorize user accounts.</div>
                 <div class="txt_link"> &raquo; <a href="" onclick="var minf = askInteractionFrequency(); $('#whattodo').val('interaction_graph&minf='+minf);sendUrl('mod.interaction_graph.php');return false;">launch</a></div>
 
@@ -558,7 +566,7 @@ foreach ($linedata as $key => $value) {
 
                 <?php if ($show_relations_export) { ?>
                     <h3>Follower graph</h3>
-                    <div class="txt_desc">Produces a <a href="http://en.wikipedia.org/wiki/Directed_graph">directed graph</a> (.gexf, open in gephi) based on follower (friend) relations between users. If a user is friends with another one, a directed link is created.</div>
+                    <div class="txt_desc">Produces a <a href="http://en.wikipedia.org/wiki/Directed_graph">directed graph</a> based on follower (friend) relations between users. If a user is friends with another one, a directed link is created.</div>
                     <div class="txt_desc">Use: explore the follower network of a set of users, find shared followees.</div>
                     <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('relations'); sendUrl('mod.relations.php');return false;">launch</a></div>
 
@@ -566,7 +574,7 @@ foreach ($linedata as $key => $value) {
                 <?php } ?>
 
                 <h3>Co-hashtag graph</h3>
-                <div class="txt_desc">Produces an <a href="http://en.wikipedia.org/wiki/Graph_%28mathematics%29#Undirected_graph">undirected graph</a> (.gdf, open in gephi) based on co-word analysis of hashtags. If two hashtags appear in the same tweet, they are linked.
+                <div class="txt_desc">Produces an <a href="http://en.wikipedia.org/wiki/Graph_%28mathematics%29#Undirected_graph">undirected graph</a> based on co-word analysis of hashtags. If two hashtags appear in the same tweet, they are linked.
                     The more often they appear together, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>").</div>
                 <div class="txt_desc">Use: explore the relations between hashtags, find and analyze sub-issues, distinguish between different types of hashtags (event related, qualifiers, etc.).</div>
                 <div class="txt_link"> &raquo; <a href="" onclick="var mind = askDegree(); $('#whattodo').val('hashtag_cooc&minf='+mind);sendUrl('mod.hashtag_cooc.php');return false;">launch</a></div><!-- with absolute weighting of cooccurrences</a></div>-->
@@ -574,7 +582,7 @@ foreach ($linedata as $key => $value) {
                 <hr />
 
                 <h3>Bipartite hashtag-user graph</h3>
-                <div class="txt_desc">Produces a <a href="http://en.wikipedia.org/wiki/Bipartite_graph">bipartite graph</a> (.gexf, open in gephi) based on co-occurence of hashtags and users. If a user wrote a tweet with a certain hashtag, there will be a link between that user and the hashtag.
+                <div class="txt_desc">Produces a <a href="http://en.wikipedia.org/wiki/Bipartite_graph">bipartite graph</a> based on co-occurence of hashtags and users. If a user wrote a tweet with a certain hashtag, there will be a link between that user and the hashtag.
                     The more often they appear together, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>").</div>
                 <div class="txt_desc">Use: explore the relations between users and hashtags, find and analyze which users group around which topics.</div>
                 <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('hashtag_user');sendUrl('mod.hashtag_user.php');return false;">launch</a></div>
@@ -582,7 +590,7 @@ foreach ($linedata as $key => $value) {
                 <hr />
 
                 <h3>Bipartite hashtag-mention graph</h3>
-                <div class="txt_desc">Produces a <a href="http://en.wikipedia.org/wiki/Bipartite_graph">bipartite graph</a> (.gexf, open in gephi) based on co-occurence of hashtags and @replies. If an @reply co-occurs in a tweet with a certain hashtag, there will be a link between that @reply and the hashtag.
+                <div class="txt_desc">Produces a <a href="http://en.wikipedia.org/wiki/Bipartite_graph">bipartite graph</a> based on co-occurence of hashtags and @replies. If an @reply co-occurs in a tweet with a certain hashtag, there will be a link between that @reply and the hashtag.
                     The more often they appear together, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>").</div>
                 <div class="txt_desc">Use: explore the relational <i>activity</i> between mentioned users and hashtags, find and analyze which users are considered experts around which topics.</div>
                 <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('mention_hashtags');sendUrl('mod.mention_hashtags.php');return false;">launch</a></div>
@@ -591,8 +599,8 @@ foreach ($linedata as $key => $value) {
                     <hr />
 
                     <h3>Bipartite hashtag-URL graph</h3>
-                    <div class="txt_desc">Creates a .csv file (open in Excel or similar) that contains URLs and the number of times they have co-occured with a particular hashtag.</div>
-                    <div class="txt_desc">Creates a .gexf file (open in Gephi) that contains a <a href="http://en.wikipedia.org/wiki/Bipartite_graph">bipartite graph</a> (.gexf, open in gephi) based on co-occurence of URLs and hashtags. If a URL co-occurs with a certain hashtag, there will be a link between that URL and the hashtag.
+                    <div class="txt_desc">Creates a .csv file that contains URLs and the number of times they have co-occured with a particular hashtag.</div>
+                    <div class="txt_desc">Creates a .gexf file that contains a <a href="http://en.wikipedia.org/wiki/Bipartite_graph">bipartite graph</a> (.gexf, open in gephi) based on co-occurence of URLs and hashtags. If a URL co-occurs with a certain hashtag, there will be a link between that URL and the hashtag.
                         The more often they appear together, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>").</div>
                     <div class="txt_desc">Use: get a grasp of how urls are qualified.</div>
                     <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('url_hashtags'); sendUrl('mod.url_hashtags.php');return false;">launch</a></div>
@@ -600,8 +608,8 @@ foreach ($linedata as $key => $value) {
                     <hr />
 
                     <h3>Bipartite hashtag-host graph</h3>
-                    <div class="txt_desc">Creates a .csv file (open in Excel or similar) that contains hosts and the number of times they have co-occured with a particular hashtag.</div>
-                    <div class="txt_desc">Creates a .gexf file (open in Gephi) that contains a <a href="http://en.wikipedia.org/wiki/Bipartite_graph">bipartite graph</a> (.gexf, open in gephi) based on co-occurence of hosts and hashtags. If a hosts co-occurs with a certain hashtag, there will be a link between that host and the hashtag.
+                    <div class="txt_desc">Creates a .csv file that contains hosts and the number of times they have co-occured with a particular hashtag.</div>
+                    <div class="txt_desc">Creates a .gexf file that contains a <a href="http://en.wikipedia.org/wiki/Bipartite_graph">bipartite graph</a> (.gexf, open in gephi) based on co-occurence of hosts and hashtags. If a hosts co-occurs with a certain hashtag, there will be a link between that host and the hashtag.
                         The more often they appear together, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>").</div>
                     <div class="txt_desc">Use: get a grasp of how hosts are qualified.</div>
                     <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('hosts_hashtags'); sendUrl('mod.hosts_hashtags.php');return false;">launch</a></div>
@@ -635,9 +643,9 @@ foreach ($linedata as $key => $value) {
                     <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('word_variability');sendUrl('mod.word_variability.php');return false;">launch</a></div>
                 <?php } ?>
 
-                <hr/>
-
                 <?php if (isset($_GET['dataset']) && $_GET['dataset'] == "iranelection2013") { ?>
+                    <hr/>
+
                     <h3>Bursty keywords</h3>
                     <div class="txt_desc">Insert a word to see a table with frequencies and burstiness scores per interval. (You can specify the interval under the 'Tweet Statistics and Activity Metrics' heading above.)</div>
                     <div class="txt_desc">Use: find out whether certain words are bursty.</div>
