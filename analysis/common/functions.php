@@ -565,8 +565,8 @@ function validate(&$what, $how) {
             break;
         // escape shell cmd chars
         case "shell":
-            //$what = str_replace(" ", "_", str_replace("/","$what);
             $what = preg_replace("/[\/ ]/", "_", $what);
+            $what = str_replace("#", "HT", $what);
             if (strlen($what) > 100) {
                 $what = escapeshellcmd(substr($what, 0, 100)) . "...";
             } else {
@@ -591,27 +591,25 @@ function validate(&$what, $how) {
     return $what;
 }
 
+// validate and escape all user input
 // make sure that we have all the right types and values
 // also make sure one cannot do a mysql injection attack
 function validate_all_variables() {
     global $esc, $query, $url_query, $dataset, $exclude, $from_user_name, $startdate, $enddate, $databases, $connection, $keywords, $database, $minf, $from_user_lang;
 
-    // validate and escape all user input
     $esc['mysql']['dataset'] = validate($dataset, "mysql");
     $esc['mysql']['query'] = validate($query, "mysql");
     $esc['mysql']['url_query'] = validate($url_query, "mysql");
     $esc['mysql']['exclude'] = validate($exclude, "mysql");
     $esc['mysql']['from_user_name'] = validate($from_user_name, "mysql");
     $esc['mysql']['from_user_lang'] = validate($from_user_lang, "mysql");
-
-    $esc['shell']['dataset'] = validate($dataset, "mysql");
-    $esc['shell']['query'] = validate($query, "mysql");
-    $esc['shell']['url_query'] = validate($url_query, "mysql");
-    $esc['shell']['exclude'] = validate($exclude, "mysql");
+    
+    $esc['shell']['dataset'] = validate($dataset, "shell");
+    $esc['shell']['query'] = validate($query, "shell");
+    $esc['shell']['url_query'] = validate($url_query, "shell");
+    $esc['shell']['exclude'] = validate($exclude, "shell");
     $esc['shell']['from_user_name'] = validate($from_user_name, "shell");
-    $esc['shell']['from_user_lang'] = validate($from_user_lang, "mysql");
-    // @todo shell + filenames for from_user_lang
-
+    $esc['shell']['from_user_lang'] = validate($from_user_lang, "shell");
     $esc['shell']['datasetname'] = validate($dataset, "shell");
 
     $esc['shell']['minf'] = validate($minf, 'frequency');
@@ -632,8 +630,8 @@ function get_filename_for_export($module, $settings = "", $filetype = "csv") {
     // construct filename
     $filename = $resultsdir;
     $filename .= $esc['shell']["datasetname"];
-    $filename .= "-" . str_replace("-","",$esc['date']["startdate"]);
-    $filename .= "-" . str_replace("-","",$esc['date']["enddate"]);
+    $filename .= "-" . str_replace("-", "", $esc['date']["startdate"]);
+    $filename .= "-" . str_replace("-", "", $esc['date']["enddate"]);
     $filename .= "-" . $esc['shell']["query"];
     $filename .= "-" . $esc['shell']["exclude"];
     $filename .= "-" . $esc['shell']["from_user_name"];
