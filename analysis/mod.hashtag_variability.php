@@ -394,8 +394,7 @@ if(isset($_GET['dataset'])&&$_GET['dataset']=="drones")
 
                                                 // generate files, if requested
                                                 if ($cowordTimeSeries) {
-                                                    $exc = (empty($esc['shell']["exclude"])) ? "" : "-" . $esc['shell']["exclude"];
-                                                    $filename = $resultsdir . $esc['shell']["datasetname"] . "_" . $esc['shell']["query"] . $exc . "_" . $esc['date']["startdate"] . "_" . $esc['date']["enddate"] . "_" . $esc['shell']["from_user_name"] . (isset($_GET['probabilityOfAssociation']) ? "_normalizedAssociationWeight" : "") . "_hashtagVariability.gexf";
+                                                    $filename = get_filename_for_export("hashtagVariability", (isset($_GET['probabilityOfAssociation']) ? "_normalizedAssociationWeight" : ""), "gexf");
                                                     if (!empty($_REQUEST['timeseriesGexf']))
                                                         getGEXFtimeseries($filename, $series);
                                                     if (isset($_REQUEST['cohashtagVariability']))
