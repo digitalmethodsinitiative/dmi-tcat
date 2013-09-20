@@ -134,7 +134,7 @@ function get_file($what) {
 
     // get filename (this also validates the data)
     global $database;
-    $filename = get_filename($what);
+    $filename = get_filename_for_export($what);
 
     generate($what, $filename);
 
@@ -528,13 +528,6 @@ function generate($what, $filename) {
         ;
     #file_put_contents($filename, "\xEF\xBB\xBF" . $file);   // write BOM
     file_put_contents($filename, chr(239) . chr(187) . chr(191) . $file);   // write BOM
-}
-
-// constructs the filename and validates the variables
-function get_filename($what) {
-    global $resultsdir, $esc, $interval, $intervalDates;
-    $exc = (empty($esc['shell']["exclude"])) ? "" : "-" . $esc['shell']["exclude"];
-    return $resultsdir . str_replace(" ", "_", $esc['shell']['datasetname']) . "_" . str_replace(" ", "-", $esc['shell']["query"]) . $exc . "_" . $esc['date']["startdate"] . "_" . $esc['date']["enddate"] . "_" . $esc['shell']["from_user_name"] . "_" . $what . "_min" . $esc['shell']['minf'] . "_groupedBy" . ucwords($interval) . ($interval == "custom" ? implode("_", $intervalDates) : "") . ".csv";
 }
 
 // does some cleanup of data types
