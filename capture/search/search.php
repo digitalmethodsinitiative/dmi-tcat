@@ -30,7 +30,7 @@ create_bin($bin_name, $dbh);
 search($keywords);
 
 function search($keywords, $max_id = null) {
-    global $twitter_keys, $current_key, $querybins, $path_local, $all_users, $all_tweet_ids, $bin_name, $tweets_success, $tweets_failed, $tweets_processed, $dbh;
+    global $twitter_keys, $current_key, $querybins, $all_users, $all_tweet_ids, $bin_name, $tweets_success, $tweets_failed, $tweets_processed, $dbh;
 
     $tmhOAuth = new tmhOAuth(array(
                 'consumer_key' => $twitter_keys[$current_key]['twitter_consumer_key'],
@@ -62,7 +62,7 @@ function search($keywords, $max_id = null) {
 
         if ($ratelimitremaining == 0) {
             $current_key++;
-            print "next key $current_key\n";
+            print "!!next key $current_key!!\n";
             if ($current_key >= count($twitter_keys)) {
                 $current_key = 0;
                 $looped = 1;
@@ -75,10 +75,9 @@ function search($keywords, $max_id = null) {
                     sleep(5);
                 }
             }
-        } elseif (count($tweets) == 1)    // search exhausted    
-            die("no more tweets found\n");
-
-        print count($tweets) . " tweets found\n";
+        }
+        
+        $tweet_ids = array();
         foreach ($tweets as $tweet) {
 
             $t = Tweet::fromJSON(json_encode($tweet)); // @todo: dubbelop
@@ -89,21 +88,21 @@ function search($keywords, $max_id = null) {
 
             $saved = $t->save($dbh, $bin_name);
 
-            if ($saved) {
-                $tweets_success++;
-            } else {
-                $tweets_failed++;
-            }
-
-            $tweets_processed++;
-
             print ".";
         }
-        print "\n";
 
-
-        $max_id = min($tweet_ids);
-        print "max id: " . $max_id . "\n";
+        if (!empty($tweet_ids)) {
+            print "\n";
+            if (count($tweet_ids) <= 1) {
+                print "no more tweets found\n\n";
+                return false;
+            }
+            $max_id = min($tweet_ids);
+            print "max id: " . $max_id . "\n";
+        } else {
+            print "0 tweets found\n\n";
+            return false;
+        }
         sleep(1);
         search($keywords, $max_id);
     } else {
