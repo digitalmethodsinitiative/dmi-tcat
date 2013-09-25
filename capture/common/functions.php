@@ -1,4 +1,5 @@
 <?php
+
 error_reporting(E_ALL);
 
 function checktables() {
@@ -17,7 +18,7 @@ function checktables() {
     foreach ($querybins as $bin => $content) {
         if (!in_array($bin . "_tweets", $tables)) {
             $dbh = pdo_connect();
-            create_bin($bin,$dbh);
+            create_bin($bin, $dbh);
         }
     }
 }
@@ -278,6 +279,10 @@ class Tweet {
 
 
         $saved_tweet = $q->execute();
+        //print $q->rowCount();
+        // if tweet already exists, do not update hashtags, mentions, urls. As they have no unique constraint, it would just add extra info. _tweets has id as its unique primary key
+        if ($q->rowCount() > 1)    // The affected-rows count makes it easy to determine whether REPLACE only added a row or whether it also replaced any rows: Check whether the count is 1 (added) or greater (replaced).
+            return $saved_tweet;
 
         if ($this->hashtags) {
             foreach ($this->hashtags as $hashtag) {
