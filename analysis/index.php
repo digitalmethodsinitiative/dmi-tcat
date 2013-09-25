@@ -541,6 +541,13 @@ foreach ($linedata as $key => $value) {
                 <div class="txt_desc">Contains only geo-located tweets.</div>
                 <div class="txt_desc"></div>
                 <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('location');sendUrl('mod.location.php');return false;">launch</a></div>
+                
+                <hr />
+
+                <h3>Export tweet ids</h3>
+                <div class="txt_desc">Contains only the tweet ids from your selection.</div>
+                <div class="txt_desc"></div>
+                <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('export_tweet_ids');sendUrl('mod.export_tweet_ids.php');return false;">launch</a></div>
 
             </div>
             <h2>Networks</h2>
