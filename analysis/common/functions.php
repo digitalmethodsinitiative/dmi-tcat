@@ -596,7 +596,7 @@ function validate_all_variables() {
     $esc['mysql']['exclude'] = validate($exclude, "mysql");
     $esc['mysql']['from_user_name'] = validate($from_user_name, "mysql");
     $esc['mysql']['from_user_lang'] = validate($from_user_lang, "mysql");
-    
+
     $esc['shell']['dataset'] = validate($dataset, "shell");
     $esc['shell']['query'] = validate($query, "shell");
     $esc['shell']['url_query'] = validate($url_query, "shell");
@@ -722,17 +722,15 @@ function get_all_datasets() {
 }
 
 function get_total_nr_of_tweets() {
-    $select = "SHOW TABLES";
+    $select = "SHOW TABLES LIKE '%_tweets'";
     $rec = mysql_query($select);
     $count = 0;
     while ($res = mysql_fetch_row($rec)) {
-        if (preg_match("/_tweets$/", $res[0], $match)) {
-            $sql = "SELECT COUNT(id) FROM " . $res[0];
-            $rec2 = mysql_query($sql);
-            if ($rec2) {
-                $res2 = mysql_fetch_row($rec2);
-                $count += $res2[0];
-            }
+        $sql = "SELECT COUNT(id) FROM " . $res[0];
+        $rec2 = mysql_query($sql);
+        if ($rec2) {
+            $res2 = mysql_fetch_row($rec2);
+            $count += $res2[0];
         }
     }
     return $count;
