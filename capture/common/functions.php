@@ -63,7 +63,9 @@ function create_bin($bin_name, $dbh) {
                 KEY `created_at` (`created_at`),
 		KEY `tweet_id` (`tweet_id`),
                 KEY `from_user_name` (`from_user_name`),
-                KEY `to_user` (`to_user`)
+                KEY `from_user_id` (`from_user_id`),
+                KEY `to_user` (`to_user`),
+                KEY `to_user_id` (`to_user_id)
 		) ENGINE=MyISAM  DEFAULT CHARSET=utf8;";
 
     $create_mentions = $dbh->prepare($sql);
@@ -197,7 +199,8 @@ class Tweet {
         } elseif ($name == "metadata") {
             return;
         } else {
-            throw new Exception("Trying to set non existing class property: $name");
+            print "Trying to set non existing class property: $name=$value\n";
+            //throw new Exception("Trying to set non existing class property: $name");
         }
     }
 
