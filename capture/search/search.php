@@ -76,7 +76,7 @@ function search($keywords, $max_id = null) {
                 }
             }
         }
-        
+
         $tweet_ids = array();
         foreach ($tweets as $tweet) {
 
@@ -106,7 +106,11 @@ function search($keywords, $max_id = null) {
         sleep(1);
         search($keywords, $max_id);
     } else {
-        echo $tmhOAuth->response['response'];
+        echo $tmhOAuth->response['response']."\n";
+        if ($tmhOAuth->response['response']['errors']['code'] == 130) { // over capacity
+            sleep(1);
+            search($keywords, $max_id);
+        }
     }
 }
 
