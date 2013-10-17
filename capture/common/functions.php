@@ -128,6 +128,7 @@ function create_bin($bin_name, $dbh) {
 		PRIMARY KEY (id),
                 KEY `tweet_id` (`tweet_id`),                
                 KEY `created_at` (`created_at`),
+                KEY `from_user_id` (`from_user_id`),
                 FULLTEXT KEY `url_followed` (`url_followed`),
                 KEY `url_expanded` (`url_expanded`)
 		) ENGINE=MyISAM  DEFAULT CHARSET=utf8;";
