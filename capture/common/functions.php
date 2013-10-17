@@ -122,7 +122,7 @@ function create_bin($bin_name, $dbh) {
 		from_user_id int(11),
 		url varchar(2048),
 		url_expanded varchar(2048),
-		url_followed varchar(2048),
+		url_followed varchar(4096),
 		domain varchar(2048),
 		error_code varchar(64),
 		PRIMARY KEY (id),
