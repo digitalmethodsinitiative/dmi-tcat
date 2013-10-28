@@ -65,7 +65,7 @@ function create_bin($bin_name, $dbh) {
                 KEY `from_user_name` (`from_user_name`),
                 KEY `from_user_id` (`from_user_id`),
                 KEY `to_user` (`to_user`),
-                KEY `to_user_id` (`to_user_id)
+                KEY `to_user_id` (`to_user_id`)
 		) ENGINE=MyISAM  DEFAULT CHARSET=utf8;";
 
     $create_mentions = $dbh->prepare($sql);
