@@ -3,8 +3,8 @@ require_once './common/config.php';
 require_once './common/functions.php';
 require_once './common/Coword.class.php';
 validate_all_variables();
-if(isset($_GET['dataset'])&&$_GET['dataset']=="drones")
-    die("access to the associational profiler has temporarily been disabled in order to aleviate server load");
+//if(isset($_GET['dataset'])&&$_GET['dataset']=="drones")
+//    die("access to the associational profiler has temporarily been disabled in order to aleviate server load");
 ?>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -20,11 +20,11 @@ if(isset($_GET['dataset'])&&$_GET['dataset']=="drones")
 
         <script type="text/javascript" src="./scripts/raphael-min.js"></script>
         <script type='text/javascript' src='./scripts/jquery-1.7.1.min.js'></script>
-        <script type="text/javascript" src="./scripts/tablesorter/jquery.tablesorter.min.js"></script> 
+        <script type="text/javascript" src="./scripts/tablesorter/jquery.tablesorter.min.js"></script>
         <script type="text/javascript">
-            $(document).ready(function() { 
-                $("#metrics").tablesorter(); 
-                $("#cowordFrequencyOverall").tablesorter({sortList: [[1,1],[0,0]] }); 
+            $(document).ready(function() {
+                $("#metrics").tablesorter();
+                $("#cowordFrequencyOverall").tablesorter({sortList: [[1,1],[0,0]] });
                 var Input = $('input[name=customInterval]');
                 var default_value = Input.val();
 
@@ -33,10 +33,10 @@ if(isset($_GET['dataset'])&&$_GET['dataset']=="drones")
                 }).blur(function(){
                     if(Input.val().length == 0) Input.val(default_value);
                 });
-                
+
                 apply_vis_settings();
-                
-            }); 
+
+            });
             function generate_permalink() {
                 var permalink = "";
                 permalink += "&vis_colorcoding=" + $('[name="vis_colorcoding"]').val();
@@ -58,7 +58,7 @@ if(isset($_GET['dataset'])&&$_GET['dataset']=="drones")
             }
 
             function apply_vis_settings() {
-                
+
                 var currentlink = window.location.href;
                 $('#permalink').text(currentlink);
                 $('#permalink').attr('href',currentlink);
@@ -77,8 +77,8 @@ if(isset($_GET['dataset'])&&$_GET['dataset']=="drones")
                     }
                 }
             }
-                
-                
+
+
         </script>
     </head>
 
@@ -422,8 +422,8 @@ if(isset($_GET['dataset'])&&$_GET['dataset']=="drones")
                                                                 <input type="checkbox" onchange="changeInterface('sorting',this.checked)" />Sort by size
                                                             </form>
 
-                                                            <script type="text/javascript">                                                                                                     
-    <?php print "var _data = " . json_encode($vis_data); ?>                                                                                                                                   	                                                                                                      
+                                                            <script type="text/javascript">
+    <?php print "var _data = " . json_encode($vis_data); ?>
                                                             </script>
                                                             <p id="visualization"></p>
                                                             <p id="wordlist"></p>
@@ -457,7 +457,7 @@ if(isset($_GET['dataset'])&&$_GET['dataset']=="drones")
                                                                           $highlight = " style='background-color:yellow'";
                                                                           if ($specificity < 50.0)
                                                                           $highlight = " style='background-color:red'";
-                                                                         * 
+                                                                         *
                                                                          */
 
                                                                         if ($frequency_coword_total[$word] >= $minimumCowordFrequencyOverall && $frequency_coword >= $minimumCowordFrequencyInterval)
@@ -563,7 +563,7 @@ if(isset($_GET['dataset'])&&$_GET['dataset']=="drones")
                                                             if (empty($series) || empty($keywordToTrack))
                                                                 die('not enough data');
                                                             $filename = str_replace(".gexf", "_" . escapeshellarg(implode("_", $keywordToTrack)) . ".csv", $filename);
-                                                            // group per slice 
+                                                            // group per slice
                                                             // per keyword
                                                             // 	get associated words (depth 1) per slice
                                                             // 	get frequency, degree, ap variation (calculated on cooc frequency), words in, words out, ap keywords
@@ -706,10 +706,10 @@ if(isset($_GET['dataset'])&&$_GET['dataset']=="drones")
                                                         /*
                                                          * Uses elaborate coword implementation on tools.digitalmethods.net/beta/coword
                                                          * This works via persistent objects = SLOW but does not run out of memory
-                                                         * 
+                                                         *
                                                          * @todo test
                                                          * @todo extract variability
-                                                         * 
+                                                         *
                                                          * @deprecated, just leaving this in for the curl call
                                                          */
 

@@ -26,10 +26,11 @@ stream();
 
 function stream() {
 
-    global $twitter_consumer_key, $twitter_consumer_secret, $twitter_user_token, $twitter_user_secret, $querybins, $path_local;
+    global $twitter_consumer_key, $twitter_consumer_secret, $twitter_user_token, $twitter_user_secret, $querybins, $path_local, $lastinsert;
 
     logit("error.log", "connecting to API socket");
     $pid = getmypid();
+	$lastinsert = time();
     file_put_contents($path_local . "logs/procinfo", $pid . "|" . time());
 
     $tweetbucket = array();
@@ -64,7 +65,8 @@ function stream() {
 }
 
 function streamCallback($data, $length, $metrics) {
-    global $tweetbucket;
+    global $tweetbucket,$lastinsert;
+	$now = time();
     if (isset($data["disconnect"])) {
         $discerror = implode(",", $data["disconnect"]);
         logit("error.log", "connection dropped or timed out - error " . $discerror);
@@ -72,8 +74,9 @@ function streamCallback($data, $length, $metrics) {
     $data = json_decode($data, true);
     if ($data) {
         $tweetbucket[] = $data;
-        if (count($tweetbucket) == 100) {
+        if (count($tweetbucket) == 100 || $now > $lastinsert + 5) {
             processtweets($tweetbucket);
+			$lastinsert = time();
             $tweetbucket = array();
         }
     }
