@@ -14,9 +14,9 @@ require_once './common/functions.php';
         <link rel="stylesheet" href="css/main.css" type="text/css" />
 
         <script type="text/javascript" language="javascript">
-	
-	
-	
+
+
+
         </script>
 
     </head>
@@ -28,14 +28,14 @@ require_once './common/functions.php';
         <?php
         validate_all_variables();
 
-
-
         $users = array();
         $usersinv = array();
         $edges = array();
 
         $cur = 0;
         $numresults = 10000;
+
+		//print_r($esc); exit;
 
         while ($numresults == 10000) {
 
@@ -53,7 +53,7 @@ require_once './common/functions.php';
 
                 if (!isset($users[$data["from_user_name"]])) {
 
-                    $users[$data["from_user_name"]] = $arrayName = array('id' => count($usersinv), 'notweets' => 1);
+                    $users[$data["from_user_name"]] = $arrayName = array('id' => count($usersinv), 'notweets' => 1,'nomentions ' => 0);
 
                     $usersinv[] = $data["from_user_name"];
                 } else {
@@ -63,9 +63,12 @@ require_once './common/functions.php';
 
                 if (!isset($users[$data["to_user"]])) {
 
-                    $users[$data["to_user"]] = $arrayName = array('id' => count($usersinv), 'notweets' => 0);
+                    $users[$data["to_user"]] = $arrayName = array('id' => count($usersinv), 'notweets' => 0,'nomentions ' => 1);
 
                     $usersinv[] = $data["to_user"];
+                } else {
+
+                    $users[$data["from_user_name"]]["nomentions"]++;
                 }
 
                 $to = $users[$data["from_user_name"]]["id"] . "," . $users[$data["to_user"]]["id"];
@@ -83,21 +86,38 @@ require_once './common/functions.php';
             $cur = $cur + $numresults;
         }
 
+        $topusers = array();
 
-        $content = "nodedef>name VARCHAR,label VARCHAR,no_tweets INT\n";
+		if($esc["shell"]["topu"] > 0) {
+			foreach ($users as $key => $user) {
+				$topusers[(string)$user["id"]] = $user["nomentions"];
+			}
+		}
 
+		arsort($topusers);
+		$topusers = array_slice($topusers,0,$esc["shell"]["topu"],true);
+		//print_r($topusers);
+
+
+        $content = "nodedef>name VARCHAR,label VARCHAR,no_tweets INT,no_mentions INT\n";
         foreach ($users as $key => $value) {
-            $content .= $value["id"] . "," . $key . "," . $value["notweets"] . "\n";
+        	if(isset($topusers[$value["id"]])) {
+            	$content .= $value["id"] . "," . $key . "," . $value["notweets"] . "," . $value["nomentions"] . "\n";
+            }
         }
 
         $content .= "edgedef>node1 VARCHAR,node2 VARCHAR,weight DOUBLE\n";
-
         foreach ($edges as $key => $value) {
-
-            $content .= $key . "," . $value . "\n";
+			$tmp = explode(",", $key);
+			if(isset($topusers[$tmp[0]]) && isset($topusers[$tmp[1]])) {
+            	$content .= $key . "," . $value . "\n";
+			}
         }
 
-        $filename = get_filename_for_export("mention","","gdf");
+		//echo $content;
+
+		// add filename for top user filter  "_minDegreeOf".$esc['shell']['minf']
+        $filename = get_filename_for_export("mention","_Top".$esc['shell']['topu'],"gdf");
         file_put_contents($filename, $content);
 
         echo '<fieldset class="if_parameters">';

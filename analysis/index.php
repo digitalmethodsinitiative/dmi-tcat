@@ -79,9 +79,13 @@ if (defined('ANALYSIS_URL'))
         var minf = prompt("Specify the minimum number of tweets for the user to be included:","10");
         return minf;
     }
-    function askDegree() {
-        var minf = prompt("Specify the minimum degree for nodes to be included in the export. (How much would you filter out with Gephi?)","4");
-        return minf;
+    function askTopht() {
+        var topu = prompt("Specify number of top hashtags to get. (by frequency of hashtag, enter 0 to get all)","500");
+        return topu;
+    }
+    function askMentions() {
+        var topu = prompt("Specify number of top users you want to get. (by number of mentions, enter 0 to get all)","500");
+        return topu;
     }
     function getInterval() {
         var selected = $('[name="interval"]:checked');
@@ -582,7 +586,7 @@ foreach ($linedata as $key => $value) {
                 <div class="txt_desc">Produces a <a href="http://en.wikipedia.org/wiki/Directed_graph">directed graph</a> based on interactions between users. If a users mentions another one, a directed link is created.
                     The more often a user mentions another, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>"). The "count" value contains the number of tweets for each user in the specified period.</div>
                 <div class="txt_desc">Use: analyze patterns in communication, find "hubs" and "communities", categorize user accounts.</div>
-                <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('mention_graph');sendUrl('mod.mention_graph.php');return false;">launch</a></div>
+                <div class="txt_link"> &raquo; <a href="" onclick="var topu = askMentions(); $('#whattodo').val('mention_graph&topu='+topu);sendUrl('mod.mention_graph.php');return false;">launch</a></div>
 
                 <hr />
 
@@ -606,7 +610,8 @@ foreach ($linedata as $key => $value) {
                 <div class="txt_desc">Produces an <a href="http://en.wikipedia.org/wiki/Graph_%28mathematics%29#Undirected_graph">undirected graph</a> based on co-word analysis of hashtags. If two hashtags appear in the same tweet, they are linked.
                     The more often they appear together, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>").</div>
                 <div class="txt_desc">Use: explore the relations between hashtags, find and analyze sub-issues, distinguish between different types of hashtags (event related, qualifiers, etc.).</div>
-                <div class="txt_link"> &raquo; <a href="" onclick="var mind = askDegree(); if(mind != false) { $('#whattodo').val('hashtag_cooc&minf='+mind);sendUrl('mod.hashtag_cooc.php'); } return false;">launch</a></div><!-- with absolute weighting of cooccurrences</a></div>-->
+                <div class="txt_link"> &raquo; <a href="" onclick="var minf = askFrequency(); if(minf != false) { $('#whattodo').val('hashtag_cooc&minf='+minf);sendUrl('mod.hashtag_cooc.php'); } return false;">launch</a> (set minimum frequency)</div><!-- with absolute weighting of cooccurrences</a></div>-->
+				<div class="txt_link"> &raquo; <a href="" onclick="var topu = askTopht(); if(topu != false) { $('#whattodo').val('hashtag_cooc&topu='+topu);sendUrl('mod.hashtag_cooc.php'); } return false;">launch</a> (get top hashtags)</div>
 
                 <hr />
 

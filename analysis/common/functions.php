@@ -34,6 +34,8 @@ if (isset($_GET['minf']) && preg_match("/^\d+$/", $_GET['minf']) !== false)
     $minf = $_GET['minf'];
 else
     $minf = 2;
+if (isset($_GET['topu']) && preg_match("/^\d+$/", $_GET['topu']) !== false)
+    $topu = $_GET['topu'];
 if (isset($_GET['startdate']) && !empty($_GET['startdate']))
     $startdate = $_GET['startdate'];
 else
@@ -101,6 +103,7 @@ if ($interval == "custom" && isset($_REQUEST['customInterval'])) {
     if ($lastDate > $enddate)
         die("<font size='+1' color='red'>custom interval should have the same end date as the selection</font>");
 }
+//var_dump($intervalDates);
 
 
 $keywords = array();
@@ -531,7 +534,7 @@ function generate($what, $filename) {
 }
 
 // does some cleanup of data types
-function validate(&$what, $how) {
+function validate($what, $how) {
     $what = trim($what);
     switch ($how) {
         case "database":
@@ -588,7 +591,7 @@ function validate(&$what, $how) {
 // make sure that we have all the right types and values
 // also make sure one cannot do a mysql injection attack
 function validate_all_variables() {
-    global $esc, $query, $url_query, $dataset, $exclude, $from_user_name, $startdate, $enddate, $databases, $connection, $keywords, $database, $minf, $from_user_lang;
+    global $esc, $query, $url_query, $dataset, $exclude, $from_user_name, $startdate, $enddate, $databases, $connection, $keywords, $database, $minf, $topu, $from_user_lang;
 
     $esc['mysql']['dataset'] = validate($dataset, "mysql");
     $esc['mysql']['query'] = validate($query, "mysql");
@@ -606,6 +609,7 @@ function validate_all_variables() {
     $esc['shell']['datasetname'] = validate($dataset, "shell");
 
     $esc['shell']['minf'] = validate($minf, 'frequency');
+	$esc['shell']['topu'] = validate($topu, 'frequency');
 
     $esc['date']['startdate'] = validate($startdate, "startdate");
     $esc['date']['enddate'] = validate($enddate, "enddate");
@@ -688,6 +692,10 @@ function get_all_datasets() {
     $datasets = array();
 
     foreach ($querybins as $bin => $keywords) {
+        if(preg_match("/^penw_|^ondernemerszaken|^user_ambtenaar20$/",$bin)) {
+                print "[[$bin]]<br>";
+                continue;
+        }
         // get nr of results per table
         $sql2 = "SELECT count(t.id) AS notweets,MIN(t.created_at) AS min,MAX(t.created_at) AS max  FROM " . $bin . "_tweets t ";
         $rec2 = mysql_query($sql2);
@@ -703,6 +711,10 @@ function get_all_datasets() {
         }
     }
     foreach ($queryarchives as $bin => $keywords) {
+        if(preg_match("/^penw_/",$bin)) {
+                print "[[$bin]]<br>";
+                continue;
+        }
         // get nr of results per table
         $sql2 = "SELECT count(t.id) AS notweets,MIN(t.created_at) AS min,MAX(t.created_at) AS max  FROM " . $bin . "_tweets t ";
         $rec2 = mysql_query($sql2);
