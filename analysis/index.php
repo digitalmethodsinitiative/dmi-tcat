@@ -118,7 +118,7 @@ if (defined('ANALYSIS_URL'))
         			} elseif (preg_match("/user_/", $key)) {
             			$ordered_datasets["user captures"][$key] = $set;
         			} elseif(preg_match("/sample_/", $key)) {
-            			$ordered_datasets["one percent sample"][$key] = $set;
+            			$ordered_datasets["one percent samples"][$key] = $set;
 					} else {
 						$ordered_datasets["keyword captures"][$key] = $set;
 					}
