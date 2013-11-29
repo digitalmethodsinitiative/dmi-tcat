@@ -22,23 +22,23 @@ $datasets = get_all_datasets();
         <script type="text/javascript" src="https://www.google.com/jsapi"></script>
 
         <script type="text/javascript">
-     
+
             google.load("visualization", "1", {packages:["corechart"]});
-     	
+
             function sendUrl(_file) {
                 var _d1 = $("#ipt_startdate").val();
                 var _d2 = $("#ipt_enddate").val();
-		
+
                 if(!_d1.match(/\d{4}-\d{2}-\d{2}/) || !_d2.match(/\d{4}-\d{2}-\d{2}/)) {
                     alert("Please check the date format!");
                     return false;
                 }
-		
-                if(typeof(_file) == "undefined") {	
+
+                if(typeof(_file) == "undefined") {
                     _file = "index.php";
                     $('#whattodo').val('');
                 }
-                var _url = 
+                var _url =
 <?php
 if (defined('ANALYSIS_URL'))
     print '"' . ANALYSIS_URL . '"';
@@ -52,8 +52,8 @@ if (defined('ANALYSIS_URL'))
             "&startdate=" + $("#ipt_startdate").val() +
             "&enddate=" + $("#ipt_enddate").val() +
             "&whattodo=" + $("#whattodo").val();
-			
-        
+
+
         document.location.href = _url;
     }
     $(document).ready(function(){
@@ -62,7 +62,7 @@ if (defined('ANALYSIS_URL'))
             return false;
         });
     });
-	
+
     function askFrequency() {
         var minf = prompt("Specify the minimum frequency for data to be included in the export:","2");
         return minf;
@@ -91,7 +91,7 @@ if (defined('ANALYSIS_URL'))
         var inter = "&interval="+selectedValue+"&customInterval="+$('[name="customInterval"]').val();
         return inter;
     }
-	
+
         </script>
 
     </head>
@@ -111,12 +111,34 @@ if (defined('ANALYSIS_URL'))
                 <?php
                 echo '<select id="ipt_dataset" name="dataset">';
 
-                foreach ($datasets as $key => $set) {
+				$ordered_datasets = array();
+				foreach($datasets as $key => $set) {
+					if (preg_match("/ytk_/", $key)) {
+            			$ordered_datasets["ytk imports"][$key] = $set;
+        			} elseif (preg_match("/user_/", $key)) {
+            			$ordered_datasets["user captures"][$key] = $set;
+        			} elseif(preg_match("/sample_/", $key)) {
+            			$ordered_datasets["one percent sample"][$key] = $set;
+					} else {
+						$ordered_datasets["keyword captures"][$key] = $set;
+					}
+				}
 
-                    $v = ($key == $dataset) ? 'selected="selected"' : "";
+				//print_r($ordered_datasets);
 
-                    echo '<option value="' . $key . '" ' . $v . '>' . $set["bin"] . ' --- ' . number_format($set["notweets"], 0, ",", ".") . ' tweets from ' . $set['mintime'] . ' to ' . $set['maxtime'] . '</option>';
-                }
+				foreach($ordered_datasets as $groupname => $group) {
+
+					echo '<optgroup label="'.$groupname.'">';
+
+	                foreach ($group as $key => $set) {
+
+	                    $v = ($key == $dataset) ? 'selected="selected"' : "";
+
+	                    echo '<option value="' . $key . '" ' . $v . '>' . $set["bin"] . ' --- ' . number_format($set["notweets"], 0, ",", ".") . ' tweets from ' . $set['mintime'] . ' to ' . $set['maxtime'] . '</option>';
+	                }
+
+					echo '</optgroup>';
+				}
 
                 echo "</select> ";
                 $count = get_total_nr_of_tweets();
@@ -304,12 +326,12 @@ if (defined('ANALYSIS_URL'))
                         </tr>
                     </table>
 
-                </div>	
+                </div>
 
                 <div id="if_panel_linkchart" class="if_panel_box"></div>
 
                 <script type="text/javascript">
-	
+
                     var data = new google.visualization.DataTable();
                     data.addColumn('string', 'Slice');
                     data.addColumn('number', 'Percent');
@@ -318,11 +340,11 @@ if (defined('ANALYSIS_URL'))
                     data.setValue(0, 1, <?php echo $numlinktweets; ?>);
                     data.setValue(1, 0, 'Tweets containing no links');
                     data.setValue(1, 1, <?php echo $numtweets - $numlinktweets; ?>);
-	   
+
                     var chart = new google.visualization.PieChart(document.getElementById('if_panel_linkchart'));
                     chart.draw(data, {width: 380, height: 160});
-	
-                </script>		
+
+                </script>
             </div>
 
             <hr />
@@ -336,13 +358,13 @@ if (defined('ANALYSIS_URL'))
             <script type="text/javascript">
 
                 var data = new google.visualization.DataTable();
-		
+
                 data.addColumn('string', 'Date');
                 data.addColumn('number', 'Tweets');
                 data.addColumn('number', 'Users');
                 data.addColumn('number', 'Locations');
                 data.addColumn('number', 'Geo coded');
-		
+
 <?php
 echo "data.addRows(" . count($linedata) . ");";
 
@@ -359,10 +381,10 @@ foreach ($linedata as $key => $value) {
     $counter++;
 }
 ?>
-		
+
     var chart = new google.visualization.LineChart(document.getElementById('if_panel_linegraph'));
     chart.draw(data, {width:1000, height:360, fontSize:9, hAxis:{slantedTextAngle:90, slantedText:true}, chartArea:{left:50,top:10,width:850,height:300}});
-      
+
             </script>
 
             <?php if (isset($_GET['query']) && $_GET["query"] != "") { ?>
@@ -370,10 +392,10 @@ foreach ($linedata as $key => $value) {
                 <script type="text/javascript">
 
                     var data = new google.visualization.DataTable();
-                                                                                                                	
+
                     data.addColumn('string', 'Date');
                     data.addColumn('number', 'Norm Query (%)');
-                                                                                                                					
+
     <?php
     echo "data.addRows(" . count($linedata) . ");";
 
@@ -389,10 +411,10 @@ foreach ($linedata as $key => $value) {
         $counter++;
     }
     ?>
-                                                                                                                		
+
         var chart = new google.visualization.LineChart(document.getElementById('if_panel_linegraph_norm'));
         chart.draw(data, {width:1000, height:160, fontSize:9, hAxis:{slantedTextAngle:90, slantedText:true}, vAxis:{minValue:0,maxValue:100}, chartArea:{left:50,top:10,width:850,height:100}});
-                                                                                                                      
+
                 </script>
 
             <?php } ?>
@@ -541,7 +563,7 @@ foreach ($linedata as $key => $value) {
                 <div class="txt_desc">Contains only geo-located tweets.</div>
                 <div class="txt_desc"></div>
                 <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('location');sendUrl('mod.location.php');return false;">launch</a></div>
-                
+
                 <hr />
 
                 <h3>Export tweet ids</h3>
@@ -567,7 +589,7 @@ foreach ($linedata as $key => $value) {
                 <h3>Social graph by in_reply_to_status_id</h3>
                 <div class="txt_desc">Produces a <a href="http://en.wikipedia.org/wiki/Directed_graph">directed graph</a> based on interactions between users. If a tweet was written in reply to another one, a directed link is created.</div>
                 <div class="txt_desc">Use: analyze patterns in communication, find "hubs" and "communities", categorize user accounts.</div>
-                <div class="txt_link"> &raquo; <a href="" onclick="var minf = askInteractionFrequency(); $('#whattodo').val('interaction_graph&minf='+minf);sendUrl('mod.interaction_graph.php');return false;">launch</a></div>
+                <div class="txt_link"> &raquo; <a href="" onclick="var minf = askInteractionFrequency();  if(minf != false) { $('#whattodo').val('interaction_graph&minf='+minf);sendUrl('mod.interaction_graph.php'); } return false;">launch</a></div>
 
                 <hr />
 
@@ -584,7 +606,7 @@ foreach ($linedata as $key => $value) {
                 <div class="txt_desc">Produces an <a href="http://en.wikipedia.org/wiki/Graph_%28mathematics%29#Undirected_graph">undirected graph</a> based on co-word analysis of hashtags. If two hashtags appear in the same tweet, they are linked.
                     The more often they appear together, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>").</div>
                 <div class="txt_desc">Use: explore the relations between hashtags, find and analyze sub-issues, distinguish between different types of hashtags (event related, qualifiers, etc.).</div>
-                <div class="txt_link"> &raquo; <a href="" onclick="var mind = askDegree(); $('#whattodo').val('hashtag_cooc&minf='+mind);sendUrl('mod.hashtag_cooc.php');return false;">launch</a></div><!-- with absolute weighting of cooccurrences</a></div>-->
+                <div class="txt_link"> &raquo; <a href="" onclick="var mind = askDegree(); if(mind != false) { $('#whattodo').val('hashtag_cooc&minf='+mind);sendUrl('mod.hashtag_cooc.php'); } return false;">launch</a></div><!-- with absolute weighting of cooccurrences</a></div>-->
 
                 <hr />
 

@@ -353,7 +353,7 @@ function generate($what, $filename) {
         $results = frequencyTable("urls", "domain");
     } elseif ($what == "mention") {
         $results = frequencyTable("mentions", "to_user");
-        // get other things        
+        // get other things
     } else {
         // @todo, this could also use database grouping
         $sql = "SELECT id,text,created_at,from_user_name FROM " . $esc['mysql']['dataset'] . "_tweets t ";
@@ -454,7 +454,7 @@ function generate($what, $filename) {
             $tmp_mentions = array_count_values($things['mentions']);
             $tmp_users = array_count_values($things['users']);
             $counted_things = array();
-            // add all from_user_names 
+            // add all from_user_names
             foreach ($tmp_users as $user => $count) {
                 if (isset($tmp_mentions["@" . $user]))
                     $counted_things[$user] = $tmp_mentions["@" . $user] . "," . $count;
