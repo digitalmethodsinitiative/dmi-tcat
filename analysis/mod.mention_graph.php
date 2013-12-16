@@ -52,23 +52,17 @@ require_once './common/functions.php';
                 $data["to_user"] = strtolower($data["to_user"]);
 
                 if (!isset($users[$data["from_user_name"]])) {
-
-                    $users[$data["from_user_name"]] = $arrayName = array('id' => count($usersinv), 'notweets' => 1,'nomentions ' => 0);
-
+                    $users[$data["from_user_name"]] = $arrayName = array('id' => count($usersinv), 'notweets' => 1,'nomentions' => 0);
                     $usersinv[] = $data["from_user_name"];
                 } else {
-
                     $users[$data["from_user_name"]]["notweets"]++;
                 }
 
                 if (!isset($users[$data["to_user"]])) {
-
-                    $users[$data["to_user"]] = $arrayName = array('id' => count($usersinv), 'notweets' => 0,'nomentions ' => 1);
-
+                    $users[$data["to_user"]] = $arrayName = array('id' => count($usersinv), 'notweets' => 0,'nomentions' => 1);
                     $usersinv[] = $data["to_user"];
                 } else {
-
-                    $users[$data["from_user_name"]]["nomentions"]++;
+                    $users[$data["to_user"]]["nomentions"]++;
                 }
 
                 $to = $users[$data["from_user_name"]]["id"] . "," . $users[$data["to_user"]]["id"];
@@ -86,22 +80,26 @@ require_once './common/functions.php';
             $cur = $cur + $numresults;
         }
 
+		//print_r($users);
+
         $topusers = array();
 
-		if($esc["shell"]["topu"] > 0) {
-			foreach ($users as $key => $user) {
-				$topusers[(string)$user["id"]] = $user["nomentions"];
-			}
+
+		foreach ($users as $key => $user) {
+			$topusers[$key] = $user["nomentions"];
 		}
 
 		arsort($topusers);
-		$topusers = array_slice($topusers,0,$esc["shell"]["topu"],true);
+
+		if($esc["shell"]["topu"] > 0) {
+			$topusers = array_slice($topusers,0,$esc["shell"]["topu"],true);
+		}
 		//print_r($topusers);
 
 
         $content = "nodedef>name VARCHAR,label VARCHAR,no_tweets INT,no_mentions INT\n";
         foreach ($users as $key => $value) {
-        	if(isset($topusers[$value["id"]])) {
+        	if(isset($topusers[$key])) {
             	$content .= $value["id"] . "," . $key . "," . $value["notweets"] . "," . $value["nomentions"] . "\n";
             }
         }
@@ -109,7 +107,7 @@ require_once './common/functions.php';
         $content .= "edgedef>node1 VARCHAR,node2 VARCHAR,weight DOUBLE\n";
         foreach ($edges as $key => $value) {
 			$tmp = explode(",", $key);
-			if(isset($topusers[$tmp[0]]) && isset($topusers[$tmp[1]])) {
+			if(isset($topusers[$usersinv[$tmp[0]]]) && isset($topusers[$usersinv[$tmp[1]]])) {
             	$content .= $key . "," . $value . "\n";
 			}
         }

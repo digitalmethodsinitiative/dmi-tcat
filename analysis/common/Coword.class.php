@@ -226,7 +226,9 @@ class Coword {
 		// create a list of the top n keywords and use that to filter out all the others
 		$toplist = $this->wordFrequency;
 		arsort($toplist);
+		//print_r($toplist);
 		$toplist = array_slice($toplist,$topu,1,true);
+		//print_r($toplist);
 		$minfreq = array_shift(array_values($toplist));			// getting the frequency of the top n word to solve cutoff problem when two words have the same frequency
 
 		//print_r($minfreq);
