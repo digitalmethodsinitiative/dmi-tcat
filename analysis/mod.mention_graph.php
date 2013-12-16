@@ -33,17 +33,19 @@ require_once './common/functions.php';
         $edges = array();
 
         $cur = 0;
-        $numresults = 10000;
+        $numresults = 500000;
 
 		//print_r($esc); exit;
 
-        while ($numresults == 10000) {
+        while ($numresults == 500000) {
 
             $sql = "SELECT m.from_user_name,m.to_user FROM " . $esc['mysql']['dataset'] . "_mentions m, " . $esc['mysql']['dataset'] . "_tweets t ";
             $where = "m.tweet_id = t.id AND ";
             $sql .= sqlSubset($where);
             $sql .= " LIMIT " . $cur . "," . $numresults;
-//print $sql."<br>";
+
+			//print $sql."<br>";
+
             $sqlresults = mysql_query($sql);
 
             while ($data = mysql_fetch_assoc($sqlresults)) {
@@ -68,10 +70,8 @@ require_once './common/functions.php';
                 $to = $users[$data["from_user_name"]]["id"] . "," . $users[$data["to_user"]]["id"];
 
                 if (!isset($edges[$to])) {
-
                     $edges[$to] = 1;
                 } else {
-
                     $edges[$to]++;
                 }
             }
@@ -125,6 +125,7 @@ require_once './common/functions.php';
         echo '<p><a href="' . str_replace("#", urlencode("#"), $filename) . '">' . $filename . '</a></p>';
 
         echo '</fieldset>';
+
         ?>
 
     </body>
