@@ -1,0 +1,46 @@
+diff --git a/capture/common/tmhOAuth/tmhOAuth.php b/capture/common/tmhOAuth/tmhOAuth.php
+index e725a03..00ddc26 100644
+--- a/capture/common/tmhOAuth/tmhOAuth.php
++++ b/capture/common/tmhOAuth/tmhOAuth.php
+@@ -412,11 +412,16 @@ class tmhOAuth {
+     # that, instead of the request host. otherwise the signature won't match
+     # on the server side
+     if (!empty($this->request_settings['headers']['Host'])) {
++	// Make sure we _always_ override the host part, when requested
++	$url = preg_replace("/^https?:\/\/.*?\//", "", $url);
++	$url = 'https://' . $this->request_settings['headers']['Host'] . '/' . $url;
++/*
+       $url = str_ireplace(
+         $this->config['host'],
+         $this->request_settings['headers']['Host'],
+         $url
+       );
++*/
+     }
+ 
+     $base = array(
+@@ -590,7 +595,7 @@ class tmhOAuth {
+    * @param string $callback the callback function to stream the buffer to.
+    * @return void
+    */
+-  public function streaming_request($method, $url, $params=array(), $callback='') {
++  public function streaming_request($method, $url, $params=array(), $callback='', $headers=array()) {
+     if ( ! empty($callback) ) {
+       if ( ! is_callable($callback) ) {
+         return false;
+@@ -604,7 +609,7 @@ class tmhOAuth {
+     $this->metrics['bytes']          = 0;
+     $this->metrics['last_bytes']     = 0;
+     $this->config['is_streaming']    = true;
+-    $this->request($method, $url, $params);
++    $this->request($method, $url, $params, true, false, $headers);
+   }
+ 
+   /**
+@@ -842,4 +847,4 @@ class tmhOAuth {
+ 
+     return $code;
+   }
+-}
+\ No newline at end of file
++}
