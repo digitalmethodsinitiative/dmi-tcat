@@ -1,5 +1,4 @@
 <?php
-// todo: ask Erik how to protect cells in CSV for mod.random_tweets.php
 
 require_once 'common/config.php';
 require_once 'common/functions.php';
@@ -11,7 +10,7 @@ $datasets = get_all_datasets();
 
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
-        <title>Twitter Analytics</title>
+        <title>DMI Twitter Capturing and Analysis Toolset (DMI-TCAT)</title>
 
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
@@ -102,7 +101,7 @@ if (defined('ANALYSIS_URL'))
 
     <body>
 
-        <h1>Twitter Analytics</h1>
+        <h1>DMI Twitter Capturing and Analysis Toolset (DMI-TCAT)</h1>
 
         <fieldset class="if_parameters">
 
@@ -115,34 +114,34 @@ if (defined('ANALYSIS_URL'))
                 <?php
                 echo '<select id="ipt_dataset" name="dataset">';
 
-				$ordered_datasets = array();
-				foreach($datasets as $key => $set) {
-					if (preg_match("/ytk_/", $key)) {
-            			$ordered_datasets["ytk imports"][$key] = $set;
-        			} elseif (preg_match("/user_/", $key)) {
-            			$ordered_datasets["user captures"][$key] = $set;
-        			} elseif(preg_match("/sample_/", $key)) {
-            			$ordered_datasets["one percent samples"][$key] = $set;
-					} else {
-						$ordered_datasets["keyword captures"][$key] = $set;
-					}
-				}
+                $ordered_datasets = array();
+                foreach ($datasets as $key => $set) {
+                    if (preg_match("/ytk_/", $key)) {
+                        $ordered_datasets["ytk imports"][$key] = $set;
+                    } elseif (preg_match("/user_/", $key)) {
+                        $ordered_datasets["user captures"][$key] = $set;
+                    } elseif (preg_match("/sample_/", $key)) {
+                        $ordered_datasets["one percent samples"][$key] = $set;
+                    } else {
+                        $ordered_datasets["keyword captures"][$key] = $set;
+                    }
+                }
 
-				//print_r($ordered_datasets);
+                //print_r($ordered_datasets);
 
-				foreach($ordered_datasets as $groupname => $group) {
+                foreach ($ordered_datasets as $groupname => $group) {
 
-					echo '<optgroup label="'.$groupname.'">';
+                    echo '<optgroup label="' . $groupname . '">';
 
-	                foreach ($group as $key => $set) {
+                    foreach ($group as $key => $set) {
 
-	                    $v = ($key == $dataset) ? 'selected="selected"' : "";
+                        $v = ($key == $dataset) ? 'selected="selected"' : "";
 
-	                    echo '<option value="' . $key . '" ' . $v . '>' . $set["bin"] . ' --- ' . number_format($set["notweets"], 0, ",", ".") . ' tweets from ' . $set['mintime'] . ' to ' . $set['maxtime'] . '</option>';
-	                }
+                        echo '<option value="' . $key . '" ' . $v . '>' . $set["bin"] . ' --- ' . number_format($set["notweets"], 0, ",", ".") . ' tweets from ' . $set['mintime'] . ' to ' . $set['maxtime'] . '</option>';
+                    }
 
-					echo '</optgroup>';
-				}
+                    echo '</optgroup>';
+                }
 
                 echo "</select> ";
                 $count = get_total_nr_of_tweets();
@@ -154,30 +153,31 @@ if (defined('ANALYSIS_URL'))
                 <table>
 
                     <tr>
-                        <td class="tbl_head">Query: </td><td><input type="text" id="ipt_query" name="query" value="<?php echo $query; ?>" /> (empty: containing any text)</td>
+                        <td class="tbl_head">Query: </td><td><input type="text" id="ipt_query" size="60" name="query" value="<?php echo $query; ?>" /> (empty: containing any text*)</td>
                     </tr>
 
                     <tr>
-                        <td class="tbl_head">Exclude: </td><td><input type="text" id="ipt_exclude" name="exclude"  value="<?php echo $exclude; ?>" /> (empty: exclude nothing)</td>
+                        <td class="tbl_head">Exclude: </td><td><input type="text" id="ipt_exclude" size="60" name="exclude"  value="<?php echo $exclude; ?>" /> (empty: exclude nothing*)</td>
                     </tr>
 
                     <tr>
-                        <td class="tbl_head">From user: </td><td><input type="text" id="ipt_from_user" name="from_user_name"  value="<?php echo $from_user_name; ?>" /> (empty: from any user)</td>
+                        <td class="tbl_head">From user: </td><td><input type="text" id="ipt_from_user" size="60" name="from_user_name"  value="<?php echo $from_user_name; ?>" /> (empty: from any user*)</td>
                     </tr>
                     <tr>
-                        <td class="tbl_head">URL (or part of URL): </td><td><input type="text" id="ipt_url_query" name="url_query"  value="<?php echo $url_query; ?>" /> (empty: any or all URLs)</td>
+                        <td class="tbl_head">URL (or part of URL): </td><td><input type="text" id="ipt_url_query" size="60" name="url_query"  value="<?php echo $url_query; ?>" /> (empty: any or all URLs*)</td>
                     </tr>
                     <tr>
-                        <td class="tbl_head">Startdate:</td><td><input type="text" id="ipt_startdate" name="startdate" value="<?php echo $startdate; ?>" /> (YYYY-MM-DD)</td>
+                        <td class="tbl_head">Startdate:</td><td><input type="text" id="ipt_startdate" size="60" name="startdate" value="<?php echo $startdate; ?>" /> (YYYY-MM-DD)</td>
                     </tr>
 
                     <tr>
-                        <td class="tbl_head">Enddate:</td><td><input type="text" id="ipt_enddate" name="enddate" value="<?php echo $enddate; ?>" /> (YYYY-MM-DD)</td>
+                        <td class="tbl_head">Enddate:</td><td><input type="text" id="ipt_enddate" size="60" name="enddate" value="<?php echo $enddate; ?>" /> (YYYY-MM-DD)</td>
                     </tr>
 
                     <tr>
                         <td><input type="submit" value="update overview" /></td>
                     </tr>
+                    <tr><td colspan='2'>*  You can also do AND <b>or</b> OR queries, although you cannot mix AND and OR in the same query.</td></tr>
                 </table>
 
             </form>
@@ -526,7 +526,7 @@ foreach ($linedata as $key => $value) {
                 <hr/>
 
                 <h3>Identical tweet frequency</h3>
-                <div class="txt_desc">Contains tweets and the number of times they have been retweeted indentically, per day (date range > 2 days) or per hour (date range 2 days or smaller).</div>
+                <div class="txt_desc">Contains tweets and the number of times they have been (re)tweeted indentically.</div>
                 <div class="txt_desc">Use: get a grasp of the most "popular" content.</div>
                 <div class="txt_link"> &raquo;  <a href="" onclick="var minf = askFrequency(); $('#whattodo').val('retweet&minf='+minf+getInterval()); sendUrl('index.php');return false;">launch</a></div>
 
@@ -611,7 +611,7 @@ foreach ($linedata as $key => $value) {
                     The more often they appear together, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>").</div>
                 <div class="txt_desc">Use: explore the relations between hashtags, find and analyze sub-issues, distinguish between different types of hashtags (event related, qualifiers, etc.).</div>
                 <div class="txt_link"> &raquo; <a href="" onclick="var minf = askFrequency(); if(minf != false) { $('#whattodo').val('hashtag_cooc&minf='+minf);sendUrl('mod.hashtag_cooc.php'); } return false;">launch</a> (set minimum frequency)</div><!-- with absolute weighting of cooccurrences</a></div>-->
-				<div class="txt_link"> &raquo; <a href="" onclick="var topu = askTopht(); if(topu != false) { $('#whattodo').val('hashtag_cooc&topu='+topu);sendUrl('mod.hashtag_cooc.php'); } return false;">launch</a> (get top hashtags)</div>
+                <div class="txt_link"> &raquo; <a href="" onclick="var topu = askTopht(); if(topu != false) { $('#whattodo').val('hashtag_cooc&topu='+topu);sendUrl('mod.hashtag_cooc.php'); } return false;">launch</a> (get top hashtags)</div>
 
                 <hr />
 

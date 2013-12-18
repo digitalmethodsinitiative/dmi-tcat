@@ -103,8 +103,6 @@ if ($interval == "custom" && isset($_REQUEST['customInterval'])) {
     if ($lastDate > $enddate)
         die("<font size='+1' color='red'>custom interval should have the same end date as the selection</font>");
 }
-//var_dump($intervalDates);
-
 
 $keywords = array();
 $esc = array();
@@ -692,10 +690,6 @@ function get_all_datasets() {
     $datasets = array();
 
     foreach ($querybins as $bin => $keywords) {
-        if(preg_match("/^penw_|^ondernemerszaken|^user_ambtenaar20$/",$bin)) {
-                print "[[$bin]]<br>";
-                continue;
-        }
         // get nr of results per table
         $sql2 = "SELECT count(t.id) AS notweets,MIN(t.created_at) AS min,MAX(t.created_at) AS max  FROM " . $bin . "_tweets t ";
         $rec2 = mysql_query($sql2);
@@ -711,10 +705,6 @@ function get_all_datasets() {
         }
     }
     foreach ($queryarchives as $bin => $keywords) {
-        if(preg_match("/^penw_/",$bin)) {
-                print "[[$bin]]<br>";
-                continue;
-        }
         // get nr of results per table
         $sql2 = "SELECT count(t.id) AS notweets,MIN(t.created_at) AS min,MAX(t.created_at) AS max  FROM " . $bin . "_tweets t ";
         $rec2 = mysql_query($sql2);

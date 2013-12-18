@@ -3,8 +3,6 @@ require_once './common/config.php';
 require_once './common/functions.php';
 require_once './common/Coword.class.php';
 validate_all_variables();
-//if(isset($_GET['dataset'])&&$_GET['dataset']=="drones")
-//    die("access to the associational profiler has temporarily been disabled in order to aleviate server load");
 ?>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -248,6 +246,7 @@ validate_all_variables();
                                                     $date = $res['datepart'];
                                                     if (!empty($intervalDates))
                                                         $date = groupByInterval($res['datepart']);
+                                                    //print "[$date]<br>";
                                                     $word = $res['h1'];
                                                     if (!isset($usersForWord[$date][$word]))
                                                         $usersForWord[$date][$word] = 0;
@@ -266,7 +265,7 @@ validate_all_variables();
 
                                                 // get frequency (occurence) of hashtag in full selection
                                                 $sql = "SELECT LOWER(A.text) AS h1, COUNT(LOWER(A.text)) AS frequency";
-                                                $sql .= ", ".sqlInterval();
+                                                $sql .= ", " . sqlInterval();
                                                 $sql .= "FROM " . $esc['mysql']['dataset'] . "_hashtags A, " . $esc['mysql']['dataset'] . "_tweets t ";
                                                 $sql .= sqlSubset() . " AND ";
                                                 $sql .= "LENGTH(A.text)>1 AND ";
@@ -416,367 +415,357 @@ validate_all_variables();
                                                     print $datadescription . "<br>";
                                                     ?>
                                                     <br><span>Permalink to visualization: <a href='' id='permalink' style='font-size:12px;color:black;text-decoration:none;'></a></span>
-                                                    <br><span onclick="encode_as_img_and_link();">make SVG</span><span id="svgdown"></span><br>
-                                                            <form id="vis_interface">>
-                                                                <input type="checkbox" onchange="changeInterface('labels',this.checked)" />Show labels in visualization
-                                                                <input type="checkbox" onchange="changeInterface('sorting',this.checked)" />Sort by size
-                                                            </form>
+                                                        <br><span onclick="encode_as_img_and_link();">make SVG</span><span id="svgdown"></span><br>
+                                                                <form id="vis_interface">>
+                                                                    <input type="checkbox" onchange="changeInterface('labels',this.checked)" />Show labels in visualization
+                                                                    <input type="checkbox" onchange="changeInterface('sorting',this.checked)" />Sort by size
+                                                                </form>
 
-                                                            <script type="text/javascript">
+                                                                <script type="text/javascript">
     <?php print "var _data = " . json_encode($vis_data); ?>
-                                                            </script>
-                                                            <p id="visualization"></p>
-                                                            <p id="wordlist"></p>
-                                                            <script type='text/javascript' src='./scripts/vis.js'></script>
-                                                            </p>
+                                                                </script>
+                                                                <p id="visualization"></p>
+                                                                <p id="wordlist"></p>
+                                                                <script type='text/javascript' src='./scripts/vis.js'></script>
+                                                                </p>
+
+                                                                <?php
+                                                                if (isset($_REQUEST['tableOutput'])) {
+                                                                    print "<hr>Tip: Sort multiple columns simultaneously by holding down the shift key and clicking a second, third or even fourth column header! ";
+                                                                    print "<table id='metrics' class='tablesorter'>";
+                                                                    print "<thead><tr><th>date</th><th>word</th><th>frequency</th><th>cowordFrequency</th><th>specificity</th><th>normalizedWordFrequency</th><th>normalizedCowordFrequency</th><th>distinctUsersForWord</th><th>userDiversity</th><th>wordFrequencyDividedByUniqueUsers</th><th>wordFrequencyMultipliedByUniqueUsers</th>></tr></thead>";
+                                                                    print "<tbody>";
+                                                                    foreach ($vis_data as $date => $words) {
+                                                                        if (empty($words))
+                                                                            print "<tr><td>$date</td><td >no associations here</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>";
+                                                                        foreach ($words as $word => $specs) {
+                                                                            $frequency = $specs['wordFrequency'];
+                                                                            $normalizedWordFrequency = $specs['normalizedWordFrequency'];
+                                                                            $frequency_coword = $specs['cowordFrequency'];
+                                                                            $specificity = $specs['specificity'];
+                                                                            if (isset($_REQUEST['normalizedCowordFrequency']))
+                                                                                $normalizedCowordFrequency = $specs['normalizedCowordFrequency'];
+                                                                            else
+                                                                                $normalizedCowordFrequency = "";
+                                                                            $userDiversity = $specs['userDiversity'];
+                                                                            $usersForWord = $specs['distinctUsersForWord'];
+                                                                            $wordFrequencyDividedByUniqueUsers = $specs['wordFrequencyDividedByUniqueUsers'];
+                                                                            $wordFrequencyMultipliedByUniqueUsers = $specs['wordFrequencyMultipliedByUniqueUsers'];
+                                                                            $highlight = "";
+                                                                            /* if ($specificity < 100.0 && $specificity > 70.0)
+                                                                              $highlight = " style='background-color:yellow'";
+                                                                              if ($specificity < 50.0)
+                                                                              $highlight = " style='background-color:red'";
+                                                                             *
+                                                                             */
+
+                                                                            if ($frequency_coword_total[$word] >= $minimumCowordFrequencyOverall && $frequency_coword >= $minimumCowordFrequencyInterval)
+                                                                                print "<tr><td>$date</td><td>$word</td><td>$frequency</td><td>$frequency_coword</td><td $highlight>$specificity</td><td>$normalizedWordFrequency</td><td>$normalizedCowordFrequency</td><td>$usersForWord</td><td>$userDiversity</td><td>$wordFrequencyDividedByUniqueUsers</td><td>$wordFrequencyMultipliedByUniqueUsers</td></tr>";
+                                                                            else
+                                                                                print "<tr><td>$date</td><td>$word</td><td colspan='3'>skipping because {$frequency_coword_total[$word]} < $minimumCowordFrequencyOverall</td></tr>";
+                                                                        }
+                                                                    }
+                                                                    print "</tbody></table>";
+                                                                }
+
+                                                                if (isset($_REQUEST['displayOverallCowordFrequencies'])) {
+                                                                    print "<table id='cowordFrequencyOverall' class='tablesorter'>";
+                                                                    print "<thead><tr><th>coword</th><th>coword frequency</th></tr></thead>";
+                                                                    print "<tbody>";
+
+                                                                    arsort($frequency_coword_total);
+                                                                    foreach ($frequency_coword_total as $word => $frequency) {
+                                                                        if ($frequency >= $minimumCowordFrequencyOverall)
+                                                                            print "<tr><td>$word</td><td>$frequency</td></tr>";
+                                                                    }
+                                                                    print "</tbody></table>";
+                                                                }
+                                                            }
+                                                            ?>
+                                                            <P>The associational profiler is a collaboration between the <a href="http://www.csisponline.net/">Centre for the Study of Invention and Social Process</a> (Goldsmiths) and the <a href="http://digitalmethods.net">Digital Methods Initiative</a> (University of Amsterdam).</P>
+                                                            </body>
+                                                            </html>
 
                                                             <?php
-                                                            if (isset($_REQUEST['tableOutput'])) {
-                                                                print "<hr>Tip: Sort multiple columns simultaneously by holding down the shift key and clicking a second, third or even fourth column header! ";
-                                                                print "<table id='metrics' class='tablesorter'>";
-                                                                print "<thead><tr><th>date</th><th>word</th><th>frequency</th><th>cowordFrequency</th><th>specificity</th><th>normalizedWordFrequency</th><th>normalizedCowordFrequency</th><th>distinctUsersForWord</th><th>userDiversity</th><th>wordFrequencyDividedByUniqueUsers</th><th>wordFrequencyMultipliedByUniqueUsers</th>></tr></thead>";
-                                                                print "<tbody>";
-                                                                foreach ($vis_data as $date => $words) {
-                                                                    if (empty($words))
-                                                                        print "<tr><td>$date</td><td >no associations here</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>";
-                                                                    foreach ($words as $word => $specs) {
-                                                                        $frequency = $specs['wordFrequency'];
-                                                                        $normalizedWordFrequency = $specs['normalizedWordFrequency'];
-                                                                        $frequency_coword = $specs['cowordFrequency'];
-                                                                        $specificity = $specs['specificity'];
-                                                                        if (isset($_REQUEST['normalizedCowordFrequency']))
-                                                                            $normalizedCowordFrequency = $specs['normalizedCowordFrequency'];
-                                                                        else
-                                                                            $normalizedCowordFrequency = "";
-                                                                        $userDiversity = $specs['userDiversity'];
-                                                                        $usersForWord = $specs['distinctUsersForWord'];
-                                                                        $wordFrequencyDividedByUniqueUsers = $specs['wordFrequencyDividedByUniqueUsers'];
-                                                                        $wordFrequencyMultipliedByUniqueUsers = $specs['wordFrequencyMultipliedByUniqueUsers'];
-                                                                        $highlight = "";
-                                                                        /* if ($specificity < 100.0 && $specificity > 70.0)
-                                                                          $highlight = " style='background-color:yellow'";
-                                                                          if ($specificity < 50.0)
-                                                                          $highlight = " style='background-color:red'";
-                                                                         *
-                                                                         */
 
-                                                                        if ($frequency_coword_total[$word] >= $minimumCowordFrequencyOverall && $frequency_coword >= $minimumCowordFrequencyInterval)
-                                                                            print "<tr><td>$date</td><td>$word</td><td>$frequency</td><td>$frequency_coword</td><td $highlight>$specificity</td><td>$normalizedWordFrequency</td><td>$normalizedCowordFrequency</td><td>$usersForWord</td><td>$userDiversity</td><td>$wordFrequencyDividedByUniqueUsers</td><td>$wordFrequencyMultipliedByUniqueUsers</td></tr>";
-                                                                        else
-                                                                            print "<tr><td>$date</td><td>$word</td><td colspan='3'>skipping because {$frequency_coword_total[$word]} < $minimumCowordFrequencyOverall</td></tr>";
+                                                            function printTopHashtags() {
+                                                                global $esc;
+
+                                                                $results = array();
+                                                                $sql = "SELECT COUNT(hashtags.text) AS count, LOWER(hashtags.text) AS toget ";
+                                                                $sql .= "FROM " . $esc['mysql']['dataset'] . "_hashtags hashtags, " . $esc['mysql']['dataset'] . "_tweets t ";
+                                                                $sql .= sqlSubset("t.id = hashtags.tweet_id AND ");
+                                                                $sql .= " GROUP BY toget ORDER BY count DESC limit 10";
+                                                                //print $sql."<br>";
+                                                                $rec = mysql_query($sql);
+                                                                $out = "";
+                                                                while ($res = mysql_fetch_assoc($rec)) {
+                                                                    $out .= $res['toget'] . " (" . $res['count'] . "), ";
+                                                                }
+                                                                print substr($out, 0, -2);
+                                                            }
+
+                                                            function getGEXFtimeseries($filename, $series) {
+                                                                include_once('common/Gexf.class.php');
+                                                                $gexf = new Gexf();
+                                                                $gexf->setTitle("Co-word " . $filename);
+                                                                $gexf->setEdgeType(GEXF_EDGE_UNDIRECTED);
+                                                                $gexf->setMode(GEXF_MODE_DYNAMIC);
+                                                                $gexf->setTimeFormat(GEXF_TIMEFORMAT_DATE);
+                                                                $gexf->setCreator("tools.digitalmethods.net");
+                                                                foreach ($series as $time => $cw) {
+
+                                                                    $w = $cw->getWords();
+                                                                    $cw = $cw->getCowords();
+                                                                    foreach ($cw as $word => $cowords) {
+                                                                        foreach ($cowords as $coword => $coword_frequency) {
+                                                                            $node1 = new GexfNode($word);
+                                                                            if (isset($w[$word]))
+                                                                                $node1->addNodeAttribute("word_frequency", $w[$word], $type = "int");
+                                                                            $gexf->addNode($node1);
+                                                                            //if ($documentsPerWords[$word] > $threshold)
+                                                                            //    $node1->setNodeColor(0, 255, 0, 0.75);
+                                                                            $gexf->nodeObjects[$node1->id]->addNodeSpell($time, $time);
+                                                                            $node2 = new GexfNode($coword);
+                                                                            if (isset($w[$coword]))
+                                                                                $node2->addNodeAttribute("word_frequency", $w[$word], $type = "int");
+                                                                            $gexf->addNode($node2);
+                                                                            //if ($documentsPerWords[$coword] > $threshold)
+                                                                            //    $node2->setNodeColor(0, 255, 0, 0.75);
+                                                                            $gexf->nodeObjects[$node2->id]->addNodeSpell($time, $time);
+                                                                            $edge_id = $gexf->addEdge($node1, $node2, $coword_frequency);
+                                                                            $gexf->edgeObjects[$edge_id]->addEdgeSpell($time, $time);
+                                                                        }
                                                                     }
                                                                 }
-                                                                print "</tbody></table>";
+                                                                $gexf->render();
+                                                                file_put_contents($filename, $gexf->gexfFile);
+
+                                                                echo '<fieldset class="if_parameters">';
+                                                                echo '<legend>Your co-hashtag time-series File</legend>';
+                                                                echo '<p><a href="' . str_replace("#", urlencode("#"), str_replace("\"", "%22", $filename)) . '">' . $filename . '</a></p>';
+                                                                echo '</fieldset>';
                                                             }
 
-                                                            if (isset($_REQUEST['displayOverallCowordFrequencies'])) {
-                                                                print "<table id='cowordFrequencyOverall' class='tablesorter'>";
-                                                                print "<thead><tr><th>coword</th><th>coword frequency</th></tr></thead>";
-                                                                print "<tbody>";
+                                                            function variabilityOfAssociationProfiles($filename, $series, $keywordToTrack, $ap) {
 
-                                                                arsort($frequency_coword_total);
-                                                                foreach ($frequency_coword_total as $word => $frequency) {
-                                                                    if ($frequency >= $minimumCowordFrequencyOverall)
-                                                                        print "<tr><td>$word</td><td>$frequency</td></tr>";
-                                                                }
-                                                                print "</tbody></table>";
-                                                            }
-                                                        }
-                                                        ?>
-                                                        <P>The associational profiler is a collaboration between the <a href="http://www.csisponline.net/">Centre for the Study of Invention and Social Process</a> (Goldsmiths) and the <a href="http://digitalmethods.net">Digital Methods Initiative</a> (University of Amsterdam).</P>
-                                                        </body>
-                                                        </html>
+                                                                if (empty($series) || empty($keywordToTrack))
+                                                                    die('not enough data');
+                                                                $filename = str_replace(".gexf", "_" . escapeshellarg(implode("_", $keywordToTrack)) . ".csv", $filename);
+                                                                // group per slice
+                                                                // per keyword
+                                                                // 	get associated words (depth 1) per slice
+                                                                // 	get frequency, degree, ap variation (calculated on cooc frequency), words in, words out, ap keywords
+                                                                $degree = array();
+                                                                foreach ($series as $time => $cw) {
+                                                                    $cw = $cw->getCowords();
+                                                                    foreach ($cw as $word => $cowords) {
+                                                                        foreach ($cowords as $coword => $frequency) {
 
-                                                        <?php
+                                                                            // save how many time slices the word appears
+                                                                            $words[$word][$time] = 1;
+                                                                            $words[$coword][$time] = 1;
 
-                                                        function printTopHashtags() {
-                                                            global $esc;
 
-                                                            // determine interval
-                                                            $sql = "SELECT MIN(t.created_at) AS min, MAX(t.created_at) AS max FROM " . $esc['mysql']['dataset'] . "_tweets t ";
-                                                            $sql .= sqlSubset();
-                                                            $rec = mysql_query($sql);
-                                                            $res = mysql_fetch_assoc($rec);
-                                                            $sql_interval = "DATE_FORMAT(t.created_at,'%Y-%m-%d') datepart ";
-                                                            $results = array();
-                                                            $sql = "SELECT COUNT(hashtags.text) AS count, LOWER(hashtags.text) AS toget, ";
-                                                            $sql .= $sql_interval;
-                                                            $sql .= "FROM " . $esc['mysql']['dataset'] . "_hashtags hashtags, " . $esc['mysql']['dataset'] . "_tweets t ";
-                                                            $where = "t.id = hashtags.tweet_id AND ";
-                                                            $sql .= sqlSubset($where);
-                                                            $sql .= " GROUP BY toget ORDER BY count DESC limit 10";
-                                                            //print $sql."<br>";
-                                                            $rec = mysql_query($sql);
-                                                            $out = "";
-                                                            while ($res = mysql_fetch_assoc($rec)) {
-                                                                //if ($res['count'] > $esc['shell']['minf'])
-                                                                $out .= $res['toget'] . " (" . $res['count'] . "), ";
-                                                            }
-                                                            print substr($out, 0, -2);
-                                                        }
+                                                                            // keep track of degree per word per time slice
+                                                                            if (array_key_exists($word, $degree) === false)
+                                                                                $degree[$word] = array();
+                                                                            if (array_key_exists($coword, $degree) === false)
+                                                                                $degree[$coword] = array();
+                                                                            if (array_key_exists($time, $degree[$word]) === false)
+                                                                                $degree[$word][$time] = 0;
+                                                                            if (array_key_exists($time, $degree[$coword]) === false)
+                                                                                $degree[$coword][$time] = 0;
 
-                                                        function getGEXFtimeseries($filename, $series) {
-// time-series gexf
-                                                            include_once('common/Gexf.class.php');
-                                                            $gexf = new Gexf();
-                                                            $gexf->setTitle("Co-word " . $filename);
-                                                            $gexf->setEdgeType(GEXF_EDGE_UNDIRECTED);
-                                                            $gexf->setMode(GEXF_MODE_DYNAMIC);
-                                                            $gexf->setTimeFormat(GEXF_TIMEFORMAT_DATE);
-                                                            $gexf->setCreator("tools.digitalmethods.net");
-                                                            foreach ($series as $time => $cw) {
-
-                                                                $w = $cw->getWords();
-                                                                $cw = $cw->getCowords();
-                                                                foreach ($cw as $word => $cowords) {
-                                                                    foreach ($cowords as $coword => $coword_frequency) {
-                                                                        $node1 = new GexfNode($word);
-                                                                        if (isset($w[$word]))
-                                                                            $node1->addNodeAttribute("word_frequency", $w[$word], $type = "int");
-                                                                        $gexf->addNode($node1);
-                                                                        //if ($documentsPerWords[$word] > $threshold)
-                                                                        //    $node1->setNodeColor(0, 255, 0, 0.75);
-                                                                        $gexf->nodeObjects[$node1->id]->addNodeSpell($time, $time);
-                                                                        $node2 = new GexfNode($coword);
-                                                                        if (isset($w[$coword]))
-                                                                            $node2->addNodeAttribute("word_frequency", $w[$word], $type = "int");
-                                                                        $gexf->addNode($node2);
-                                                                        //if ($documentsPerWords[$coword] > $threshold)
-                                                                        //    $node2->setNodeColor(0, 255, 0, 0.75);
-                                                                        $gexf->nodeObjects[$node2->id]->addNodeSpell($time, $time);
-                                                                        $edge_id = $gexf->addEdge($node1, $node2, $coword_frequency);
-                                                                        $gexf->edgeObjects[$edge_id]->addEdgeSpell($time, $time);
+                                                                            $degree[$word][$time]++;
+                                                                            $degree[$coword][$time]++;
+                                                                        }
                                                                     }
                                                                 }
-                                                            }
-                                                            $gexf->render();
-                                                            file_put_contents($filename, $gexf->gexfFile);
 
-                                                            echo '<fieldset class="if_parameters">';
-                                                            echo '<legend>Your co-hashtag time-series File</legend>';
-                                                            echo '<p><a href="' . str_replace("#", urlencode("#"), str_replace("\"", "%22", $filename)) . '">' . $filename . '</a></p>';
-                                                            echo '</fieldset>';
-                                                        }
-
-                                                        function variabilityOfAssociationProfiles($filename, $series, $keywordToTrack, $ap) {
-
-                                                            if (empty($series) || empty($keywordToTrack))
-                                                                die('not enough data');
-                                                            $filename = str_replace(".gexf", "_" . escapeshellarg(implode("_", $keywordToTrack)) . ".csv", $filename);
-                                                            // group per slice
-                                                            // per keyword
-                                                            // 	get associated words (depth 1) per slice
-                                                            // 	get frequency, degree, ap variation (calculated on cooc frequency), words in, words out, ap keywords
-                                                            $degree = array();
-                                                            foreach ($series as $time => $cw) {
-                                                                $cw = $cw->getCowords();
-                                                                foreach ($cw as $word => $cowords) {
-                                                                    foreach ($cowords as $coword => $frequency) {
-
-                                                                        // save how many time slices the word appears
-                                                                        $words[$word][$time] = 1;
-                                                                        $words[$coword][$time] = 1;
-
-
-                                                                        // keep track of degree per word per time slice
-                                                                        if (array_key_exists($word, $degree) === false)
-                                                                            $degree[$word] = array();
-                                                                        if (array_key_exists($coword, $degree) === false)
-                                                                            $degree[$coword] = array();
-                                                                        if (array_key_exists($time, $degree[$word]) === false)
-                                                                            $degree[$word][$time] = 0;
-                                                                        if (array_key_exists($time, $degree[$coword]) === false)
-                                                                            $degree[$coword][$time] = 0;
-
-                                                                        $degree[$word][$time]++;
-                                                                        $degree[$coword][$time]++;
+                                                                // count nr of time slices the words appears in
+                                                                foreach ($words as $word => $times) {
+                                                                    $documentsPerWords[$word] = count($times);
+                                                                }
+                                                                // calculate similarity and changes
+                                                                foreach ($ap as $word => $times) {
+                                                                    $times_keys = array_keys($times);
+                                                                    for ($i = 1; $i < count($times_keys); $i++) {
+                                                                        $im1 = $i - 1;
+                                                                        $v1 = $times[$times_keys[$im1]];
+                                                                        $v2 = $times[$times_keys[$i]];
+                                                                        $cos_sim[$word][$times_keys[$i]] = cosineSimilarity($v1, $v2);
+                                                                        $change_out[$word][$times_keys[$i]] = change($v1, $v2);
+                                                                        $change_in[$word][$times_keys[$i]] = change($v2, $v1);
+                                                                        $stable[$word][$times_keys[$i]] = array_intersect(array_keys($v1), array_keys($v2));
                                                                     }
                                                                 }
-                                                            }
 
-                                                            // count nr of time slices the words appears in
-                                                            foreach ($words as $word => $times) {
-                                                                $documentsPerWords[$word] = count($times);
-                                                            }
-                                                            // calculate similarity and changes
-                                                            foreach ($ap as $word => $times) {
-                                                                $times_keys = array_keys($times);
-                                                                for ($i = 1; $i < count($times_keys); $i++) {
-                                                                    $im1 = $i - 1;
-                                                                    $v1 = $times[$times_keys[$im1]];
-                                                                    $v2 = $times[$times_keys[$i]];
-                                                                    $cos_sim[$word][$times_keys[$i]] = cosineSimilarity($v1, $v2);
-                                                                    $change_out[$word][$times_keys[$i]] = change($v1, $v2);
-                                                                    $change_in[$word][$times_keys[$i]] = change($v2, $v1);
-                                                                    $stable[$word][$times_keys[$i]] = array_intersect(array_keys($v1), array_keys($v2));
+                                                                // @todo, frequency
+                                                                $out = "key\ttime\tdegree\tsimilarity\tassociational profile\tchange in\tchange out\tstable\n";
+                                                                foreach ($ap as $word => $times) {
+                                                                    foreach ($times as $time => $profile) {
+                                                                        if (isset($change_in[$word][$time])) {
+                                                                            $inc = "";
+                                                                            foreach ($change_in[$word][$time] as $w => $c) {
+                                                                                $inc .= "$w ($c), ";
+                                                                            }
+                                                                            $inc = substr($inc, 0, -2);
+                                                                        } else
+                                                                            $inc = "";
+                                                                        if (isset($change_out[$word][$time])) {
+                                                                            $outc = "";
+                                                                            foreach ($change_out[$word][$time] as $w => $c) {
+                                                                                $outc .= "$w ($c), ";
+                                                                            }
+                                                                            $outc = substr($outc, 0, -2);
+                                                                        } else
+                                                                            $outc = "";
+                                                                        if (isset($stable[$word][$time])) {
+                                                                            $stablec = array();
+                                                                            foreach ($stable[$word][$time] as $w) {
+                                                                                $stablec[] = $w;
+                                                                            }
+                                                                            $stablec = implode(", ", $stablec);
+                                                                        } else
+                                                                            $stablec = "";
+                                                                        $prof = "";
+                                                                        foreach ($profile as $w => $c)
+                                                                            $prof .= "$w ($c), ";
+                                                                        $prof = substr($prof, 0, -2);
+                                                                        if (isset($degree[$word][$time]))
+                                                                            $deg = $degree[$word][$time]; else
+                                                                            $deg = "";
+                                                                        if (isset($cos_sim[$word][$time]))
+                                                                            $cs = $cos_sim[$word][$time]; else
+                                                                            $cs = "";
+                                                                        $out .= $word . "\t" . $time . "\t" . $deg . "\t" . $cs . "\t" . $prof . "\t" . $inc . "\t" . $outc . "\t" . $stablec . "\n";
+                                                                    }
                                                                 }
+
+
+                                                                file_put_contents($filename, chr(239) . chr(187) . chr(191) . $out);
+                                                                echo '<fieldset class="if_parameters">';
+                                                                echo '<legend>Your co-hashtag variability File</legend>';
+                                                                echo '<p><a href="' . str_replace("#", urlencode("#"), str_replace("\"", "%22", $filename)) . '">' . $filename . '</a></p>';
+                                                                echo '</fieldset>';
                                                             }
-
-                                                            // @todo, frequency
-                                                            $out = "key\ttime\tdegree\tsimilarity\tassociational profile\tchange in\tchange out\tstable\n";
-                                                            foreach ($ap as $word => $times) {
-                                                                foreach ($times as $time => $profile) {
-                                                                    if (isset($change_in[$word][$time])) {
-                                                                        $inc = "";
-                                                                        foreach ($change_in[$word][$time] as $w => $c) {
-                                                                            $inc .= "$w ($c), ";
-                                                                        }
-                                                                        $inc = substr($inc, 0, -2);
-                                                                    } else
-                                                                        $inc = "";
-                                                                    if (isset($change_out[$word][$time])) {
-                                                                        $outc = "";
-                                                                        foreach ($change_out[$word][$time] as $w => $c) {
-                                                                            $outc .= "$w ($c), ";
-                                                                        }
-                                                                        $outc = substr($outc, 0, -2);
-                                                                    } else
-                                                                        $outc = "";
-                                                                    if (isset($stable[$word][$time])) {
-                                                                        $stablec = array();
-                                                                        foreach ($stable[$word][$time] as $w) {
-                                                                            $stablec[] = $w;
-                                                                        }
-                                                                        $stablec = implode(", ", $stablec);
-                                                                    } else
-                                                                        $stablec = "";
-                                                                    $prof = "";
-                                                                    foreach ($profile as $w => $c)
-                                                                        $prof .= "$w ($c), ";
-                                                                    $prof = substr($prof, 0, -2);
-                                                                    if (isset($degree[$word][$time]))
-                                                                        $deg = $degree[$word][$time]; else
-                                                                        $deg = "";
-                                                                    if (isset($cos_sim[$word][$time]))
-                                                                        $cs = $cos_sim[$word][$time]; else
-                                                                        $cs = "";
-                                                                    $out .= $word . "\t" . $time . "\t" . $deg . "\t" . $cs . "\t" . $prof . "\t" . $inc . "\t" . $outc . "\t" . $stablec . "\n";
-                                                                }
-                                                            }
-
-
-                                                            file_put_contents($filename, chr(239) . chr(187) . chr(191) . $out);
-                                                            echo '<fieldset class="if_parameters">';
-                                                            echo '<legend>Your co-hashtag variability File</legend>';
-                                                            echo '<p><a href="' . str_replace("#", urlencode("#"), str_replace("\"", "%22", $filename)) . '">' . $filename . '</a></p>';
-                                                            echo '</fieldset>';
-                                                        }
 
 // calculates cosine measure between two frequency vectors
-                                                        function cosineSimilarity($v1, $v2) {
-                                                            $l1 = $l2 = 0;
-                                                            foreach ($v1 as $word => $frequency)
-                                                                $l1 += pow($frequency, 2);
-                                                            $l1 = sqrt($l1);
-                                                            foreach ($v2 as $word => $frequency)
-                                                                $l2 += pow($frequency, 2);
-                                                            $l2 = sqrt($l2);
+                                                            function cosineSimilarity($v1, $v2) {
+                                                                $l1 = $l2 = 0;
+                                                                foreach ($v1 as $word => $frequency)
+                                                                    $l1 += pow($frequency, 2);
+                                                                $l1 = sqrt($l1);
+                                                                foreach ($v2 as $word => $frequency)
+                                                                    $l2 += pow($frequency, 2);
+                                                                $l2 = sqrt($l2);
 
-                                                            $dot_product = 0;
-                                                            foreach ($v1 as $word => $frequency) {
-                                                                if (isset($v2[$word])) {
-                                                                    $dot_product += ($v2[$word] * $frequency);
-                                                                }
-                                                            }
-
-                                                            $cos_sim = $dot_product / ($l1 * $l2);
-
-                                                            return $cos_sim;
-                                                        }
-
-// detects gradient of change between two frequency vectors
-                                                        function change($v1, $v2) {
-                                                            $change = array();
-                                                            foreach ($v1 as $word => $freq) {
-                                                                if (isset($v2[$word])) {
-                                                                    $c = $freq - $v2[$word];
-                                                                    $norm = ($freq + $v2[$word]) / 2;
-                                                                } else {
-                                                                    $c = $freq;
-                                                                    $norm = $freq / 2;
-                                                                }
-                                                                $change[$word] = $c / $norm;
-                                                            }
-                                                            arsort($change);
-                                                            return $change;
-                                                        }
-                                                        ?>
-
-                                                        <?php
-                                                        /*
-                                                         * Uses elaborate coword implementation on tools.digitalmethods.net/beta/coword
-                                                         * This works via persistent objects = SLOW but does not run out of memory
-                                                         *
-                                                         * @todo test
-                                                         * @todo extract variability
-                                                         *
-                                                         * @deprecated, just leaving this in for the curl call
-                                                         */
-
-                                                        function cohashtagsViaDatabase($sqlresults, $filename) {
-                                                            // make arrays of tweets per day
-                                                            print "collecting<br/>";
-                                                            flush();
-                                                            $word_frequencies = array();
-                                                            while ($data = mysql_fetch_assoc($sqlresults)) { // @todo, new scheme of things
-                                                                // preprocess
-                                                                preg_match_all("/(#.+?)[" . implode("|", $punctuation) . "]/", strtolower($data["text"]), $text, PREG_PATTERN_ORDER);
-                                                                $text = trim(implode(" ", $text[1]));
-                                                                if (!empty($text)) {
-                                                                    // store per day
-                                                                    $dataPerDay[strftime("%Y-%m-%d", $data['time'])][] = $text;
-
-                                                                    $words = explode(" ", $text);
-                                                                    $wcvcount = count($words);
-                                                                    for ($i = $wcvcount - 1; $i > 0; $i--) {
-                                                                        if (!isset($word_frequencies[$words[$i]]))
-                                                                            $word_frequencies[$words[$i]] = 0;
-                                                                        $word_frequencies[$words[$i]]++;
+                                                                $dot_product = 0;
+                                                                foreach ($v1 as $word => $frequency) {
+                                                                    if (isset($v2[$word])) {
+                                                                        $dot_product += ($v2[$word] * $frequency);
                                                                     }
                                                                 }
+
+                                                                $cos_sim = $dot_product / ($l1 * $l2);
+
+                                                                return $cos_sim;
                                                             }
 
-                                                            foreach ($dataPerDay as $day => $texts) {
-                                                                print count($texts) . " " . $day . "<br/>";
+// detects gradient of change between two frequency vectors
+                                                            function change($v1, $v2) {
+                                                                $change = array();
+                                                                foreach ($v1 as $word => $freq) {
+                                                                    if (isset($v2[$word])) {
+                                                                        $c = $freq - $v2[$word];
+                                                                        $norm = ($freq + $v2[$word]) / 2;
+                                                                    } else {
+                                                                        $c = $freq;
+                                                                        $norm = $freq / 2;
+                                                                    }
+                                                                    $change[$word] = $c / $norm;
+                                                                }
+                                                                arsort($change);
+                                                                return $change;
+                                                            }
+                                                            ?>
 
-                                                                if (!defined('ANALYSIS_URL'))
-                                                                    die('define ANALYSIS_URL');
-                                                                $url = COWORD_URL;
+                                                            <?php
+                                                            /*
+                                                             * Uses elaborate coword implementation on tools.digitalmethods.net/beta/coword
+                                                             * This works via persistent objects = SLOW but does not run out of memory
+                                                             *
+                                                             * @todo test
+                                                             * @todo extract variability
+                                                             *
+                                                             * @deprecated, just leaving this in for the curl call
+                                                             */
 
-                                                                $params = array(
-                                                                    'text_json' => json_encode($texts),
-                                                                    'stopwordList' => 'all',
-                                                                    //'max_document_frequency' => 90,
-                                                                    'min_frequency' => 0, // 5 per avg of 5000 tweets
+                                                            function cohashtagsViaDatabase($sqlresults, $filename) {
+                                                                // make arrays of tweets per day
+                                                                print "collecting<br/>";
+                                                                flush();
+                                                                $word_frequencies = array();
+                                                                while ($data = mysql_fetch_assoc($sqlresults)) { // @todo, new scheme of things
+                                                                    // preprocess
+                                                                    preg_match_all("/(#.+?)[" . implode("|", $punctuation) . "]/", strtolower($data["text"]), $text, PREG_PATTERN_ORDER);
+                                                                    $text = trim(implode(" ", $text[1]));
+                                                                    if (!empty($text)) {
+                                                                        // store per day
+                                                                        $dataPerDay[strftime("%Y-%m-%d", $data['time'])][] = $text;
+
+                                                                        $words = explode(" ", $text);
+                                                                        $wcvcount = count($words);
+                                                                        for ($i = $wcvcount - 1; $i > 0; $i--) {
+                                                                            if (!isset($word_frequencies[$words[$i]]))
+                                                                                $word_frequencies[$words[$i]] = 0;
+                                                                            $word_frequencies[$words[$i]]++;
+                                                                        }
+                                                                    }
+                                                                }
+
+                                                                foreach ($dataPerDay as $day => $texts) {
+                                                                    print count($texts) . " " . $day . "<br/>";
+
+                                                                    if (!defined('ANALYSIS_URL'))
+                                                                        die('define ANALYSIS_URL');
+                                                                    $url = COWORD_URL;
+
+                                                                    $params = array(
+                                                                        'text_json' => json_encode($texts),
+                                                                        'stopwordList' => 'all',
+                                                                        //'max_document_frequency' => 90,
+                                                                        'min_frequency' => 0, // 5 per avg of 5000 tweets
 //            'threshold_of_associations' => 0.2,
-                                                                    'options[]' => 'urls, remove_stopwords',
-                                                                );
+                                                                        'options[]' => 'urls, remove_stopwords',
+                                                                    );
 
-                                                                // @todo, think through the inclusion of the probability of association
-                                                                // @todo, think through changes w.r.t. coword (instead of cohashtag)
-                                                                //if (isset($_GET['probabilityOfAssociation']) && !empty($_GET['probabilityOfAssociation'])) {
-                                                                //    $params['options'] = 'urls, remove_stopwords, probabilityOfAssociation';
-                                                                //}
+                                                                    // @todo, think through the inclusion of the probability of association
+                                                                    // @todo, think through changes w.r.t. coword (instead of cohashtag)
+                                                                    //if (isset($_GET['probabilityOfAssociation']) && !empty($_GET['probabilityOfAssociation'])) {
+                                                                    //    $params['options'] = 'urls, remove_stopwords, probabilityOfAssociation';
+                                                                    //}
 
-                                                                $ch = curl_init();
-                                                                curl_setopt($ch, CURLOPT_URL, $url);
-                                                                curl_setopt($ch, CURLOPT_POST, count($params));
-                                                                curl_setopt($ch, CURLOPT_POSTFIELDS, $params);
-                                                                curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
-                                                                curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE);
-                                                                curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
-                                                                $json = curl_exec($ch);
-                                                                curl_close($ch);
+                                                                    $ch = curl_init();
+                                                                    curl_setopt($ch, CURLOPT_URL, $url);
+                                                                    curl_setopt($ch, CURLOPT_POST, count($params));
+                                                                    curl_setopt($ch, CURLOPT_POSTFIELDS, $params);
+                                                                    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
+                                                                    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE);
+                                                                    curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+                                                                    $json = curl_exec($ch);
+                                                                    curl_close($ch);
 
-                                                                $stuff = json_decode(stripslashes($json));
-                                                                if (empty($stuff) || !$stuff)
-                                                                    print "<b>Nothing found for $time</b><br/>";
+                                                                    $stuff = json_decode(stripslashes($json));
+                                                                    if (empty($stuff) || !$stuff)
+                                                                        print "<b>Nothing found for $time</b><br/>";
 
-                                                                $this->series[$time] = json_decode($json);
+                                                                    $this->series[$time] = json_decode($json);
+                                                                }
+
+                                                                // make GEXF time series
+                                                                $gexf = $cw->gexfTimeSeries(str_replace($resultsdir, "", $filename), $word_frequencies);
+                                                                file_put_contents($filename, $gexf);
                                                             }
-
-                                                            // make GEXF time series
-                                                            $gexf = $cw->gexfTimeSeries(str_replace($resultsdir, "", $filename), $word_frequencies);
-                                                            file_put_contents($filename, $gexf);
-                                                        }
-                                                        ?>
+                                                            ?>
