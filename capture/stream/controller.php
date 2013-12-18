@@ -5,48 +5,71 @@ if ($argc < 1)
     die;
 
 include_once("../../config.php");
+include "../../common/functions.php";        // load base functions file
+include "../common/functions.php";           // load capture function file
 
-$idletime = 300;
+$dbh = pdo_connect();
+create_error_logs($dbh);
+//$dbh = null;                                 // https://bugs.php.net/bug.php?id=62065
 
-$pid = 0;
-$running = false;
-if (file_exists(BASE_FILE . "capture/stream/logs/procinfo")) {
-    $procfile = file_get_contents(BASE_FILE . "capture/stream/logs/procinfo");
+$roles = unserialize(CAPTUREROLES);
 
-    $tmp = explode("|", $procfile);
-    $pid = $tmp[0];
-    $last = $tmp[1];
+foreach ($roles as $role) {
 
-    // check if script with pid is still runnning
-    exec("ps -p " . $pid . " | wc -l", $out);
-    $out = trim($out[0]);
-    if ($out == 2)
-        $running = true;
+     if (defined('IDLETIME')) {
+          $idletime = IDLETIME;
+     } else {
+	     $idletime = 600;
+     }
 
-    // check whether the process has been idle for too long
-    logit("controller.log", "script called - pid:" . $pid . "  idle:" . (time() - $last));
-    if ($running && ( $last < time() - $idletime)) {
+	$pid = 0;
+	$running = false;
+	if (file_exists(BASE_FILE . "proc/$role.procinfo")) {
+	    $procfile = file_get_contents(BASE_FILE . "proc/$role.procinfo");
 
-        exec("kill " . $pid);
+	    $tmp = explode("|", $procfile);
+	    $pid = $tmp[0];
+	    $last = $tmp[1];
 
-        logit("controller.log", "script was idle for more than " . $idletime . " seconds - killing and starting");
-        mail($mail_to,"DMI-TCAT controller killed a process","script was idle for more than " . $idletime . " seconds - killing and starting");
+	    // check if script with pid is still runnning
+	    exec("ps -p " . $pid . " | wc -l", $out);
+	    $out = trim($out[0]);
+	    if ($out == 2)
+          $running = true;
 
-        sleep(2);
+	    // check whether the process has been idle for too long
+	    logit("controller.log", "script $role called - pid:" . $pid . "  idle:" . (time() - $last));
+         if ($last < (time() - $idletime)) {
 
-        passthru("php " . BASE_FILE . "capture/stream/capture.php > /dev/null 2>&1 &");
-    }
-}
-if (!$running) {
+               // record confirmed gap
+               gap_record($role, $last, time());
 
-    logit("controller.log", "script was not running - starting");
+               if ($running) {
+          
+                   exec("kill -s SIGTERM " . $pid);
 
-    passthru("php " . BASE_FILE . "capture/stream/capture.php > /dev/null 2>&1 &");
+                   logit("controller.log", "script $role was idle for more than " . $idletime . " seconds - killing and starting");
+                   mail($mail_to,"DMI-TCAT controller killed a process","script $role was idle for more than " . $idletime . " seconds - killing and starting");
+
+                   sleep(2);
+
+                   passthru("php " . BASE_FILE . "capture/stream/$role.php > /dev/null 2>&1 &");
+                            
+               }
+         }
+	}
+	if (!$running) {
+
+	    logit("controller.log", "script $role was not running - starting");
+
+	    passthru("php " . BASE_FILE . "capture/stream/$role.php > /dev/null 2>&1 &");
+	}
+
 }
 
 function logit($file, $message) {
 
-    $file = BASE_FILE . "capture/stream/logs/" . $file;
+    $file = BASE_FILE . "logs/" . $file;
     $message = date("Y-m-d H:i:s") . " " . $message . "\n";
     file_put_contents($file, $message, FILE_APPEND);
 }
