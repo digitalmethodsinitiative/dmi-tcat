@@ -1,0 +1,6 @@
+Options -Indexes
+
+<FilesMatch "\.(procinfo)$">
+    Order Deny,Allow
+    Deny from all
+</FilesMatch>
