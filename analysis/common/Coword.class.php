@@ -193,58 +193,60 @@ class Coword {
     // removes connections with a degree < $mindegree
     // @todo, does not check whether after application there are still words left without connections // only necessary if $this->words is requested
     public function applyMinDegree($mindegree) {
-        foreach($this->cowords as $word => $connections) {
-            foreach($connections as $coword => $freq) {
-                if($freq < $mindegree) {
+        foreach ($this->cowords as $word => $connections) {
+            foreach ($connections as $coword => $freq) {
+                if ($freq < $mindegree) {
                     unset($this->cowords[$word][$coword]);
-                    if(empty($this->cowords[$word]))
-                        unset($this->cowords[$word]);
                 }
             }
+            if (empty($this->cowords[$word]))
+                unset($this->cowords[$word]);
         }
     }
 
-	// removes connections with a frequency < $minfreq
+    // removes connections with a frequency < $minfreq
     // @todo, does not check whether after application there are still words left without connections // only necessary if $this->words is requested
     public function applyMinFreq($minfreq) {
-
-        foreach($this->cowords as $word => $connections) {
-            foreach($connections as $coword => $freq) {
-				if($this->wordFrequency[$coword] < $minfreq) {
+        foreach ($this->cowords as $word => $connections) {
+            foreach ($connections as $coword => $freq) {
+                if ($this->wordFrequency[$coword] < $minfreq) {
                     unset($this->cowords[$word][$coword]);
-				}
-				if($this->wordFrequency[$word] < $minfreq) {
-					unset($this->cowords[$word]);
-				}
+                }
+            }
+            if ($this->wordFrequency[$word] < $minfreq) {
+                unset($this->cowords[$word]);
             }
         }
     }
 
+    // @todo, gets too little
+    public function applyTopUnits($topu) {
 
-	 public function applyTopUnits($topu) {
+        // create a list of the top n keywords and use that to filter out all the others
+        $toplist = $this->wordFrequency;
+        arsort($toplist);
+        // getting the frequency of the top n word to solve cutoff problem when two words have the same frequency
+        $toplist = array_slice($toplist, $topu, 1);
+        $topvalues = array_values($toplist);
+        $minfreq = array_shift($topvalues);
 
-		// create a list of the top n keywords and use that to filter out all the others
-		$toplist = $this->wordFrequency;
-		arsort($toplist);
-		//print_r($toplist);
-		$toplist = array_slice($toplist,$topu,1,true);
-		//print_r($toplist);
-		$minfreq = array_shift(array_values($toplist));			// getting the frequency of the top n word to solve cutoff problem when two words have the same frequency
-
-		//print_r($minfreq);
-
-		foreach($this->cowords as $word => $connections) {
-            foreach($connections as $coword => $freq) {
-				if($this->wordFrequency[$coword] < $minfreq) {
+        foreach ($this->cowords as $word => $connections) {
+            foreach ($connections as $coword => $freq) {
+                if (isset($this->wordFrequency[$coword]) && $this->wordFrequency[$coword] < $minfreq) { // @todo, utf-8 encoded chars don't exist as keys
                     unset($this->cowords[$word][$coword]);
-				}
-				if($this->wordFrequency[$word] < $minfreq) {
-					unset($this->cowords[$word]);
-				}
+                }
+            }
+            if (isset($this->wordFrequency[$word]) && $this->wordFrequency[$word] < $minfreq) {
+                foreach ($connections as $coword => $freq) {
+                    if ($freq >= $minfreq) {
+                        if (!isset($this->cowords[$coword]))
+                            $this->cowords[$coword] = array();
+                    }
+                }
+                unset($this->cowords[$word]);
             }
         }
     }
-
 
     function getWords() {
         arsort($this->words);
@@ -290,18 +292,26 @@ class Coword {
         $gexf->setCreator("tools.digitalmethods.net");
 
         foreach ($this->cowords as $word => $cowords) {
-            foreach ($cowords as $coword => $coword_frequency) {
+            if (empty($cowords)) {
                 $node1 = new GexfNode($word);
                 if (isset($this->words[$word]))
                     $node1->addNodeAttribute("word_frequency", $this->words[$word], $type = "int");
                 $this->addNodeExtraNodeAttributes($node1, $word);
                 $gexf->addNode($node1);
-                $node2 = new GexfNode($coword);
-                if (isset($this->words[$coword]))
-                    $node2->addNodeAttribute("word_frequency", $this->words[$coword], $type = "int");
-                $this->addNodeExtraNodeAttributes($node2, $coword);
-                $gexf->addNode($node2);
-                $edge_id = $gexf->addEdge($node1, $node2, $coword_frequency);
+            } else {
+                foreach ($cowords as $coword => $coword_frequency) {
+                    $node1 = new GexfNode($word);
+                    if (isset($this->words[$word]))
+                        $node1->addNodeAttribute("word_frequency", $this->words[$word], $type = "int");
+                    $this->addNodeExtraNodeAttributes($node1, $word);
+                    $gexf->addNode($node1);
+                    $node2 = new GexfNode($coword);
+                    if (isset($this->words[$coword]))
+                        $node2->addNodeAttribute("word_frequency", $this->words[$coword], $type = "int");
+                    $this->addNodeExtraNodeAttributes($node2, $coword);
+                    $gexf->addNode($node2);
+                    $edge_id = $gexf->addEdge($node1, $node2, $coword_frequency);
+                }
             }
         }
 
