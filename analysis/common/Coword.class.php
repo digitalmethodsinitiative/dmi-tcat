@@ -2,7 +2,7 @@
 
 /*
  * Simple coword calculation, all in memory
- * 
+ *
  * WARNING: Because of PHP's very very very bad UTF-8 support, splitting tweets into words only works reliably for tweets consisting solely of latin chars (i.e. English)
  */
 if (0) {
@@ -203,6 +203,48 @@ class Coword {
             }
         }
     }
+
+	// removes connections with a frequency < $minfreq
+    // @todo, does not check whether after application there are still words left without connections // only necessary if $this->words is requested
+    public function applyMinFreq($minfreq) {
+
+        foreach($this->cowords as $word => $connections) {
+            foreach($connections as $coword => $freq) {
+				if($this->wordFrequency[$coword] < $minfreq) {
+                    unset($this->cowords[$word][$coword]);
+				}
+				if($this->wordFrequency[$word] < $minfreq) {
+					unset($this->cowords[$word]);
+				}
+            }
+        }
+    }
+
+
+	 public function applyTopUnits($topu) {
+
+		// create a list of the top n keywords and use that to filter out all the others
+		$toplist = $this->wordFrequency;
+		arsort($toplist);
+		//print_r($toplist);
+		$toplist = array_slice($toplist,$topu,1,true);
+		//print_r($toplist);
+		$minfreq = array_shift(array_values($toplist));			// getting the frequency of the top n word to solve cutoff problem when two words have the same frequency
+
+		//print_r($minfreq);
+
+		foreach($this->cowords as $word => $connections) {
+            foreach($connections as $coword => $freq) {
+				if($this->wordFrequency[$coword] < $minfreq) {
+                    unset($this->cowords[$word][$coword]);
+				}
+				if($this->wordFrequency[$word] < $minfreq) {
+					unset($this->cowords[$word]);
+				}
+            }
+        }
+    }
+
 
     function getWords() {
         arsort($this->words);

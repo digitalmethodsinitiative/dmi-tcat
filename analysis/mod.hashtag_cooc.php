@@ -25,7 +25,7 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
         <?php
         validate_all_variables();
         if(empty($esc['shell']['minf'])) $esc['shell']['minf'] = 4;
-        
+
         include_once('common/Coword.class.php');
         $coword = new Coword;
         $coword->countWordOncePerDocument = FALSE;
@@ -63,11 +63,20 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
             $coword->addWord($res['h2']);
             $coword->addCoword($res['h1'], $res['h2'], 1);
         }
+
         unset($coword->words); // as we are adding words manually the frequency would be messed up
-        if ($esc['shell']['minf'] > 0)
-            $coword->applyMinDegree($esc['shell']['minf']);
-        
-        $filename = get_filename_for_export("hashtagCooc",(isset($_GET['probabilityOfAssociation']) ? "_normalizedAssociationWeight" : "") . "_minDegreeOf".$esc['shell']['minf'],"gexf");
+        if ($esc['shell']['minf'] > 0 && !($esc['shell']['topu'] > 0)) {
+			$coword->applyMinFreq($esc['shell']['minf']);
+            //$coword->applyMinDegree($esc['shell']['minf']);	// Berno: method no longer in use, remains unharmed
+             $filename = get_filename_for_export("hashtagCooc",(isset($_GET['probabilityOfAssociation']) ? "_normalizedAssociationWeight" : "") . "_minFreqOf".$esc['shell']['minf'],"gexf");
+		} elseif ($esc['shell']['topu'] > 0) {
+			$coword->applyTopUnits($esc['shell']['topu']);
+			$filename = get_filename_for_export("hashtagCooc",(isset($_GET['probabilityOfAssociation']) ? "_normalizedAssociationWeight" : "") . "_Top".$esc['shell']['topu'],"gexf");
+		} else {
+			 $filename = get_filename_for_export("hashtagCooc",(isset($_GET['probabilityOfAssociation']) ? "_normalizedAssociationWeight" : ""),"gexf");
+		}
+
+
         file_put_contents($filename, $coword->getCowordsAsGexf($filename));
 
         echo '<fieldset class="if_parameters">';

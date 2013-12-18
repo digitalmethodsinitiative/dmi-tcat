@@ -2,125 +2,123 @@
 <head>
 	<title>DMI Twitter Analytics Status</title>
 
+	<script type='text/javascript' src='../analysis/scripts/jquery-1.7.1.min.js'></script>
+	<script type="text/javascript" src="../analysis/scripts/tablesorter/jquery.tablesorter.min.js"></script>
+
+	<script type="text/javascript">
+
+		$(document).ready(function() {
+			$("#thetable").tablesorter();
+		});
+
+		function setArchive(_bin) {
+
+			_answer = window.confirm("Are you sure that you want to stop capturing the '" + _bin + "' bin?");
+
+			if(_answer == true) {
+				alert("aiight!");
+			}
+
+		}
+
+		function setModify(_bin,_keywords) {
+
+			_answer = window.prompt("modify keywords?",_keywords);
+
+			if(_answer == true) {
+				alert("aiight!");
+			}
+
+		}
+
+	</script>
+
 	<style type="text/css">
 
-	body,html { font-family:Arial, Helvetica, sans-serif; font-size:11px; }
+		body,html { font-family:Arial, Helvetica, sans-serif; font-size:12px; }
 
-	table {
-		/* border: 1px solid black; */
-		font-size:12px;
-	}
-
-	th {
-		background-color: #ccc;
-		padding:5px;
-	}
-
-	td {
-		background-color: #eee;
-		padding:5px;
-	}
+		table { font-size:11px; }
+		th { background-color: #ccc; padding:5px; }
+		th.toppad { font-size:14px; text-align:left; padding-top:20px; background-color:#fff; }
+		td { background-color: #eee; padding:5px; }
+		.keywords { width:400px; }
 
 	</style>
+
 
 </head>
 
 <body>
 
-<h1>DMI Twitter Analytics Status</h1>
-
-<table>
+<h1>DMI Twitter Capture and Analysis Toolset - Capture Config</h1>
 
 <?php
 
-include "../config.php";						// load base config file
-include "../querybins.php";						// load base config file
-include "../common/functions.php";				// load base functions file
-include "common/functions.php";
+require_once '../analysis/common/config.php';
+require_once '../analysis/common/functions.php';
 
-dbconnect();
+$datasets = get_all_datasets();
+//print_r($datasets);
 
-$sql = "SHOW TABLES";
-$sqlresults = mysql_query($sql);
+$count = get_total_nr_of_tweets();
+echo '' . number_format($count, 0, ",", ".") . ' tweets archived so far (and counting)<br /><br />';
 
-$tabledata = array();
+echo 'add query bin';
+echo '<div><form>form</form><div>';
 
-while($data = mysql_fetch_assoc($sqlresults)) {
 
-	if(preg_match("/_tweets/",$data["Tables_in_twittercapture"])) {
-
-		$sql2 = "SELECT count(*) as count,MIN(created_at) as mindate,MAX(created_at) as maxdate FROM " . $data["Tables_in_twittercapture"];
-
-		//echo $sql2;
-
-		$sql2results = mysql_query($sql2);
-
-		$tabledata[preg_replace("/_tweets/", "", $data["Tables_in_twittercapture"])] = mysql_fetch_assoc($sql2results);
-
-		//print_r($data2);
+$ordered_datasets = array();
+foreach($datasets as $key => $set) {
+	if (preg_match("/ytk_/", $key)) {
+		$ordered_datasets["ytk imports"][$key] = $set;
+	} elseif (preg_match("/user_/", $key)) {
+		$ordered_datasets["user captures"][$key] = $set;
+	} elseif(preg_match("/sample_/", $key)) {
+		$ordered_datasets["one percent samples"][$key] = $set;
+	} else {
+		$ordered_datasets["keyword captures"][$key] = $set;
 	}
 }
 
-//print_r($tabledata);
 
-/*
 
- *
-include_once('config.php');
+echo '<table id="thetable">';
 
-list($count_q,$count_qb) = count_bins($querybins);
-print "Active: $count_q queries, $count_qb bins\n";
-list($count_q,$count_qb) = count_bins($queryarchives);
-print "Archived: $count_q queries, $count_qb bins\n";
+foreach($ordered_datasets as $groupname => $group) {
 
-function count_bins($query_bins) {
-	$count_q = 0;
-	foreach($query_bins as $bin => $queries) {
-		$count_q+=count(explode(",",$queries));
-	}
-	return array($count_q,count($query_bins));
+
+ 	echo '<thead>';
+	echo '<tr><th colspan="6" class="toppad">'.$groupname.'</th></tr>';
+	echo '<tr>';
+	echo '<th>querybin</th>';
+	echo '<th class="keywords">queries</th>';
+	echo '<th>no. tweets</th>';
+	echo '<th>startdate</th>';
+	echo '<th>enddate</th>';
+	echo '<th></th>';
+	echo '<th></th>';
+	echo '</tr>';
+ 	echo '</thead>';
+	echo '<tbody>';
+
+
+    foreach ($group as $key => $set) {
+
+		echo '<tr>';
+ 		echo '<td>'.$set["bin"].'</td>';
+		echo '<td class="keywords">'.preg_replace("/,\s*/",", ",$set["keywords"]).'</td>';
+		echo '<td>'.$set["notweets"].'</td>';
+		echo '<td>'.$set['mintime'].'</td>';
+		echo '<td>'.$set['maxtime'].'</td>';
+		echo '<td><a href="" onclick="setModify(\''.$set["bin"].'\',\''.addslashes($set["keywords"]).'\'); return false;">modify</a></td>';
+		echo '<td><a href="" onclick="setArchive(\''.$set["bin"].'\'); return false;">archive</a></td>';
+		echo '</tr>';
+    }
+
+	echo '</tbody>';
 }
 
- */
-
-
-
-echo '<tr>';
-echo "<th>Binname</th>";
-echo "<th>Bindetails</th>";
-echo "</tr>";
-
-foreach($querybins as $binname => $binterms) {
-
-	echo "<tr>";
-	echo "<td>" . $binname . "</td>";
-	echo "<td>";
-
-		echo "<table>";
-		echo "<tr>";
-		echo "<td>active:</td>";
-		echo "<td>yes</td>";
-		echo "</tr>";
-
-		echo "<tr>";
-		echo "<td>keywords:</td>";
-		echo "<td>" . preg_replace("/,/", ", ", $binterms) . "</td>";
-		echo "</tr>";
-
-		echo "<tr>";
-		echo "<td>daterange:</td>";
-		echo '<td>'.$tabledata[$binname]["mindate"].' - '.$tabledata[$binname]["maxdate"].'</td>';
-		echo "</tr>";
-
-		echo "<tr>";
-		echo "<td>tweets captured:</td>";
-		echo '<td>'.$tabledata[$binname]["count"].'</td>';
-		echo "</tr>";
-		echo "</table>";
-
-	echo "</td>";
-	echo "</tr>";
-}
+echo '</table><br /><br />';
 
 ?>
 
