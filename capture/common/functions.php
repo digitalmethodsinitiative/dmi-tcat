@@ -32,6 +32,18 @@ function pdo_connect() {
     return $dbh;
 }
 
+function create_error_logs($dbh) {
+
+     $sql = 'create table if not exists tcat_error_ratelimit ( id bigint auto_increment, type varchar(32), start datetime not null, end datetime not null, tweets bigint not null, primary key(id), index(type), index(start), index(end) )';
+     $h = $dbh->prepare($sql);
+     $h->execute();
+
+     $sql = 'create table if not exists tcat_error_gap ( id bigint auto_increment, type varchar(32), start datetime not null, end datetime not null, primary key(id), index(type), index(start), index(end) )';
+     $h = $dbh->prepare($sql);
+     $h->execute();
+
+}
+
 function create_bin($bin_name, $dbh) {
 
     $sql = "CREATE TABLE IF NOT EXISTS " . $bin_name . "_hashtags (
@@ -135,6 +147,50 @@ function create_bin($bin_name, $dbh) {
 
     $create_urls = $dbh->prepare($sql);
     $create_urls->execute();
+}
+
+/*
+ * Record a ratelimit disturbance
+ */
+function ratelimit_record($ratelimit, $ex_start) {
+     $ts_ex_start = toDateTime($ex_start);
+     $ts_ex_end = toDateTime(time());
+     $sql = "insert into tcat_error_ratelimit ( type, start, end, tweets ) values ( '" . CAPTURE . "', '" . $ts_ex_start . "', '" . $ts_ex_end . "', $ratelimit )";
+     mysql_query($sql);
+}
+
+/*
+ * Record a gap in the data
+ */
+function gap_record($role, $ustart, $uend) {
+     $ts_start = toDateTime($ustart);
+     $ts_end = toDateTime($uend);
+     $sql = "insert into tcat_error_gap ( type, start, end ) values ( '" . $role . "', '" . $ts_start . "', '" . $ts_end . "' )";
+     mysql_query($sql);
+}
+
+/*
+ * Inform administrator of ratelimit problems
+ */
+function ratelimit_report_problem() {
+     if (defined('RATELIMIT_MAIL_HOURS') && RATELIMIT_MAIL_HOURS > 0) {
+          $sql = "select count(*) as cnt from tcat_error_ratelimit where start > (now() - interval " . RATELIMIT_MAIL_HOURS . " hour)";
+          $result = mysql_query($sql);
+          if ($row = mysql_fetch_assoc($result)) {
+               if (isset($row['cnt']) && $row['cnt'] == 0) {
+                    global $mail_to;
+                    mail( $mail_to,
+                          'DMI-TCAT rate limit has been reached',
+                          'The script running the ' . CAPTURE . ' query has hit a rate limit while talking to the Twitter API. Twitter is not allowing you to track more than 1% of its total traffic at any time. This means that the number of tweets exceeding the barrier are being dropped. Consider reducing the size of your query bins and reducing the number of terms and users you are tracking.' . "\n\n" .
+                          'This may be a temporary or a structural problem. Please look at the webinterface for more details. Rate limit statistics on the website are historic, however. Consider this message indicative of a current issue. This e-mail will not be repeated for at least ' . RATELIMIT_MAIL_HOURS . ' hours.', 'From: no-reply@dmitcat');
+               }
+          }
+     }
+}
+
+
+function toDateTime($unixTimestamp){
+     return date("Y-m-d H:m:s", $unixTimestamp);
 }
 
 /**
