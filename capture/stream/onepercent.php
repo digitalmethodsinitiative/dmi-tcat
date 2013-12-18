@@ -27,7 +27,6 @@ stream();
 function stream() {
 
     global $twitter_consumer_key, $twitter_consumer_secret, $twitter_user_token, $twitter_user_secret, $querybins, $path_local, $lastinsert;
-    global $tmhOAuth;    // we need to access the tmhOAuth object from inside the callback functions (to fetch warnings, metrics)
 
     logit(CAPTURE . ".error.log", "connecting to API socket");
     $pid = getmypid();
@@ -58,7 +57,6 @@ function stream() {
 
 function streamCallback($data, $length, $metrics) {
     global $tweetbucket,$lastinsert;
-    global $tmhOAuth;
     $now = time();
     $data = json_decode($data, true);
     if (isset($data["disconnect"])) {
