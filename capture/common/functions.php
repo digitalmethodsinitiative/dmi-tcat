@@ -172,6 +172,11 @@ function gap_record($role, $ustart, $uend) {
      $dbh = pdo_connect();
      $ts_start = toDateTime($ustart);
      $ts_end = toDateTime($uend);
+     if ($uend - $ustart < 10) {
+          // a less than 10 second gap is usually the result of a software restart/reload
+          // during that restart the tweet buffer is flushed and the gap is very tiny, therefore we ignore this
+          return TRUE;
+     }
      $sql = "insert into tcat_error_gap ( type, start, end ) values ( '" . $role . "', '" . $ts_start . "', '" . $ts_end . "' )";
      /* for debugging */
      logit("controller.log", "gap_record() SQL: $sql");
