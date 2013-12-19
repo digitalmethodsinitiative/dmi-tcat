@@ -16,11 +16,26 @@ $roles = unserialize(CAPTUREROLES);
 
 // first handle all instruction sent by the webinterface to the controller (ie. the instruction queue)
 
+$commands = array();
 foreach ($roles as $role) {
-     $sql = "select task, instruction from tcat_controller_tasklist where task = '$role' order by id asc";
-     foreach ($dbh->query($sql) as $row) {
-	    logit("controller.log", "received instruction to execute '" . $row['instruction'] . "' for script $role");
-          switch($row['instruction']) {
+     $commands[$role] = array();
+}
+
+$sql = "select task, instruction from tcat_controller_tasklist order by id asc lock in share mode";
+foreach ($dbh->query($sql) as $row) {
+     if (!array_key_exists($row['task'], $commands)) { continue; }
+     $commands[$row['task']][] = $row;
+}
+
+// do not leave any unknown tasks linger
+$sql = 'truncate tcat_controller_tasklist';
+$h = $dbh->prepare($sql);
+$res = $h->execute();
+
+foreach ($roles as $role) {
+     foreach ($commands[$role] as $command) {
+	    logit("controller.log", "received instruction to execute '" . $command['instruction'] . "' for script $role");
+         switch($command['instruction']) {
                case "reload": {
                     // reload configuration for a task
                     controller_reload_config_role($role);
@@ -30,11 +45,6 @@ foreach ($roles as $role) {
           }
     }
 }
-
-// do not leave any unknown tasks linger
-$sql = 'truncate tcat_controller_tasklist';
-$h = $dbh->prepare($sql);
-$res = $h->execute();
 
 foreach ($roles as $role) {
 
