@@ -39,6 +39,7 @@ foreach ($roles as $role) {
 
 	    // check whether the process has been idle for too long
 	    logit("controller.log", "script $role called - pid:" . $pid . "  idle:" . (time() - $last));
+
          if ($last < (time() - $idletime)) {
 
                // record confirmed gap
@@ -46,12 +47,12 @@ foreach ($roles as $role) {
 
                if ($running) {
           
-                   exec("kill -s SIGTERM " . $pid);
+                   posix_kill(SIGTERM, $pid);
 
                    logit("controller.log", "script $role was idle for more than " . $idletime . " seconds - killing and starting");
                    mail($mail_to,"DMI-TCAT controller killed a process","script $role was idle for more than " . $idletime . " seconds - killing and starting");
 
-                   sleep(2);
+                   sleep(6);       // we need some time to allow graceful exit
 
                    passthru("php " . BASE_FILE . "capture/stream/$role.php > /dev/null 2>&1 &");
                             
