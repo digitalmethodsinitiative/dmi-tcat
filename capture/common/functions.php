@@ -153,20 +153,32 @@ function create_bin($bin_name, $dbh) {
  * Record a ratelimit disturbance
  */
 function ratelimit_record($ratelimit, $ex_start) {
+     $dbh = pdo_connect();
      $ts_ex_start = toDateTime($ex_start);
      $ts_ex_end = toDateTime(time());
      $sql = "insert into tcat_error_ratelimit ( type, start, end, tweets ) values ( '" . CAPTURE . "', '" . $ts_ex_start . "', '" . $ts_ex_end . "', $ratelimit )";
-     mysql_query($sql);
+     /* for debugging */
+     logit("controller.log", "ratelimit_record() SQL: $sql");
+     $h = $dbh->prepare($sql);
+     $res = $h->execute();
+     /* for debugging */
+     logit("controller.log", "ratelimit_record() sql result: " . var_export($res, 1));
 }
 
 /*
  * Record a gap in the data
  */
 function gap_record($role, $ustart, $uend) {
+     $dbh = pdo_connect();
      $ts_start = toDateTime($ustart);
      $ts_end = toDateTime($uend);
      $sql = "insert into tcat_error_gap ( type, start, end ) values ( '" . $role . "', '" . $ts_start . "', '" . $ts_end . "' )";
-     mysql_query($sql);
+     /* for debugging */
+     logit("controller.log", "gap_record() SQL: $sql");
+     $h = $dbh->prepare($sql);
+     $res = $h->execute();
+     /* for debugging */
+     logit("controller.log", "gap_record() sql result: " . var_export($res, 1));
 }
 
 /*
@@ -192,6 +204,91 @@ function ratelimit_report_problem() {
 function toDateTime($unixTimestamp){
      return date("Y-m-d H:m:s", $unixTimestamp);
 }
+
+/*
+ * This function returns TRUE if there is an active capture script for role.
+ */
+function check_running_role($role) {
+
+     // is role allowed?
+     if (!defined('CAPTUREROLES')) {
+          // old config did not have this configurability
+          return TRUE;    
+     }
+
+     $roles = unserialize(CAPTUREROLES);
+     if (!in_array($role, $roles)) {
+          return FALSE;
+     }
+
+     // is the appropriate script running?
+     if (file_exists(BASE_FILE . "proc/$role.procinfo")) {
+  
+          $procfile = file_get_contents(BASE_FILE . "proc/$role.procinfo");
+
+          $tmp = explode("|", $procfile);
+          $pid = $tmp[0];
+          $last = $tmp[1];
+
+          if (is_numeric($pid) && $pid > 0) {
+
+               $running = posix_kill($pid, 0);
+               if (posix_get_last_error()==1) {
+                    $running = true;      // running as another user
+               }
+
+               if ($running) {
+                    return TRUE;
+               }
+
+          }
+
+     }
+
+     return FALSE;
+
+}
+
+/*
+ * Force a task to reload it configuration
+ */
+function reload_config_role($role) {
+
+     if (!check_running_role($role)) {
+          return FALSE;
+     }
+
+     if (file_exists(BASE_FILE . "proc/$role.procinfo")) {
+  
+          $procfile = file_get_contents(BASE_FILE . "proc/$role.procinfo");
+
+          $tmp = explode("|", $procfile);
+          $pid = $tmp[0];
+          $last = $tmp[1];
+
+          if (is_numeric($pid) && $pid > 0) {
+
+               logit("controller.log", "enforcing reload of config for $role task");
+               logit("controller.log", "sending a TERM signal to $role task");
+               posix_kill($pid, SIGTERM);
+               sleep(6);
+               logit("controller.log", "starting new instance of $role task");
+               // this command should start the capture task as a detached process and report back its pid
+               $cmd = "/usr/bin/nohup /usr/bin/php " . BASE_FILE . "capture/stream/$role.php > /dev/null & echo $!";
+               /* for debugging */
+               logit("controller.log", "reload_config_role() cmd $cmd");
+               return shell_exec($cmd);
+          }
+
+     }
+
+     return FALSE;
+
+}
+
+
+
+
 
 /**
  * 
