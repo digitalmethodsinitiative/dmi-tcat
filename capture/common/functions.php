@@ -255,9 +255,22 @@ function check_running_role($role) {
 }
 
 /*
- * Force a task to reload it configuration
+ * Inform controller a task wants to update its queries 
  */
-function reload_config_role($role) {
+function web_reload_config_role($role) {
+     $dbh = pdo_connect();
+     $sql = "create table if not exists tcat_controller_tasklist ( id bigint auto_increment, task varchar(32) not null, instruction varchar(255) not null, ts_issued timestamp default current_timestamp, primary key(id) )";
+     $h = $dbh->prepare($sql);
+     $res = $h->execute();
+     $sql = "insert into tcat_controller_tasklist ( task, instruction ) values ( '$role', 'reload' )";
+     $h = $dbh->prepare($sql);
+     return $h->execute();
+}
+
+/*
+ * Force a task to reload it configuration, should be called by the controller process
+ */
+function controller_reload_config_role($role) {
 
      if (!check_running_role($role)) {
           return FALSE;
