@@ -292,7 +292,7 @@ function controller_reload_config_role($role) {
                sleep(6);
                logit("controller.log", "starting new instance of $role task");
                // this command should start the capture task as a detached process and report back its pid
-               $cmd = "/usr/bin/nohup /usr/bin/php " . BASE_FILE . "capture/stream/$role.php > /dev/null & echo $!";
+               $cmd = "/usr/bin/nohup php " . BASE_FILE . "capture/stream/$role.php > /dev/null & echo $!";
                /* for debugging */
                logit("controller.log", "reload_config_role() cmd $cmd");
                return shell_exec($cmd);
