@@ -73,6 +73,9 @@ function stream() {
 
     // output any response we get back AFTER the Stream has stopped -- or it errors
     logit(CAPTURE . ".error.log", "stream stopped - error " . var_export($tmhOAuth, 1));
+
+    logit(CAPTURE . ".error.log", "processing buffer before exit");
+    processstweets($tweetbucket);
 }
 
 function streamCallback($data, $length, $metrics) {

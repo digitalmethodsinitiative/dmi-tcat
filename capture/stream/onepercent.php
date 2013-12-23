@@ -53,6 +53,9 @@ function stream() {
 
     // output any response we get back AFTER the Stream has stopped -- or it errors
     logit(CAPTURE . ".error.log", "stream stopped - error " . var_export($tmhOAuth, 1));
+ 
+    logit(CAPTURE . ".error.log", "processing buffer before exit");
+    processstweets($tweetbucket);
 }
 
 function streamCallback($data, $length, $metrics) {
@@ -126,35 +129,35 @@ function processtweets($tweetbucket) { // @todo, should use tweet entity in capt
          $t = array();
          $t["id"] = $data["id_str"];
          $t["created_at"] = date("Y-m-d H:i:s", strtotime($data["created_at"]));
-         $t["from_user_name"] = addslashes($data["user"]["screen_name"]);
+         $t["from_user_name"] = mysql_real_escape_string($data["user"]["screen_name"]);
          $t["from_user_id"] = $data["user"]["id"];
          $t["from_user_lang"] = $data["user"]["lang"];
          $t["from_user_tweetcount"] = $data["user"]["statuses_count"];
          $t["from_user_followercount"] = $data["user"]["followers_count"];
          $t["from_user_friendcount"] = $data["user"]["friends_count"];
          $t["from_user_listed"] = $data["user"]["listed_count"];
-         $t["from_user_realname"] = addslashes($data["user"]["name"]);
+         $t["from_user_realname"] = mysql_real_escape_string($data["user"]["name"]);
          $t["from_user_utcoffset"] = $data["user"]["utc_offset"];
-         $t["from_user_timezone"] = addslashes($data["user"]["time_zone"]);
-         $t["from_user_description"] = addslashes($data["user"]["description"]);
-         $t["from_user_url"] = addslashes($data["user"]["url"]);
+         $t["from_user_timezone"] = mysql_real_escape_string($data["user"]["time_zone"]);
+         $t["from_user_description"] = mysql_real_escape_string($data["user"]["description"]);
+         $t["from_user_url"] = mysql_real_escape_string($data["user"]["url"]);
          $t["from_user_verified"] = $data["user"]["verified"];
          $t["from_user_profile_image_url"] = $data["user"]["profile_image_url"];
-         $t["source"] = addslashes($data["source"]);
-         $t["location"] = addslashes($data["user"]["location"]);
+         $t["source"] = mysql_real_escape_string($data["source"]);
+         $t["location"] = mysql_real_escape_string($data["user"]["location"]);
          $t["geo_lat"] = 0;
          $t["geo_lng"] = 0;
          if ($data["geo"] != null) {
              $t["geo_lat"] = $data["geo"]["coordinates"][0];
              $t["geo_lng"] = $data["geo"]["coordinates"][1];
          }
-         $t["text"] = addslashes($data["text"]);
+         $t["text"] = mysql_real_escape_string($data["text"]);
          $t["retweet_id"] = null;
          if (isset($data["retweeted_status"])) {
              $t["retweet_id"] = $data["retweeted_status"]["id_str"];
          }
          $t["to_user_id"] = $data["in_reply_to_user_id_str"];
-         $t["to_user_name"] = addslashes($data["in_reply_to_screen_name"]);
+         $t["to_user_name"] = mysql_real_escape_string($data["in_reply_to_screen_name"]);
          $t["in_reply_to_status_id"] = $data["in_reply_to_status_id_str"];
          $t["filter_level"] = $data["filter_level"];
 
@@ -167,7 +170,7 @@ function processtweets($tweetbucket) { // @todo, should use tweet entity in capt
                  $h["created_at"] = $t["created_at"];
                  $h["from_user_name"] = $t["from_user_name"];
                  $h["from_user_id"] = $t["from_user_id"];
-                 $h["text"] = addslashes($hashtag["text"]);
+                 $h["text"] = mysql_real_escape_string($hashtag["text"]);
 
                  $list_hashtags[] = "('" . implode("','", $h) . "')";
              }
@@ -181,7 +184,7 @@ function processtweets($tweetbucket) { // @todo, should use tweet entity in capt
                  $u["from_user_name"] = $t["from_user_name"];
                  $u["from_user_id"] = $t["from_user_id"];
                  $u["url"] = $url["url"];
-                 $u["url_expanded"] = addslashes($url["expanded_url"]);
+                 $u["url_expanded"] = mysql_real_escape_string($url["expanded_url"]);
 
                  $list_urls[] = "('" . implode("','", $u) . "')";
              }
@@ -202,13 +205,16 @@ function processtweets($tweetbucket) { // @todo, should use tweet entity in capt
          }
      }
 
+     // set character encoding to uf8 for inserts
+     //mysql_set_charset('utf8');
+     //mysql_query("SET character_set_results = 'utf8', character_set_client = 'utf8', character_set_connection = 'utf8', character_set_database = 'utf8', character_set_server = 'utf8'");
+
      // distribute tweets into bins
 
 
      if (count($list_tweets) > 0) {
 
          $sql = "INSERT IGNORE INTO " . $binname . "_tweets (id,created_at,from_user_name,from_user_id,from_user_lang,from_user_tweetcount,from_user_followercount,from_user_friendcount,from_user_listed,from_user_realname,from_user_utcoffset,from_user_timezone,from_user_description,from_user_url,from_user_verified,from_user_profile_image_url,source,location,geo_lat,geo_lng,text,retweet_id,to_user_id,to_user_name,in_reply_to_status_id,filter_level) VALUES " . implode(",", $list_tweets);
-
          $sqlresults = mysql_query($sql);
          if (!$sqlresults) {
              logit(CAPTURE . ".error.log", "insert error: " . $sql);
