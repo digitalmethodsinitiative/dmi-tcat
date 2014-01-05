@@ -9,7 +9,28 @@ $database = "twittercapture";
 $hostname = "localhost";
 
 /*
- * Mail address in case capture/stream/controller.php detects that capture/stream/capture.php has been idle for too long
+ * Capturing role(s) for DMI-TCAT
+ * Here you can define which types of capturing you would like to do
+ * Possible values are "track", "follow", "onepercent". 
+ * Note that you can only do one of track, follow or onepercent per IP address and capturing key
+ */
+define("CAPTUREROLES", serialize(array("track")));
+
+/* 
+ * *Super advanced and currently undocumented feature, leave settings as they are*
+ * We have made it possible to tunnel Twitter API connections through other hosts (obtaining a different source IP address), and use multiple keysets for multiple streaming queries.
+ * Each capture script should define its role, see define("CAPTUREROLES",serialize(array()))
+ * Every distinct role should then get a different network path below
+ * 
+ */
+$GLOBALS["HOSTROLE"] = array(
+    'track' => "https://stream.twitter.com/",
+    'follow' => "https://stream.twitter.com",
+    'onepercent' => "https://stream.twitter.com",
+);
+
+/*
+ * Mail address to report critical errors to
  */
 $mail_to = "";
 
@@ -17,13 +38,27 @@ $mail_to = "";
  * Twitter API keys
  */
 
-// Main key, used for capturing from streaming API
-$twitter_consumer_key = "";
-$twitter_consumer_secret = "";
-$twitter_user_token = "";
-$twitter_user_secret = "";
+// Main keyring, used for capturing from streaming API
+// Make sure you have a key for each capture role defined in CAPTUREROLES above
+if (!defined('CAPTURE') || !strcmp(CAPTURE, "track")) {
+        $twitter_consumer_key = "";
+        $twitter_consumer_secret = "";
+        $twitter_user_token = "";
+        $twitter_user_secret = "";
+} elseif (!strcmp(CAPTURE, "follow")) {
+        $twitter_consumer_key = "";
+        $twitter_consumer_secret = "";
+        $twitter_user_token = "";
+        $twitter_user_secret = "";
+} elseif (!strcmp(CAPTURE, "onepercent")) {
+        $twitter_consumer_key = "";
+        $twitter_consumer_secret = "";
+        $twitter_user_token = "";
+        $twitter_user_secret = "";
+}
 
 // List of additional keys to loop over when there is a limited amount of requests per key, e.g. search
+// twitter_keys is an array of arrays listing different Twitter API keys
 $twitter_keys = array(
     array("twitter_consumer_key" => "",
         "twitter_consumer_secret" => "",
@@ -33,7 +68,7 @@ $twitter_keys = array(
 );
 
 /*
- * Klout account info
+ * Klout account info (optional)
  */
 $kloutapi_key = "";
 
@@ -51,6 +86,22 @@ define('BASE_URL', 'http://example.com/dmi-tcat/');
  * URL root in which analysis resides
  */
 define('ANALYSIS_URL', BASE_URL . 'analysis/');
+
+/*
+ * When no database activity has occured for IDLETIME seconds during a track, the controller restarts the process. Do not set this too low,
+ * as there is caching before we insert. Usually the default is fine.
+ */
+define('IDLETIME', 600);
+
+/*
+ * To avoid excessive verbosity, assume a minimal length of ratetime disturbance (heartbeat) in seconds
+ */
+define('RATELIMIT_SILENCE', 300);
+
+/*
+ * Report rate limit problems to the administrator every x hours ( 0 = no mail reporting )
+ */
+define('RATELIMIT_MAIL_HOURS', 24);
 
 /*
  * Time zone
