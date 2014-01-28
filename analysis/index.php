@@ -1,5 +1,4 @@
 <?php
-
 require_once 'common/config.php';
 require_once 'common/functions.php';
 
@@ -427,6 +426,9 @@ foreach ($linedata as $key => $value) {
 
         </fieldset>
 
+        <?php
+        include("mod.sentiment.graph.php");
+        ?>
 
         <fieldset class="if_parameters">
 
@@ -686,10 +688,43 @@ foreach ($linedata as $key => $value) {
                     <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('trending'+getInterval());sendUrl('mod.trending.php');return false;">launch</a></div>
                 <?php } ?>
 
-            </div>
-        </fieldset>
+                <?php if (sentiments($_GET['dataset'])) { ?>
+                </div><h2> Sentiment analysis</h2>
+                <div class='if_export_block'>
+                    <h3>Export all tweets from selection, with sentiments</h3>
+                    <div class="txt_desc">Contains all tweets and information about them (user, date created, ...).</div>
+                    <div class="txt_desc">Use: spend time with your data.</div>
+                    <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('export_tweets_sentiment');sendUrl('mod.export_tweets_sentiment.php');return false;">export</a></div>
+                    <?php if ($show_url_export) { ?>
+                        <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('export_tweets_sentiment&includeUrls=1');sendUrl('mod.export_tweets_sentiment.php');return false;">export with URLs</a> (much slower)</div>
+                    <?php } ?>
+                    <hr />
+                    <h3>Social graph by mentions, with sentiments</h3>
+                    <div class="txt_desc">Produces a <a href="http://en.wikipedia.org/wiki/Directed_graph">directed graph</a> based on interactions between users. If a users mentions another one, a directed link is created.
+                        The more often a user mentions another, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>"). 
+                        <br>The "count" value contains the number of tweets for each user in the specified period.<br>
+                                Usernames will contain attributes conveying statistics about the sentiment of the tweets they appear in.
+                                </div>
+                                <div class="txt_desc">Use: analyze patterns in communication, find "hubs" and "communities", categorize user accounts.</div>
+                                <div class="txt_link"> &raquo; <a href="" onclick="var topu = askMentions(); $('#whattodo').val('mention_graph_sentiment&topu='+topu);sendUrl('mod.mention_graph_sentiment.php');return false;">launch</a></div>
 
-        <div style="display:none" id="whattodo" />
+                                <hr />
 
-    </body>
-</html>
+                                <h3>Co-hashtag graph, with sentiments</h3>
+                                <div class="txt_desc">Produces an <a href="http://en.wikipedia.org/wiki/Graph_%28mathematics%29#Undirected_graph">undirected graph</a> based on co-word analysis of hashtags. If two hashtags appear in the same tweet, they are linked.
+                                    The more often they appear together, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>").<br>
+                                        Hashtags will contain attributes conveying statistics about the sentiment of the tweets they appear in.
+                                </div>
+                                <div class="txt_desc">Use: explore the relations between hashtags, find and analyze sub-issues, distinguish between different types of hashtags (event related, qualifiers, etc.).</div>
+                                <div class="txt_link"> &raquo; <a href="" onclick="var minf = askFrequency(); if(minf != false) { $('#whattodo').val('hashtag_cooc_sentiment&minf='+minf);sendUrl('mod.hashtag_cooc_sentiment.php'); } return false;">launch</a> (set minimum frequency)</div><!-- with absolute weighting of cooccurrences</a></div>-->
+                                <div class="txt_link"> &raquo; <a href="" onclick="var topu = askTopht(); if(topu != false) { $('#whattodo').val('hashtag_cooc_sentiment&topu='+topu);sendUrl('mod.hashtag_cooc_sentiment.php'); } return false;">launch</a> (get top hashtags)</div>
+                                </div>
+                            <?php } ?>
+
+                            </div>
+                            </fieldset>
+
+                            <div style="display:none" id="whattodo" />
+
+                            </body>
+                            </html>

@@ -36,6 +36,11 @@ class Coword {
     public $wordFrequency = array();
     public $wordFrequencyDividedByUniqueUsers = array();
     public $wordFrequencyMultipliedByUniqueUsers = array();
+    public $sentimentMin = array();
+    public $sentimentMax = array();
+    public $sentimentAvg = array();
+    public $sentimentMaxAbs = array();
+    public $sentimentDominant = array();
 
     function __construct() {
         $this->hashtags_are_separate_words = FALSE;
@@ -332,6 +337,16 @@ class Coword {
             $node->addNodeAttribute("wordFrequencyDividedByUniqueUsers", $this->wordFrequencyDividedByUniqueUsers[$word], $type = "float");
         if (isset($this->wordFrequencyMultipliedByUniqueUsers[$word]))
             $node->addNodeAttribute("wordFrequencyMultipliedByUniqueUsers", $this->wordFrequencyMultipliedByUniqueUsers[$word], $type = "int");
+        if (isset($this->sentimentMax[$word]))
+            $node->addNodeAttribute("sentiment_max", $this->sentimentMax[$word], $type = "integer");
+        if (isset($this->sentimentMin[$word]))
+            $node->addNodeAttribute("sentiment_min", $this->sentimentMin[$word], $type = "integer");
+        if (isset($this->sentimentAvg[$word]))
+            $node->addNodeAttribute("sentiment_avg", $this->sentimentAvg[$word], $type = "float");
+        if (isset($this->sentimentMaxAbs[$word]))
+            $node->addNodeAttribute("sentiment_max_absolute", $this->sentimentMaxAbs[$word], $type = "integer");
+        if (isset($this->sentimentDominant[$word]))
+            $node->addNodeAttribute("sentiment_dominant", $this->sentimentDominant[$word], $type = "integer");
     }
 
     public function getExtract_only_hashtags() {
