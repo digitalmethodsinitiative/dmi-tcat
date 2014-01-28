@@ -41,7 +41,11 @@ require_once './common/functions.php';
         $out = $header;
         if ($sqlresults) {
             while ($data = mysql_fetch_assoc($sqlresults)) {
-                $out .= $data['id'] . "," .
+                if (preg_match("/_urls/", $sql))
+                    $id = $data['tweet_id'];
+                else
+                    $id = $data['id'];
+                $out .= $id . "," .
                         strtotime($data["created_at"]) . "," .
                         $data["created_at"] . "," .
                         $data["from_user_name"] . "," .

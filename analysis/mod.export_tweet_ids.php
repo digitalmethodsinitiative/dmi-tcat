@@ -35,7 +35,11 @@ require_once './common/functions.php';
         $out = "";
         if ($sqlresults) {
             while ($data = mysql_fetch_assoc($sqlresults)) {
-                $out .= $data['id'] . "\n";
+                if (preg_match("/_urls/", $sql))
+                    $id = $data['tweet_id'];
+                else
+                    $id = $data['id'];
+                $out .= $id . "\n";
             }
         }
 
