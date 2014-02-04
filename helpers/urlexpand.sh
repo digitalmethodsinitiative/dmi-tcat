@@ -1,5 +1,5 @@
 #!/bin/bash
-if ! ps aux | grep  "[p]ython /home/eelke/urlexpander/urlexpand.py"
+if ! ps aux | grep  "[p]ython /var/www/dmi-tcat/helpers/urlexpand.py"
     then
-        python /home/eelke/urlexpander/urlexpand.py
+        python /var/www/dmi-tcat/helpers/urlexpand.py
 fi

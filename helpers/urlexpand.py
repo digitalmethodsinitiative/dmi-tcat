@@ -109,7 +109,7 @@ def main(argv = None):
         for u in urls:
             pool.spawn(job, u, _table)
 
-        gevent.wait(pool)
+        pool.join()
         
         # Flush left over updates in the queue to the db
         flush_db_queue(_table)    
