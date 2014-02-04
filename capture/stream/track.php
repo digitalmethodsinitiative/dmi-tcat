@@ -240,7 +240,7 @@ function processtweets($tweetbucket) { // @todo, should use tweet entity in capt
             $t["id"] = $data["id_str"];
             $t["created_at"] = date("Y-m-d H:i:s", strtotime($data["created_at"]));
             $t["from_user_name"] = addslashes($data["user"]["screen_name"]);
-            $t["from_user_id"] = $data["user"]["id"];
+            $t["from_user_id"] = $data["user"]["id_str"];
             $t["from_user_lang"] = $data["user"]["lang"];
             $t["from_user_tweetcount"] = $data["user"]["statuses_count"];
             $t["from_user_followercount"] = $data["user"]["followers_count"];
