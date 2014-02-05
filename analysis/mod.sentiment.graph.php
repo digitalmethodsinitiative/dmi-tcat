@@ -27,7 +27,9 @@ sdata.addRows($r);";
 $counter = 0;
 foreach ($avgs as $key => $sentiment) {
     $sent_html .= "sdata.setValue(" . $counter . ", 0, '" . $key . "');";
+    if(isset($sentiment[0]))
     $sent_html .= "sdata.setValue(" . $counter . ", 1, " . $sentiment[0] . ");";
+    if(isset($sentiment[1]))
     $sent_html .= "sdata.setValue(" . $counter . ", 2, " . $sentiment[1] . ");";
     if(isset($sentiment[2]))
     $sent_html .= "sdata.setValue(" . $counter . ", 3, " . $sentiment[2] . ");";
@@ -112,5 +114,29 @@ function sentiment_avgs() {
         $avgs[$res['datepart']][2] = (float) $pos;
         $avgs[$res['datepart']][3] = (float) abs($neg);
     }
+
+     // only dateparts
+     $sql = "SELECT ";
+     if ($period == "day") // @todo
+         $sql .= "DATE_FORMAT(t.created_at,'%Y.%d.%m') datepart ";
+     else
+         $sql .= "DATE_FORMAT(t.created_at,'%d. %H:00h') datepart ";
+     $sql .= "FROM " . $esc['mysql']['dataset'] . "_tweets t ";
+     $sql .= sqlSubset();
+     $sql .= "GROUP BY datepart";
+ 
+     // initialize with empty dates
+     $curdate = strtotime($esc['datetime']['startdate']);
+     while ($curdate < strtotime($esc['datetime']['enddate'])) {
+         $thendate = ($period == "day") ? $curdate + 86400 : $curdate + 3600;
+         $tmp = ($period == "day") ? strftime("%Y.%d.%m", $curdate) : strftime("%d. %H:%M", $curdate) . "h";
+         if (!isset($avgs[$tmp])) {
+               $avgs[$tmp] = array();
+          }
+         $curdate = $thendate;
+     }
+
+
+
     return $avgs;
 }
