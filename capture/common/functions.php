@@ -51,7 +51,7 @@ function create_bin($bin_name, $dbh) {
 		tweet_id bigint(20) NOT NULL,
 		created_at datetime,
 		from_user_name varchar(255),
-		from_user_id int(11),
+		from_user_id bigint,
 		`text` varchar(255),
 		PRIMARY KEY (id),
                 KEY `created_at` (`created_at`),
@@ -68,9 +68,9 @@ function create_bin($bin_name, $dbh) {
 		tweet_id bigint(20) NOT NULL,
 		created_at datetime,
 		from_user_name varchar(255),
-		from_user_id int(11),
+		from_user_id bigint, 
 		to_user varchar(255),
-		to_user_id int(11),
+		to_user_id bigint,
 		PRIMARY KEY (id),
                 KEY `created_at` (`created_at`),
 		KEY `tweet_id` (`tweet_id`),
@@ -87,7 +87,7 @@ function create_bin($bin_name, $dbh) {
 		id bigint(20) NOT NULL,
                 created_at datetime NOT NULL,
                 from_user_name varchar(255) NOT NULL,
-                from_user_id int(11) NOT NULL,
+                from_user_id bigint NOT NULL,
                 from_user_lang varchar(16),
                 from_user_tweetcount int(11),
                 from_user_followercount int(11),
@@ -108,7 +108,7 @@ function create_bin($bin_name, $dbh) {
                 retweet_id bigint(20),
                 retweet_count int(11),
                 favorite_count int(11),
-                to_user_id int(11),
+                to_user_id bigint,
                 to_user_name varchar(255),
                 in_reply_to_status_id bigint(20),
                 filter_level varchar(6),
@@ -131,7 +131,7 @@ function create_bin($bin_name, $dbh) {
 		tweet_id bigint(20) NOT NULL,
 		created_at datetime,
 		from_user_name varchar(255),
-		from_user_id int(11),
+		from_user_id bigint,
 		url varchar(2048),
 		url_expanded varchar(2048),
 		url_followed varchar(4096),
@@ -153,37 +153,42 @@ function create_bin($bin_name, $dbh) {
  * Record a ratelimit disturbance
  */
 function ratelimit_record($ratelimit, $ex_start) {
+     /* for debugging */
+     logit("controller.log", "ratelimit_record() has been called");
      $dbh = pdo_connect();
      $ts_ex_start = toDateTime($ex_start);
      $ts_ex_end = toDateTime(time());
      $sql = "insert into tcat_error_ratelimit ( type, start, end, tweets ) values ( '" . CAPTURE . "', '" . $ts_ex_start . "', '" . $ts_ex_end . "', $ratelimit )";
      /* for debugging */
-     logit("controller.log", "ratelimit_record() SQL: $sql");
+     //logit("controller.log", "ratelimit_record() SQL: $sql");
      $h = $dbh->prepare($sql);
      $res = $h->execute();
      /* for debugging */
-     logit("controller.log", "ratelimit_record() sql result: " . var_export($res, 1));
+     //logit("controller.log", "ratelimit_record() sql result: " . var_export($res, 1));
 }
 
 /*
  * Record a gap in the data
  */
 function gap_record($role, $ustart, $uend) {
-     $dbh = pdo_connect();
-     $ts_start = toDateTime($ustart);
-     $ts_end = toDateTime($uend);
-     if ($uend - $ustart < 10) {
-          // a less than 10 second gap is usually the result of a software restart/reload
+     if ($uend <= $ustart) {
+          return TRUE;
+     }
+     if (($uend - $ustart) < 15) {
+          // a less than 15 second gap is usually the result of a software restart/reload
           // during that restart the tweet buffer is flushed and the gap is very tiny, therefore we ignore this
           return TRUE;
      }
+     $dbh = pdo_connect();
+     $ts_start = toDateTime($ustart);
+     $ts_end = toDateTime($uend);
      $sql = "insert into tcat_error_gap ( type, start, end ) values ( '" . $role . "', '" . $ts_start . "', '" . $ts_end . "' )";
      /* for debugging */
-     logit("controller.log", "gap_record() SQL: $sql");
+     //logit("controller.log", "gap_record() SQL: $sql");
      $h = $dbh->prepare($sql);
      $res = $h->execute();
      /* for debugging */
-     logit("controller.log", "gap_record() sql result: " . var_export($res, 1));
+     //logit("controller.log", "gap_record() sql result: " . var_export($res, 1));
 }
 
 /*
