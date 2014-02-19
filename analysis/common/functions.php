@@ -5,25 +5,25 @@ $connection = false;
 db_connect($hostname, $dbuser, $dbpass, $database);
 // catch parameters
 if (isset($_GET['dataset']) && !empty($_GET['dataset']))
-    $dataset = $_GET['dataset'];
+    $dataset = urldecode($_GET['dataset']);
 else {
     reset($querybins);
     $dataset = key($querybins);
 }
 if (isset($_GET['query']) && !empty($_GET['query']))
-    $query = $_GET['query'];
+    $query = urldecode($_GET['query']);
 else
     $query = "";
 if (isset($_GET['url_query']) && !empty($_GET['url_query']))
-    $url_query = $_GET['url_query'];
+    $url_query = urldecode($_GET['url_query']);
 else
     $url_query = "";
 if (isset($_GET['exclude']) && !empty($_GET['exclude']))
-    $exclude = $_GET['exclude'];
+    $exclude = urldecode($_GET['exclude']);
 else
     $exclude = "";
 if (isset($_GET['from_user_name']) && !empty($_GET['from_user_name']))
-    $from_user_name = $_GET['from_user_name'];
+    $from_user_name = urldecode($_GET['from_user_name']);
 else
     $from_user_name = "";
 if (isset($_GET['samplesize']) && !empty($_GET['samplesize']))
@@ -52,7 +52,7 @@ else
     $whattodo = "";
 
 if (isset($_GET['keywordToTrack']) && !empty($_GET['keywordToTrack']))
-    $keywordToTrack = trim(strtolower($_GET['keywordToTrack']));
+    $keywordToTrack = trim(strtolower(urldecode($_GET['keywordToTrack'])));
 else
     $keywordToTrack = "";
 
