@@ -2,6 +2,7 @@
 
 // Non-space separated languages, such as CJK and Arabic, are currently unsupported.
 // https://dev.twitter.com/docs/streaming-apis/parameters#track
+// format: query bin name => comma separated list of keywords to track
 $querybins = array(
     "globalwarming" => "global warming,globalwarming,climate,climatechange,drought,flood",
 );
