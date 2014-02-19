@@ -24,6 +24,8 @@ dbconnect();        // connect to database
 checktables();      // check whether all tables specified in querybins.php exist in the database
 stream();
 
+$last_insert_id = -1;
+
 function stream() {
 
     global $twitter_consumer_key, $twitter_consumer_secret, $twitter_user_token, $twitter_user_secret, $querybins, $path_local, $lastinsert;
@@ -65,6 +67,7 @@ function streamCallback($data, $length, $metrics) {
     if (isset($data["disconnect"])) {
         $discerror = implode(",", $data["disconnect"]);
         logit(CAPTURE . ".error.log", "connection dropped or timed out - error $discerror");
+        logit(CAPTURE . ".error.log", "(debug) drump of result data on disconnect" . var_export($data, true));
     }
     if ($data) {
         $tweetbucket[] = $data;
@@ -130,7 +133,7 @@ function processtweets($tweetbucket) { // @todo, should use tweet entity in capt
          $t["id"] = $data["id_str"];
          $t["created_at"] = date("Y-m-d H:i:s", strtotime($data["created_at"]));
          $t["from_user_name"] = mysql_real_escape_string($data["user"]["screen_name"]);
-         $t["from_user_id"] = $data["user"]["id"];
+         $t["from_user_id"] = $data["user"]["id_str"];
          $t["from_user_lang"] = $data["user"]["lang"];
          $t["from_user_tweetcount"] = $data["user"]["statuses_count"];
          $t["from_user_followercount"] = $data["user"]["followers_count"];
@@ -214,11 +217,11 @@ function processtweets($tweetbucket) { // @todo, should use tweet entity in capt
 
      if (count($list_tweets) > 0) {
 
-         $sql = "INSERT IGNORE INTO " . $binname . "_tweets (id,created_at,from_user_name,from_user_id,from_user_lang,from_user_tweetcount,from_user_followercount,from_user_friendcount,from_user_listed,from_user_realname,from_user_utcoffset,from_user_timezone,from_user_description,from_user_url,from_user_verified,from_user_profile_image_url,source,location,geo_lat,geo_lng,text,retweet_id,to_user_id,to_user_name,in_reply_to_status_id,filter_level) VALUES " . implode(",", $list_tweets);
+         $sql = "INSERT DELAYED IGNORE INTO " . $binname . "_tweets (id,created_at,from_user_name,from_user_id,from_user_lang,from_user_tweetcount,from_user_followercount,from_user_friendcount,from_user_listed,from_user_realname,from_user_utcoffset,from_user_timezone,from_user_description,from_user_url,from_user_verified,from_user_profile_image_url,source,location,geo_lat,geo_lng,text,retweet_id,to_user_id,to_user_name,in_reply_to_status_id,filter_level) VALUES " . implode(",", $list_tweets);
          $sqlresults = mysql_query($sql);
          if (!$sqlresults) {
              logit(CAPTURE . ".error.log", "insert error: " . $sql);
-         } else {
+         } elseif (database_activity()) {
              $pid = getmypid();
              file_put_contents($path_local . "proc/" . CAPTURE . ".procinfo", $pid . "|" . time());
          }
@@ -226,7 +229,7 @@ function processtweets($tweetbucket) { // @todo, should use tweet entity in capt
 
      if (count($list_hashtags) > 0) {
 
-         $sql = "INSERT IGNORE INTO " . $binname . "_hashtags (tweet_id,created_at,from_user_name,from_user_id,text) VALUES " . implode(",", $list_hashtags);
+         $sql = "INSERT DELAYED IGNORE INTO " . $binname . "_hashtags (tweet_id,created_at,from_user_name,from_user_id,text) VALUES " . implode(",", $list_hashtags);
 
          $sqlresults = mysql_query($sql);
          if (!$sqlresults) {
@@ -236,7 +239,7 @@ function processtweets($tweetbucket) { // @todo, should use tweet entity in capt
 
      if (count($list_urls) > 0) {
 
-         $sql = "INSERT IGNORE INTO " . $binname . "_urls (tweet_id,created_at,from_user_name,from_user_id,url,url_expanded) VALUES " . implode(",", $list_urls);
+         $sql = "INSERT DELAYED IGNORE INTO " . $binname . "_urls (tweet_id,created_at,from_user_name,from_user_id,url,url_expanded) VALUES " . implode(",", $list_urls);
 
          $sqlresults = mysql_query($sql);
          if (!$sqlresults) {
@@ -246,7 +249,7 @@ function processtweets($tweetbucket) { // @todo, should use tweet entity in capt
 
      if (count($list_mentions) > 0) {
 
-         $sql = "INSERT IGNORE INTO " . $binname . "_mentions (tweet_id,created_at,from_user_name,from_user_id,to_user,to_user_id) VALUES " . implode(",", $list_mentions);
+         $sql = "INSERT DELAYED IGNORE INTO " . $binname . "_mentions (tweet_id,created_at,from_user_name,from_user_id,to_user,to_user_id) VALUES " . implode(",", $list_mentions);
 
          $sqlresults = mysql_query($sql);
          if (!$sqlresults) {
@@ -267,6 +270,25 @@ function logit($file, $message) {
 function safe_feof($fp, &$start = NULL) {
     $start = microtime(true);
     return feof($fp);
+}
+
+function database_activity() {
+    global $last_insert_id;
+    // we explicitely use the MySQL function last_insert_id
+    // we don't want any PHP caching of insert id's()
+    $results = mysql_query("SELECT LAST_INSERT_ID()");
+    if (!$results) { return FALSE; }
+    $row = mysql_fetch_row($results);
+    $lid = $row[0]; 
+    if ($lid === FALSE || $lid === 0) {
+        return FALSE;
+    }
+    if ($lid !== $last_insert_id) {
+        // update the value
+        $last_insert_id = $lid;
+        return TRUE;
+    }
+    return FALSE;
 }
 
 ?>

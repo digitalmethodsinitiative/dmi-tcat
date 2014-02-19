@@ -34,14 +34,13 @@ function pdo_connect() {
 
 function create_error_logs($dbh) {
 
-     $sql = 'create table if not exists tcat_error_ratelimit ( id bigint auto_increment, type varchar(32), start datetime not null, end datetime not null, tweets bigint not null, primary key(id), index(type), index(start), index(end) )';
-     $h = $dbh->prepare($sql);
-     $h->execute();
+    $sql = 'create table if not exists tcat_error_ratelimit ( id bigint auto_increment, type varchar(32), start datetime not null, end datetime not null, tweets bigint not null, primary key(id), index(type), index(start), index(end) )';
+    $h = $dbh->prepare($sql);
+    $h->execute();
 
-     $sql = 'create table if not exists tcat_error_gap ( id bigint auto_increment, type varchar(32), start datetime not null, end datetime not null, primary key(id), index(type), index(start), index(end) )';
-     $h = $dbh->prepare($sql);
-     $h->execute();
-
+    $sql = 'create table if not exists tcat_error_gap ( id bigint auto_increment, type varchar(32), start datetime not null, end datetime not null, primary key(id), index(type), index(start), index(end) )';
+    $h = $dbh->prepare($sql);
+    $h->execute();
 }
 
 function create_bin($bin_name, $dbh) {
@@ -152,166 +151,160 @@ function create_bin($bin_name, $dbh) {
 /*
  * Record a ratelimit disturbance
  */
+
 function ratelimit_record($ratelimit, $ex_start) {
-     /* for debugging */
-     logit("controller.log", "ratelimit_record() has been called");
-     $dbh = pdo_connect();
-     $ts_ex_start = toDateTime($ex_start);
-     $ts_ex_end = toDateTime(time());
-     $sql = "insert into tcat_error_ratelimit ( type, start, end, tweets ) values ( '" . CAPTURE . "', '" . $ts_ex_start . "', '" . $ts_ex_end . "', $ratelimit )";
-     /* for debugging */
-     //logit("controller.log", "ratelimit_record() SQL: $sql");
-     $h = $dbh->prepare($sql);
-     $res = $h->execute();
-     /* for debugging */
-     //logit("controller.log", "ratelimit_record() sql result: " . var_export($res, 1));
+    /* for debugging */
+    logit("controller.log", "ratelimit_record() has been called");
+    $dbh = pdo_connect();
+    $ts_ex_start = toDateTime($ex_start);
+    $ts_ex_end = toDateTime(time());
+    $sql = "insert into tcat_error_ratelimit ( type, start, end, tweets ) values ( '" . CAPTURE . "', '" . $ts_ex_start . "', '" . $ts_ex_end . "', $ratelimit )";
+    /* for debugging */
+    //logit("controller.log", "ratelimit_record() SQL: $sql");
+    $h = $dbh->prepare($sql);
+    $res = $h->execute();
+    /* for debugging */
+    //logit("controller.log", "ratelimit_record() sql result: " . var_export($res, 1));
 }
 
 /*
  * Record a gap in the data
  */
+
 function gap_record($role, $ustart, $uend) {
-     if ($uend <= $ustart) {
-          return TRUE;
-     }
-     if (($uend - $ustart) < 15) {
-          // a less than 15 second gap is usually the result of a software restart/reload
-          // during that restart the tweet buffer is flushed and the gap is very tiny, therefore we ignore this
-          return TRUE;
-     }
-     $dbh = pdo_connect();
-     $ts_start = toDateTime($ustart);
-     $ts_end = toDateTime($uend);
-     $sql = "insert into tcat_error_gap ( type, start, end ) values ( '" . $role . "', '" . $ts_start . "', '" . $ts_end . "' )";
-     /* for debugging */
-     //logit("controller.log", "gap_record() SQL: $sql");
-     $h = $dbh->prepare($sql);
-     $res = $h->execute();
-     /* for debugging */
-     //logit("controller.log", "gap_record() sql result: " . var_export($res, 1));
+    if ($uend <= $ustart) {
+        return TRUE;
+    }
+    if (($uend - $ustart) < 15) {
+        // a less than 15 second gap is usually the result of a software restart/reload
+        // during that restart the tweet buffer is flushed and the gap is very tiny, therefore we ignore this
+        return TRUE;
+    }
+    $dbh = pdo_connect();
+    $ts_start = toDateTime($ustart);
+    $ts_end = toDateTime($uend);
+    $sql = "insert into tcat_error_gap ( type, start, end ) values ( '" . $role . "', '" . $ts_start . "', '" . $ts_end . "' )";
+    /* for debugging */
+    //logit("controller.log", "gap_record() SQL: $sql");
+    $h = $dbh->prepare($sql);
+    $res = $h->execute();
+    /* for debugging */
+    //logit("controller.log", "gap_record() sql result: " . var_export($res, 1));
 }
 
 /*
  * Inform administrator of ratelimit problems
  */
+
 function ratelimit_report_problem() {
-     if (defined('RATELIMIT_MAIL_HOURS') && RATELIMIT_MAIL_HOURS > 0) {
-          $sql = "select count(*) as cnt from tcat_error_ratelimit where start > (now() - interval " . RATELIMIT_MAIL_HOURS . " hour)";
-          $result = mysql_query($sql);
-          if ($row = mysql_fetch_assoc($result)) {
-               if (isset($row['cnt']) && $row['cnt'] == 0) {
-                    global $mail_to;
-                    mail( $mail_to,
-                          'DMI-TCAT rate limit has been reached',
-                          'The script running the ' . CAPTURE . ' query has hit a rate limit while talking to the Twitter API. Twitter is not allowing you to track more than 1% of its total traffic at any time. This means that the number of tweets exceeding the barrier are being dropped. Consider reducing the size of your query bins and reducing the number of terms and users you are tracking.' . "\n\n" .
-                          'This may be a temporary or a structural problem. Please look at the webinterface for more details. Rate limit statistics on the website are historic, however. Consider this message indicative of a current issue. This e-mail will not be repeated for at least ' . RATELIMIT_MAIL_HOURS . ' hours.', 'From: no-reply@dmitcat');
-               }
-          }
-     }
+    if (defined('RATELIMIT_MAIL_HOURS') && RATELIMIT_MAIL_HOURS > 0) {
+        $sql = "select count(*) as cnt from tcat_error_ratelimit where start > (now() - interval " . RATELIMIT_MAIL_HOURS . " hour)";
+        $result = mysql_query($sql);
+        if ($row = mysql_fetch_assoc($result)) {
+            if (isset($row['cnt']) && $row['cnt'] == 0) {
+                global $mail_to;
+                mail($mail_to, 'DMI-TCAT rate limit has been reached', 'The script running the ' . CAPTURE . ' query has hit a rate limit while talking to the Twitter API. Twitter is not allowing you to track more than 1% of its total traffic at any time. This means that the number of tweets exceeding the barrier are being dropped. Consider reducing the size of your query bins and reducing the number of terms and users you are tracking.' . "\n\n" .
+                        'This may be a temporary or a structural problem. Please look at the webinterface for more details. Rate limit statistics on the website are historic, however. Consider this message indicative of a current issue. This e-mail will not be repeated for at least ' . RATELIMIT_MAIL_HOURS . ' hours.', 'From: no-reply@dmitcat');
+            }
+        }
+    }
 }
 
-
-function toDateTime($unixTimestamp){
-     return date("Y-m-d H:m:s", $unixTimestamp);
+function toDateTime($unixTimestamp) {
+    return date("Y-m-d H:m:s", $unixTimestamp);
 }
 
 /*
  * This function returns TRUE if there is an active capture script for role.
  */
+
 function check_running_role($role) {
 
-     // is role allowed?
-     if (!defined('CAPTUREROLES')) {
-          // old config did not have this configurability
-          return TRUE;    
-     }
+    // is role allowed?
+    if (!defined('CAPTUREROLES')) {
+        // old config did not have this configurability
+        return TRUE;
+    }
 
-     $roles = unserialize(CAPTUREROLES);
-     if (!in_array($role, $roles)) {
-          return FALSE;
-     }
+    $roles = unserialize(CAPTUREROLES);
+    if (!in_array($role, $roles)) {
+        return FALSE;
+    }
 
-     // is the appropriate script running?
-     if (file_exists(BASE_FILE . "proc/$role.procinfo")) {
-  
-          $procfile = file_get_contents(BASE_FILE . "proc/$role.procinfo");
+    // is the appropriate script running?
+    if (file_exists(BASE_FILE . "proc/$role.procinfo")) {
 
-          $tmp = explode("|", $procfile);
-          $pid = $tmp[0];
-          $last = $tmp[1];
+        $procfile = file_get_contents(BASE_FILE . "proc/$role.procinfo");
 
-          if (is_numeric($pid) && $pid > 0) {
+        $tmp = explode("|", $procfile);
+        $pid = $tmp[0];
+        $last = $tmp[1];
 
-               $running = posix_kill($pid, 0);
-               if (posix_get_last_error()==1) {
-                    $running = true;      // running as another user
-               }
+        if (is_numeric($pid) && $pid > 0) {
 
-               if ($running) {
-                    return TRUE;
-               }
+            $running = posix_kill($pid, 0);
+            if (posix_get_last_error() == 1) {
+                $running = true;      // running as another user
+            }
 
-          }
+            if ($running) {
+                return TRUE;
+            }
+        }
+    }
 
-     }
-
-     return FALSE;
-
+    return FALSE;
 }
 
 /*
  * Inform controller a task wants to update its queries 
  */
+
 function web_reload_config_role($role) {
-     $dbh = pdo_connect();
-     $sql = "create table if not exists tcat_controller_tasklist ( id bigint auto_increment, task varchar(32) not null, instruction varchar(255) not null, ts_issued timestamp default current_timestamp, primary key(id) )";
-     $h = $dbh->prepare($sql);
-     $res = $h->execute();
-     $sql = "insert into tcat_controller_tasklist ( task, instruction ) values ( '$role', 'reload' )";
-     $h = $dbh->prepare($sql);
-     return $h->execute();
+    $dbh = pdo_connect();
+    $sql = "create table if not exists tcat_controller_tasklist ( id bigint auto_increment, task varchar(32) not null, instruction varchar(255) not null, ts_issued timestamp default current_timestamp, primary key(id) )";
+    $h = $dbh->prepare($sql);
+    $res = $h->execute();
+    $sql = "insert into tcat_controller_tasklist ( task, instruction ) values ( '$role', 'reload' )";
+    $h = $dbh->prepare($sql);
+    return $h->execute();
 }
 
 /*
  * Force a task to reload it configuration, should be called by the controller process
  */
+
 function controller_reload_config_role($role) {
 
-     if (!check_running_role($role)) {
-          return FALSE;
-     }
+    if (!check_running_role($role)) {
+        return FALSE;
+    }
 
-     if (file_exists(BASE_FILE . "proc/$role.procinfo")) {
-  
-          $procfile = file_get_contents(BASE_FILE . "proc/$role.procinfo");
+    if (file_exists(BASE_FILE . "proc/$role.procinfo")) {
 
-          $tmp = explode("|", $procfile);
-          $pid = $tmp[0];
-          $last = $tmp[1];
+        $procfile = file_get_contents(BASE_FILE . "proc/$role.procinfo");
 
-          if (is_numeric($pid) && $pid > 0) {
+        $tmp = explode("|", $procfile);
+        $pid = $tmp[0];
+        $last = $tmp[1];
 
-               logit("controller.log", "enforcing reload of config for $role task");
-               logit("controller.log", "sending a TERM signal to $role task");
-               posix_kill($pid, SIGTERM);
-               sleep(6);
-               logit("controller.log", "starting new instance of $role task");
-               // this command should start the capture task as a detached process and report back its pid
-               $cmd = "/usr/bin/nohup php " . BASE_FILE . "capture/stream/$role.php > /dev/null & echo $!";
-               /* for debugging */
-               logit("controller.log", "reload_config_role() cmd $cmd");
-               return shell_exec($cmd);
-          }
+        if (is_numeric($pid) && $pid > 0) {
 
-     }
+            logit("controller.log", "enforcing reload of config for $role task");
+            logit("controller.log", "sending a TERM signal to $role task");
+            posix_kill($pid, SIGTERM);
+            sleep(6);
+            logit("controller.log", "starting new instance of $role task");
+            // this command should start the capture task as a detached process and report back its pid
+            $cmd = "/usr/bin/nohup php " . BASE_FILE . "capture/stream/$role.php > /dev/null & echo $!";
+            /* for debugging */
+            logit("controller.log", "reload_config_role() cmd $cmd");
+            return shell_exec($cmd);
+        }
+    }
 
-     return FALSE;
-
+    return FALSE;
 }
-
-
-
-
 
 /**
  * 

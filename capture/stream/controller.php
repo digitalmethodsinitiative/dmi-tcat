@@ -18,13 +18,15 @@ $roles = unserialize(CAPTUREROLES);
 
 $commands = array();
 foreach ($roles as $role) {
-     $commands[$role] = array();
+    $commands[$role] = array();
 }
 
 $sql = "select task, instruction from tcat_controller_tasklist order by id asc lock in share mode";
 foreach ($dbh->query($sql) as $row) {
-     if (!array_key_exists($row['task'], $commands)) { continue; }
-     $commands[$row['task']][] = $row;
+    if (!array_key_exists($row['task'], $commands)) {
+        continue;
+    }
+    $commands[$row['task']][] = $row;
 }
 
 // do not leave any unknown tasks linger
@@ -33,71 +35,78 @@ $h = $dbh->prepare($sql);
 $res = $h->execute();
 
 foreach ($roles as $role) {
-     foreach ($commands[$role] as $command) {
-	    logit("controller.log", "received instruction to execute '" . $command['instruction'] . "' for script $role");
-         switch($command['instruction']) {
-               case "reload": {
+    foreach ($commands[$role] as $command) {
+        logit("controller.log", "received instruction to execute '" . $command['instruction'] . "' for script $role");
+        switch ($command['instruction']) {
+            case "reload": {
                     // reload configuration for a task
                     controller_reload_config_role($role);
                     break;
-               }
-               default: { break; }
-          }
+                }
+            default: {
+                    break;
+                }
+        }
     }
 }
 
 foreach ($roles as $role) {
 
-     if (defined('IDLETIME')) {
-          $idletime = IDLETIME;
-     } else {
-	     $idletime = 600;
-     }
+    if (defined('IDLETIME')) {
+        $idletime = IDLETIME;
+    } else {
+        $idletime = 600;
+    }
 
-	$pid = 0;
-	$running = false;
-	if (file_exists(BASE_FILE . "proc/$role.procinfo")) {
-	    $procfile = file_get_contents(BASE_FILE . "proc/$role.procinfo");
+    if ($role === 'follow') {
+        // DMI tcat verdubbelde idletime voor follow,
+        // dit omdat 's nachts herhaadelijk het script wordt gerestart
+        $idletime *= 10;
+    }
 
-	    $tmp = explode("|", $procfile);
-	    $pid = $tmp[0];
-	    $last = $tmp[1];
+    $pid = 0;
+    $running = false;
+    if (file_exists(BASE_FILE . "proc/$role.procinfo")) {
+        $procfile = file_get_contents(BASE_FILE . "proc/$role.procinfo");
 
-	    // check if script with pid is still runnning
-	    exec("ps -p " . $pid . " | wc -l", $out);
-	    $out = trim($out[0]);
-	    if ($out == 2)
-          $running = true;
+        $tmp = explode("|", $procfile);
+        $pid = $tmp[0];
+        $last = $tmp[1];
 
-	    // check whether the process has been idle for too long
-	    logit("controller.log", "script $role called - pid:" . $pid . "  idle:" . (time() - $last));
+        // check if script with pid is still runnning
+        exec("ps -p " . $pid . " | wc -l", $out);
+        $out = trim($out[0]);
+        if ($out == 2)
+            $running = true;
 
-         if ($last < (time() - $idletime)) {
+        // check whether the process has been idle for too long
+        logit("controller.log", "script $role called - pid:" . $pid . "  idle:" . (time() - $last));
 
-               // record confirmed gap
-               gap_record($role, $last, time());
+        if ($last < (time() - $idletime)) {
 
-               if ($running) {
-          
-                   posix_kill(SIGTERM, $pid);
+            // record confirmed gap
+            gap_record($role, $last, time());
 
-                   logit("controller.log", "script $role was idle for more than " . $idletime . " seconds - killing and starting");
-                   mail($mail_to,"DMI-TCAT controller killed a process","script $role was idle for more than " . $idletime . " seconds - killing and starting");
+            if ($running) {
 
-                   sleep(6);       // we need some time to allow graceful exit
+                //posix_kill(SIGTERM, $pid);
+                $res = exec("kill -s SIGTERM $pid");
 
-                   passthru("php " . BASE_FILE . "capture/stream/$role.php > /dev/null 2>&1 &");
-                            
-               }
-         }
-	}
-	if (!$running) {
+                logit("controller.log", "script $role was idle for more than " . $idletime . " seconds - killing and starting");
+                mail($mail_to, "DMI-TCAT controller killed a process", "script $role was idle for more than " . $idletime . " seconds - killing and starting had result $res");
 
-	    logit("controller.log", "script $role was not running - starting");
+                sleep(6);       // we need some time to allow graceful exit
 
-	    passthru("php " . BASE_FILE . "capture/stream/$role.php > /dev/null 2>&1 &");
-	}
+                passthru("php " . BASE_FILE . "capture/stream/$role.php > /dev/null 2>&1 &");
+            }
+        }
+    }
+    if (!$running) {
 
+        logit("controller.log", "script $role was not running - starting");
+
+        passthru("php " . BASE_FILE . "capture/stream/$role.php > /dev/null 2>&1 &");
+    }
 }
 
 function logit($file, $message) {
