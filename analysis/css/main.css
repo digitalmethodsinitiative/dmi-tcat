@@ -8,7 +8,7 @@ h3 { font-size:13px; margin:10px 0px 8px 0px; }
 
 a { font-size:12px; }
 
-fieldset { font-size:14px; margin-top:20px; width:1000px; }
+fieldset { font-size:14px; margin-top:20px; width:100%; }
 
 table { border-collapse:collapse; border:0px; }
 td { font-size:12px; padding:5px; }
@@ -16,7 +16,17 @@ td.tbl_head { font-weight:bold; }
 
 hr { border:0; color:#aaa; background-color:#aaa; height:1px; width:100%; margin:10px 0 10px 0; clear:both; }
 
+/* ids */
+
+#if_fullpage { width:1000px; }
+#if_title { float:left; }
+#if_links { float:right; padding-top:22px; margin-right:-20px; }
+
+
 /* classes */
+
+.if_toplinks { font-size:12px; text-decoration:none; color: #000; }
+.if_toplinks:hover { text-decoration:underline; }
 
 .if_panel_box { float:left; margin:10px 0px 10px 0px; }
 

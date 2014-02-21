@@ -100,7 +100,17 @@ if (defined('ANALYSIS_URL'))
 
     <body>
 
-        <h1>DMI Twitter Capturing and Analysis Toolset (DMI-TCAT)</h1>
+	<div id="if_fullpage">
+
+        <h1 id="if_title">DMI Twitter Capturing and Analysis Toolset (DMI-TCAT)</h1>
+
+        <div id="if_links">
+        	&raquo; <a href="https://github.com/digitalmethodsinitiative/dmi-tcat" target="_blank" class="if_toplinks">github</a>&nbsp;&nbsp;&nbsp;
+        	&raquo; <a href="https://github.com/digitalmethodsinitiative/dmi-tcat/issues?state=open" target="_blank" class="if_toplinks">issues</a>&nbsp;&nbsp;&nbsp;
+        	&raquo; <a href="https://github.com/digitalmethodsinitiative/dmi-tcat/wiki" target="_blank" class="if_toplinks">FAQ</a>
+        </div>
+
+		<div style="clear: both;"></div>
 
         <fieldset class="if_parameters">
 
@@ -127,7 +137,6 @@ if (defined('ANALYSIS_URL'))
                 }
 
                 //print_r($ordered_datasets);
-
                 foreach ($ordered_datasets as $groupname => $group) {
 
                     echo '<optgroup label="' . $groupname . '">';
@@ -386,7 +395,7 @@ foreach ($linedata as $key => $value) {
 ?>
 
     var chart = new google.visualization.LineChart(document.getElementById('if_panel_linegraph'));
-    chart.draw(data, {width:1000, height:360, fontSize:9, hAxis:{slantedTextAngle:90, slantedText:true}, chartArea:{left:50,top:10,width:850,height:300}});
+    chart.draw(data, {width:1000, height:360, fontSize:9, lineWidth:1, hAxis:{slantedTextAngle:90, slantedText:true}, chartArea:{left:50,top:10,width:850,height:300}});
 
             </script>
 
@@ -416,7 +425,7 @@ foreach ($linedata as $key => $value) {
     ?>
 
         var chart = new google.visualization.LineChart(document.getElementById('if_panel_linegraph_norm'));
-        chart.draw(data, {width:1000, height:160, fontSize:9, hAxis:{slantedTextAngle:90, slantedText:true}, vAxis:{minValue:0,maxValue:100}, chartArea:{left:50,top:10,width:850,height:100}});
+        chart.draw(data, {width:1000, height:160, fontSize:9, lineWidth:1, hAxis:{slantedTextAngle:90, slantedText:true}, vAxis:{minValue:0,maxValue:100}, chartArea:{left:50,top:10,width:850,height:100}});
 
                 </script>
 
@@ -427,7 +436,7 @@ foreach ($linedata as $key => $value) {
         </fieldset>
 
         <?php
-        include("mod.sentiment.graph.php");
+            sentiment_graph();
         ?>
 
         <fieldset class="if_parameters">
@@ -688,7 +697,7 @@ foreach ($linedata as $key => $value) {
                     <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('trending'+getInterval());sendUrl('mod.trending.php');return false;">launch</a></div>
                 <?php } ?>
 
-                <?php if (sentiments($_GET['dataset'])) { ?>
+                <?php if (sentiment_exists()) { ?>
                 </div><h2> Sentiment analysis</h2>
                 <div class='if_export_block'>
                     <h3>Export all tweets from selection, with sentiments</h3>
@@ -701,7 +710,7 @@ foreach ($linedata as $key => $value) {
                     <hr />
                     <h3>Social graph by mentions, with sentiments</h3>
                     <div class="txt_desc">Produces a <a href="http://en.wikipedia.org/wiki/Directed_graph">directed graph</a> based on interactions between users. If a users mentions another one, a directed link is created.
-                        The more often a user mentions another, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>"). 
+                        The more often a user mentions another, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>").
                         <br>The "count" value contains the number of tweets for each user in the specified period.<br>
                                 Usernames will contain attributes conveying statistics about the sentiment of the tweets they appear in.
                                 </div>
@@ -725,6 +734,7 @@ foreach ($linedata as $key => $value) {
                             </fieldset>
 
                             <div style="display:none" id="whattodo" />
+	</div>
 
-                            </body>
-                            </html>
+</body>
+</html>
