@@ -139,7 +139,7 @@ function streamCallback($data, $length, $metrics) {
 }
 
 // function receives a bucket of tweets, sorts them according to bins and inserts into DB
-function processtweets($tweetbucket) { // @todo, should use tweet entity in capture/common/functions.php
+function processtweets($tweetbucket) {
     global $querybins, $path_local;
 
     // we run through every bin to check whether the received tweets fit
@@ -169,15 +169,13 @@ function processtweets($tweetbucket) { // @todo, should use tweet entity in capt
             if (!array_key_exists('entities', $data)) {
 
                   // unexpected/irregular tweet data
-
                   if (array_key_exists('delete', $data)) {
                        // a tweet has been deleted. @todo: process
                        continue;
                   }
 
                   // this can get very verbose when repeated?
-
-                  logit(CAPTURE . ".error.log", "irregular tweet data: " . var_export($data, 1));
+                  //logit(CAPTURE . ".error.log", "irregular tweet data: " . var_export($data, 1));
                   continue;
 
             }
@@ -228,19 +226,11 @@ function processtweets($tweetbucket) { // @todo, should use tweet entity in capt
                 }
             }
 
-            // ["retweeted_status"]["id_str"] => retweet_id
-            // => from_user_utcoffset int(11),
-            // from_user_timezone varchar(255) NOT NULL,
-            // from_user_verified
-            // from_user_listed
-            // from_user_description
-            // from_user_url
             // if the tweet does not fit in the current bin, go to the next tweet
             if ($found == false) {
                 continue;
             }
 
-            //from_user_lang 	from_user_tweetcount 	from_user_followercount 	from_user_realname
             $t = array();
             $t["id"] = $data["id_str"];
             $t["created_at"] = date("Y-m-d H:i:s", strtotime($data["created_at"]));
@@ -322,8 +312,6 @@ function processtweets($tweetbucket) { // @todo, should use tweet entity in capt
         }
 
         // distribute tweets into bins
-
-
         if (count($list_tweets) > 0) {
 
             $sql = "INSERT DELAYED IGNORE INTO " . $binname . "_tweets (id,created_at,from_user_name,from_user_id,from_user_lang,from_user_tweetcount,from_user_followercount,from_user_friendcount,from_user_listed,from_user_realname,from_user_utcoffset,from_user_timezone,from_user_description,from_user_url,from_user_verified,from_user_profile_image_url,source,location,geo_lat,geo_lng,text,retweet_id,to_user_id,to_user_name,in_reply_to_status_id,filter_level) VALUES " . implode(",", $list_tweets);

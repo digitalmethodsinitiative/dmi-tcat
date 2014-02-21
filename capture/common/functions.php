@@ -335,6 +335,7 @@ class Tweet {
     public $geo;
     public $source;
     public $id;
+    public $id_str;
     public $possibly_sensitive;
     public $in_reply_to_user_id;
     public $user_mentions = array();
@@ -348,8 +349,10 @@ class Tweet {
     public $lang;
 
     public function __construct($obj = null) {
-        foreach ($obj as $k => $v) {
-            $this->{$k} = $v;
+        if (isset($obj)) {
+            foreach ($obj as $k => $v) {
+                $this->{$k} = $v;
+            }
         }
     }
 
@@ -362,6 +365,8 @@ class Tweet {
                 $this->{$name} = $value;
             }
         } elseif ($name == "_id") {
+            $this->id = $value;
+        } elseif ($name == "_id_str") {
             $this->id = $value;
         } elseif ($name == "random_number" || $name == "withheld_scope" || $name == "status" || $name == "withheld_in_countries" || $name == "withheld_copyright") {
             print $name . "=" . $value . " not available as a database field\n";
@@ -405,22 +410,22 @@ class Tweet {
 			from_user_realname, source, location, geo_lat, geo_lng, text, 
 			to_user_id, to_user_name,in_reply_to_status_id, 
                         from_user_listed, from_user_utcoffset, from_user_timezone, from_user_description,from_user_url,from_user_verified,
-                        retweet_id,retweet_count,favorite_count,filter_level,lang) 
+                        retweet_id,retweet_count,favorite_count,filter_level,lang,from_user_profile_image_url) 
 			VALUES 
 			(:id, :created_at, :from_user_name, :from_user_id, :from_user_lang,
 			:from_user_tweetcount, :from_user_followercount, :from_user_friendcount, 
 			:from_user_realname, :source, :location, :geo_lat, :geo_lng, :text, 
 			:to_user_id, :to_user_name, :in_reply_to_status_id,
                         :from_user_listed, :from_user_utcoffset, :from_user_timezone, :from_user_description, :from_user_url, :from_user_verified,
-                        :retweet_id, :retweet_count, :favorite_count, :filter_level,:lang
+                        :retweet_id, :retweet_count, :favorite_count, :filter_level,:lang,:from_user_profile_image_url
                         ) 
 			;");
         //var_export($this);
-        $q->bindParam(':id', $this->id, PDO::PARAM_STR); //
+        $q->bindParam(':id', $this->id_str, PDO::PARAM_STR); //
         $date = date("Y-m-d H:i:s", strtotime($this->created_at));
         $q->bindParam(':created_at', $date, PDO::PARAM_STR); //
         $q->bindParam(':from_user_name', $this->user->screen_name, PDO::PARAM_STR); //
-        $q->bindParam(':from_user_id', $this->user->id, PDO::PARAM_STR);    //
+        $q->bindParam(':from_user_id', $this->user->id_str, PDO::PARAM_STR);    //
         $q->bindParam(':from_user_lang', $this->user->lang, PDO::PARAM_STR); //
         $q->bindParam(':from_user_tweetcount', $this->user->statuses_count, PDO::PARAM_STR); //
         $q->bindParam(':from_user_followercount', $this->user->followers_count, PDO::PARAM_INT); //
@@ -433,15 +438,16 @@ class Tweet {
         $q->bindParam(':geo_lat', $geo_lat, PDO::PARAM_STR); //
         $q->bindParam(':geo_lng', $geo_lng, PDO::PARAM_STR); //
         $q->bindParam(':text', $this->text, PDO::PARAM_STR); //
-        $q->bindParam(':to_user_id', $this->in_reply_to_user_id, PDO::PARAM_STR); //
+        $q->bindParam(':to_user_id', $this->in_reply_to_user_id_str, PDO::PARAM_STR); //
         $q->bindParam(':to_user_name', $this->in_reply_to_screen_name, PDO::PARAM_STR); //
-        $q->bindParam(':in_reply_to_status_id', $this->in_reply_to_status_id, PDO::PARAM_STR); //
+        $q->bindParam(':in_reply_to_status_id', $this->in_reply_to_status_id_str, PDO::PARAM_STR); //
 
         $q->bindParam(':from_user_listed', $this->user->listed_count, PDO::PARAM_INT); //
         $q->bindParam(':from_user_utcoffset', $this->user->utcoffset, PDO::PARAM_STR); //  
         $q->bindParam(':from_user_timezone', $this->user->timezone, PDO::PARAM_STR); //   
         $q->bindParam(':from_user_description', $this->user->description, PDO::PARAM_STR); //
         $q->bindParam(':from_user_url', $this->user->url, PDO::PARAM_STR); //     
+        $q->bindParam(':from_user_profile_image_url', $this->user->profile_image_url, PDO::PARAM_STR);
         $q->bindParam(':from_user_verified', $this->user->verified, PDO::PARAM_STR); //
         $retweet_id = $this->retweeted_status ? (string) $this->retweeted_status->id_str : null;
         $q->bindParam(':retweet_id', $retweet_id, PDO::PARAM_STR); //    
@@ -463,11 +469,11 @@ class Tweet {
 					(tweet_id, created_at, from_user_name, from_user_id, text) 
 					VALUES (:tweet_id, :created_at , :from_user_name, :from_user_id, :text)");
 
-                $q->bindParam(':tweet_id', $this->id, PDO::PARAM_STR);
+                $q->bindParam(':tweet_id', $this->id_str, PDO::PARAM_STR);
                 $date = date("Y-m-d H:i:s", strtotime($this->created_at));
                 $q->bindParam(':created_at', $date, PDO::PARAM_STR);
                 $q->bindParam(':from_user_name', $this->user->screen_name, PDO::PARAM_STR);
-                $q->bindParam(':from_user_id', $this->user->id, PDO::PARAM_STR);
+                $q->bindParam(':from_user_id', $this->user->id_str, PDO::PARAM_STR);
                 $q->bindParam(':text', $hashtag->text, PDO::PARAM_STR);
 
                 $saved_hashtags = $q->execute();
@@ -484,7 +490,7 @@ class Tweet {
                 $date = date("Y-m-d H:i:s", strtotime($this->created_at));
                 $q->bindParam(':created_at', $date, PDO::PARAM_STR);
                 $q->bindParam(':from_user_name', $this->user->screen_name, PDO::PARAM_STR);
-                $q->bindParam(':from_user_id', $this->user->id, PDO::PARAM_STR);
+                $q->bindParam(':from_user_id', $this->user->id_str, PDO::PARAM_STR);
                 $q->bindParam(':url', $url->url, PDO::PARAM_STR);
                 $q->bindParam(':url_expanded', $url->expanded_url, PDO::PARAM_STR);
 
@@ -498,13 +504,13 @@ class Tweet {
 					(tweet_id, created_at, from_user_name, from_user_id, to_user, to_user_id) 
 					VALUES (:tweet_id, :created_at , :from_user_name, :from_user_id, :to_user, :to_user_id)");
 
-                $q->bindParam(':tweet_id', $this->id, PDO::PARAM_STR);
+                $q->bindParam(':tweet_id', $this->id_str, PDO::PARAM_STR);
                 $date = date("Y-m-d H:i:s", strtotime($this->created_at));
                 $q->bindParam(':created_at', $date, PDO::PARAM_STR);
                 $q->bindParam(':from_user_name', $this->user->screen_name, PDO::PARAM_STR);
-                $q->bindParam(':from_user_id', $this->user->id, PDO::PARAM_STR);
+                $q->bindParam(':from_user_id', $this->user->id_str, PDO::PARAM_STR);
                 $q->bindParam(':to_user', $mention->screen_name, PDO::PARAM_STR);
-                $q->bindParam(':to_user_id', $mention->id, PDO::PARAM_STR);
+                $q->bindParam(':to_user_id', $mention->id_str, PDO::PARAM_STR);
 
                 $saved_mentions = $q->execute();
             }

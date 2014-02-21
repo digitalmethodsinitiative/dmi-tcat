@@ -42,26 +42,26 @@ function stream() {
                 'consumer_secret' => $twitter_consumer_secret,
                 'token' => $twitter_user_token,
                 'secret' => $twitter_user_secret,
-  		  'host' => 'stream.twitter.com',
+                'host' => 'stream.twitter.com',
             ));
     $tmhOAuth->request_settings['headers']['Host'] = 'stream.twitter.com';
 
     $networkpath = isset($GLOBALS["HOSTROLE"][CAPTURE]) ? $GLOBALS["HOSTROLE"][CAPTURE] : 'https://stream.twitter.com/';
     $method = $networkpath . '1.1/statuses/sample.json';
-    $params = array ( 'stall_warnings' => 'true' );
+    $params = array('stall_warnings' => 'true');
 
     logit(CAPTURE . ".error.log", "connecting");
     $tmhOAuth->streaming_request('POST', $method, $params, 'streamCallback', array('Host' => 'stream.twitter.com'));
 
     // output any response we get back AFTER the Stream has stopped -- or it errors
     logit(CAPTURE . ".error.log", "stream stopped - error " . var_export($tmhOAuth, 1));
- 
+
     logit(CAPTURE . ".error.log", "processing buffer before exit");
     processstweets($tweetbucket);
 }
 
 function streamCallback($data, $length, $metrics) {
-    global $tweetbucket,$lastinsert;
+    global $tweetbucket, $lastinsert;
     $now = time();
     $data = json_decode($data, true);
     if (isset($data["disconnect"])) {
@@ -81,181 +81,171 @@ function streamCallback($data, $length, $metrics) {
 
 // function receives a bucket of tweets, sorts them according to bins and inserts into DB
 function processtweets($tweetbucket) { // @todo, should use tweet entity in capture/common/functions.php
-     global $path_local;
+    global $path_local;
 
-     $binname = 'onepercent';
-     
-     $list_tweets = array();
-     $list_hashtags = array();
-     $list_urls = array();
-     $list_mentions = array();
+    $binname = 'onepercent';
 
-     // running through every single tweet
-     foreach ($tweetbucket as $data) {
+    $list_tweets = array();
+    $list_hashtags = array();
+    $list_urls = array();
+    $list_mentions = array();
 
-         if (array_key_exists('warning', $data)) {
-               // Twitter sent us a warning
-               $code = $data['warning']['code'];
-               $message = $data['warning']['message'];
-               if ($code === 'FALLING_BEHIND') {
-                    $full = $data['warning']['percent_full'];
-                    // @todo: avoid writing this on every callback
-                    logit(CAPTURE . ".error.log", "twitter api warning received: ($code) $message [percentage full $full]");
-               } else {
-                    logit(CAPTURE . ".error.log", "twitter api warning received: ($code) $message");
-               }
-               
-         }
+    // running through every single tweet
+    foreach ($tweetbucket as $data) {
 
-         if (!array_key_exists('entities', $data)) {
+        if (array_key_exists('warning', $data)) {
+            // Twitter sent us a warning
+            $code = $data['warning']['code'];
+            $message = $data['warning']['message'];
+            if ($code === 'FALLING_BEHIND') {
+                $full = $data['warning']['percent_full'];
+                // @todo: avoid writing this on every callback
+                logit(CAPTURE . ".error.log", "twitter api warning received: ($code) $message [percentage full $full]");
+            } else {
+                logit(CAPTURE . ".error.log", "twitter api warning received: ($code) $message");
+            }
+        }
 
-               // unexpected/irregular tweet data
+        if (!array_key_exists('entities', $data)) {
 
-               if (array_key_exists('delete', $data)) {
-                    // a tweet has been deleted. @todo: process
-                    continue;
-               }
+            // unexpected/irregular tweet data
+            if (array_key_exists('delete', $data)) {
+                // a tweet has been deleted. @todo: process
+                continue;
+            }
 
-               // this can get very verbose when repeated?
+            // this can get very verbose when repeated?
+            //logit(CAPTURE . ".error.log", "irregular tweet data: " . var_export($data, 1));
+            continue;
+        }
 
-               logit(CAPTURE . ".error.log", "irregular tweet data: " . var_export($data, 1));
-               continue;
+        // adding the expanded url to the tweets text to search in them like twiter does
+        foreach ($data["entities"]["urls"] as $url) {
+            $data["text"] .= " [[" . $url["expanded_url"] . "]]";
+        }
 
-         }
+        //from_user_lang 	from_user_tweetcount 	from_user_followercount 	from_user_realname
+        $t = array();
+        $t["id"] = $data["id_str"];
+        $t["created_at"] = date("Y-m-d H:i:s", strtotime($data["created_at"]));
+        $t["from_user_name"] = mysql_real_escape_string($data["user"]["screen_name"]);
+        $t["from_user_id"] = $data["user"]["id_str"];
+        $t["from_user_lang"] = $data["user"]["lang"];
+        $t["from_user_tweetcount"] = $data["user"]["statuses_count"];
+        $t["from_user_followercount"] = $data["user"]["followers_count"];
+        $t["from_user_friendcount"] = $data["user"]["friends_count"];
+        $t["from_user_listed"] = $data["user"]["listed_count"];
+        $t["from_user_realname"] = mysql_real_escape_string($data["user"]["name"]);
+        $t["from_user_utcoffset"] = $data["user"]["utc_offset"];
+        $t["from_user_timezone"] = mysql_real_escape_string($data["user"]["time_zone"]);
+        $t["from_user_description"] = mysql_real_escape_string($data["user"]["description"]);
+        $t["from_user_url"] = mysql_real_escape_string($data["user"]["url"]);
+        $t["from_user_verified"] = $data["user"]["verified"];
+        $t["from_user_profile_image_url"] = $data["user"]["profile_image_url"];
+        $t["source"] = mysql_real_escape_string($data["source"]);
+        $t["location"] = mysql_real_escape_string($data["user"]["location"]);
+        $t["geo_lat"] = 0;
+        $t["geo_lng"] = 0;
+        if ($data["geo"] != null) {
+            $t["geo_lat"] = $data["geo"]["coordinates"][0];
+            $t["geo_lng"] = $data["geo"]["coordinates"][1];
+        }
+        $t["text"] = mysql_real_escape_string($data["text"]);
+        $t["retweet_id"] = null;
+        if (isset($data["retweeted_status"])) {
+            $t["retweet_id"] = $data["retweeted_status"]["id_str"];
+        }
+        $t["to_user_id"] = $data["in_reply_to_user_id_str"];
+        $t["to_user_name"] = mysql_real_escape_string($data["in_reply_to_screen_name"]);
+        $t["in_reply_to_status_id"] = $data["in_reply_to_status_id_str"];
+        $t["filter_level"] = $data["filter_level"];
 
-         // adding the expanded url to the tweets text to search in them like twiter does
-         foreach ($data["entities"]["urls"] as $url) {
-             $data["text"] .= " [[" . $url["expanded_url"] . "]]";
-         }
+        $list_tweets[] = "('" . implode("','", $t) . "')";
 
-         //from_user_lang 	from_user_tweetcount 	from_user_followercount 	from_user_realname
-         $t = array();
-         $t["id"] = $data["id_str"];
-         $t["created_at"] = date("Y-m-d H:i:s", strtotime($data["created_at"]));
-         $t["from_user_name"] = mysql_real_escape_string($data["user"]["screen_name"]);
-         $t["from_user_id"] = $data["user"]["id_str"];
-         $t["from_user_lang"] = $data["user"]["lang"];
-         $t["from_user_tweetcount"] = $data["user"]["statuses_count"];
-         $t["from_user_followercount"] = $data["user"]["followers_count"];
-         $t["from_user_friendcount"] = $data["user"]["friends_count"];
-         $t["from_user_listed"] = $data["user"]["listed_count"];
-         $t["from_user_realname"] = mysql_real_escape_string($data["user"]["name"]);
-         $t["from_user_utcoffset"] = $data["user"]["utc_offset"];
-         $t["from_user_timezone"] = mysql_real_escape_string($data["user"]["time_zone"]);
-         $t["from_user_description"] = mysql_real_escape_string($data["user"]["description"]);
-         $t["from_user_url"] = mysql_real_escape_string($data["user"]["url"]);
-         $t["from_user_verified"] = $data["user"]["verified"];
-         $t["from_user_profile_image_url"] = $data["user"]["profile_image_url"];
-         $t["source"] = mysql_real_escape_string($data["source"]);
-         $t["location"] = mysql_real_escape_string($data["user"]["location"]);
-         $t["geo_lat"] = 0;
-         $t["geo_lng"] = 0;
-         if ($data["geo"] != null) {
-             $t["geo_lat"] = $data["geo"]["coordinates"][0];
-             $t["geo_lng"] = $data["geo"]["coordinates"][1];
-         }
-         $t["text"] = mysql_real_escape_string($data["text"]);
-         $t["retweet_id"] = null;
-         if (isset($data["retweeted_status"])) {
-             $t["retweet_id"] = $data["retweeted_status"]["id_str"];
-         }
-         $t["to_user_id"] = $data["in_reply_to_user_id_str"];
-         $t["to_user_name"] = mysql_real_escape_string($data["in_reply_to_screen_name"]);
-         $t["in_reply_to_status_id"] = $data["in_reply_to_status_id_str"];
-         $t["filter_level"] = $data["filter_level"];
+        if (count($data["entities"]["hashtags"]) > 0) {
+            foreach ($data["entities"]["hashtags"] as $hashtag) {
+                $h = array();
+                $h["tweet_id"] = $t["id"];
+                $h["created_at"] = $t["created_at"];
+                $h["from_user_name"] = $t["from_user_name"];
+                $h["from_user_id"] = $t["from_user_id"];
+                $h["text"] = mysql_real_escape_string($hashtag["text"]);
 
-         $list_tweets[] = "('" . implode("','", $t) . "')";
+                $list_hashtags[] = "('" . implode("','", $h) . "')";
+            }
+        }
 
-         if (count($data["entities"]["hashtags"]) > 0) {
-             foreach ($data["entities"]["hashtags"] as $hashtag) {
-                 $h = array();
-                 $h["tweet_id"] = $t["id"];
-                 $h["created_at"] = $t["created_at"];
-                 $h["from_user_name"] = $t["from_user_name"];
-                 $h["from_user_id"] = $t["from_user_id"];
-                 $h["text"] = mysql_real_escape_string($hashtag["text"]);
+        if (count($data["entities"]["urls"]) > 0) {
+            foreach ($data["entities"]["urls"] as $url) {
+                $u = array();
+                $u["tweet_id"] = $t["id"];
+                $u["created_at"] = $t["created_at"];
+                $u["from_user_name"] = $t["from_user_name"];
+                $u["from_user_id"] = $t["from_user_id"];
+                $u["url"] = $url["url"];
+                $u["url_expanded"] = mysql_real_escape_string($url["expanded_url"]);
 
-                 $list_hashtags[] = "('" . implode("','", $h) . "')";
-             }
-         }
+                $list_urls[] = "('" . implode("','", $u) . "')";
+            }
+        }
 
-         if (count($data["entities"]["urls"]) > 0) {
-             foreach ($data["entities"]["urls"] as $url) {
-                 $u = array();
-                 $u["tweet_id"] = $t["id"];
-                 $u["created_at"] = $t["created_at"];
-                 $u["from_user_name"] = $t["from_user_name"];
-                 $u["from_user_id"] = $t["from_user_id"];
-                 $u["url"] = $url["url"];
-                 $u["url_expanded"] = mysql_real_escape_string($url["expanded_url"]);
+        if (count($data["entities"]["user_mentions"]) > 0) {
+            foreach ($data["entities"]["user_mentions"] as $mention) {
+                $m = array();
+                $m["tweet_id"] = $t["id"];
+                $m["created_at"] = $t["created_at"];
+                $m["from_user_name"] = $t["from_user_name"];
+                $m["from_user_id"] = $t["from_user_id"];
+                $m["to_user"] = $mention["screen_name"];
+                $m["to_user_id"] = $mention["id_str"];
 
-                 $list_urls[] = "('" . implode("','", $u) . "')";
-             }
-         }
+                $list_mentions[] = "('" . implode("','", $m) . "')";
+            }
+        }
+    }
 
-         if (count($data["entities"]["user_mentions"]) > 0) {
-             foreach ($data["entities"]["user_mentions"] as $mention) {
-                 $m = array();
-                 $m["tweet_id"] = $t["id"];
-                 $m["created_at"] = $t["created_at"];
-                 $m["from_user_name"] = $t["from_user_name"];
-                 $m["from_user_id"] = $t["from_user_id"];
-                 $m["to_user"] = $mention["screen_name"];
-                 $m["to_user_id"] = $mention["id_str"];
+    // distribute tweets into bins
+    if (count($list_tweets) > 0) {
 
-                 $list_mentions[] = "('" . implode("','", $m) . "')";
-             }
-         }
-     }
+        $sql = "INSERT DELAYED IGNORE INTO " . $binname . "_tweets (id,created_at,from_user_name,from_user_id,from_user_lang,from_user_tweetcount,from_user_followercount,from_user_friendcount,from_user_listed,from_user_realname,from_user_utcoffset,from_user_timezone,from_user_description,from_user_url,from_user_verified,from_user_profile_image_url,source,location,geo_lat,geo_lng,text,retweet_id,to_user_id,to_user_name,in_reply_to_status_id,filter_level) VALUES " . implode(",", $list_tweets);
+        $sqlresults = mysql_query($sql);
+        if (!$sqlresults) {
+            logit(CAPTURE . ".error.log", "insert error: " . $sql);
+        } elseif (database_activity()) {
+            $pid = getmypid();
+            file_put_contents($path_local . "proc/" . CAPTURE . ".procinfo", $pid . "|" . time());
+        }
+    }
 
-     // set character encoding to uf8 for inserts
-     //mysql_set_charset('utf8');
-     //mysql_query("SET character_set_results = 'utf8', character_set_client = 'utf8', character_set_connection = 'utf8', character_set_database = 'utf8', character_set_server = 'utf8'");
+    if (count($list_hashtags) > 0) {
 
-     // distribute tweets into bins
+        $sql = "INSERT DELAYED IGNORE INTO " . $binname . "_hashtags (tweet_id,created_at,from_user_name,from_user_id,text) VALUES " . implode(",", $list_hashtags);
 
+        $sqlresults = mysql_query($sql);
+        if (!$sqlresults) {
+            logit(CAPTURE . ".error.log", "insert error: " . $sql);
+        }
+    }
 
-     if (count($list_tweets) > 0) {
+    if (count($list_urls) > 0) {
 
-         $sql = "INSERT DELAYED IGNORE INTO " . $binname . "_tweets (id,created_at,from_user_name,from_user_id,from_user_lang,from_user_tweetcount,from_user_followercount,from_user_friendcount,from_user_listed,from_user_realname,from_user_utcoffset,from_user_timezone,from_user_description,from_user_url,from_user_verified,from_user_profile_image_url,source,location,geo_lat,geo_lng,text,retweet_id,to_user_id,to_user_name,in_reply_to_status_id,filter_level) VALUES " . implode(",", $list_tweets);
-         $sqlresults = mysql_query($sql);
-         if (!$sqlresults) {
-             logit(CAPTURE . ".error.log", "insert error: " . $sql);
-         } elseif (database_activity()) {
-             $pid = getmypid();
-             file_put_contents($path_local . "proc/" . CAPTURE . ".procinfo", $pid . "|" . time());
-         }
-     }
+        $sql = "INSERT DELAYED IGNORE INTO " . $binname . "_urls (tweet_id,created_at,from_user_name,from_user_id,url,url_expanded) VALUES " . implode(",", $list_urls);
 
-     if (count($list_hashtags) > 0) {
+        $sqlresults = mysql_query($sql);
+        if (!$sqlresults) {
+            logit(CAPTURE . "error.log", "insert error: " . $sql);
+        }
+    }
 
-         $sql = "INSERT DELAYED IGNORE INTO " . $binname . "_hashtags (tweet_id,created_at,from_user_name,from_user_id,text) VALUES " . implode(",", $list_hashtags);
+    if (count($list_mentions) > 0) {
 
-         $sqlresults = mysql_query($sql);
-         if (!$sqlresults) {
-             logit(CAPTURE . ".error.log", "insert error: " . $sql);
-         }
-     }
+        $sql = "INSERT DELAYED IGNORE INTO " . $binname . "_mentions (tweet_id,created_at,from_user_name,from_user_id,to_user,to_user_id) VALUES " . implode(",", $list_mentions);
 
-     if (count($list_urls) > 0) {
-
-         $sql = "INSERT DELAYED IGNORE INTO " . $binname . "_urls (tweet_id,created_at,from_user_name,from_user_id,url,url_expanded) VALUES " . implode(",", $list_urls);
-
-         $sqlresults = mysql_query($sql);
-         if (!$sqlresults) {
-             logit(CAPTURE . "error.log", "insert error: " . $sql);
-         }
-     }
-
-     if (count($list_mentions) > 0) {
-
-         $sql = "INSERT DELAYED IGNORE INTO " . $binname . "_mentions (tweet_id,created_at,from_user_name,from_user_id,to_user,to_user_id) VALUES " . implode(",", $list_mentions);
-
-         $sqlresults = mysql_query($sql);
-         if (!$sqlresults) {
-             logit(CAPTURE . ".error.log", "insert error: " . $sql);
-         }
-     }
+        $sqlresults = mysql_query($sql);
+        if (!$sqlresults) {
+            logit(CAPTURE . ".error.log", "insert error: " . $sql);
+        }
+    }
 }
 
 function logit($file, $message) {
@@ -277,9 +267,11 @@ function database_activity() {
     // we explicitely use the MySQL function last_insert_id
     // we don't want any PHP caching of insert id's()
     $results = mysql_query("SELECT LAST_INSERT_ID()");
-    if (!$results) { return FALSE; }
+    if (!$results) {
+        return FALSE;
+    }
     $row = mysql_fetch_row($results);
-    $lid = $row[0]; 
+    $lid = $row[0];
     if ($lid === FALSE || $lid === 0) {
         return FALSE;
     }
