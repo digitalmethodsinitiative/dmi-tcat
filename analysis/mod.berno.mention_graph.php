@@ -3,7 +3,6 @@
 require_once './common/config.php';
 require_once './common/functions.php';
 
-// script duplicated to do some experimental stuff with user accounts
 // TODO: test Follower vs. Friend Metrics
 
 ?>
