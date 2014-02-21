@@ -329,7 +329,6 @@ class Tweet {
     public $coordinates;
     public $in_reply_to_status_id_str;
     public $in_reply_to_screen_name;
-    public $id_str;
     public $place;
     public $retweet_count;
     public $geo;
@@ -456,12 +455,13 @@ class Tweet {
         $q->bindParam(':filter_level', $this->filter_level, PDO::PARAM_STR); //
         $q->bindParam(':lang', $this->lang, PDO::PARAM_STR); //
 
-
         $saved_tweet = $q->execute();
         //print $q->rowCount();
         // if tweet already exists, do not update hashtags, mentions, urls. As they have no unique constraint, it would just add extra info. _tweets has id as its unique primary key
-        if ($q->rowCount() > 1)    // The affected-rows count makes it easy to determine whether REPLACE only added a row or whether it also replaced any rows: Check whether the count is 1 (added) or greater (replaced).
+        if ($q->rowCount() > 1) {   // The affected-rows count makes it easy to determine whether REPLACE only added a row or whether it also replaced any rows: Check whether the count is 1 (added) or greater (replaced).
+            print "row count " . $q->rowCount() . "\n";
             return $saved_tweet;
+        }
 
         if ($this->hashtags) {
             foreach ($this->hashtags as $hashtag) {
@@ -486,7 +486,7 @@ class Tweet {
 					(tweet_id, created_at, from_user_name, from_user_id, url, url_expanded) 
 					VALUES (:tweet_id, :created_at , :from_user_name, :from_user_id, :url, :url_expanded)");
 
-                $q->bindParam(':tweet_id', $this->id, PDO::PARAM_STR);
+                $q->bindParam(':tweet_id', $this->id_str, PDO::PARAM_STR);
                 $date = date("Y-m-d H:i:s", strtotime($this->created_at));
                 $q->bindParam(':created_at', $date, PDO::PARAM_STR);
                 $q->bindParam(':from_user_name', $this->user->screen_name, PDO::PARAM_STR);
@@ -529,7 +529,7 @@ class TwitterRelations {
     private $screen_name;
     private $observed_at;
 
-    public function __construct($screen_name_or_id, array $relations, $type, $observed_at) {
+    public function __construct($screen_name_or_id, $relations, $type, $observed_at) {
 
         if (is_numeric($screen_name_or_id)) {
             $this->id = $screen_name_or_id;
@@ -537,7 +537,7 @@ class TwitterRelations {
             $this->screen_name = $screen_name_or_id;
         }
 
-        $this->list = array_unique($relations);
+        $this->users = $relations;
         $this->type = $type;
         $this->observed_at = $observed_at;
     }
@@ -553,33 +553,38 @@ class TwitterRelations {
             if ($result && $result->from_user_id) {
                 $this->id = $result->from_user_id;
             } else {
-                throw new Exception("No matching user id for `screen_name` = 
-									$this->screen_name in table $bin_name found.");
+                throw new Exception("No matching user id for `screen_name` =  {$this->screen_name} in table $bin_name found.");
             }
         }
 
-        foreach ($this->list as $relation) {
+        foreach ($this->users as $user) {
             $q = $dbh->prepare(
-                    "REPLACE INTO " . $bin_name . '_relations' . "
-				(user1_id, user2_id, type, observed_at)
+                    "INSERT INTO " . $bin_name . '_relations' . "
+				(user1_id, user1_name, type, observed_at, user2_id, user2_name, user2_realname)
 				VALUES 
-				(:user1_id, :user2_id, :type, :observed_at);");
-
-            $q->bindParam(":user1_id", $this->id, PDO::PARAM_INT);
-            $q->bindParam(":user2_id", $relation, PDO::PARAM_INT);
+				(:user1_id, :user1_name, :type, :observed_at, :user2_id, :user2_name, :user2_realname);");
+            $q->bindParam(":user1_id", $this->id, PDO::PARAM_INT); // @otod id_str?
+            $q->bindParam(":user1_name", $this->screen_name, PDO::PARAM_STR);
             $q->bindParam(":type", $this->type, PDO::PARAM_STR);
             $q->bindParam(":observed_at", $this->observed_at, PDO::PARAM_STR);
+            $q->bindParam(':user2_id', $user['id_str'], PDO::PARAM_STR);
+            $q->bindParam(':user2_name', $user['screen_name'], PDO::PARAM_STR);
+            $q->bindParam(':user2_realname', $user['name'], PDO::PARAM_STR);
             $q->execute();
         }
     }
 
     public static function create_relations_tables(PDO $dbh, $bin_name) {
         $sql = "CREATE TABLE IF NOT EXISTS " . $bin_name . "_relations (
-		user1_id int(11) NOT NULL,
-		user2_id int(11) NOT NULL,
-		type varchar(255),
+		user1_id bigint NOT NULL,
+                user1_name varchar(255) NOT NULL,		
+                type varchar(255),
 		observed_at datetime,
-		PRIMARY KEY (user1_id, user2_id, type)
+                user2_id bigint NOT NULL,
+		user2_name varchar(255) NOT NULL,
+                user2_realname varchar(255),
+		KEY `user1_id` (`user1_id`), 
+                KEY `user2_id` (`user2_id`)
 		) ENGINE=MyISAM DEFAULT CHARSET=utf8";
 
         if ($dbh->exec($sql)) {
