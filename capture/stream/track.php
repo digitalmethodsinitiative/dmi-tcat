@@ -40,7 +40,7 @@ function stream() {
 
     logit(CAPTURE . ".error.log", "connecting to API socket");
     $pid = getmypid();
-	$lastinsert = time();
+    $lastinsert = time();
     file_put_contents($path_local . "proc/" . CAPTURE . ".procinfo", $pid . "|" . time());
 
     $tweetbucket = array();
@@ -63,7 +63,7 @@ function stream() {
                 'consumer_secret' => $twitter_consumer_secret,
                 'token' => $twitter_user_token,
                 'secret' => $twitter_user_secret,
-		'host' => 'stream.twitter.com',
+                'host' => 'stream.twitter.com',
             ));
     $tmhOAuth->request_settings['headers']['Host'] = 'stream.twitter.com';
 
@@ -77,13 +77,14 @@ function stream() {
     logit(CAPTURE . ".error.log", "stream stopped - error " . var_export($tmhOAuth, 1));
 
     logit(CAPTURE . ".error.log", "processing buffer before exit");
-    processstweets($tweetbucket);
-
+    processtweets($tweetbucket);
+    logit(CAPTURE . ".error.log", "automatically restarting ...");
+    exec("cd " . BASE_FILE . "capture/stream; php controller.php &");
 }
 
 function streamCallback($data, $length, $metrics) {
-    global $tweetbucket,$lastinsert;
-	$now = time();
+    global $tweetbucket, $lastinsert;
+    $now = time();
     $data = json_decode($data, true);
     if (isset($data["disconnect"])) {
         $discerror = implode(",", $data["disconnect"]);
@@ -93,28 +94,27 @@ function streamCallback($data, $length, $metrics) {
     if ($data) {
 
         // handle rate limiting
-        if (array_key_exists('limit', $data)) {
+        if (isset($data['limit'])) {
             global $ratelimit, $exceeding, $ex_start;
             if (isset($data['limit'][CAPTURE])) {
                 $current = $data['limit'][CAPTURE];
                 if ($current > $ratelimit) {
                     // currently exceeding rate limit
                     if (!$exceeding) {
-                         // new disturbance!
-                         $ex_start = time();
-                         ratelimit_report_problem();
-                         logit(CAPTURE . ".error.log", "you have hit a rate limit. consider reducing your query bin sizes");
+                        // new disturbance!
+                        $ex_start = time();
+                        ratelimit_report_problem();
+                        logit(CAPTURE . ".error.log", "you have hit a rate limit. consider reducing your query bin sizes. limit: " . $data['limit'][CAPTURE]);
                     }
                     $ratelimit = $current;
                     $exceeding = 1;
 
                     if (time() > ($ex_start + RATELIMIT_SILENCE * 6)) {
-                         // every half an hour (or: heartbeat x 6), record, but keep the exceeding flag set
-                         ratelimit_record($ratelimit, $ex_start);
-                         $ex_start = time();
+                        // every half an hour (or: heartbeat x 6), record, but keep the exceeding flag set
+                        ratelimit_record($ratelimit, $ex_start);
+                        $ex_start = time();
                     }
-
-                } elseif ($exceeding && time() < ($ex_start + RATELIMIT_SILENCE) ) {
+                } elseif ($exceeding && time() < ($ex_start + RATELIMIT_SILENCE)) {
                     // we are now no longer exceeding the rate limit
                     // to avoid flip-flop we only reset our values after the minimal heartbeat has passed
 
@@ -132,10 +132,11 @@ function streamCallback($data, $length, $metrics) {
         $tweetbucket[] = $data;
         if (count($tweetbucket) == 100 || $now > $lastinsert + 5) {
             processtweets($tweetbucket);
-			$lastinsert = time();
+            $lastinsert = time();
             $tweetbucket = array();
         }
-    }
+    } else
+        logit(CAPTURE . ".error.log", "no data");
 }
 
 // function receives a bucket of tweets, sorts them according to bins and inserts into DB
@@ -153,31 +154,29 @@ function processtweets($tweetbucket) {
         foreach ($tweetbucket as $data) {
 
             if (array_key_exists('warning', $data)) {
-                  // Twitter sent us a warning
-                  $code = $data['warning']['code'];
-                  $message = $data['warning']['message'];
-                  if ($code === 'FALLING_BEHIND') {
-                       $full = $data['warning']['percent_full'];
-                       // @todo: avoid writing this on every callback
-                       logit(CAPTURE . ".error.log", "twitter api warning received: ($code) $message [percentage full $full]");
-                  } else {
-                       logit(CAPTURE . ".error.log", "twitter api warning received: ($code) $message");
-                  }
-                  
+                // Twitter sent us a warning
+                $code = $data['warning']['code'];
+                $message = $data['warning']['message'];
+                if ($code === 'FALLING_BEHIND') {
+                    $full = $data['warning']['percent_full'];
+                    // @todo: avoid writing this on every callback
+                    logit(CAPTURE . ".error.log", "twitter api warning received: ($code) $message [percentage full $full]");
+                } else {
+                    logit(CAPTURE . ".error.log", "twitter api warning received: ($code) $message");
+                }
             }
 
             if (!array_key_exists('entities', $data)) {
 
-                  // unexpected/irregular tweet data
-                  if (array_key_exists('delete', $data)) {
-                       // a tweet has been deleted. @todo: process
-                       continue;
-                  }
+                // unexpected/irregular tweet data
+                if (array_key_exists('delete', $data)) {
+                    // a tweet has been deleted. @todo: process
+                    continue;
+                }
 
-                  // this can get very verbose when repeated?
-                  //logit(CAPTURE . ".error.log", "irregular tweet data: " . var_export($data, 1));
-                  continue;
-
+                // this can get very verbose when repeated?
+                //logit(CAPTURE . ".error.log", "irregular tweet data: " . var_export($data, 1));
+                continue;
             }
 
             // adding the expanded url to the tweets text to search in them like twiter does
@@ -211,7 +210,7 @@ function processtweets($tweetbucket) {
                     }
                 } else {
 
-                    // treet quoted queries as single words
+                    // treat quoted queries as single words
                     $query = preg_replace("/\'/", "", $query);
 
                     if (preg_match("/" . $query . "/i", $data["text"])) {
@@ -355,6 +354,7 @@ function processtweets($tweetbucket) {
             }
         }
     }
+    return TRUE;
 }
 
 function logit($file, $message) {
@@ -376,9 +376,11 @@ function database_activity() {
     // we explicitely use the MySQL function last_insert_id
     // we don't want any PHP caching of insert id's()
     $results = mysql_query("SELECT LAST_INSERT_ID()");
-    if (!$results) { return FALSE; }
+    if (!$results) {
+        return FALSE;
+    }
     $row = mysql_fetch_row($results);
-    $lid = $row[0]; 
+    $lid = $row[0];
     if ($lid === FALSE || $lid === 0) {
         return FALSE;
     }

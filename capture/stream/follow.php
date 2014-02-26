@@ -77,7 +77,7 @@ function stream() {
     logit(CAPTURE . ".error.log", "stream stopped - error " . var_export($tmhOAuth, 1));
 
     logit(CAPTURE . ".error.log", "processing buffer before exit");
-    processstweets($tweetbucket);
+    processtweets($tweetbucket);
 }
 
 function streamCallback($data, $length, $metrics) {
