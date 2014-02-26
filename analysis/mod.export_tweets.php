@@ -48,23 +48,23 @@ require_once './common/functions.php';
                 $out .= $id . "," .
                         strtotime($data["created_at"]) . "," .
                         $data["created_at"] . "," .
-                        $data["from_user_name"] . "," .
-                        $data['from_user_lang'] . "," .
-                        validate($data["text"], "tweet") . "," .
-                        "\"" . strip_tags(html_entity_decode($data["source"])) . "\"," .
-                        "\"" . preg_replace("/[\r\t\n,]/", " ", trim(strip_tags(html_entity_decode($data["location"])))) . "\"," .
+                        "\"" . cleanText($data["from_user_name"]) . "\"," .
+                        "\"" . $data['from_user_lang'] . "\"," .
+                        "\"" . validate($data["text"], "tweet") . "\"," .
+                        "\"" . cleanText($data["source"]) . "\"," .
+                        "\"" . cleanTExt($data["location"]) . "\"," .
                         $data['geo_lat'] . "," .
                         $data['geo_lng'] . "," .
                         (isset($data['from_user_follower_count']) ? $data['from_user_follower_count'] : "") . "," .
                         (isset($data['from_user_friend_count']) ? $data['from_user_friend_count'] : "") . "," .
-                        (isset($data['from_user_realname']) ? $data['from_user_realname'] : "") . "," .
-                        (isset($data['to_user_name']) ? $data['to_user_name'] : "") . "," .
+                        (isset($data['from_user_realname']) ? "\"" . cleanText($data['from_user_realname']) . "\"" : "") . "," .
+                        (isset($data['to_user_name']) ? "\"" . cleanText($data['to_user_name']) . "\"" : "") . "," .
                         (isset($data['in_reply_to_status_id']) ? $data['in_reply_to_status_id'] : "") . "," .
                         (isset($data['from_user_listed']) ? $data['from_user_listed'] : "") . "," .
                         (isset($data['from_user_utcoffset']) ? $data['from_user_utcoffset'] : "") . "," .
                         (isset($data['from_user_timezone']) ? $data['from_user_timezone'] : "") . "," .
-                        "\"" . preg_replace("/[\r\t\n,]/", " ", trim(strip_tags(html_entity_decode($data['from_user_description'])))) . "\"," .
-                        "\"" . preg_replace("/[\r\t\n,]/", " ", trim($data['from_user_url'])) . "\"," .
+                        "\"" . cleanText($data['from_user_description']) . "\"," .
+                        "\"" . cleanText($data['from_user_url']) . "\"," .
                         $data['from_user_verified'] . "," .
                         $data['filter_level'];
                 if (isset($_GET['includeUrls']) && $_GET['includeUrls'] == 1) {
@@ -88,6 +88,10 @@ require_once './common/functions.php';
                 }
                 $out .= "\n";
             }
+        }
+
+        function cleanText($text) {
+            return preg_replace("/[\r\t\n,]/", " ", addslashes(trim(strip_tags(html_entity_decode($text)))));
         }
 
         $filename = get_filename_for_export("fullExport");

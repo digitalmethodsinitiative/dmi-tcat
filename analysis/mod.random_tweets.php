@@ -66,7 +66,7 @@ require_once './common/functions.php';
             $sqlresults = mysql_query($sql);
             $content = array();
             while ($data = mysql_fetch_assoc($sqlresults)) {
-                $content[$data['id']] = strtotime($data["created_at"]) . "," . $data["created_at"] . "," . $data["from_user_name"] . "," . $data['from_user_lang'] . "," . validate($data["text"], "tweet") . ",\"" . strip_tags(html_entity_decode($data["source"])) . "\",\"" . preg_replace("/[\r\t\n,]/", " ", trim(strip_tags(html_entity_decode($data["location"])))) . "\"," . $data['geo_lat'] . "," . $data['geo_lng'];
+                $content[$data['id']] = strtotime($data["created_at"]) . "," . $data["created_at"] . ",\"" . cleanText($data["from_user_name"]) . "\",\"" . $data['from_user_lang'] . "\",\"" . validate($data["text"], "tweet") . "\",\"" . cleanText($data["source"]) . "\",\"" . cleanText($data["location"]) . "\"," . $data['geo_lat'] . "," . $data['geo_lng'];
             }
 
             // get hashtags
@@ -104,6 +104,10 @@ require_once './common/functions.php';
                     $out = substr($out, 0, -1);
                 //$out .= ",".$id;
                 $out .= "\n";
+            }
+
+            function cleanText($text) {
+                return preg_replace("/[\r\t\n,]/", " ", trim(strip_tags(html_entity_decode($text))));
             }
 
             $filename = get_filename_for_export("randomTweets", $samplesize);
