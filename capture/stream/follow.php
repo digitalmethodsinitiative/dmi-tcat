@@ -173,11 +173,6 @@ function processtweets($tweetbucket) { // @todo, should use tweet entity in capt
                 continue;
             }
 
-            // adding the expanded url to the tweets text to search in them like twiter does
-            foreach ($data["entities"]["urls"] as $url) {
-                $data["text"] .= " [[" . $url["expanded_url"] . "]]";
-            }
-
             // we check for every query in the bin if they fit
             $found = in_array($data["user"]["id"], $queries) ? TRUE : FALSE;
 

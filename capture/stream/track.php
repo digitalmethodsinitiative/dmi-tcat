@@ -179,11 +179,6 @@ function processtweets($tweetbucket) {
                 continue;
             }
 
-            // adding the expanded url to the tweets text to search in them like twiter does
-            foreach ($data["entities"]["urls"] as $url) {
-                $data["text"] .= " [[" . $url["expanded_url"] . "]]";
-            }
-
             // we check for every query in the bin if they fit
             $found = false;
 
