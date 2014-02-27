@@ -30,6 +30,13 @@ if (!empty($list_name)) {
         }
     }
 }
+// you can also retrieve the users from a set of tweets
+if (empty($user_ids)) {
+    $q = $dbh->prepare("SELECT DISTINCT(from_user_name) FROM " . $bin_name . "_tweets");
+    if ($q->execute()) {
+        $user_ids = $q->fetchAll(PDO::FETCH_COLUMN, 0);
+    }
+}
 
 if (empty($bin_name))
     die("bin_name not set\n");
