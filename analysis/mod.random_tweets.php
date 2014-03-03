@@ -106,10 +106,6 @@ require_once './common/functions.php';
                 $out .= "\n";
             }
 
-            function cleanText($text) {
-                return preg_replace("/[\r\t\n,]/", " ", trim(strip_tags(html_entity_decode($text))));
-            }
-
             $filename = get_filename_for_export("randomTweets", $samplesize);
             file_put_contents($filename, chr(239) . chr(187) . chr(191) . $out);
 
@@ -118,6 +114,11 @@ require_once './common/functions.php';
 
             echo '</fieldset>';
         }
+
+        function cleanText($text) {
+            return preg_replace("/[\r\t\n,]/", " ", trim(strip_tags(html_entity_decode($text))));
+        }
+
         ?>
 
     </body>
