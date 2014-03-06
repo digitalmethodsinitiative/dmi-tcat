@@ -1,0 +1,530 @@
+<?php
+
+include_once("../config.php");
+
+if (defined(ADMIN_USER) && ADMIN_USER != "" && (!isset($_SERVER['PHP_AUTH_USER']) || $_SERVER['PHP_AUTH_USER'] != ADMIN_USER))
+    die("Go away, you evil hacker!");
+
+include_once("../common/functions.php");
+include_once("../capture/common/functions.php");
+
+$captureroles = unserialize(CAPTUREROLES);
+$now = strftime("%Y-%m-%d %H:%M:00", date('U') + 60); // controller only called each minute
+
+if (isset($_POST) && isset($_POST['action'])) {
+    $action = $_POST["action"];
+
+    switch ($action) {
+        case "newbin":
+            create_new_bin($_POST);
+            break;
+        case "pausebin":
+            pause_bin($_POST);
+            break;
+        case "modifybin":
+            modify_bin($_POST);
+            break;
+        default:
+            break;
+    }
+}
+
+function create_new_bin($params) {
+    global $captureroles, $now;
+
+    $bin_name = $params["newbin_name"];
+    if (table_exists($bin_name) != 0) {
+        echo '{"msg":"Query bin [' . $bin_name . '] already exists. Please change your bin name."}';
+        return;
+    }
+    $type = $params['type'];
+    if (array_search($type, $captureroles) === false) {
+        echo '{"msg":"This capturing type is not defined in the config file"}';
+        return;
+    }
+
+    // check whether the main query management tables are there, if not, create
+    create_admin();
+
+    $dbh = pdo_connect();
+
+    // if one percent check whether there already is an active onepercent bin
+    if ($type == "onepercent") {
+        $sql = "SELECT querybin FROM tcat_query_bins WHERE type = 'onepercent' AND active = 1";
+        $rec = $dbh->prepare($sql);
+        if ($rec->execute() && $rec->rowCount() > 0) {
+            echo '{"msg":"You can only have one active one percent stream at the same time"}';
+            return;
+        }
+    }
+
+    // populate tcat_query_bin table
+    $sql = "INSERT INTO tcat_query_bins (querybin,type,active) VALUES ('" . mysql_real_escape_string(trim($bin_name)) . "','" . $type . "','1')";
+    $insert_querybin = $dbh->prepare($sql);
+    $insert_querybin->execute();
+    $lastbinid = $dbh->lastInsertId();
+
+    // insert a period
+    $sql = "INSERT INTO tcat_query_bins_periods (querybin_id,starttime,endtime) VALUES ('" . $lastbinid . "','$now','0000-00-00 00:00:00')";
+    $insert_periods = $dbh->prepare($sql);
+    $insert_periods->execute();
+
+    create_bin($bin_name);
+
+    if ($type == "track") {
+        $phrases = explode(",", $params["newbin_phrases"]);
+        $phrases = array_trim_and_unique($phrases);
+
+        // populate the phrases and connector tables
+        foreach ($phrases as $phrase) {
+            $sql = "SELECT distinct(id) FROM tcat_query_phrases WHERE phrase='" . mysql_real_escape_string($phrase) . "'";
+            $check_phrase = $dbh->prepare($sql);
+            $check_phrase->execute();
+            if ($check_phrase->rowCount() > 0) {
+                $results = $check_phrase->fetch();
+                $inid = $results['id'];
+            } else {
+                $sql = "INSERT INTO tcat_query_phrases (phrase) VALUES ('" . mysql_real_escape_string($phrase) . "')";
+                $insert_phrase = $dbh->prepare($sql);
+                $insert_phrase->execute();
+                $inid = $dbh->lastInsertId();
+            }
+            $sql = "INSERT INTO tcat_query_bins_phrases (phrase_id,querybin_id,starttime,endtime) VALUES ('" . $inid . "','" . $lastbinid . "','$now','0000-00-00 00:00:00')";
+            $insert_connect = $dbh->prepare($sql);
+            $insert_connect->execute();
+        }
+    } elseif ($type == "follow") {
+        $users = explode(",", $params["newbin_users"]);
+        $users = array_trim_and_unique($users);
+
+        // populate the phrases and connector tables
+        foreach ($users as $user) {
+            $sql = "SELECT distinct(id) FROM tcat_query_users WHERE id='" . mysql_real_escape_string($user) . "'";
+            $check_phrase = $dbh->prepare($sql);
+            $check_phrase->execute();
+            if ($check_phrase->rowCount() > 0) {
+                $results = $check_phrase->fetch();
+                $inid = $results['id'];
+            } else {
+                $sql = "INSERT INTO tcat_query_users (id) VALUES ('" . mysql_real_escape_string($user) . "')";
+                $insert_phrase = $dbh->prepare($sql);
+                $insert_phrase->execute();
+                $inid = $dbh->lastInsertId();
+            }
+            $sql = "INSERT INTO tcat_query_bins_users (user_id,querybin_id,starttime,endtime) VALUES ('" . $inid . "','" . $lastbinid . "','$now','0000-00-00 00:00:00')";
+            $insert_connect = $dbh->prepare($sql);
+            $insert_connect->execute();
+        }
+    }
+
+    if (web_reload_config_role($type)) {
+        echo '{"msg":"The new query bin has been created"}';
+    } else {
+        echo '{"msg":"The new query bin has been created but the ' . $type . ' script could NOT be restarted"}';
+    }
+    $dbh = false;
+}
+
+function pause_bin($params) {
+    global $captureroles, $now;
+
+    $dbh = pdo_connect();
+
+    if (!table_id_exists($params["bin"])) {
+        echo '{"msg":"The query bin could not be found"}';
+        return false;
+    }
+    $type = $params['type'];
+    if (array_search($type, $captureroles) === false) {
+        echo '{"msg":"This capturing type is not defined in the config file"}';
+        return;
+    }
+
+    $querybin_id = mysql_real_escape_string($params["bin"]);
+
+    // set the active flag in the query_bins table
+    $newstate = ($params["todo"] == "stop") ? 0 : 1;
+    $sql = "UPDATE tcat_query_bins SET active = '" . $newstate . "' WHERE id = $querybin_id";
+    $modify_bin = $dbh->prepare($sql);
+    $modify_bin->execute();
+
+    // manage the query_bins_periods
+    if ($params["todo"] == "stop") {
+        $sql = "SELECT distinct(id) FROM tcat_query_bins_periods WHERE querybin_id = $querybin_id AND endtime = '0000-00-00 00:00:00'";
+        $read_periods = $dbh->prepare($sql);
+        if ($read_periods->execute() && $read_periods->rowCount() > 0) {
+            $result = $read_periods->fetch();
+            $updateid = $result["id"];
+            $sql = "UPDATE tcat_query_bins_periods SET endtime = '$now' WHERE id = $updateid";
+            $update_periods = $dbh->prepare($sql);
+            $update_periods->execute();
+        }
+    } else {
+        $sql = "INSERT INTO tcat_query_bins_periods (querybin_id, starttime, endtime) VALUES ($querybin_id, '$now', '0000-00-00 00:00:00')";
+        $insert_periods = $dbh->prepare($sql);
+        $insert_periods->execute();
+    }
+
+    if ($type == "onepercent") { // one percent does not have queries or users, only period is the bin period
+        echo '{"msg":"Your query bin has been ' . $params["todo"] . 'ed"}';
+        $dbh = false;
+        return;
+    }
+
+    // manage the phrase and user periods
+    if ($params["todo"] == "start") {
+        // get latest active queries or users
+        if ($type == "track")
+            $sql = "SELECT min(endtime) as min, max(endtime) AS max FROM tcat_query_bins_phrases WHERE querybin_id = $querybin_id";
+        elseif ($type == "follow")
+            $sql = "SELECT min(endtime) as min, max(endtime) AS max FROM tcat_query_bins_users WHERE querybin_id = $querybin_id";
+        $rec = $dbh->prepare($sql);
+        $rec->execute();
+        $res = $rec->fetch();
+        if ($res['min'] == "0000-00-00 00:00:00") // if prhases were first modified and now need to be started
+            $endtime = $res['min'];
+        else
+            $endtime = $res['max'];
+
+        if ($type == "track")
+            $sql = "SELECT phrase_id FROM tcat_query_bins_phrases WHERE querybin_id = $querybin_id AND endtime = '$endtime'";
+        elseif ($type == "follow")
+            $sql = "SELECT user_id FROM tcat_query_bins_users WHERE querybin_id = $querybin_id AND endtime = '$endtime'";
+        $read_periods = $dbh->prepare($sql);
+        $read_periods->execute();
+        $results = $read_periods->fetchAll();
+        foreach ($results as $res) {
+            if ($type == "track")
+                $sql = "INSERT tcat_query_bins_phrases (phrase_id, querybin_id, starttime, endtime) VALUES (" . $res['phrase_id'] . ", $querybin_id, '$now', '0000-00-00 00:00:00')";
+            elseif ($type == "follow")
+                $sql = "INSERT tcat_query_bins_users (user_id, querybin_id, starttime, endtime) VALUES (" . $res['user_id'] . ", $querybin_id, '$now', '0000-00-00 00:00:00')";
+            $insert_periods = $dbh->prepare($sql);
+            $insert_periods->execute();
+        }
+    } else {
+        // stop all active queries or users
+        if ($type == "track")
+            $sql = "SELECT id, querybin_id FROM tcat_query_bins_phrases WHERE querybin_id = $querybin_id AND endtime = '0000-00-00 00:00:00'";
+        elseif ($type == "follow")
+            $sql = "SELECT id, querybin_id FROM tcat_query_bins_users WHERE querybin_id = $querybin_id AND endtime = '0000-00-00 00:00:00'";
+        $read_periods = $dbh->prepare($sql);
+        $read_periods->execute();
+        $results = $read_periods->fetchAll();
+        foreach ($results as $res) {
+            if ($type == "track")
+                $sql = "UPDATE tcat_query_bins_phrases SET endtime = '$now' WHERE querybin_id = $querybin_id AND id = " . $res['id'];
+            if ($type == "follow")
+                $sql = "UPDATE tcat_query_bins_users SET endtime = '$now' WHERE querybin_id = $querybin_id AND id = " . $res['id'];
+            $update_periods = $dbh->prepare($sql);
+            $update_periods->execute();
+        }
+    }
+
+    if ($params['todo'] == "stop")
+        $params['todo'] == "stopp";
+    if (web_reload_config_role($type)) {
+        echo '{"msg":"Your query bin has been ' . $params["todo"] . 'ed"}';
+    } else {
+        echo '{"msg":"Your query bin has been set as ' . $params["todo"] . 'ed but the ' . $type . ' script could NOT be restarted"}';
+    }
+    $dbh = false;
+}
+
+function modify_bin($params) {
+    global $captureroles, $now;
+
+    if (!table_id_exists($params["bin"])) {
+        echo '{"msg":"The bin ' . $params['bin'] . ' does not seem to exist"}';
+        return;
+    }
+    $querybin_id = mysql_real_escape_string(trim($params['bin']));
+
+    $type = $params['type'];
+    if (array_search($type, $captureroles) === false) {
+        echo '{"msg":"This capturing type is not defined in the config file"}';
+        return;
+    }
+
+    $dbh = pdo_connect();
+
+    $oldphrases = array_trim_and_unique(explode(",", $params["oldphrases"]));
+    $newphrases = array_trim_and_unique(explode(",", $params["newphrases"]));
+
+    $outs = array_diff($oldphrases, $newphrases);
+    $outs_escaped = array();
+    foreach ($outs as $k => $v) {
+        $outs_escaped[$k] = mysql_real_escape_string($v);
+    }
+    $ins = array_diff($newphrases, $oldphrases);
+    $ins_escaped = array();
+    foreach ($ins as $k => $v) {
+        $ins_escaped[$k] = mysql_real_escape_string($v);
+    }
+
+    // set endtime to now for each phrase or user going out
+    if (!empty($outs_escaped)) {
+        if ($type == "track")
+            $sql = "SELECT distinct(bp.id) FROM tcat_query_bins_phrases bp, tcat_query_phrases p WHERE bp.phrase_id = p.id AND bp.querybin_id = $querybin_id AND p.phrase IN ('" . implode("','", $outs_escaped) . "') AND bp.endtime = '0000-00-00 00:00:00'";
+        elseif ($type == "follow")
+            $sql = "SELECT distinct(bu.id) FROM tcat_query_bins_users bu, tcat_query_users u WHERE bu.user_id = u.id AND bu.querybin_id = $querybin_id AND u.id IN ('" . implode("','", $outs_escaped) . "') AND bu.endtime = '0000-00-00 00:00:00'";
+
+        $rec = $dbh->prepare($sql);
+        if ($rec->execute() && $rec->rowCount()) {
+            $ids = $rec->fetchAll(PDO::FETCH_COLUMN);
+            if ($type == "track")
+                $sql = "UPDATE tcat_query_bins_phrases SET endtime = '$now' WHERE querybin_id = $querybin_id AND id IN (" . implode(",", $ids) . ")";
+            elseif ($type == "follow")
+                $sql = "UPDATE tcat_query_bins_users SET endtime = '$now' WHERE querybin_id = $querybin_id AND id IN (" . implode(",", $ids) . ")";
+            $update_periods = $dbh->prepare($sql);
+            $update_periods->execute();
+        }
+    }
+
+    // for each phrase or user coming in, check if it already exists, if not create, set new bin-phrase connection
+    if (!empty($ins_escaped)) {
+        foreach ($ins_escaped as $in) {
+            if ($type == "track")
+                $sql = "SELECT id FROM tcat_query_phrases WHERE phrase = '$in'";
+            elseif ($type == "follow")
+                $sql = "SELECT id FROM tcat_query_users WHERE id = '$in'";
+            $check_phrase = $dbh->prepare($sql);
+            $check_phrase->execute();
+            if (!$check_phrase->rowCount()) {
+                if ($type == "track")
+                    $sql = "INSERT INTO tcat_query_phrases(phrase) VALUES('$in')";
+                elseif ($type == "follow")
+                    $sql = "INSERT INTO tcat_query_users(id) VALUES('$in')";
+                $insert_phrase = $dbh->prepare($sql);
+                $insert_phrase->execute();
+                $inid = $dbh->lastInsertId();
+            } else {
+                $results = $check_phrase->fetchAll();
+                $inid = $results[0]["id"];
+            }
+            // double check whether phrase or user is already running
+            if ($type == "track")
+                $sql = "SELECT min(endtime) AS min FROM tcat_query_bins_phrases WHERE querybin_id = $querybin_id AND phrase_id = $inid";
+            elseif ($type == "follow")
+                $sql = "SELECT min(endtime) AS min FROM tcat_query_bins_users WHERE querybin_id = $querybin_id AND user_id = $inid";
+            $rec = $dbh->prepare($sql);
+            $rec->execute();
+            $insertit = true;
+            if ($rec->rowCount() != 0) {
+                $res = $rec->fetch(PDO::FETCH_COLUMN);
+                if ($res == "0000-00-00 00:00:00")
+                    $insertit = false;
+            }
+            // insert new period
+            if ($insertit) {
+                if ($type == "track")
+                    $sql = "INSERT INTO tcat_query_bins_phrases(phrase_id, querybin_id, starttime, endtime) VALUES($inid, $querybin_id,  '$now', '0000-00-00 00:00:00')";
+                elseif ($type == "follow")
+                    $sql = "INSERT INTO tcat_query_bins_users(user_id, querybin_id, starttime, endtime) VALUES($inid, $querybin_id,  '$now', '0000-00-00 00:00:00')";
+                $insert_connect = $dbh->prepare($sql);
+                $insert_connect->execute();
+            }
+        }
+    }
+
+    if ($params['active'] == 0) {
+        $params["todo"] = "start";
+        pause_bin($params);
+    } else {
+        // restart capture
+        if (web_reload_config_role($type)) {
+            echo '{"msg": "The queries have been modified"}';
+        } else {
+            echo '{"msg": "The queries have been modified but the ' . $type . ' script could NOT be restarted"}';
+        }
+    }
+    $dbh = false;
+}
+
+function array_trim_and_unique($array) {
+    foreach ($array as $k => $v) {
+        $v = trim($v);
+        if (empty($v))
+            unset($array[$k]
+            );
+        else
+            $array[$k] = $v;
+    }
+    return $array;
+}
+
+function table_exists($binname) {
+    $dbh = pdo_connect();
+
+    $sql = "SHOW TABLES LIKE '" . mysql_real_escape_string(trim($binname)) . "%'";
+    $query = $dbh->prepare($sql);
+    $query->execute();
+    $rc = $query->rowCount();
+    $dbh = false;
+    return $rc;
+}
+
+function table_id_exists($id) {
+    $dbh = pdo_connect();
+    $sql = "SELECT querybin FROM tcat_query_bins WHERE id = " . mysql_real_escape_string(trim($id));
+    $rec = $dbh->prepare($sql);
+    if ($rec->execute() && $rec->rowCount() > 0) {
+        $res = $rec->fetch();
+        $binname = $res['querybin'];
+
+        $sql = "SHOW TABLES LIKE '$binname%'";
+        $query = $dbh->prepare($sql);
+        $query->execute();
+        $rc = $query->rowCount();
+        $dbh = false;
+        return $rc;
+    }
+    $dbh = false;
+    return 0;
+}
+
+function getNrOfActivePhrases() {
+    $dbh = pdo_connect();
+
+    $sql = "SELECT count(distinct(p.phrase)) AS count FROM tcat_query_phrases p, tcat_query_bins_phrases bp WHERE p.id = bp.phrase_id AND bp.endtime = '0000-00-00 00:00:00'";
+    $res = $dbh->prepare($sql);
+    $res->execute();
+    if ($res->rowCount() > 0) {
+        $result = $res->fetch();
+        return $result['count'];
+    }
+    $dbh = false;
+    return 0;
+}
+
+function getNrOfActiveUsers() {
+    $dbh = pdo_connect();
+
+    $sql = "SELECT count(distinct(u.id)) AS count FROM tcat_query_users u, tcat_query_bins_users bu WHERE u.id = bu.user_id AND bu.endtime = '0000-00-00 00:00:00'";
+    $res = $dbh->prepare($sql);
+    $res->execute();
+    if ($res->rowCount() > 0) {
+        $result = $res->fetch();
+        return $result['count'];
+    }
+    $dbh = false;
+    return 0;
+}
+
+function getBinIds() {
+
+
+    $dbh = pdo_connect();
+    $sql = "SELECT id, querybin FROM tcat_query_bins";
+    $rec = $dbh->prepare($sql);
+    $tables = array();
+    if ($rec->execute() && $rec->rowCount() > 0) {
+        while ($res = $rec->fetch())
+            $tables[
+                    $res['id']] = $res['querybin'];
+    }
+    $dbh = false;
+    return $tables;
+}
+
+function getBins() {
+
+    $dbh = pdo_connect();
+
+    // select query bins
+    // select phrases
+    // select users
+
+    $sql = "SELECT b.id, b.querybin, b.type, b.active, period.starttime AS bin_starttime, period.endtime AS bin_endtime FROM tcat_query_bins b, tcat_query_bins_periods period WHERE b.id = period.querybin_id ORDER BY b.querybin";
+    $rec = $dbh->prepare($sql);
+    $rec->execute();
+    $bin_results = $rec->fetchAll();
+    $querybins = array();
+    foreach ($bin_results as $data) {
+        if (!isset($querybins[$data['id']])) {
+            $bin = new stdClass();
+            $bin->periods = array();
+            $bin->phrases = array();
+            $bin->users = array();
+            $bin->id = $data['id'];
+            $bin->name = $data['querybin'];
+            $bin->type = $data['type'];
+            $bin->active = $data['active'];
+        } else {
+            $bin = $querybins[$data['id']];
+        }
+        $bin->periods[] = $data['bin_starttime'] . " - " . str_replace("0000-00-00 00:00:00", "now", $data['bin_endtime']);
+
+        if ($bin->type == "track") {
+            $sql = "SELECT p.id AS phrase_id, p.phrase, bp.starttime AS phrase_starttime, bp.endtime AS phrase_endtime FROM tcat_query_phrases p, tcat_query_bins_phrases bp WHERE p.id = bp.phrase_id AND bp.querybin_id = " . $bin->id;
+            $rec = $dbh->prepare($sql);
+            $rec->execute();
+            $phrase_results = $rec->fetchAll();
+            foreach ($phrase_results as $result) {
+                if (!isset($bin->phrases[$result['phrase_id']])) {
+                    $phrase = new stdClass();
+                    $phrase->id = $result['phrase_id'];
+                    $phrase->phrase = $result['phrase'];
+                    $phrase->periods = array();
+                    $phrase->active = false;
+                } else {
+                    $phrase = $bin->phrases[$result['phrase_id']];
+                }
+                if ($result["phrase_endtime"] == "0000-00-00 00:00:00")
+                    $phrase->active = true;
+
+                $phrase->periods[] = $result['phrase_starttime'] . " - " . str_replace("0000-00-00 00:00:00", "now", $result["phrase_endtime"]);
+                $bin->phrases[$result['phrase_id']] = $phrase;
+            }
+        } elseif ($bin->type == "follow") {
+            $sql = "SELECT u.id AS user_id, bu.starttime AS user_starttime, bu.endtime AS user_endtime FROM tcat_query_users u, tcat_query_bins_users bu WHERE u.id = bu.user_id AND bu.querybin_id = " . $bin->id;
+            $rec = $dbh->prepare($sql);
+            $rec->execute();
+            $user_results = $rec->fetchAll();
+            foreach ($user_results as $result) {
+                if (!isset($bin->users[$result['user_id']])) {
+                    $user = new stdClass();
+                    $user->id = $result['user_id'];
+                    $user->periods = array();
+                    $user->active = false;
+                } else {
+                    $user = $bin->users[$result['user_id']];
+                }
+                if ($result["user_endtime"] == "0000-00-00 00:00:00")
+                    $user->active = true;
+
+                $user->periods[] = $result['user_starttime'] . " - " . str_replace("0000-00-00 00:00:00", "now", $result["user_endtime"]);
+                $bin->users[$result['user_id']] = $user;
+            }
+        }
+        $querybins[$bin->id] = $bin;
+    }
+
+
+
+    // get nr of tweets per bin
+    foreach ($querybins as $bin) {
+        $querybins[$bin->id]->nrOfTweets = 0;
+        if (table_exists($bin->name)) {
+            $sql = "SELECT count(id) AS count FROM " . $bin->name . "_tweets";
+            $res = $dbh->prepare($sql);
+            if ($res->execute() && $res->rowCount()) {
+                $result = $res->fetch();
+                $querybins[$bin->id]->nrOfTweets = $result['count'];
+            }
+        }
+    }
+    $dbh = false;
+    return $querybins;
+}
+
+function getLastRateLimitHit() {
+    $dbh = pdo_connect();
+    $rec = $dbh->prepare("SELECT end FROM tcat_error_ratelimit ORDER BY end DESC LIMIT 1");
+    if ($rec->execute() && $rec->rowCount() > 0) {
+        $res = $rec->fetch();
+        return $res['end'];
+    }
+    return 0;
+}
+
+?>
