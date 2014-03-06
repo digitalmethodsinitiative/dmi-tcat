@@ -136,6 +136,7 @@ function create_admin() {
     `querybin` VARCHAR(45) NOT NULL,
     `type` VARCHAR(10) NOT NULL,
     `active` BOOLEAN NOT NULL,
+    `visible` BOOLEAN DEFAULT TRUE,
     PRIMARY KEY (`id`),
     KEY `querybin` (`querybin`),
     KEY `type` (`type`),
