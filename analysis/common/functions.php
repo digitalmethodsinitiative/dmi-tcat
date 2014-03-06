@@ -673,7 +673,7 @@ function get_hash_tags($msg) {
 // get listing of all datasets
 function get_all_datasets() {
     $dbh = pdo_connect();
-    $rec = $dbh->prepare("SELECT id, querybin, type, active FROM tcat_query_bins");
+    $rec = $dbh->prepare("SELECT id, querybin, type, active FROM tcat_query_bins WHERE visible = TRUE");
     $datasets = array();
     if ($rec->execute() && $rec->rowCount() > 0) {
         while ($res = $rec->fetch()) {

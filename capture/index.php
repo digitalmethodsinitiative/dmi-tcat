@@ -73,11 +73,16 @@ $lastRateLimitHit = getLastRateLimitHit();
         if (array_search("track", $captureroles) !== false)
             print $activePhrases . " out of 400 possible phrases";
         if (array_search("track", $captureroles) !== false && array_search("follow", $captureroles) !== false)
-            print " and ";
+            print ", and ";
         if (array_search("follow", $captureroles) !== false)
-            print $activeUsers . " users out of 5000 possible user ids";
+            print $activeUsers . " out of 5000 possible user ids";
+        if ((array_search("track", $captureroles) !== false || array_search("follow", $captureroles) !== false) && array_search("onepercent", $captureroles) !== false)
+            print ", and ";
+        if (array_search("onepercent", $captureroles) !== false)
+            print "a one percent sample";
+        print ".<br/>";
         if ($lastRateLimitHit) {
-            print "<br><font color='red'>Your latest rate limit hit was on $lastRateLimitHit</font><bR>";
+            print "<font color='red'>Your latest rate limit hit was on $lastRateLimitHit</font><bR>";
         }
         ?>
         <h3>New query bin</h3>
@@ -185,7 +190,7 @@ $lastRateLimitHit = getLastRateLimitHit();
             $bin->periods = array_unique($bin->periods);
             sort($bin->periods);
             asort($phraseList);
-            
+
             $action = ($bin->active == 0) ? "start" : "stop";
 
             echo '<tr>';
@@ -204,10 +209,13 @@ $lastRateLimitHit = getLastRateLimitHit();
             echo '<td valign="top" align="right">' . number_format($bin->nrOfTweets, 0, ",", ".") . '</td>'; // does not sort well
             echo '<td valign="top">' . implode("<br />", $bin->periods) . '</td>';
             echo '<td valign="top">';
-            if ($bin->type != "onepercent")
-                echo '<a href="" onclick="sendModify(\'' . $bin->id . '\',\'' . addslashes(implode(",", $activePhraselist)) . '\',\'' . $bin->active . '\',\'' . $bin->type . '\'); return false;">modify phrases</a>';
+            if ($bin->type != "onepercent" && $bin->type != "other")
+                echo '<a href="" onclick="sendModify(\'' . $bin->id . '\',\'' . addslashes(implode(",", $activePhraselist)) . '\',\'' . $bin->active . '\',\'' . $bin->type . '\'); return false;">modify ' . ($bin->type == 'follow' ? 'users' : 'phrases') . '</a>';
             echo '</td>';
-            echo '<td valign="top"><a href="" onclick="sendPause(\'' . $bin->id . '\',\'' . $action . '\',\'' . $bin->type . '\'); return false;">' . $action . '</a></td>';
+            echo '<td valign="top">';
+            if ($bin->type != "other")
+                echo '<a href="" onclick="sendPause(\'' . $bin->id . '\',\'' . $action . '\',\'' . $bin->type . '\'); return false;">' . $action . '</a>';
+            echo '</td>';
             echo '</tr>';
         }
         echo '</tbody>';
