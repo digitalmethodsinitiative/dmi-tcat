@@ -45,6 +45,10 @@ function stream() {
 
     // prepare queries
     $querylist = getActiveUsers();
+    if(empty($querylist)) {
+        logit(CAPTURE . ".error.log", "empty query list, aborting!");
+        return;
+    }
     $params = array("follow" => implode(",", $querylist));
 
     $tmhOAuth = new tmhOAuth(array(

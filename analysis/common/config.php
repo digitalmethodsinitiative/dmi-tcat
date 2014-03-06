@@ -1,7 +1,6 @@
 <?php
 
 include_once('../config.php');
-include_once('../querybins.php');
 
 /*
  * Whether to cache results

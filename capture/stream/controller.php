@@ -9,7 +9,6 @@ include "../../common/functions.php";        // load base functions file
 include "../common/functions.php";           // load capture function file
 
 $dbh = pdo_connect();
-create_error_logs($dbh);
 
 $roles = unserialize(CAPTUREROLES);
 

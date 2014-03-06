@@ -11,7 +11,8 @@ function pdo_connect() {
     return $dbh;
 }
 
-function create_error_logs($dbh) {
+function create_error_logs() {
+    $dbh = pdo_connect();
 
     $sql = 'create table if not exists tcat_error_ratelimit ( id bigint auto_increment, type varchar(32), start datetime not null, end datetime not null, tweets bigint not null, primary key(id), index(type), index(start), index(end) )';
     $h = $dbh->prepare($sql);

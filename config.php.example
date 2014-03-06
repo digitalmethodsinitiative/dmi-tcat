@@ -128,7 +128,7 @@ ini_set("max_execution_time", "50000");
 /*
  * How much memory the script is allowed to take
  */
-ini_set("memory_limit", "30G");
+ini_set("memory_limit", "2G");
 
 /*
  * Set encoding
@@ -137,6 +137,7 @@ mb_internal_encoding("UTF-8");
 
 /*
  * set location of php
+ * find the location by typing 'which php' on the command line of your terminal
  */
 define("PHP_CLI", "/usr/bin/php");
 
