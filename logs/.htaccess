@@ -1,6 +1,0 @@
-Options -Indexes
-
-<FilesMatch "\.(log).*$">
-    Order Deny,Allow
-    Deny from all
-</FilesMatch>
