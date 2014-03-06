@@ -6,7 +6,6 @@ if ($argc < 1)
 set_time_limit(0);
 error_reporting(E_ALL);
 include_once "../../config.php";
-include_once BASE_FILE . "/querybins.php";
 include_once BASE_FILE . '/common/functions.php';
 include_once BASE_FILE . '/capture/common/functions.php';
 
@@ -53,7 +52,7 @@ foreach ($user_ids as $user_id) {
 
 function get_timeline($user_id, $max_id = null) {
     print "doing $user_id\n";
-    global $twitter_keys, $current_key, $looped, $querybins, $bin_name, $dbh;
+    global $twitter_keys, $current_key, $looped, $bin_name, $dbh;
 
     $tmhOAuth = new tmhOAuth(array(
                 'consumer_key' => $twitter_keys[$current_key]['twitter_consumer_key'],

@@ -3,12 +3,14 @@
 $connection = false;
 
 db_connect($hostname, $dbuser, $dbpass, $database);
+$datasets = get_all_datasets();
+
 // catch parameters
 if (isset($_GET['dataset']) && !empty($_GET['dataset']))
     $dataset = urldecode($_GET['dataset']);
 else {
-    reset($querybins);
-    $dataset = key($querybins);
+    reset($datasets);
+    $dataset = key($datasets);
 }
 if (isset($_GET['query']) && !empty($_GET['query']))
     $query = urldecode($_GET['query']);
@@ -154,6 +156,7 @@ function get_file($what) {
 
 function frequencyTable($table, $toget) {
     global $esc, $intervalDates;
+
     $results = array();
     $sql = "SELECT COUNT($table.$toget) AS count, $table.$toget AS toget, ";
     $sql .= sqlInterval();
@@ -371,7 +374,6 @@ function generate($what, $filename) {
                 $from_user_names[] = strtolower($res['from_user_name']);
             }
         }
-
 
         // extract desired things ($what) and group per interval
         foreach ($tweets as $key => $tweet) {
@@ -669,54 +671,29 @@ function get_hash_tags($msg) {
 }
 
 // get listing of all datasets
-// @todo add groups in select form
 function get_all_datasets() {
-
-    global $querybins, $queryarchives; // defined in php.config of twitter capture
-// include ytk imported tables as they are not in php.ini
-    $tables = array();
-    $select = "SHOW TABLES";
-    $rec = mysql_query($select);
-    while ($res = mysql_fetch_row($rec)) {
-        if (preg_match("/^(ytk_.*?)_tweets$/", $res[0], $match)) {
-            $querybins[$match[1]] = $match[1];
-        } elseif (preg_match("/(user_.*?)_tweets$/", $res[0], $match)) {
-            $querybins[$match[1]] = $match[1];
-        } elseif (preg_match("/(sample_.*?)_tweets$/", $res[0], $match)) {
-            $querybins[$match[1]] = $match[1];
-        }
-    }
-
+    $dbh = pdo_connect();
+    $rec = $dbh->prepare("SELECT id, querybin, type, active FROM tcat_query_bins");
     $datasets = array();
-
-    foreach ($querybins as $bin => $keywords) {
-        // get nr of results per table
-        $sql2 = "SELECT count(t.id) AS notweets,MIN(t.created_at) AS min,MAX(t.created_at) AS max  FROM " . $bin . "_tweets t ";
-        $rec2 = mysql_query($sql2);
-        if ($rec2 && mysql_num_rows($rec2) > 0) {
-            $res2 = mysql_fetch_assoc($rec2);
-            $row['bin'] = $bin;
-            $row['notweets'] = $res2['notweets'];
-            $row['mintime'] = $res2['min'];
-            $row['maxtime'] = $res2['max'];
-            $row['keywords'] = $keywords;
-            // return datasets
-            $datasets[$bin] = $row;
-        }
-    }
-    foreach ($queryarchives as $bin => $keywords) {
-        // get nr of results per table
-        $sql2 = "SELECT count(t.id) AS notweets,MIN(t.created_at) AS min,MAX(t.created_at) AS max  FROM " . $bin . "_tweets t ";
-        $rec2 = mysql_query($sql2);
-        if ($rec2 && mysql_num_rows($rec2) > 0) {
-            $res2 = mysql_fetch_assoc($rec2);
-            $row['bin'] = $bin;
-            $row['notweets'] = $res2['notweets'];
-            $row['mintime'] = $res2['min'];
-            $row['maxtime'] = $res2['max'];
-            $row['keywords'] = $keywords;
-            // return datasets
-            $datasets[$bin] = $row;
+    if ($rec->execute() && $rec->rowCount() > 0) {
+        while ($res = $rec->fetch()) {
+            $row['bin'] = $res['querybin'];
+            $row['type'] = $res['type'];
+            $row['active'] = $res['active'];
+            $rec2 = $dbh->prepare("SELECT count(t.id) AS notweets,MIN(t.created_at) AS min,MAX(t.created_at) AS max  FROM " . $res['querybin'] . "_tweets t ");
+            if ($rec2->execute() && $rec2->rowCount() > 0) {
+                $res2 = $rec2->fetch();
+                $row['notweets'] = $res2['notweets'];
+                $row['mintime'] = $res2['min'];
+                $row['maxtime'] = $res2['max'];
+            }
+            $rec2 = $dbh->prepare("SELECT p.phrase FROM tcat_query_bins_phrases bp, tcat_query_phrases p WHERE bp.querybin_id = " . $res['id'] . " AND bp.phrase_id = p.id");
+            $keywords = array();
+            if ($rec2->execute() && $rec2->rowCount() > 0) {
+                $res2 = $rec2->fetchAll(PDO::FETCH_COLUMN);
+                $row['keywords'] = implode(", ", $res2);
+            }
+            $datasets[$row['bin']] = $row;
         }
     }
     asort($datasets);
@@ -752,6 +729,15 @@ function db_connect($db_host, $db_user, $db_pass, $db_name) {
         echo "Error: Unable to set the character set.\n";
         exit;
     }
+}
+
+function pdo_connect() {
+    global $dbuser, $dbpass, $database, $hostname;
+
+    $dbh = new PDO("mysql:host=$hostname;dbname=$database;charset=utf8", $dbuser, $dbpass);
+    $dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    return $dbh;
 }
 
 // number median ( number arg1, number arg2 [, number ...] )

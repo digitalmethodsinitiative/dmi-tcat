@@ -16,7 +16,14 @@ $hostname = "localhost";
  */
 define("CAPTUREROLES", serialize(array("track")));
 
-/* 
+/*
+ * The user who can add and modify query bins. 
+ * This user should exist in your htaccess authentication
+ * Leave empty if you do not want to resetrict access to the query manager - which, of course, is a security risk
+ */
+define("ADMIN_USER", "admin");
+
+/*
  * *Super advanced and currently undocumented feature, leave settings as they are*
  * We have made it possible to tunnel Twitter API connections through other hosts (obtaining a different source IP address), and use multiple keysets for multiple streaming queries.
  * Each capture script should define its role, see define("CAPTUREROLES",serialize(array()))
@@ -41,20 +48,20 @@ $mail_to = "";
 // Main keyring, used for capturing from streaming API
 // Make sure you have a key for each capture role defined in CAPTUREROLES above
 if (!defined('CAPTURE') || !strcmp(CAPTURE, "track")) {
-        $twitter_consumer_key = "";
-        $twitter_consumer_secret = "";
-        $twitter_user_token = "";
-        $twitter_user_secret = "";
+    $twitter_consumer_key = "";
+    $twitter_consumer_secret = "";
+    $twitter_user_token = "";
+    $twitter_user_secret = "";
 } elseif (!strcmp(CAPTURE, "follow")) {
-        $twitter_consumer_key = "";
-        $twitter_consumer_secret = "";
-        $twitter_user_token = "";
-        $twitter_user_secret = "";
+    $twitter_consumer_key = "";
+    $twitter_consumer_secret = "";
+    $twitter_user_token = "";
+    $twitter_user_secret = "";
 } elseif (!strcmp(CAPTURE, "onepercent")) {
-        $twitter_consumer_key = "";
-        $twitter_consumer_secret = "";
-        $twitter_user_token = "";
-        $twitter_user_secret = "";
+    $twitter_consumer_key = "";
+    $twitter_consumer_secret = "";
+    $twitter_user_token = "";
+    $twitter_user_secret = "";
 }
 
 // List of additional keys to loop over when there is a limited amount of requests per key, e.g. search
@@ -127,4 +134,10 @@ ini_set("memory_limit", "30G");
  * Set encoding
  */
 mb_internal_encoding("UTF-8");
+
+/*
+ * set location of php
+ */
+define("PHP_CLI", "/usr/bin/php");
+
 ?>

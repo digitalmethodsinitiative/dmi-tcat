@@ -13,7 +13,6 @@ define('CAPTURE', 'follow');
 
 // ----- includes -----
 include "../../config.php";                  // load base config file
-include "../../followbins.php";              // load base config file
 include "../../common/functions.php";        // load base functions file
 include "../common/functions.php";           // load capture function file
 include "../common/termhandler.php";         // load capture signal handler
@@ -22,8 +21,7 @@ $path_local = BASE_FILE;
 require BASE_FILE . 'capture/common/tmhOAuth/tmhOAuth.php';
 
 // ----- connection -----
-dbconnect();      // connect to database
-checktables();      // check whether all tables specified in querybins.php exist in the database
+dbconnect();      // connect to database @todo, rewrite mysql calls with pdo
 
 install_capture_signal_handlers();
 $ratelimit = 0;     // rate limit counter since start of script
@@ -36,7 +34,7 @@ $last_insert_id = -1;
 
 function stream() {
 
-    global $twitter_consumer_key, $twitter_consumer_secret, $twitter_user_token, $twitter_user_secret, $querybins, $path_local, $lastinsert;
+    global $twitter_consumer_key, $twitter_consumer_secret, $twitter_user_token, $twitter_user_secret, $path_local, $lastinsert;
 
     logit(CAPTURE . ".error.log", "connecting to API socket");
     $pid = getmypid();
@@ -46,16 +44,7 @@ function stream() {
     $tweetbucket = array();
 
     // prepare queries
-    $querylist = array();
-    foreach ($querybins as $binname => $bin) {
-        //echo $bin . "|";
-        $queries = explode(",", $bin);
-        foreach ($queries as $query) {
-            $querylist[$query] = preg_replace("/\'/", "", $query);
-        }
-        $querybins[$binname] = $queries;
-    }
-
+    $querylist = getActiveUsers();
     $params = array("follow" => implode(",", $querylist));
 
     $tmhOAuth = new tmhOAuth(array(
@@ -135,7 +124,9 @@ function streamCallback($data, $length, $metrics) {
 
 // function receives a bucket of tweets, sorts them according to bins and inserts into DB
 function processtweets($tweetbucket) { // @todo, should use tweet entity in capture/common/functions.php
-    global $querybins, $path_local;
+    global $path_local;
+    
+    $querybins = getActiveFollowBins();
 
     // we run through every bin to check whether the received tweets fit
     foreach ($querybins as $binname => $queries) {
@@ -181,7 +172,6 @@ function processtweets($tweetbucket) { // @todo, should use tweet entity in capt
                 continue;
             }
 
-            //from_user_lang 	from_user_tweetcount 	from_user_followercount 	from_user_realname
             $t = array();
             $t["id"] = $data["id_str"];
             $t["created_at"] = date("Y-m-d H:i:s", strtotime($data["created_at"]));
@@ -306,15 +296,6 @@ function processtweets($tweetbucket) { // @todo, should use tweet entity in capt
             }
         }
     }
-}
-
-function logit($file, $message) {
-
-    global $path_local;
-
-    $file = $path_local . "logs/" . $file;
-    $message = date("Y-m-d H:i:s") . " " . $message . "\n";
-    file_put_contents($file, $message, FILE_APPEND);
 }
 
 function safe_feof($fp, &$start = NULL) {

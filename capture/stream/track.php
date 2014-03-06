@@ -13,7 +13,6 @@ define('CAPTURE', 'track');
 
 // ----- includes -----
 include "../../config.php";                  // load base config file
-include "../../querybins.php";               // load base config file
 include "../../common/functions.php";        // load base functions file
 include "../common/functions.php";           // load capture function file
 include "../common/termhandler.php";         // load capture signal handler
@@ -22,21 +21,19 @@ $path_local = BASE_FILE;
 require BASE_FILE . 'capture/common/tmhOAuth/tmhOAuth.php';
 
 // ----- connection -----
-dbconnect();      // connect to database
-checktables();      // check whether all tables specified in querybins.php exist in the database
+dbconnect();      // connect to database @todo, rewrite mysql calls with pdo
 
 install_capture_signal_handlers();
 $ratelimit = 0;     // rate limit counter since start of script
 $exceeding = 0;     // are we exceeding the rate limit currently?
 $ex_start = 0;      // time at which rate limit started being exceeded
-
 stream();
 
 $last_insert_id = -1;
 
 function stream() {
 
-    global $twitter_consumer_key, $twitter_consumer_secret, $twitter_user_token, $twitter_user_secret, $querybins, $path_local, $lastinsert;
+    global $twitter_consumer_key, $twitter_consumer_secret, $twitter_user_token, $twitter_user_secret, $path_local, $lastinsert;
 
     logit(CAPTURE . ".error.log", "connecting to API socket");
     $pid = getmypid();
@@ -46,16 +43,7 @@ function stream() {
     $tweetbucket = array();
 
     // prepare queries
-    $querylist = array();
-    foreach ($querybins as $binname => $bin) {
-        //echo $bin . "|";
-        $queries = explode(",", $bin);
-        foreach ($queries as $query) {
-            $querylist[$query] = preg_replace("/\'/", "", $query);
-        }
-        $querybins[$binname] = $queries;
-    }
-
+    $querylist = getActivePhrases();
     $params = array("track" => implode(",", $querylist));
 
     $tmhOAuth = new tmhOAuth(array(
@@ -141,7 +129,9 @@ function streamCallback($data, $length, $metrics) {
 
 // function receives a bucket of tweets, sorts them according to bins and inserts into DB
 function processtweets($tweetbucket) {
-    global $querybins, $path_local;
+    global $path_local;
+
+    $querybins = getActiveTrackBins();
 
     // we run through every bin to check whether the received tweets fit
     foreach ($querybins as $binname => $queries) {
@@ -182,12 +172,12 @@ function processtweets($tweetbucket) {
             // we check for every query in the bin if they fit
             $found = false;
 
-            foreach ($queries as $query) {
+            foreach ($queries as $query => $track) {
 
                 $pass = false;
 
-                // check for queries with two words, but go around quoted queries
-                if (preg_match("/ /", $query) && !preg_match("/\'/", $query)) {
+                // check for queries with more than one word, but go around quoted queries
+                if (preg_match("/ /", $query) && !preg_match("/'/", $query)) {
                     $tmplist = explode(" ", $query);
 
                     $all = true;
@@ -206,7 +196,7 @@ function processtweets($tweetbucket) {
                 } else {
 
                     // treat quoted queries as single words
-                    $query = preg_replace("/\'/", "", $query);
+                    $query = preg_replace("/'/", "", $query);
 
                     if (preg_match("/" . $query . "/i", $data["text"])) {
                         $pass = true;
@@ -350,15 +340,6 @@ function processtweets($tweetbucket) {
         }
     }
     return TRUE;
-}
-
-function logit($file, $message) {
-
-    global $path_local;
-
-    $file = $path_local . "logs/" . $file;
-    $message = date("Y-m-d H:i:s") . " " . $message . "\n";
-    file_put_contents($file, $message, FILE_APPEND);
 }
 
 function safe_feof($fp, &$start = NULL) {

@@ -2,27 +2,6 @@
 
 error_reporting(E_ALL);
 
-function checktables() {
-
-    global $querybins;
-
-    $tables = array();
-
-    $sql = "SHOW TABLES LIKE '%_tweets'";
-    $sqlresults = mysql_query($sql);
-
-    while ($data = mysql_fetch_row($sqlresults)) {
-        $tables[] = $data[0];
-    }
-
-    foreach ($querybins as $bin => $content) {
-        if (!in_array($bin . "_tweets", $tables)) {
-            $dbh = pdo_connect();
-            create_bin($bin, $dbh);
-        }
-    }
-}
-
 function pdo_connect() {
     global $dbuser, $dbpass, $database, $hostname;
 
@@ -43,8 +22,8 @@ function create_error_logs($dbh) {
     $h->execute();
 }
 
-function create_bin($bin_name, $dbh) {
-
+function create_bin($bin_name, $dbh = false) {
+    $dbh = pdo_connect();
     $sql = "CREATE TABLE IF NOT EXISTS " . $bin_name . "_hashtags (
 		id int(11) NOT NULL AUTO_INCREMENT,
 		tweet_id bigint(20) NOT NULL,
@@ -146,6 +125,84 @@ function create_bin($bin_name, $dbh) {
 
     $create_urls = $dbh->prepare($sql);
     $create_urls->execute();
+    $dbh = false;
+}
+
+function create_admin() {
+    $dbh = pdo_connect();
+    $sql = "CREATE TABLE IF NOT EXISTS tcat_query_bins (
+    `id` INT NOT NULL AUTO_INCREMENT,
+    `querybin` VARCHAR(45) NOT NULL,
+    `type` VARCHAR(10) NOT NULL,
+    `active` BOOLEAN NOT NULL,
+    PRIMARY KEY (`id`),
+    KEY `querybin` (`querybin`),
+    KEY `type` (`type`),
+    KEY `active` (`active`)
+    ) ENGINE = MyISAM DEFAULT CHARSET = utf8";
+    $create = $dbh->prepare($sql);
+    $create->execute();
+
+    $sql = "CREATE TABLE IF NOT EXISTS tcat_query_bins_periods (
+    `id` INT NOT NULL AUTO_INCREMENT,
+    `querybin_id` INT NOT NULL,
+    `starttime` DATETIME NULL,
+    `endtime` DATETIME NULL,
+    PRIMARY KEY (`id`),
+    KEY `querybin_id` (`querybin_id`),
+    KEY `starttime` (`starttime`),
+    KEY `endtime` (`endtime`)
+    ) ENGINE = MyISAM DEFAULT CHARSET = utf8";
+    $create = $dbh->prepare($sql);
+    $create->execute();
+
+    $sql = "CREATE TABLE IF NOT EXISTS tcat_query_phrases (
+    `id` INT NOT NULL AUTO_INCREMENT,
+    `phrase` VARCHAR(255) NOT NULL,
+    PRIMARY KEY (`id`),
+    KEY `phrase` (`phrase`)
+    ) ENGINE = MyISAM DEFAULT CHARSET = utf8";
+    $create = $dbh->prepare($sql);
+    $create->execute();
+
+    $sql = "CREATE TABLE IF NOT EXISTS tcat_query_users (
+    `id` bigint NOT NULL AUTO_INCREMENT,
+    `user_name` varchar(255),
+    PRIMARY KEY `id` (`id`)
+    ) ENGINE = MyISAM DEFAULT CHARSET = utf8";
+    $create = $dbh->prepare($sql);
+    $create->execute();
+
+    $sql = "CREATE TABLE IF NOT EXISTS tcat_query_bins_phrases (
+    `id` INT NOT NULL AUTO_INCREMENT,
+    `starttime` DATETIME NULL,
+    `endtime` DATETIME NULL,
+    `phrase_id` INT NULL,
+    `querybin_id` INT NULL,
+    PRIMARY KEY (`id`),
+    KEY `starttime` (`starttime`),
+    KEY `endtime` (`endtime`),
+    KEY `phrase_id` (`phrase_id`),
+    KEY `querybin_id` (`querybin_id`)
+    ) ENGINE = MyISAM DEFAULT CHARSET = utf8";
+    $create = $dbh->prepare($sql);
+    $create->execute();
+
+    $sql = "CREATE TABLE IF NOT EXISTS tcat_query_bins_users (
+    `id` INT NOT NULL AUTO_INCREMENT,
+    `starttime` DATETIME NULL,
+    `endtime` DATETIME NULL,
+    `user_id` INT NULL,
+    `querybin_id` INT NULL,
+    PRIMARY KEY (`id`),
+    KEY `starttime` (`starttime`),
+    KEY `endtime` (`endtime`),
+    KEY `user_id` (`user_id`),
+    KEY `querybin_id` (`querybin_id`)
+    ) ENGINE = MyISAM DEFAULT CHARSET = utf8";
+    $create = $dbh->prepare($sql);
+    $create->execute();
+    $dbh = false;
 }
 
 /*
@@ -262,10 +319,11 @@ function check_running_role($role) {
 
 function web_reload_config_role($role) {
     $dbh = pdo_connect();
-    $sql = "create table if not exists tcat_controller_tasklist ( id bigint auto_increment, task varchar(32) not null, instruction varchar(255) not null, ts_issued timestamp default current_timestamp, primary key(id) )";
+    $sql = "CREATE TABLE IF NOT EXISTS tcat_controller_tasklist ( id bigint auto_increment, task varchar(32) not null, instruction varchar(255) not null, ts_issued timestamp default current_timestamp, primary key(id) )";
     $h = $dbh->prepare($sql);
-    $res = $h->execute();
-    $sql = "insert into tcat_controller_tasklist ( task, instruction ) values ( '$role', 'reload' )";
+    if (!$h->execute())
+        return false;
+    $sql = "INSERT INTO tcat_controller_tasklist ( task, instruction ) VALUES ( '$role', 'reload' )";
     $h = $dbh->prepare($sql);
     return $h->execute();
 }
@@ -291,19 +349,80 @@ function controller_reload_config_role($role) {
         if (is_numeric($pid) && $pid > 0) {
 
             logit("controller.log", "enforcing reload of config for $role task");
-            logit("controller.log", "sending a TERM signal to $role task");
-            posix_kill($pid, SIGTERM);
+            logit("controller.log", "sending a TERM signal to $role task for $pid");
+            posix_kill($pid, 15); // sigterm
             sleep(6);
             logit("controller.log", "starting new instance of $role task");
             // this command should start the capture task as a detached process and report back its pid
-            $cmd = "/usr/bin/nohup php " . BASE_FILE . "capture/stream/$role.php > /dev/null & echo $!";
+            $cmd = PHP_CLI . " " . BASE_FILE . "capture/stream/$role.php > /dev/null & echo $!";
             /* for debugging */
-            logit("controller.log", "reload_config_role() cmd $cmd");
-            return shell_exec($cmd);
+            //logit("controller.log", "reload_config_role() cmd $cmd");
+            $pid = shell_exec($cmd);
+            return $pid;
         }
     }
 
     return FALSE;
+}
+
+function logit($file, $message) {
+    $file = BASE_FILE . "logs/" . $file;
+    $message = date("Y-m-d H:i:s") . " " . $message . "\n";
+    file_put_contents($file, $message, FILE_APPEND);
+}
+
+function getActivePhrases() {
+    $dbh = pdo_connect();
+    $sql = "SELECT DISTINCT(p.phrase) FROM tcat_query_phrases p, tcat_query_bins_phrases bp WHERE bp.endtime = '0000-00-00 00:00:00' AND p.id = bp.phrase_id";
+    $rec = $dbh->prepare($sql);
+    $rec->execute();
+    $results = $rec->fetchAll(PDO::FETCH_COLUMN);
+    foreach ($results as $k => $v)
+        $results[$k] = trim(preg_replace("/'/", "", $v));
+    $results = array_unique($results);
+    $dbh = false;
+    return $results;
+}
+
+function getActiveUsers() {
+    $dbh = pdo_connect();
+    $sql = "SELECT DISTINCT(u.id) FROM tcat_query_users u, tcat_query_bins_users bu WHERE bu.endtime = '0000-00-00 00:00:00' AND u.id = bu.user_id";
+    $rec = $dbh->prepare($sql);
+    $rec->execute();
+    $results = $rec->fetchAll(PDO::FETCH_COLUMN);
+    foreach ($results as $k => $v)
+        $results[$k] = trim($v);
+    $results = array_unique($results);
+    $dbh = false;
+    return $results;
+}
+
+function getActiveTrackBins() {
+    $dbh = pdo_connect();
+    $sql = "SELECT b.querybin, p.phrase FROM tcat_query_bins b, tcat_query_phrases p, tcat_query_bins_phrases bp WHERE b.active = 1 AND bp.querybin_id = b.id AND bp.phrase_id = p.id AND bp.endtime = '0000-00-00 00:00:00'";
+    $rec = $dbh->prepare($sql);
+    $querybins = array();
+    if ($rec->execute() && $rec->rowCount() > 0) {
+        while ($res = $rec->fetch()) {
+            $querybins[$res['querybin']][$res['phrase']] = preg_replace("/'/", "", $res['phrase']);
+        }
+    }
+    $dbh = false;
+    return $querybins;
+}
+
+function getActiveFollowBins() {
+    $dbh = pdo_connect();
+    $sql = "SELECT b.querybin, u.id AS uid FROM tcat_query_bins b, tcat_query_users u, tcat_query_bins_users bu WHERE b.active = 1 AND bu.querybin_id = b.id AND bu.user_id = u.id AND bu.endtime = '0000-00-00 00:00:00'";
+    $rec = $dbh->prepare($sql);
+    $querybins = array();
+    if ($rec->execute() && $rec->rowCount() > 0) {
+        while ($res = $rec->fetch()) {
+            $querybins[$res['querybin']][$res['uid']] = $res['uid'];
+        }
+    }
+    $dbh = false;
+    return $querybins;
 }
 
 /**
@@ -401,6 +520,72 @@ class Tweet {
         return $tweet;
     }
 
+    public static function fromGnip($json) {
+        // Parse JSON when fed JSON string
+        if (is_string($json)) {
+            $object = json_decode($json);
+        } else if (is_object($json)) {
+            $object = $json;
+        } else {
+            throw new Exception("Invalid JSON input:\n[[$json]]\n");
+        }
+
+        $t = new self(null);
+        if (!isset($object->id))
+            return false;
+
+        $t->id = preg_replace("/tag:.*:/", "", $object->id);
+        $t->id_str = $t->id;
+        $t->created_at = $object->postedTime;
+        $t->text = $object->body;
+        $t->timezone = null;
+        if (isset($object->twitterTimeZone))
+            $t->timezone = $object->twitterTimeZone;
+
+        $t->user = new StdClass();
+        $t->user->screen_name = $object->actor->preferredUsername;
+        $t->user->id = str_replace("id:twitter.com:", "", $object->actor->id);
+        $t->user->url = $object->actor->link;
+        $t->user->lang = $object->actor->languages[0];
+        $t->user->statuses_count = $object->actor->statusesCount;
+        $t->user->followers_count = $object->actor->followersCount;
+        $t->user->friends_count = $object->actor->friendsCount;
+        $t->user->name = $object->actor->displayName;
+        if (isset($object->actor->location))
+            $t->user->location = $object->actor->location->displayName;
+        $t->user->listed_count = $object->actor->listedCount;
+        $t->user->utcoffset = $object->actor->utcOffset;
+        $t->user->timezone = $object->actor->twitterTimeZone;
+        $t->user->description = $object->actor->summary;
+        $t->user->from_user_profile_image_url = $object->actor->image;
+        $t->user->verified = $object->actor->verified;
+
+        $t->source = $object->generator->displayName; // @todo, is this right?
+        $t->geo->coordinates[0] = null; // @todo
+        $t->geo->coordinates[1] = null; // @todo
+
+        $t->in_reply_to_user_id = null; // @todo
+        $t->in_reply_to_screen_name = null; // @todo
+        $t->in_reply_to_status_id = null; // @todo
+
+        $t->retweet_count = $object->retweetCount;
+        if ($t->retweet_count != 0 && isset($object->object)) {
+            $t->retweet_id = preg_replace("/tag:.*:/", "", $object->object->id);
+        }
+        $t->filter_level = $object->twitter_filter_level;
+        if (isset($object->twitter_entities->twitter_lang))
+            $t->lang = $object->twitter_entities->twitter_lang;
+
+        $t->favorite_count = $object->favoritesCount;
+
+
+        $t->urls = $object->twitter_entities->urls;
+        $t->user_mentions = $object->twitter_entities->user_mentions;
+        $t->hashtags = $object->twitter_entities->hashtags;
+
+        return $t;
+    }
+
     public function save(PDO $dbh, $bin_name) {
 
         $q = $dbh->prepare("REPLACE INTO " . $bin_name . '_tweets' . "
@@ -456,11 +641,9 @@ class Tweet {
         $q->bindParam(':lang', $this->lang, PDO::PARAM_STR); //
 
         $saved_tweet = $q->execute();
-        //print $q->rowCount();
         // if tweet already exists, do not update hashtags, mentions, urls. As they have no unique constraint, it would just add extra info. _tweets has id as its unique primary key
         if ($q->rowCount() > 1) {   // The affected-rows count makes it easy to determine whether REPLACE only added a row or whether it also replaced any rows: Check whether the count is 1 (added) or greater (replaced).
-            print "row count " . $q->rowCount() . "\n";
-            return $saved_tweet;
+            return $q->rowCount();
         }
 
         if ($this->hashtags) {

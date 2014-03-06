@@ -20,8 +20,7 @@ $path_local = BASE_FILE;
 require BASE_FILE . 'capture/common/tmhOAuth/tmhOAuth.php';
 
 // ----- connection -----
-dbconnect();        // connect to database
-checktables();      // check whether all tables specified in querybins.php exist in the database
+dbconnect();      // connect to database @todo, rewrite mysql calls with pdo
 stream();
 
 $last_insert_id = -1;
@@ -119,7 +118,6 @@ function processtweets($tweetbucket) { // @todo, should use tweet entity in capt
             continue;
         }
 
-        //from_user_lang 	from_user_tweetcount 	from_user_followercount 	from_user_realname
         $t = array();
         $t["id"] = $data["id_str"];
         $t["created_at"] = date("Y-m-d H:i:s", strtotime($data["created_at"]));
@@ -241,15 +239,6 @@ function processtweets($tweetbucket) { // @todo, should use tweet entity in capt
             logit(CAPTURE . ".error.log", "insert error: " . $sql);
         }
     }
-}
-
-function logit($file, $message) {
-
-    global $path_local;
-
-    $file = $path_local . "logs/" . $file;
-    $message = date("Y-m-d H:i:s") . " " . $message . "\n";
-    file_put_contents($file, $message, FILE_APPEND);
 }
 
 function safe_feof($fp, &$start = NULL) {

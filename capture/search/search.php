@@ -6,14 +6,13 @@ if ($argc < 1)
 set_time_limit(0);
 error_reporting(E_ALL);
 include_once "../../config.php";
-include_once BASE_FILE . "/querybins.php";
 include_once BASE_FILE . '/common/functions.php';
 include_once BASE_FILE . '/capture/common/functions.php';
 
 require BASE_FILE . 'capture/common/tmhOAuth/tmhOAuth.php';
 
-$bin_name = '';
-$keywords = '';
+$bin_name = 'verkiezingen_nl';
+$keywords = '@VVD OR @cdavandaag OR @christenunie OR @D66 OR @PvdA OR @groenlinks OR @PvdD_Nieuws OR @PVV OR @SGPnieuws OR @SPnl OR @50pluspartij OR @Piratenpartij';
 
 if (empty($bin_name))
     die("bin_name not set\n");
@@ -30,7 +29,7 @@ create_bin($bin_name, $dbh);
 search($keywords);
 
 function search($keywords, $max_id = null) {
-    global $twitter_keys, $current_key, $querybins, $all_users, $all_tweet_ids, $bin_name, $tweets_success, $tweets_failed, $tweets_processed, $dbh;
+    global $twitter_keys, $current_key, $all_users, $all_tweet_ids, $bin_name, $tweets_success, $tweets_failed, $tweets_processed, $dbh;
 
     $tmhOAuth = new tmhOAuth(array(
                 'consumer_key' => $twitter_keys[$current_key]['twitter_consumer_key'],
@@ -106,7 +105,7 @@ function search($keywords, $max_id = null) {
         sleep(1);
         search($keywords, $max_id);
     } else {
-        echo $tmhOAuth->response['response']."\n";
+        echo $tmhOAuth->response['response'] . "\n";
         if ($tmhOAuth->response['response']['errors']['code'] == 130) { // over capacity
             sleep(1);
             search($keywords, $max_id);
