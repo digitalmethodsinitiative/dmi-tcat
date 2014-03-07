@@ -677,6 +677,7 @@ function get_all_datasets() {
     $datasets = array();
     if ($rec->execute() && $rec->rowCount() > 0) {
         while ($res = $rec->fetch()) {
+            $row = array();
             $row['bin'] = $res['querybin'];
             $row['type'] = $res['type'];
             $row['active'] = $res['active'];
