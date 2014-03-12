@@ -2,22 +2,28 @@
 
 // ----- only run from command line -----
 if ($argc < 1)
-    die;
+    exit();
 
 include_once("../../config.php");
-include "../../common/functions.php";        // load base functions file
-include "../common/functions.php";           // load capture function file
+include "../../common/functions.php";
+include "../common/functions.php";
+
+// check whether controller script is already running
+$out = exec("ps aux | grep 'php controller.php' | grep -v grep | grep -v stream | wc -l");
+if ($out > 1) {
+    logit("controller.log", "controller.php already running, skipping this check");
+    exit();
+}
 
 $dbh = pdo_connect();
 
 $roles = unserialize(CAPTUREROLES);
 
+// first gather all instructions sent by the webinterface to the controller (ie. the instruction queue)
 $commands = array();
 foreach ($roles as $role) {
     $commands[$role] = array();
 }
-
-// first handle all instruction sent by the webinterface to the controller (ie. the instruction queue)
 $rec = $dbh->prepare("SHOW TABLES LIKE 'tcat_controller_tasklist'");
 if ($rec->execute() && $rec->rowCount() > 0) {
     $sql = "select task, instruction from tcat_controller_tasklist order by id asc lock in share mode";
@@ -34,36 +40,27 @@ if ($rec->execute() && $rec->rowCount() > 0) {
     $res = $h->execute();
 }
 
+// now check for each role what needs to be done
 foreach ($roles as $role) {
 
     if (!empty($commands[$role])) {
         foreach ($commands[$role] as $command) {
             logit("controller.log", "received instruction to execute '" . $command['instruction'] . "' for script $role");
             switch ($command['instruction']) {
-                case "reload": {
-                        // reload configuration for a task
-                        logit("controller.log", $command['instruction'] . " $role");
-                        controller_reload_config_role($role);
-                        break;
-                    }
-                default: {
-                        break;
-                    }
+                case "reload":
+                    controller_reload_config_role($role);
+                    break;
+                default:
+                    break;
             }
         }
         continue;
     }
-    
+
     if (defined('IDLETIME')) {
         $idletime = IDLETIME;
     } else {
         $idletime = 600;
-    }
-
-    if ($role === 'follow') {
-        // DMI tcat verdubbelde idletime voor follow,
-        // dit omdat 's nachts herhaadelijk het script wordt gerestart
-        $idletime *= 10;
     }
 
     $pid = 0;
@@ -75,30 +72,56 @@ foreach ($roles as $role) {
         $pid = $tmp[0];
         $last = $tmp[1];
 
-        // check if script with pid is still runnning
-        exec("ps -p " . $pid . " | wc -l", $out);
-        $out = trim($out[0]);
-        if ($out == 2)
-            $running = true;
-
-
-        // check whether the process has been idle for too long
         logit("controller.log", "script $role called - pid:" . $pid . "  idle:" . (time() - $last));
 
+        // check whether the script with pid is running by checking whether it is possible to send it a signal
+        $running = posix_kill($pid, 0);
+
+        // running as another user
+        if (posix_get_last_error() == 1)
+            $running = TRUE;
+
+        // check whether the process has been idle for too long
         if ($last < (time() - $idletime)) {
 
             // record confirmed gap
             gap_record($role, $last, time());
 
             if ($running) {
+                $restartmsg = "script $role was idle for more than " . $idletime . " seconds - killing and starting";
+                logit("controller.log", $restartmsg);
 
-                $res = exec("kill -s SIGTERM $pid");
+                // check whether the process was started by another user
+                posix_kill($pid, 0);
+                if (posix_get_last_error() == 1) {
+                    logit("controller.log", "unable to kill $role, it seems to be running under another user\n");
+                    exit();
+                }
 
-                logit("controller.log", "script $role was idle for more than " . $idletime . " seconds - killing and starting");
-                mail($mail_to, "DMI-TCAT controller killed a process", "script $role was idle for more than " . $idletime . " seconds - killing and starting had result $res");
+                // kill script $role
+                posix_kill($pid, SIGTERM);
 
-                sleep(6);       // we need some time to allow graceful exit
+                // test whether the process really has been killed
+                $i = 0;
+                $sleep = 5;
+                // while we can still signal the pid
+                while (posix_kill($pid, 0)) {
+                    logit("controller.log", "waiting for graceful exit of script $role with pid $pid");
+                    // we need some time to allow graceful exit
+                    sleep($sleep);
+                    $i++;
+                    if ($i == 10) {
+                        $failmsg = "unable to kill script $role with pid $pid after " . ($sleep * $i) . " seconds";
+                        logit("controller.log", $failmsg);
+                        exit();
+                    }
+                }
 
+                // notify user via email
+                if (isset($mail_to) && trim($mail_to) != "")
+                    mail($mail_to, "DMI-TCAT controller killed a process", $restartmsg);
+
+                // restart script
                 passthru(PHP_CLI . " " . BASE_FILE . "capture/stream/$role.php > /dev/null 2>&1 &");
             }
         }

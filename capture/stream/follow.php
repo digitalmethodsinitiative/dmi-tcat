@@ -23,7 +23,6 @@ require BASE_FILE . 'capture/common/tmhOAuth/tmhOAuth.php';
 // ----- connection -----
 dbconnect();      // connect to database @todo, rewrite mysql calls with pdo
 
-install_capture_signal_handlers();
 $ratelimit = 0;     // rate limit counter since start of script
 $exceeding = 0;     // are we exceeding the rate limit at the moment?
 $ex_start = 0;      // time at which rate limit started being exceeded

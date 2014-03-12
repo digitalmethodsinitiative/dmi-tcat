@@ -23,7 +23,6 @@ require BASE_FILE . 'capture/common/tmhOAuth/tmhOAuth.php';
 // ----- connection -----
 dbconnect();      // connect to database @todo, rewrite mysql calls with pdo
 
-install_capture_signal_handlers();
 $ratelimit = 0;     // rate limit counter since start of script
 $exceeding = 0;     // are we exceeding the rate limit currently?
 $ex_start = 0;      // time at which rate limit started being exceeded
@@ -35,8 +34,10 @@ function stream() {
 
     global $twitter_consumer_key, $twitter_consumer_secret, $twitter_user_token, $twitter_user_secret, $path_local, $lastinsert;
 
-    logit(CAPTURE . ".error.log", "connecting to API socket");
     $pid = getmypid();
+    logit(CAPTURE . ".error.log", "started script track with pid $pid");
+    logit(CAPTURE . ".error.log", "connecting to API socket");
+
     $lastinsert = time();
     file_put_contents($path_local . "proc/" . CAPTURE . ".procinfo", $pid . "|" . time());
 
@@ -44,7 +45,7 @@ function stream() {
 
     // prepare queries
     $querylist = getActivePhrases();
-    if(empty($querylist)) {
+    if (empty($querylist)) {
         logit(CAPTURE . ".error.log", "empty query list, aborting!");
         return;
     }

@@ -274,19 +274,35 @@ function toDateTime($unixTimestamp) {
 }
 
 /*
+ * Inform controller a task wants to update its queries 
+ */
+
+function web_reload_config_role($role) {
+    $dbh = pdo_connect();
+    $sql = "CREATE TABLE IF NOT EXISTS tcat_controller_tasklist ( id bigint auto_increment, task varchar(32) not null, instruction varchar(255) not null, ts_issued timestamp default current_timestamp, primary key(id) )";
+    $h = $dbh->prepare($sql);
+    if (!$h->execute())
+        return false;
+    $sql = "INSERT INTO tcat_controller_tasklist ( task, instruction ) VALUES ( '$role', 'reload' )";
+    $h = $dbh->prepare($sql);
+    return $h->execute();
+}
+
+/*
  * This function returns TRUE if there is an active capture script for role.
  */
 
 function check_running_role($role) {
 
-    // is role allowed?
     if (!defined('CAPTUREROLES')) {
-        // old config did not have this configurability
-        return TRUE;
+        logit("controller.log", "check_running_role: You do not seem to have CAPTUREROLES defined in your config.php");
+        return FALSE;
     }
 
     $roles = unserialize(CAPTUREROLES);
+
     if (!in_array($role, $roles)) {
+        logit("controller.log", "check_running_role: $role not defined in CAPTUREROLES");
         return FALSE;
     }
 
@@ -301,33 +317,20 @@ function check_running_role($role) {
 
         if (is_numeric($pid) && $pid > 0) {
 
+            // check whether the pid is running by checking whether it is possible to send the process a signal
             $running = posix_kill($pid, 0);
-            if (posix_get_last_error() == 1) {
-                $running = true;      // running as another user
-            }
 
-            if ($running) {
+            // running as another user
+            if (posix_get_last_error() == 1)
+                $running = TRUE;
+
+            if ($running)
                 return TRUE;
-            }
         }
     }
+    logit("controller.log", "check_running_role: no $role script found with pid $pid");
 
     return FALSE;
-}
-
-/*
- * Inform controller a task wants to update its queries 
- */
-
-function web_reload_config_role($role) {
-    $dbh = pdo_connect();
-    $sql = "CREATE TABLE IF NOT EXISTS tcat_controller_tasklist ( id bigint auto_increment, task varchar(32) not null, instruction varchar(255) not null, ts_issued timestamp default current_timestamp, primary key(id) )";
-    $h = $dbh->prepare($sql);
-    if (!$h->execute())
-        return false;
-    $sql = "INSERT INTO tcat_controller_tasklist ( task, instruction ) VALUES ( '$role', 'reload' )";
-    $h = $dbh->prepare($sql);
-    return $h->execute();
 }
 
 /*
@@ -350,16 +353,41 @@ function controller_reload_config_role($role) {
 
         if (is_numeric($pid) && $pid > 0) {
 
-            logit("controller.log", "enforcing reload of config for $role task");
-            logit("controller.log", "sending a TERM signal to $role task for $pid");
-            posix_kill($pid, 15); // sigterm
-            sleep(6);
-            logit("controller.log", "starting new instance of $role task");
-            // this command should start the capture task as a detached process and report back its pid
+            logit("controller.log", "controller_reload_config_role: enforcing reload of config for $role");
+
+            // check whether the process was started by another user
+            posix_kill($pid, 0);
+            if (posix_get_last_error() == 1) {
+                logit("controller.log", "unable to kill $role, it seems to be running under another user\n");
+                return FALSE;
+            }
+
+            // kill script with pid $pid
+            logit("controller.log", "controller_reload_config_role: sending a TERM signal to $role for $pid");
+            posix_kill($pid, SIGTERM);
+
+            // test whether the process really has been killed
+            $i = 0;
+            $sleep = 5;
+            // while we can still signal the pid
+            while (posix_kill($pid, 0)) {
+                logit("controller.log", "controller_reload_config_role: waiting for graceful exit of script $role with pid $pid");
+                // we need some time to allow graceful exit
+                sleep($sleep);
+                $i++;
+                if ($i == 10) {
+                    $failmsg = "controller_reload_config_role: unable to kill script $role with pid $pid after " . ($sleep * $i) . " seconds";
+                    logit("controller.log", $failmsg);
+                    return FALSE;
+                }
+            }
+
+            logit("controller.log", "controller_reload_config_role: starting new instance of $role script");
+
+            // this command starts the capture task as a detached process and report back its pid
             $cmd = PHP_CLI . " " . BASE_FILE . "capture/stream/$role.php > /dev/null & echo $!";
-            /* for debugging */
-            //logit("controller.log", "reload_config_role() cmd $cmd");
             $pid = shell_exec($cmd);
+
             return $pid;
         }
     }
@@ -446,7 +474,6 @@ class Tweet {
     public $retweeted;
     public $retweeted_status;
     public $in_reply_to_status_id;
-    public $in_reply_to_user_id_str;
     public $coordinates;
     public $in_reply_to_status_id_str;
     public $in_reply_to_screen_name;
