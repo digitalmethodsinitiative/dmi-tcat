@@ -209,11 +209,11 @@ $lastRateLimitHit = getLastRateLimitHit();
             echo '<td valign="top" align="right">' . number_format($bin->nrOfTweets, 0, ",", ".") . '</td>'; // does not sort well
             echo '<td valign="top">' . implode("<br />", $bin->periods) . '</td>';
             echo '<td valign="top">';
-            if ($bin->type != "onepercent" && $bin->type != "other")
+            if ($bin->type != "onepercent" && $bin->type != "other" && array_search($bin->type, $captureroles) !== false)
                 echo '<a href="" onclick="sendModify(\'' . $bin->id . '\',\'' . addslashes(implode(",", $activePhraselist)) . '\',\'' . $bin->active . '\',\'' . $bin->type . '\'); return false;">modify ' . ($bin->type == 'follow' ? 'users' : 'phrases') . '</a>';
             echo '</td>';
             echo '<td valign="top">';
-            if ($bin->type != "other")
+            if ($bin->type != "other" && array_search($bin->type, $captureroles) !== false)
                 echo '<a href="" onclick="sendPause(\'' . $bin->id . '\',\'' . $action . '\',\'' . $bin->type . '\'); return false;">' . $action . '</a>';
             echo '</td>';
             echo '</tr>';
