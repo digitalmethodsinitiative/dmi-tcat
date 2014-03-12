@@ -673,7 +673,7 @@ function get_hash_tags($msg) {
 // get listing of all datasets
 function get_all_datasets() {
     $dbh = pdo_connect();
-    $rec = $dbh->prepare("SELECT id, querybin, type, active FROM tcat_query_bins WHERE visible = TRUE");
+    $rec = $dbh->prepare("SELECT id, querybin, type, active FROM tcat_query_bins WHERE visible = TRUE ORDER BY LOWER(querybin)");
     $datasets = array();
     if ($rec->execute() && $rec->rowCount() > 0) {
         while ($res = $rec->fetch()) {
@@ -689,7 +689,7 @@ function get_all_datasets() {
                 $row['maxtime'] = $res2['max'];
             }
             $rec2 = $dbh->prepare("SELECT p.phrase FROM tcat_query_bins_phrases bp, tcat_query_phrases p WHERE bp.querybin_id = " . $res['id'] . " AND bp.phrase_id = p.id");
-            $keywords = array();
+            $row['keywords'] = "";
             if ($rec2->execute() && $rec2->rowCount() > 0) {
                 $res2 = $rec2->fetchAll(PDO::FETCH_COLUMN);
                 $row['keywords'] = implode(", ", $res2);
@@ -697,7 +697,6 @@ function get_all_datasets() {
             $datasets[$row['bin']] = $row;
         }
     }
-    asort($datasets);
     return $datasets;
 }
 
