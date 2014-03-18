@@ -21,6 +21,7 @@ if ($argc < 1)
 require_once('../config.php');
 require_once('../common/functions.php');
 require_once('../capture/common/functions.php');
+dbconnect();
 
 print "Were you running DMI-TCAT before the query manager was implemented (6 March 2014)? (yes/no)" . PHP_EOL;
 $ans = trim(fgets(fopen("php://stdin", "r")));
