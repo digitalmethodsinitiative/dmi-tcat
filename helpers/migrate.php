@@ -279,6 +279,9 @@ function querybinsPhpToDb() {
 function binsToDb($stuff, $type) {
     $dbh = pdo_connect();
     foreach ($stuff as $binname => $queries) {
+        $binname = trim($binname);
+        if (empty($binname))
+            continue;
         $binname = mysql_real_escape_string($binname);
 
         $rec2 = $dbh->prepare("SELECT id FROM tcat_query_bins WHERE querybin = '$binname'");
