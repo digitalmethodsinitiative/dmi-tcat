@@ -455,6 +455,63 @@ function getActiveFollowBins() {
     return $querybins;
 }
 
+function queryManagerCreateBin($binname, $type, $starttime = "0000-00-00 00:00:00", $endtime = "0000-00-00 00:00:00", $active = 0) {
+    $dbh = pdo_connect();
+    // create querybin in database
+    $sql = "INSERT IGNORE INTO tcat_query_bins (querybin,type,active) VALUES ('$binname','$type','$active')";
+    $rec = $dbh->prepare($sql);
+    if (!$rec->execute() || !$rec->rowCount())
+        die("failed to insert $binname\n");
+    $querybin_id = $dbh->lastInsertId();
+
+    // insert querybin period
+    $sql = "INSERT INTO tcat_query_bins_periods (querybin_id,starttime,endtime) VALUES ('$querybin_id','$starttime','$endtime')";
+    $rec = $dbh->prepare($sql);
+    if (!$rec->execute() || !$rec->rowCount())
+        die("could not insert period for $binname with id $querybin_id\n");
+    $dbh = false;
+    return $querybin_id;
+}
+
+function queryManagerInsertPhrases($querybin_id, $phrases, $starttime = "0000-00-00 00:00:00", $endtime = "0000-00-00 00:00:00") {
+    $dbh = pdo_connect();
+    foreach ($phrases as $phrase) {
+        $phrase = trim($phrase);
+        if (empty($phrase))
+            continue;
+        $phrase = mysql_real_escape_string($phrase);
+        $sql = "INSERT IGNORE INTO tcat_query_phrases (phrase) VALUES ('$phrase')";
+        $rec = $dbh->prepare($sql);
+        if (!$rec->execute() || !$rec->rowCount())
+            die("failed to insert phrase $phrase\n");
+        $phrase_id = $dbh->lastInsertId();
+        $sql = "INSERT INTO tcat_query_bins_phrases (phrase_id,querybin_id,starttime,endtime) VALUES ('$phrase_id','$querybin_id','$starttime','$endtime')";
+        $rec = $dbh->prepare($sql);
+        if (!$rec->execute() || !$rec->rowCount())
+            die("could not insert into tcat_query_bins_phrases $sql\n");
+    }
+    $dbh = false;
+}
+
+function queryManagerInsertUsers($querybin_id, $users, $starttime = "0000-00-00 00:00:00", $endtime = "0000-00-00 00:00:00") {
+    $dbh = pdo_connect();
+    foreach ($users as $user_id) {
+        $user_id = trim($user_id);
+        if (empty($user_id))
+            continue;
+        $user_id = mysql_real_escape_string($user_id);
+        $sql = "INSERT IGNORE INTO tcat_query_users (id) VALUES ('$user_id')";
+        $rec = $dbh->prepare($sql);
+        if (!$rec->execute())
+            die("failed to insert user_id $user_id: $sql\n");
+        $sql = "INSERT INTO tcat_query_bins_users (user_id,querybin_id,starttime,endtime) VALUES ('$user_id','$querybin_id','$starttime','$endtime')";
+        $rec = $dbh->prepare($sql);
+        if (!$rec->execute() || !$rec->rowCount())
+            die("could not insert into tcat_query_bins_users $sql\n");
+    }
+    $dbh = false;
+}
+
 /**
  * 
  * Tweet entity
