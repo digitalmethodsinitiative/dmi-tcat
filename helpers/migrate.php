@@ -80,7 +80,6 @@ function checkDbDefinitions() {
         print "Your database is outdated. Here is what you can do to fix it:" . PHP_EOL;
         foreach ($statuses as $binname => $status) {
             if (array_search("touserkey", $status) !== false || array_search("from_user_profile_image_url", $status) !== false || array_search("lang", $status) !== false || array_search("_urls_from_user_id", $status) !== false) {
-                // @todo, update last increment
                 print "Your database definitions of query bin '$binname' are very outdated. You should dump your existing data, drop the old tables, create new tables with the new table definitions, and then import the data again." . PHP_EOL;
                 print "Do you want this script to create an sql file with the right table format which you can then import? (yes/no)" . PHP_EOL;
                 if (trim(fgets(fopen("php://stdin", "r"))) == 'yes') {
@@ -298,7 +297,7 @@ function binsToDb($stuff, $type) {
         $endtime = $res['max'];
         $active = 0;
         if (strtotime($endtime) > strtotime(strftime("%Y-%m-%d 00:00:00", date('U')))) { // see whether it is still active
-            $endtime = "0000:00:00 00:00:00"; // @todo, might want to keep this as null
+            $endtime = "0000:00:00 00:00:00";
             $active = 1;
         }
 
