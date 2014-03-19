@@ -13,17 +13,20 @@ require BASE_FILE . 'capture/common/tmhOAuth/tmhOAuth.php';
 // ----- connection -----
 $dbh = pdo_connect();
 
-$user_ids = array();
+$user_ids = array(); // provide an array of user ids or screen names
 $bin_name = "";
 $list_name = "";
+$type = 'timeline'; // specify 'timeline' if you want this to be a standalone bin, or 'follow' if you want to be able to continue tracking these users later on via BASE_URL/capture/index.php
 
-// instead of specying usernames, you can also fetch usernames from a specific list in the database
-if (!empty($list_name)) {
-    $q = $dbh->prepare("SELECT list_id FROM " . $bin_name . "_lists WHERE list_name = '" . $list_name . "'");
+
+if (!empty($list_name)) { // instead of specying usernames, you can also fetch usernames from a specific list in the database
+    $q = $dbh->prepare("SELECT list_id FROM " . $bin_name . "_lists WHERE list_name = :list_name");
+    $q->bindParam(":list_name", trim($list_name), PDO::PARAM_STR);
     if ($q->execute()) {
         $list_id = $q->fetchAll(PDO::FETCH_COLUMN, 0);
         $list_id = $list_id[0];
-        $q = $dbh->prepare("SELECT user_id FROM penw_lists_membership WHERE list_id = $list_id");
+        $q = $dbh->prepare("SELECT user_id FROM penw_lists_membership WHERE list_id = :list_id");
+        $q->bindParam(":list_id", $list_id, PDO::PARAM_INT);
         if ($q->execute()) {
             $user_ids = $q->fetchAll(PDO::FETCH_COLUMN, 0);
         }
@@ -42,15 +45,22 @@ if (empty($bin_name))
 if (empty($user_ids))
     die("user_ids not set\n");
 
+$querybin_id = queryManagerBinExists($bin_name);
+
 $current_key = $looped = 0;
 
 create_bin($bin_name, $dbh);
 
 foreach ($user_ids as $user_id) {
-    get_timeline($user_id);
+    if (is_int($user_id))
+        get_timeline($user_id, "user_id");
+    else
+        get_timeline($user_id, "screen_name");
 }
 
-function get_timeline($user_id, $max_id = null) {
+queryManagerCreateBinFromExistingTables($bin_name, $querybin_id, $type);
+
+function get_timeline($user_id, $type, $max_id = null) {
     print "doing $user_id\n";
     global $twitter_keys, $current_key, $looped, $bin_name, $dbh;
 
@@ -61,13 +71,17 @@ function get_timeline($user_id, $max_id = null) {
                 'secret' => $twitter_keys[$current_key]['twitter_user_secret'],
             ));
     $params = array(
-        'user_id' => $user_id, // you can use user_id or screen_name here
         'count' => 200,
         'trim_user' => false,
         'exclude_replies' => false,
         'contributor_details' => true,
         'include_rts' => 1
     );
+
+    if ($type == "user_id")
+        $params['user_id'] = $user_id;
+    else
+        $params['screen_name'] = $user_id;
 
     if (isset($max_id))
         $params['max_id'] = $max_id;
@@ -128,17 +142,17 @@ function get_timeline($user_id, $max_id = null) {
             return false;
         }
         sleep(1);
-        get_timeline($user_id, $max_id);
+        get_timeline($user_id, $type, $max_id);
     } else {
         $error_code = json_decode($tmhOAuth->response['response'])->errors[0]->code;
         if ($error_code == 130) {
             print "Twitter is over capacity, sleeping 5 seconds before retry\n";
             sleep(5);
-            get_timeline($user_id, $max_id);
+            get_timeline($user_id, $type, $max_id);
         } elseif ($error_code == 88) {
             print "API key rate limit exceeded, sleeping 60 seconds before retry\n";
             sleep(60);
-            get_timeline($user_id, $max_id);
+            get_timeline($user_id, $type, $max_id);
         } else {
             echo "\nAPI error: " . $tmhOAuth->response['response'] . "\n";
         }

@@ -130,10 +130,20 @@ if (defined('ANALYSIS_URL'))
                     foreach ($datasets as $key => $set) {
                         if ($set['type'] == "track") {
                             $ordered_datasets["keyword captures"][$key] = $set;
-                        } elseif ($set['type'] == "follow") {
+			} elseif ($set['type'] == "follow") {
                             $ordered_datasets["user captures"][$key] = $set;
                         } elseif ($set['type'] == "onepercent") {
                             $ordered_datasets["one percent samples"][$key] = $set;
+			} elseif ($set['type'] == "timeline") {
+                            $ordered_datasets["timelines"][$key] = $set;
+			} elseif ($set['type'] == "search") {
+                            $ordered_datasets["search"][$key] = $set;
+                        } elseif ($set['type'] == "import ytk") {
+                            $ordered_datasets["imports: yourTwapperKeeper"][$key] = $set;
+                        } elseif ($set['type'] == "import timeline") {
+                            $ordered_datasets["imports: timeline"][$key] = $set;
+                        } elseif ($set['type'] == "import track") {
+                            $ordered_datasets["imports: track"][$key] = $set;
                         } else {  // legacy
                             $ordered_datasets["other"][$key] = $set;
                         }

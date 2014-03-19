@@ -7,32 +7,39 @@ include_once('../common/functions.php');
 include_once('../capture/common/functions.php');
 
 # NOTE: twitter api normally gives back url and url_expanded. YourTwapperKeeper only has url. The url expansion script which needs to be run after this one needs url_expanded to work (has to do with optimalizations). Ergo: no analysis of link shortening servies on ytk_ datasets
-
-
-$import_table = "";
-$bin_name = "";
-
-if (empty($bin_name))
-    die("bin_name not set\n");
-
 // From this db
-$archive_dbh = new PDO("mysql:host=$hostname;dbname=twapper", $dbuser, $dbpass);
-$archive_dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+$dbhost_from = '';
+$dbuser_from = '';
+$dbpass_from = '';
+$dbdatabase_from = '';
+$ytk_table = "";
 
 // ... To this db
 $dbhost_to = '';
 $dbuser_to = '';
 $dbpass_to = '';
-$dbh = new PDO("mysql:host=$dbhost_to;dbname=twittercapture", $dbuser_to, $dbpass_to);
+$dbdatabase_to = '';
+$bin_name = "";
+
+// here you can specify the queries used with ytk
+$queries = array();
+
+$archive_dbh = new PDO("mysql:host=$dbhost_from;dbname=" . $dbdatabase_from, $dbuser_from, $dbpass_from);
+$archive_dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+$dbh = new PDO("mysql:host=$dbhost_to;dbname=" . $dbdatabase_to, $dbuser_to, $dbpass_to);
 $dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
+if (empty($bin_name))
+    die("bin_name not set\n");
+$querybin_id = queryManagerBinExists($bin_name);
 
 // Old table, importing tweets from here
-$query = $archive_dbh->prepare("SELECT * FROM " . $import_table);
+$query = $archive_dbh->prepare("SELECT * FROM " . $ytk_table);
 $query->execute();
 
 // create new tables
-create_bin($bin_name,$dbh);
+create_bin($bin_name, $dbh);
 
 // insert old data in new tables
 while ($row = $query->fetch(PDO::FETCH_ASSOC)) {
@@ -182,4 +189,6 @@ while ($row = $query->fetch(PDO::FETCH_ASSOC)) {
 
     $q->execute();
 }
+
+queryManagerCreateBinFromExistingTables($bin_name, $querybin_id, 'import ytk', $queries);
 ?>

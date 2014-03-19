@@ -11,13 +11,16 @@ include_once BASE_FILE . '/capture/common/functions.php';
 
 require BASE_FILE . 'capture/common/tmhOAuth/tmhOAuth.php';
 
-$bin_name = 'verkiezingen_nl';
-$keywords = '@VVD OR @cdavandaag OR @christenunie OR @D66 OR @PvdA OR @groenlinks OR @PvdD_Nieuws OR @PVV OR @SGPnieuws OR @SPnl OR @50pluspartij OR @Piratenpartij';
+$bin_name = '';
+$keywords = ''; // separate keywords by 'OR'
+$type = 'search'; // specify 'search' if you want this to be a standalone bin, or 'track' if you want to be able to continue tracking these keywords later on via BASE_URL/capture/index.php
 
 if (empty($bin_name))
     die("bin_name not set\n");
 if (empty($keywords))
     die("keywords not set\n");
+
+$querybin_id = queryManagerBinExists($bin_name);
 
 $current_key = $looped = $tweets_success = $tweets_failed = $tweets_processed = 0;
 $all_users = $all_tweet_ids = array();
@@ -27,6 +30,8 @@ $dbh = pdo_connect();
 create_bin($bin_name, $dbh);
 
 search($keywords);
+
+queryManagerCreateBinFromExistingTables($bin_name, $querybin_id, $type, explode("OR", $keywords));
 
 function search($keywords, $max_id = null) {
     global $twitter_keys, $current_key, $all_users, $all_tweet_ids, $bin_name, $tweets_success, $tweets_failed, $tweets_processed, $dbh;

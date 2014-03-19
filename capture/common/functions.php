@@ -215,15 +215,14 @@ function ratelimit_record($ratelimit, $ex_start) {
     /* for debugging */
     logit("controller.log", "ratelimit_record() has been called");
     $dbh = pdo_connect();
-    $ts_ex_start = toDateTime($ex_start);
-    $ts_ex_end = toDateTime(time());
-    $sql = "insert into tcat_error_ratelimit ( type, start, end, tweets ) values ( '" . CAPTURE . "', '" . $ts_ex_start . "', '" . $ts_ex_end . "', $ratelimit )";
-    /* for debugging */
-    //logit("controller.log", "ratelimit_record() SQL: $sql");
+    $sql = "insert into tcat_error_ratelimit ( type, start, end, tweets ) values ( :type, :start, :end, :ratelimit)";
     $h = $dbh->prepare($sql);
-    $res = $h->execute();
-    /* for debugging */
-    //logit("controller.log", "ratelimit_record() sql result: " . var_export($res, 1));
+    $h->bindParam(":type", CAPTURE, PDO::PARAM_STR);
+    $h->bindParam(":start", toDateTime($ex_start), PDO::PARAM_STR);
+    $h->bindParam(":end", toDateTime(time()), PDO::PARAM_STR);
+    $h->bindParam(":ratelimit", $ratelimit, PDO::PARAM_INT);
+    $h->execute();
+    $dbh = false;
 }
 
 /*
@@ -240,15 +239,12 @@ function gap_record($role, $ustart, $uend) {
         return TRUE;
     }
     $dbh = pdo_connect();
-    $ts_start = toDateTime($ustart);
-    $ts_end = toDateTime($uend);
-    $sql = "insert into tcat_error_gap ( type, start, end ) values ( '" . $role . "', '" . $ts_start . "', '" . $ts_end . "' )";
-    /* for debugging */
-    //logit("controller.log", "gap_record() SQL: $sql");
+    $sql = "insert into tcat_error_gap ( type, start, end ) values ( :role, :start, :end)";
     $h = $dbh->prepare($sql);
-    $res = $h->execute();
-    /* for debugging */
-    //logit("controller.log", "gap_record() sql result: " . var_export($res, 1));
+    $h->bindParam(":role", $role, PDO::PARAM_STR);
+    $h->bindParam(":start", toDateTime($ustart), PDO::PARAM_STR);
+    $h->bindParam(":end", toDateTime($uend), PDO::PARAM_STR);
+    $h->execute();
 }
 
 /*
@@ -283,8 +279,10 @@ function web_reload_config_role($role) {
     $h = $dbh->prepare($sql);
     if (!$h->execute())
         return false;
-    $sql = "INSERT INTO tcat_controller_tasklist ( task, instruction ) VALUES ( '$role', 'reload' )";
+    $sql = "INSERT INTO tcat_controller_tasklist ( task, instruction ) VALUES ( :role, :instruction)";
     $h = $dbh->prepare($sql);
+    $h->bindParam(":role", $role, PDO::PARAM_STR);
+    $h->bindParam(":instruction", 'reload', PDO::PARAM_STR);
     return $h->execute();
 }
 
@@ -455,18 +453,69 @@ function getActiveFollowBins() {
     return $querybins;
 }
 
+function queryManagerBinExists($binname) {
+    $dbh = pdo_connect();
+    $rec = $dbh->prepare("SELECT id FROM tcat_query_bins WHERE querybin = :binname");
+    $rec->bindParam(":binname", $binname, PDO::PARAM_STR);
+    if ($rec->execute() && $rec->rowCount() > 0) { // check whether the table has already been imported
+        $res = $rec->fetch();
+        print "The query bin '$binname' already exists. Are you sure you want to add tweets to '$bin_name'? (yes/no)" . PHP_EOL;
+        if (trim(fgets(fopen("php://stdin", "r"))) != 'yes')
+            die('Abort' . PHP_EOL);
+        return $res['id'];
+    }
+    return false;
+}
+
+function queryManagerCreateBinFromExistingTables($binname, $querybin_id, $type, $queries = array()) {
+    $dbh = pdo_connect();
+
+    // select start and end of dataset
+    $sql = "SELECT min(created_at) AS min, max(created_at) AS max FROM " . $binname . "_tweets";
+    $rec = $dbh->prepare($sql);
+    if (!$rec->execute() || !$rec->rowCount())
+        die("could not find " . $binname . "_tweets" . PHP_EOL);
+    $res = $rec->fetch();
+    $starttime = $res['min'];
+    $endtime = $res['max'];
+
+    // create bin in query manager
+    if ($querybin_id === false)
+        $querybin_id = queryManagerCreateBin($binname, $type, $starttime, $endtime, 0);
+
+    // retrieve users from timeline capture
+    if (($type == 'timeline' || $type == "import timeline") && empty($queries)) {
+        $rec = $dbh->prepare("SELECT DISTINCT(from_user_id) FROM " . $binname . "_tweets");
+        if ($rec->execute() && $rec->rowCount() > 0) {
+            $queries = $rec->fetchAll(PDO::FETCH_COLUMN);
+        }
+    }
+
+    if ($type == 'track' || $type == 'search' || $type == "import ytk" || $type == "import track") // insert phrases
+        queryManagerInsertPhrases($querybin_id, $queries, $starttime, $endtime);
+    elseif ($type == 'follow' || $type == 'timeline' || $type == 'import timeline') {// insert users
+        queryManagerInsertUsers($querybin_id, $queries, $starttime, $endtime);
+    }
+}
+
 function queryManagerCreateBin($binname, $type, $starttime = "0000-00-00 00:00:00", $endtime = "0000-00-00 00:00:00", $active = 0) {
     $dbh = pdo_connect();
     // create querybin in database
-    $sql = "INSERT IGNORE INTO tcat_query_bins (querybin,type,active) VALUES ('$binname','$type','$active')";
+    $sql = "INSERT IGNORE INTO tcat_query_bins (querybin,type,active) VALUES (:binname, :type, :active)";
     $rec = $dbh->prepare($sql);
+    $rec->bindParam(":binname", $binname, PDO::PARAM_STR);
+    $rec->bindParam(":type", $type, PDO::PARAM_STR);
+    $rec->bindParam(":active", $active, PDO::PARAM_BOOL);
     if (!$rec->execute() || !$rec->rowCount())
         die("failed to insert $binname\n");
     $querybin_id = $dbh->lastInsertId();
 
     // insert querybin period
-    $sql = "INSERT INTO tcat_query_bins_periods (querybin_id,starttime,endtime) VALUES ('$querybin_id','$starttime','$endtime')";
+    $sql = "INSERT INTO tcat_query_bins_periods (querybin_id,starttime,endtime) VALUES (:querybin_id, :starttime, :endtime)";
     $rec = $dbh->prepare($sql);
+    $rec->bindParam(":querybin_id", $querybin_id, PDO::PARAM_INT);
+    $rec->bindParam(":starttime", $starttime, PDO::PARAM_STR);
+    $rec->bindParam(":endtime", $endtime, PDO::PARAM_STR);
     if (!$rec->execute() || !$rec->rowCount())
         die("could not insert period for $binname with id $querybin_id\n");
     $dbh = false;
@@ -479,14 +528,18 @@ function queryManagerInsertPhrases($querybin_id, $phrases, $starttime = "0000-00
         $phrase = trim($phrase);
         if (empty($phrase))
             continue;
-        $phrase = mysql_real_escape_string($phrase);
-        $sql = "INSERT IGNORE INTO tcat_query_phrases (phrase) VALUES ('$phrase')";
+        $sql = "INSERT IGNORE INTO tcat_query_phrases (phrase) VALUES (:phrase)";
         $rec = $dbh->prepare($sql);
+        $rec->bindParam(':phrase', $phrase, PDO::PARAM_STR); //
         if (!$rec->execute() || !$rec->rowCount())
             die("failed to insert phrase $phrase\n");
         $phrase_id = $dbh->lastInsertId();
-        $sql = "INSERT INTO tcat_query_bins_phrases (phrase_id,querybin_id,starttime,endtime) VALUES ('$phrase_id','$querybin_id','$starttime','$endtime')";
+        $sql = "INSERT INTO tcat_query_bins_phrases (phrase_id,querybin_id,starttime,endtime) VALUES (:phrase_id, :querybin_id, :starttime, :endtime)";
         $rec = $dbh->prepare($sql);
+        $rec->bindParam(":phrase_id", $phrase_id, PDO::PARAM_INT);
+        $rec->bindParam(":querybin_id", $querybin_id, PDO::PARAM_INT);
+        $rec->bindParam(":starttime", $starttime, PDO::PARAM_STR);
+        $rec->bindParam(":endtime", $endtime, PDO::PARAM_STR);
         if (!$rec->execute() || !$rec->rowCount())
             die("could not insert into tcat_query_bins_phrases $sql\n");
     }
@@ -499,13 +552,17 @@ function queryManagerInsertUsers($querybin_id, $users, $starttime = "0000-00-00 
         $user_id = trim($user_id);
         if (empty($user_id))
             continue;
-        $user_id = mysql_real_escape_string($user_id);
-        $sql = "INSERT IGNORE INTO tcat_query_users (id) VALUES ('$user_id')";
+        $sql = "INSERT IGNORE INTO tcat_query_users (id) VALUES (:user_id)";
         $rec = $dbh->prepare($sql);
+        $rec->bindParam(':user_id', $user_id, PDO::PARAM_INT);
         if (!$rec->execute())
             die("failed to insert user_id $user_id: $sql\n");
-        $sql = "INSERT INTO tcat_query_bins_users (user_id,querybin_id,starttime,endtime) VALUES ('$user_id','$querybin_id','$starttime','$endtime')";
+        $sql = "INSERT INTO tcat_query_bins_users (user_id,querybin_id,starttime,endtime) VALUES (:user_id, :querybin_id, :starttime, :endtime)";
         $rec = $dbh->prepare($sql);
+        $rec->bindParam(":user_id", $user_id, PDO::PARAM_INT);
+        $rec->bindParam(":querybin_id", $querybin_id, PDO::PARAM_INT);
+        $rec->bindParam(":starttime", $starttime, PDO::PARAM_STR);
+        $rec->bindParam(":endtime", $endtime, PDO::PARAM_STR);
         if (!$rec->execute() || !$rec->rowCount())
             die("could not insert into tcat_query_bins_users $sql\n");
     }
@@ -572,6 +629,8 @@ class Tweet {
             $this->id = $value;
         } elseif ($name == "_id_str") {
             $this->id = $value;
+        } elseif ($name == "in_reply_to_user_id_str") {
+            $this->in_reply_to_user_id_str = $value;
         } elseif ($name == "random_number" || $name == "withheld_scope" || $name == "status" || $name == "withheld_in_countries" || $name == "withheld_copyright") {
             print $name . "=" . $value . " not available as a database field\n";
             return;

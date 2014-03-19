@@ -170,7 +170,7 @@ $lastRateLimitHit = getLastRateLimitHit();
             $phrasePeriodsList = array();
             $activePhraselist = array();
 
-            if ($bin->type == "track") {
+            if (strstr($bin->type, "track") !== false || $bin->type == 'search' || $bin->type == 'import ytk') {
                 foreach ($bin->phrases as $phrase) {
                     $phrasePeriodsList[$phrase->id] = array_unique($phrase->periods);
                     $phraseList[$phrase->id] = $phrase->phrase;
@@ -178,7 +178,7 @@ $lastRateLimitHit = getLastRateLimitHit();
                         $activePhraselist[$phrase->id] = $phrase->phrase;
                     }
                 }
-            } elseif ($bin->type == "follow") {
+            } elseif (strstr($bin->type, "follow") !== false || strstr($bin->type, "timeline") !== false) {
                 foreach ($bin->users as $user) {
                     $phrasePeriodsList[$user->id] = array_unique($user->periods);
                     $phraseList[$user->id] = $user->id;
@@ -209,11 +209,11 @@ $lastRateLimitHit = getLastRateLimitHit();
             echo '<td valign="top" align="right">' . number_format($bin->nrOfTweets, 0, ",", ".") . '</td>'; // does not sort well
             echo '<td valign="top">' . implode("<br />", $bin->periods) . '</td>';
             echo '<td valign="top">';
-            if ($bin->type != "onepercent" && $bin->type != "other" && array_search($bin->type, $captureroles) !== false)
+            if ($bin->type != "onepercent" && array_search($bin->type, $captureroles) !== false)
                 echo '<a href="" onclick="sendModify(\'' . $bin->id . '\',\'' . addslashes(implode(",", $activePhraselist)) . '\',\'' . $bin->active . '\',\'' . $bin->type . '\'); return false;">modify ' . ($bin->type == 'follow' ? 'users' : 'phrases') . '</a>';
             echo '</td>';
             echo '<td valign="top">';
-            if ($bin->type != "other" && array_search($bin->type, $captureroles) !== false)
+            if (array_search($bin->type, $captureroles) !== false)
                 echo '<a href="" onclick="sendPause(\'' . $bin->id . '\',\'' . $action . '\',\'' . $bin->type . '\'); return false;">' . $action . '</a>';
             echo '</td>';
             echo '</tr>';

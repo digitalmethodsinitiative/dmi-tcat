@@ -10,9 +10,15 @@ include_once('../capture/common/functions.php');
 $bin_name = '';
 // specify dir with the user timelines (json)
 $dir = '';
+// set type of dump ('import follow' or 'import track')
+$type = 'import track';
+// if 'import track', specify keywords for which data was captured
+$queries = array();
 
 if (empty($bin_name))
     die("bin_name not set\n");
+$querybin_id = queryManagerBinExists($bin_name);
+
 $dbh = pdo_connect();
 create_bin($bin_name, $dbh);
 
@@ -32,6 +38,8 @@ for ($i = 0; $i < $count; ++$i) {
     process_json_file_timeline($filepath, $dbh);
     print $c-- . "\n";
 }
+
+queryManagerCreateBinFromExistingTables($bin_name, $querybin_id, $type, $queries);
 
 function process_json_file_timeline($filepath, $dbh) {
     global $tweets_processed, $tweets_failed, $tweets_success,
@@ -87,5 +95,4 @@ print "Valid timelines: $valid_timeline\n";
 print "Invalid timelines: $invalid_timeline\n";
 print "Populated timelines: $populated_timeline\n";
 print "Empty timelines: $empty_timeline\n";
-
 ?>

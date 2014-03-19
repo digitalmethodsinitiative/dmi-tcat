@@ -6,11 +6,13 @@ include_once('../capture/common/functions.php');
 
 // specify the name of the bin here 
 $bin_name = '';
-// specify dir with the user timelines (json)
+// specify dir with the user timelines in json format
 $dir = '';
 
 if (empty($bin_name))
     die("bin_name not set\n");
+$querybin_id = queryManagerBinExists($bin_name);
+
 $dbh = pdo_connect();
 create_bin($bin_name, $dbh);
 
@@ -30,6 +32,8 @@ for ($i = 0; $i < $count; ++$i) {
     process_json_file_timeline($filepath, $dbh);
     print $c-- . "\n";
 }
+
+queryManagerCreateBinFromExistingTables($bin_name, $querybin_id, 'import timeline');
 
 function process_json_file_timeline($filepath, $dbh) {
     global $tweets_processed, $tweets_failed, $tweets_success,
