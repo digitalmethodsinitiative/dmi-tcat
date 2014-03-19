@@ -217,9 +217,11 @@ function ratelimit_record($ratelimit, $ex_start) {
     $dbh = pdo_connect();
     $sql = "insert into tcat_error_ratelimit ( type, start, end, tweets ) values ( :type, :start, :end, :ratelimit)";
     $h = $dbh->prepare($sql);
+    $ex_start = toDateTime($ex_start);
+    $ex_end = toDateTime(time());
     $h->bindParam(":type", CAPTURE, PDO::PARAM_STR);
-    $h->bindParam(":start", toDateTime($ex_start), PDO::PARAM_STR);
-    $h->bindParam(":end", toDateTime(time()), PDO::PARAM_STR);
+    $h->bindParam(":start", $ex_start, PDO::PARAM_STR);
+    $h->bindParam(":end", $ex_end, PDO::PARAM_STR);
     $h->bindParam(":ratelimit", $ratelimit, PDO::PARAM_INT);
     $h->execute();
     $dbh = false;
@@ -241,9 +243,11 @@ function gap_record($role, $ustart, $uend) {
     $dbh = pdo_connect();
     $sql = "insert into tcat_error_gap ( type, start, end ) values ( :role, :start, :end)";
     $h = $dbh->prepare($sql);
+    $ustart = toDateTime($ustart);
+    $uend = toDateTime($uend);
     $h->bindParam(":role", $role, PDO::PARAM_STR);
-    $h->bindParam(":start", toDateTime($ustart), PDO::PARAM_STR);
-    $h->bindParam(":end", toDateTime($uend), PDO::PARAM_STR);
+    $h->bindParam(":start", $ustart, PDO::PARAM_STR);
+    $h->bindParam(":end", $uend, PDO::PARAM_STR);
     $h->execute();
 }
 
@@ -279,10 +283,9 @@ function web_reload_config_role($role) {
     $h = $dbh->prepare($sql);
     if (!$h->execute())
         return false;
-    $sql = "INSERT INTO tcat_controller_tasklist ( task, instruction ) VALUES ( :role, :instruction)";
+    $sql = "INSERT INTO tcat_controller_tasklist ( task, instruction ) VALUES ( :role, 'reload')";
     $h = $dbh->prepare($sql);
     $h->bindParam(":role", $role, PDO::PARAM_STR);
-    $h->bindParam(":instruction", 'reload', PDO::PARAM_STR);
     return $h->execute();
 }
 
@@ -459,7 +462,7 @@ function queryManagerBinExists($binname) {
     $rec->bindParam(":binname", $binname, PDO::PARAM_STR);
     if ($rec->execute() && $rec->rowCount() > 0) { // check whether the table has already been imported
         $res = $rec->fetch();
-        print "The query bin '$binname' already exists. Are you sure you want to add tweets to '$bin_name'? (yes/no)" . PHP_EOL;
+        print "The query bin '$binname' already exists. Are you sure you want to add tweets to '$binname'? (yes/no)" . PHP_EOL;
         if (trim(fgets(fopen("php://stdin", "r"))) != 'yes')
             die('Abort' . PHP_EOL);
         return $res['id'];
