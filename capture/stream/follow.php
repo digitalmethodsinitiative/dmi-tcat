@@ -15,7 +15,6 @@ define('CAPTURE', 'follow');
 include "../../config.php";                  // load base config file
 include "../../common/functions.php";        // load base functions file
 include "../common/functions.php";           // load capture function file
-include "../common/termhandler.php";         // load capture signal handler
 $path_local = BASE_FILE;
 
 require BASE_FILE . 'capture/common/tmhOAuth/tmhOAuth.php';

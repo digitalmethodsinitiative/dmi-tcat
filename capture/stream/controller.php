@@ -8,6 +8,7 @@ include_once("../../config.php");
 include "../../common/functions.php";
 include "../common/functions.php";
 
+
 // check whether controller script is already running
 $out = exec("ps aux | grep 'php controller.php' | grep -v grep | grep -v stream | wc -l");
 if ($out > 1) {
@@ -62,6 +63,7 @@ foreach ($roles as $role) {
     } else {
         $idletime = 600;
     }
+    $idletime = 10;
 
     $pid = 0;
     $running = false;

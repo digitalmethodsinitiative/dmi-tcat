@@ -2,6 +2,11 @@
 
 error_reporting(E_ALL);
 
+// tick use required as of PHP 4.3.0
+declare(ticks = 1);
+// setup signal handlers
+pcntl_signal(SIGTERM, "capture_signal_handler_term");
+
 function pdo_connect() {
     global $dbuser, $dbpass, $database, $hostname;
 
@@ -219,7 +224,8 @@ function ratelimit_record($ratelimit, $ex_start) {
     $h = $dbh->prepare($sql);
     $ex_start = toDateTime($ex_start);
     $ex_end = toDateTime(time());
-    $h->bindParam(":type", CAPTURE, PDO::PARAM_STR);
+    $type = CAPTURE;
+    $h->bindParam(":type", $type, PDO::PARAM_STR);
     $h->bindParam(":start", $ex_start, PDO::PARAM_STR);
     $h->bindParam(":end", $ex_end, PDO::PARAM_STR);
     $h->bindParam(":ratelimit", $ratelimit, PDO::PARAM_INT);
@@ -570,6 +576,44 @@ function queryManagerInsertUsers($querybin_id, $users, $starttime = "0000-00-00 
             die("could not insert into tcat_query_bins_users $sql\n");
     }
     $dbh = false;
+}
+
+/*
+ * This signal handler is installed by the capture scripts.
+ */
+
+function capture_flush_buffer() {
+
+    global $tweetbucket;
+
+    if (is_array($tweetbucket) && is_callable('processtweets')) {
+        logit(CAPTURE . ".error.log", "flushing the capture buffer");
+        $copy = $tweetbucket;         // avoid any parallel processing by copy and then empty
+        $tweetbucket = array();
+
+        processtweets($copy);
+    } else {
+        logit(CAPTURE . ".error.log", "failed to flush capture buffer");
+    }
+}
+
+function capture_signal_handler_term($signo) {
+
+    global $exceeding, $ratelimit, $ex_start;
+
+    logit(CAPTURE . ".error.log", "received TERM signal");
+
+    capture_flush_buffer();
+
+    logit(CAPTURE . ".error.log", "writing rate limit information to database");
+
+    if (isset($exceeding) && $exceeding == 1) {
+        ratelimit_record($ratelimit, $ex_start);
+    }
+
+    logit(CAPTURE . ".error.log", "exiting now on TERM signal");
+
+    exit(0);
 }
 
 /**
