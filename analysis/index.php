@@ -160,10 +160,10 @@ if (defined('ANALYSIS_URL'))
                             $v = ($key == $dataset) ? 'selected="selected"' : "";
 
                             echo '<option value="' . $key . '" ' . $v . '>' . $set["bin"] . ' --- ' . number_format($set["notweets"], 0, ",", ".") . ' tweets from ' . $set['mintime'] . ' to ' . $set['maxtime'] . '</option>';
+                            $count += $set['notweets'];
                         }
 
                         echo '</optgroup>';
-                        $count += $set['notweets'];
                     }
 
                     echo "</select> ";
