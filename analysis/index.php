@@ -130,13 +130,13 @@ if (defined('ANALYSIS_URL'))
                     foreach ($datasets as $key => $set) {
                         if ($set['type'] == "track") {
                             $ordered_datasets["keyword captures"][$key] = $set;
-			} elseif ($set['type'] == "follow") {
+                        } elseif ($set['type'] == "follow") {
                             $ordered_datasets["user captures"][$key] = $set;
                         } elseif ($set['type'] == "onepercent") {
                             $ordered_datasets["one percent samples"][$key] = $set;
-			} elseif ($set['type'] == "timeline") {
+                        } elseif ($set['type'] == "timeline") {
                             $ordered_datasets["timelines"][$key] = $set;
-			} elseif ($set['type'] == "search") {
+                        } elseif ($set['type'] == "search") {
                             $ordered_datasets["search"][$key] = $set;
                         } elseif ($set['type'] == "import ytk") {
                             $ordered_datasets["imports: yourTwapperKeeper"][$key] = $set;
@@ -150,7 +150,7 @@ if (defined('ANALYSIS_URL'))
                     }
                     ksort($ordered_datasets);
 
-                    //print_r($ordered_datasets);
+                    $count = 0;
                     foreach ($ordered_datasets as $groupname => $group) {
 
                         echo '<optgroup label="' . $groupname . '">';
@@ -163,10 +163,11 @@ if (defined('ANALYSIS_URL'))
                         }
 
                         echo '</optgroup>';
+                        $count += $set['notweets'];
                     }
 
                     echo "</select> ";
-                    $count = get_total_nr_of_tweets();
+
                     print "<table style='float:right'><tr><td>" . number_format($count, 0, ",", ".") . " tweets archived so far (and counting)</td></tr></table>";
                     ?>
 
@@ -234,7 +235,7 @@ if (defined('ANALYSIS_URL'))
 
             // see whether the relations table exists
             $show_relations_export = FALSE;
-            $sql = "SHOW TABLES LIKE '" . $esc['mysql']['dataset'] . "_relations'";
+            //$sql = "SHOW TABLES LIKE '" . $esc['mysql']['dataset'] . "_relations'";
             //if (mysql_num_rows(mysql_query($sql)) == 1)
             //    $show_relations_export = TRUE;
             // see whether URLs are expanded @todo

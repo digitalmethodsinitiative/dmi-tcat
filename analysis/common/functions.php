@@ -688,11 +688,17 @@ function get_all_datasets() {
                 $row['mintime'] = $res2['min'];
                 $row['maxtime'] = $res2['max'];
             }
-            $rec2 = $dbh->prepare("SELECT p.phrase FROM tcat_query_bins_phrases bp, tcat_query_phrases p WHERE bp.querybin_id = " . $res['id'] . " AND bp.phrase_id = p.id");
             $row['keywords'] = "";
+            $rec2 = $dbh->prepare("SELECT distinct(p.phrase) FROM tcat_query_bins_phrases bp, tcat_query_phrases p WHERE bp.querybin_id = " . $res['id'] . " AND bp.phrase_id = p.id ORDER BY LOWER(p.phrase)");
             if ($rec2->execute() && $rec2->rowCount() > 0) {
                 $res2 = $rec2->fetchAll(PDO::FETCH_COLUMN);
                 $row['keywords'] = implode(", ", $res2);
+            } else {
+                $rec2 = $dbh->prepare("SELECT distinct(t.from_user_name) FROM tcat_query_bins_users bu, " . $res['querybin'] . "_tweets t WHERE bu.querybin_id = " . $res['id'] . " AND bu.user_id = t.from_user_id ORDER BY LOWER(t.from_user_name)");
+                if ($rec2->execute() && $rec2->rowCount() > 0) {
+                    $res2 = $rec2->fetchAll(PDO::FETCH_COLUMN);
+                    $row['keywords'] = implode(", ", $res2);
+                }
             }
             $datasets[$row['bin']] = $row;
         }
@@ -894,13 +900,10 @@ function sentiment_graph() {
 
 function sentiment_exists() {
     global $esc;
-    $select = "SHOW TABLES";
+    $select = "SHOW TABLES LIKE '" . $esc['mysql']['dataset'] . '_sentiment' . "'";
     $rec = mysql_query($select);
-    while ($res = mysql_fetch_row($rec)) {
-        if (!strcmp($res[0], $esc['mysql']['dataset'] . '_sentiment')) {
-            return TRUE;
-        }
-    }
+    if (mysql_num_rows($rec) > 0)
+        return TRUE;
     return FALSE;
 }
 
