@@ -63,7 +63,6 @@ foreach ($roles as $role) {
     } else {
         $idletime = 600;
     }
-    $idletime = 10;
 
     $pid = 0;
     $running = false;
