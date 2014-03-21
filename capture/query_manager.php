@@ -236,7 +236,7 @@ function pause_bin($params) {
     }
 
     if ($params['todo'] == "stop")
-        $params['todo'] == "stopp";
+        $params['todo'] = "stopp";
     if (web_reload_config_role($type)) {
         echo '{"msg":"Your query bin has been ' . $params["todo"] . 'ed"}';
     } else {
