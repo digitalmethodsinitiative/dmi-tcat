@@ -1,11 +1,12 @@
 <?php
 
 error_reporting(E_ALL);
-
-// tick use required as of PHP 4.3.0
-declare(ticks = 1);
-// setup signal handlers
-pcntl_signal(SIGTERM, "capture_signal_handler_term");
+if(isset($argc) && $argc>1) {
+    // tick use required as of PHP 4.3.0
+    declare(ticks = 1);
+    //setup signal handlers
+    pcntl_signal(SIGTERM, "capture_signal_handler_term");
+}
 
 function pdo_connect() {
     global $dbuser, $dbpass, $database, $hostname;
