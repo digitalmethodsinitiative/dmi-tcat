@@ -34,10 +34,12 @@ function stream() {
 
     global $twitter_consumer_key, $twitter_consumer_secret, $twitter_user_token, $twitter_user_secret, $path_local, $lastinsert;
 
-    logit(CAPTURE . ".error.log", "connecting to API socket");
+    logit(CAPTURE . ".error.log", "started script follow with pid $pid");
     $pid = getmypid();
     $lastinsert = time();
-    file_put_contents($path_local . "proc/" . CAPTURE . ".procinfo", $pid . "|" . time());
+    if (file_put_contents($path_local . "proc/" . CAPTURE . ".procinfo", $pid . "|" . time()) === FALSE) {
+        logit(CAPTURE . ".error.log", "cannot register capture script start time (file is not WRITABLE. make sure the proc/ directory exists in your webroot and is writable by the cron user)");
+    }
 
     $tweetbucket = array();
 
@@ -49,6 +51,7 @@ function stream() {
     }
     $params = array("follow" => implode(",", $querylist));
 
+    logit(CAPTURE . ".error.log", "connecting to API socket");
     $tmhOAuth = new tmhOAuth(array(
                 'consumer_key' => $twitter_consumer_key,
                 'consumer_secret' => $twitter_consumer_secret,
