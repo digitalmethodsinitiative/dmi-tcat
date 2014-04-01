@@ -1,4 +1,3 @@
-
 <?php
 
 // ----- only run from command line -----
@@ -21,6 +20,7 @@ require BASE_FILE . 'capture/common/tmhOAuth/tmhOAuth.php';
 
 // ----- connection -----
 dbconnect();      // connect to database @todo, rewrite mysql calls with pdo
+
 stream();
 
 $last_insert_id = -1;
@@ -29,8 +29,9 @@ function stream() {
 
     global $twitter_consumer_key, $twitter_consumer_secret, $twitter_user_token, $twitter_user_secret, $querybins, $path_local, $lastinsert;
 
-    logit(CAPTURE . ".error.log", "started script onepercent with pid $pid");
     $pid = getmypid();
+    logit(CAPTURE . ".error.log", "started script onepercent with pid $pid");
+
     $lastinsert = time();
     if (file_put_contents($path_local . "proc/" . CAPTURE . ".procinfo", $pid . "|" . time()) === FALSE) {
         logit(CAPTURE . ".error.log", "cannot register capture script start time (file is not WRITABLE. make sure the proc/ directory exists in your webroot and is writable by the cron user)");

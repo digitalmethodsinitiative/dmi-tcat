@@ -1,4 +1,3 @@
-
 <?php
 
 // ----- only run from command line -----
@@ -34,8 +33,9 @@ function stream() {
 
     global $twitter_consumer_key, $twitter_consumer_secret, $twitter_user_token, $twitter_user_secret, $path_local, $lastinsert;
 
-    logit(CAPTURE . ".error.log", "started script follow with pid $pid");
     $pid = getmypid();
+    logit(CAPTURE . ".error.log", "started script follow with pid $pid");
+ 
     $lastinsert = time();
     if (file_put_contents($path_local . "proc/" . CAPTURE . ".procinfo", $pid . "|" . time()) === FALSE) {
         logit(CAPTURE . ".error.log", "cannot register capture script start time (file is not WRITABLE. make sure the proc/ directory exists in your webroot and is writable by the cron user)");
@@ -45,7 +45,7 @@ function stream() {
 
     // prepare queries
     $querylist = getActiveUsers();
-    if(empty($querylist)) {
+    if (empty($querylist)) {
         logit(CAPTURE . ".error.log", "empty query list, aborting!");
         return;
     }

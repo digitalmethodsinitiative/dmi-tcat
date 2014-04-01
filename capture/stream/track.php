@@ -1,4 +1,3 @@
-
 <?php
 
 // ----- only run from command line -----
@@ -25,6 +24,7 @@ dbconnect();      // connect to database @todo, rewrite mysql calls with pdo
 $ratelimit = 0;     // rate limit counter since start of script
 $exceeding = 0;     // are we exceeding the rate limit currently?
 $ex_start = 0;      // time at which rate limit started being exceeded
+
 stream();
 
 $last_insert_id = -1;
