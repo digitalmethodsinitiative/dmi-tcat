@@ -21,9 +21,9 @@ require BASE_FILE . 'capture/common/tmhOAuth/tmhOAuth.php';
 // ----- connection -----
 dbconnect();      // connect to database @todo, rewrite mysql calls with pdo
 
-$ratelimit = 0;     // rate limit counter since start of script
-$exceeding = 0;     // are we exceeding the rate limit at the moment?
-$ex_start = 0;      // time at which rate limit started being exceeded
+global $ratelimit = 0;     // rate limit counter since start of script
+global $exceeding = 0;     // are we exceeding the rate limit at the moment?
+global $ex_start = 0;      // time at which rate limit started being exceeded
 
 stream();
 
