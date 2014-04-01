@@ -335,8 +335,12 @@ function check_running_role($role) {
             if ($running)
                 return TRUE;
         }
+        
+        logit("controller.log", "check_running_role: no running $role script (pid $pid seems dead)");
+ 
     }
-    logit("controller.log", "check_running_role: no $role script found with pid $pid");
+
+    logit("controller.log", "check_running_role: no running $role script found");
 
     return FALSE;
 }
