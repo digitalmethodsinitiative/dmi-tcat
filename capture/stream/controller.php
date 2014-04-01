@@ -10,8 +10,7 @@ include "../common/functions.php";
 
 
 // check whether controller script is already running
-$out = exec("ps aux | grep 'php controller.php' | grep -v grep | grep -v stream | wc -l");
-if ($out > 1) {
+if (!noduplicates('controller.php', TRUE)) {
     logit("controller.log", "controller.php already running, skipping this check");
     exit();
 }
@@ -73,7 +72,7 @@ foreach ($roles as $role) {
         $pid = $tmp[0];
         $last = $tmp[1];
 
-        logit("controller.log", "script $role called - pid:" . $pid . "  idle:" . (time() - $last));
+        logit("controller.log", "script $role may be running already - pid:" . $pid . "  idle:" . (time() - $last));
 
         $running = check_running_role($role);
 
@@ -115,24 +114,66 @@ foreach ($roles as $role) {
                         }
                     }
                 } else {
-                    system("kill -p $pid");
+
+                    logit("controller.log", "using system kill on pid $pid");
+                    system("kill $pid");
+
                 }
 
                 // notify user via email
                 if (isset($mail_to) && trim($mail_to) != "")
                     mail($mail_to, "DMI-TCAT controller killed a process", $restartmsg);
 
-                // restart script
-                passthru(PHP_CLI . " " . BASE_FILE . "capture/stream/$role.php > /dev/null 2>&1 &");
+                if (noduplicates("$role.php")) {
+                    // restart script
+                    passthru(PHP_CLI . " " . BASE_FILE . "capture/stream/$role.php > /dev/null 2>&1 &");
+                }
 
             }
         }
     }
     if (!$running) {
 
-        logit("controller.log", "script $role was not running - starting");
+        if (noduplicates("$role.php")) {
+            logit("controller.log", "script $role was not running - starting");
 
-        passthru(PHP_CLI . " " . BASE_FILE . "capture/stream/$role.php > /dev/null 2>&1 &");
+            passthru(PHP_CLI . " " . BASE_FILE . "capture/stream/$role.php > /dev/null 2>&1 &");
+        }
     }
 }
+
+/*
+ * Check for existing invocations of a particular script to avoid duplicate executions
+ * If boolean parameter single is set, one execution of script is allowed (useful for a self-check)
+ * Returns FALSE if something is running, otherwise TRUE
+ */
+function noduplicates($script, $single_allowed = FALSE) {
+
+    $cmd = "ps ax | grep -v grep | grep '$script'";
+    $found = FALSE;
+
+    // check whether script is already running
+    $out = exec($cmd, $output);
+
+    foreach ($output as $line) {
+
+        $line = preg_replace("/^[\t ]*/", "", $line);
+        $pid = preg_replace("/[\t ].*$/", "", $line);
+
+        if (is_numeric($pid) && $pid > 0) {
+
+            if ($found || $single_allowed == FALSE) {
+                return FALSE;
+            }
+
+            $found = TRUE;
+        }
+
+    }
+
+    return TRUE;
+
+}
+
+
 ?>
