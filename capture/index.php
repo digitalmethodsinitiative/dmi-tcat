@@ -302,16 +302,28 @@ foreach ($bins as $id => $bin)
         if(!validateBin(_bin))
             return false;
                 
-        var _newphrases = window.prompt("Specify active keywords:",_phrases);
-        if(_newphrases == null || _newphrases == _phrases) { return; }
+        if(_type == "track") {
+            var _newphrases = window.prompt("Specify active keywords:",_phrases);
+            if(_newphrases == null || _newphrases == _phrases) { return; }
         
-        if(!validateQuery(_newphrases,_type))
-            return false;
+            if(!validateQuery(_newphrases,_type))
+                return false;
+            var _nrOfPhrases = validateNumberOfPhrases(_phrases.split(",").length,_newphrases.split(",").length);
+            if(!_nrOfPhrases) {
+                alert("With this query you will exceed the number of allowed queries (400) to the Twitter API. Please reduce the number of phrases.");
+                return false;
+            }
+        } else if(_type == "follow") {
+            var _newphrases = window.prompt("Specify active users:",_phrases);
+            if(_newphrases == null || _newphrases == _phrases) { return; }
         
-        var _nrOfPhrases = validateNumberOfPhrases(_phrases.split(",").length,_newphrases.split(",").length);
-        if(!_nrOfPhrases) {
-            alert("With this query you will exceed the number of allowed queries (400) to the Twitter API. Please reduce the number of phrases.");
-            return false;
+            if(!validateQuery(_newphrases,_type))
+                return false;
+            var _nrOfUsers = validateNumberOfUsers(_phrases.split(",").length,_newphrases.split(",").length);
+            if(!_nrOfUsers) {
+                alert("With this query you will exceed the number of allowed user ids (5000) to the Twitter API. Please reduce the number of user ids.");
+                return false;
+            }
         }
 
         if(_active == 1)
