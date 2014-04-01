@@ -14,7 +14,7 @@ define('CAPTURE', 'follow');
 include "../../config.php";                  // load base config file
 include "../../common/functions.php";        // load base functions file
 include "../common/functions.php";           // load capture function file
-$path_local = BASE_FILE;
+global $path_local = BASE_FILE;
 
 require BASE_FILE . 'capture/common/tmhOAuth/tmhOAuth.php';
 
@@ -27,7 +27,7 @@ global $ex_start = 0;      // time at which rate limit started being exceeded
 
 stream();
 
-$last_insert_id = -1;
+global $last_insert_id = -1;
 
 function stream() {
 
