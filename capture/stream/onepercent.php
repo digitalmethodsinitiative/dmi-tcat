@@ -14,17 +14,20 @@ define('CAPTURE', 'onepercent');
 include "../../config.php";                  // load base config file
 include "../../common/functions.php";        // load base functions file
 include "../common/functions.php";           // load capture function file
-global $path_local = BASE_FILE;
+global $path_local;
+$path_local = BASE_FILE;
 
 require BASE_FILE . 'capture/common/tmhOAuth/tmhOAuth.php';
 
 // ----- connection -----
 dbconnect();      // connect to database @todo, rewrite mysql calls with pdo
 
-global $ratelimit = 0;     // rate limit counter since start of script
-global $exceeding = 0;     // are we exceeding the rate limit currently?
-global $ex_start = 0;      // time at which rate limit started being exceeded
-global $last_insert_id = -1;
+global $ratelimit, $exceeding, $ex_start, $last_insert_id;
+
+$ratelimit = 0;     // rate limit counter since start of script
+$exceeding = 0;     // are we exceeding the rate limit currently?
+$ex_start = 0;      // time at which rate limit started being exceeded
+$last_insert_id = -1;
 
 stream();
 
