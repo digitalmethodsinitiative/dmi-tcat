@@ -75,12 +75,7 @@ foreach ($roles as $role) {
 
         logit("controller.log", "script $role called - pid:" . $pid . "  idle:" . (time() - $last));
 
-        // check whether the script with pid is running by checking whether it is possible to send it a signal
-        $running = posix_kill($pid, 0);
-
-        // running as another user
-        if (posix_get_last_error() == 1)
-            $running = TRUE;
+        $running = check_running_role($role);
 
         // check whether the process has been idle for too long
         if ($last < (time() - $idletime)) {
