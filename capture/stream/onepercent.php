@@ -24,10 +24,9 @@ dbconnect();      // connect to database @todo, rewrite mysql calls with pdo
 global $ratelimit = 0;     // rate limit counter since start of script
 global $exceeding = 0;     // are we exceeding the rate limit currently?
 global $ex_start = 0;      // time at which rate limit started being exceeded
+global $last_insert_id = -1;
 
 stream();
-
-global $last_insert_id = -1;
 
 function stream() {
 
