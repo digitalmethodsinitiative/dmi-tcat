@@ -87,30 +87,35 @@ foreach ($roles as $role) {
                 $restartmsg = "script $role was idle for more than " . $idletime . " seconds - killing and starting";
                 logit("controller.log", $restartmsg);
 
-                // check whether the process was started by another user
-                posix_kill($pid, 0);
-                if (posix_get_last_error() == 1) {
-                    logit("controller.log", "unable to kill $role, it seems to be running under another user\n");
-                    exit();
-                }
+                if (function_exists('posix_kill')) {
 
-                // kill script $role
-                posix_kill($pid, SIGTERM);
-
-                // test whether the process really has been killed
-                $i = 0;
-                $sleep = 5;
-                // while we can still signal the pid
-                while (posix_kill($pid, 0)) {
-                    logit("controller.log", "waiting for graceful exit of script $role with pid $pid");
-                    // we need some time to allow graceful exit
-                    sleep($sleep);
-                    $i++;
-                    if ($i == 10) {
-                        $failmsg = "unable to kill script $role with pid $pid after " . ($sleep * $i) . " seconds";
-                        logit("controller.log", $failmsg);
+                    // check whether the process was started by another user
+                    posix_kill($pid, 0);
+                    if (posix_get_last_error() == 1) {
+                        logit("controller.log", "unable to kill $role, it seems to be running under another user\n");
                         exit();
                     }
+
+                    // kill script $role
+                    posix_kill($pid, SIGTERM);
+
+                    // test whether the process really has been killed
+                    $i = 0;
+                    $sleep = 5;
+                    // while we can still signal the pid
+                    while (posix_kill($pid, 0)) {
+                        logit("controller.log", "waiting for graceful exit of script $role with pid $pid");
+                        // we need some time to allow graceful exit
+                        sleep($sleep);
+                        $i++;
+                        if ($i == 10) {
+                            $failmsg = "unable to kill script $role with pid $pid after " . ($sleep * $i) . " seconds";
+                            logit("controller.log", $failmsg);
+                            exit();
+                        }
+                    }
+                } else {
+                    system("kill -p $pid");
                 }
 
                 // notify user via email
@@ -119,6 +124,7 @@ foreach ($roles as $role) {
 
                 // restart script
                 passthru(PHP_CLI . " " . BASE_FILE . "capture/stream/$role.php > /dev/null 2>&1 &");
+
             }
         }
     }

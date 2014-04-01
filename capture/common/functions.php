@@ -325,15 +325,24 @@ function check_running_role($role) {
 
         if (is_numeric($pid) && $pid > 0) {
 
-            // check whether the pid is running by checking whether it is possible to send the process a signal
-            $running = posix_kill($pid, 0);
+            if (function_exists('posix_kill')) {
 
-            // running as another user
-            if (posix_get_last_error() == 1)
-                $running = TRUE;
+                // check whether the pid is running by checking whether it is possible to send the process a signal
+                $running = posix_kill($pid, 0);
 
-            if ($running)
-                return TRUE;
+                // running as another user
+                if (posix_get_last_error() == 1)
+                    $running = TRUE;
+
+                if ($running)
+                    return TRUE;
+
+            } else {
+
+                exec("ps -p $pid", $output);
+                $running = (count($output) > 1) ? TRUE : FALSE;
+
+            }
         }
         
         logit("controller.log", "check_running_role: no running $role script (pid $pid seems dead)");
