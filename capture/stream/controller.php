@@ -56,7 +56,6 @@ foreach ($roles as $role) {
                     break;
             }
         }
-        continue;
     }
 
     if (defined('IDLETIME')) {
@@ -129,8 +128,8 @@ foreach ($roles as $role) {
 
                 }
 
-                // notify user via email
-                if (isset($mail_to) && trim($mail_to) != "")
+                // notify user via email when we restart an idle script
+                if ($idled && isset($mail_to) && trim($mail_to) != "")
                     mail($mail_to, "DMI-TCAT controller killed a process", $restartmsg);
 
                 if (noduplicates("dmitcat_$role.php")) {
