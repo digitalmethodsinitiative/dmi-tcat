@@ -1,12 +1,6 @@
 <?php
 
 error_reporting(E_ALL);
-if(isset($argc) && $argc>1) {
-    // tick use required as of PHP 4.3.0
-    declare(ticks = 1);
-    //setup signal handlers
-    pcntl_signal(SIGTERM, "capture_signal_handler_term");
-}
 
 function pdo_connect() {
     global $dbuser, $dbpass, $database, $hostname;
@@ -969,6 +963,48 @@ function tracker_run() {
       /* logged to no file in particular, because we don't know which one. this should not happen. */
       error_log("tracker_run() called without defining CAPTURE. have you set up config.php ?");
       die();
+
+  }
+
+  $roles = unserialize(CAPTUREROLES);
+  if (!in_array(CAPTURE, $roles)) {
+      /* incorrect script execution, report back error to user */
+      error_log("tracker_run() role " . CAPTURE . " is not configured to run");
+      die();
+  }
+
+  // log execution environment
+  $phpstring = phpversion() . " in mode " . php_sapi_name() . " with extensions ";
+  $extensions = get_loaded_extensions();
+  $first = true;
+  foreach ($extensions as $ext) {
+      if ($first) {
+          $first = false;
+      } else {
+          $phpstring .= ',';
+      }
+      $phpstring .= "$ext"; 
+  }
+  $phpstring .= " (ini file: " . php_ini_loaded_file() . ")";
+  logit(CAPTURE . ".error.log",  "running php version $phpstring");
+
+  // install the signal handler
+  if (function_exists('pcntl_signal')) {
+
+      // tick use required as of PHP 4.3.0
+      declare(ticks = 1);
+
+      // See signal method discussion:
+      // http://darrendev.blogspot.nl/2010/11/php-53-ticks-pcntlsignal.html
+
+      logit(CAPTURE . ".error.log",  "installing term signal handler for this script");
+
+      // setup signal handlers
+      pcntl_signal(SIGTERM, "capture_signal_handler_term");
+
+  } else {
+
+      logit(CAPTURE . ".error.log",  "your php installation does not support signal handlers. graceful reload will not work");
 
   }
 

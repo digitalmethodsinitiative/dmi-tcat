@@ -1,7 +1,7 @@
 <?php
 
 // ----- only run from command line -----
-if ($argc < 1)
+if (php_sapi_name() !== 'cli')
     die;
 
 // ----- params -----

@@ -1,13 +1,12 @@
 <?php
 
 // ----- only run from command line -----
-if ($argc < 1)
+if (php_sapi_name() !== 'cli')
     exit();
 
 include_once("../../config.php");
 include "../../common/functions.php";
 include "../common/functions.php";
-
 
 // check whether controller script is already running
 if (!noduplicates('controller.php', TRUE)) {
@@ -65,8 +64,10 @@ foreach ($roles as $role) {
     }
 
     $pid = 0;
+    $last = 0;
     $running = false;
     if (file_exists(BASE_FILE . "proc/$role.procinfo")) {
+
         $procfile = file_get_contents(BASE_FILE . "proc/$role.procinfo");
 
         $tmp = explode("|", $procfile);
@@ -145,6 +146,11 @@ foreach ($roles as $role) {
 
         if (noduplicates("dmitcat_$role.php")) {
             logit("controller.log", "script $role was not running - starting");
+
+            // record confirmed gap if we could measure it
+            if ($last) {
+                gap_record($role, $last, time());
+            }
 
             passthru(PHP_CLI . " " . BASE_FILE . "capture/stream/dmitcat_$role.php > /dev/null 2>&1 &");
         }
