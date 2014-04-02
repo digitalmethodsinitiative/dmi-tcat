@@ -1080,8 +1080,6 @@ function tracker_start() {
           ));
   $tmhOAuth->request_settings['headers']['Host'] = 'stream.twitter.com';
 
-  $method = $networkpath . '1.1/statuses/filter.json';
-
   if (CAPTURE == "track" || CAPTURE == "follow") {
      logit(CAPTURE . ".error.log", "connecting - query " . var_export($params, 1));
   } elseif (CAPTURE == "onepercent") {
