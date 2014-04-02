@@ -342,6 +342,9 @@ function check_running_role($role) {
                 exec("ps -p $pid", $output);
                 $running = (count($output) > 1) ? TRUE : FALSE;
 
+                if ($running)
+                    return TRUE;
+
             }
         }
         
