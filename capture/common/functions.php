@@ -488,6 +488,22 @@ function getActiveFollowBins() {
     return $querybins;
 }
 
+
+function getActiveOnepercentBin() {
+    $dbh = pdo_connect();
+    $sql = "select querybin from tcat_query_bins where type = 'onepercent' and active = 1";
+    $rec = $dbh->prepare($sql);
+    $querybins = array();
+    if ($rec->execute() && $rec->rowCount() > 0) {
+        while ($res = $rec->fetch()) {
+            $querybins[$res['querybin']] = '';      // no value neccessary
+            break;     // only one bin should be act{ive
+        }
+    }
+    $dbh = false;
+    return $querybins;
+}
+
 function queryManagerBinExists($binname) {
     $dbh = pdo_connect();
     $rec = $dbh->prepare("SELECT id FROM tcat_query_bins WHERE querybin = :binname");
@@ -1016,12 +1032,12 @@ class UrlCollection implements IteratorAggregate {
  * Start a tracking process
  */
 
-function tracker_start() {
+function tracker_run() {
 
   if (!defined("CAPTURE")) {
 
       /* logged to no file in particular, because we don't know which one. this should not happen. */
-      error_log("tracker_start() called without defining CAPTURE. have you set up config.php ?");
+      error_log("tracker_run() called without defining CAPTURE. have you set up config.php ?");
       die();
 
   }
@@ -1033,17 +1049,18 @@ function tracker_start() {
   $ex_start = 0;      // time at which rate limit started being exceeded
   $last_insert_id = -1;
 
-  global $twitter_consumer_key, $twitter_consumer_secret, $twitter_user_token, $twitter_user_secret, $path_local, $lastinsert;
+  global $twitter_consumer_key, $twitter_consumer_secret, $twitter_user_token, $twitter_user_secret, $lastinsert;
 
   $pid = getmypid();
-  logit(CAPTURE . ".error.log", "started script track with pid $pid");
+  logit(CAPTURE . ".error.log", "started script " . CAPTURE . " with pid $pid");
 
   $lastinsert = time();
-  if (file_put_contents($path_local . "proc/" . CAPTURE . ".procinfo", $pid . "|" . time()) === FALSE) {
-      logit(CAPTURE . ".error.log", "cannot register capture script start time (file is not WRITABLE. make sure the proc/ directory exists in your webroot and is writable by the cron user)");
+  $procfilename = BASE_FILE . "proc/" . CAPTURE . ".procinfo";
+  if (file_put_contents($procfilename, $pid . "|" . time()) === FALSE) {
+      logit(CAPTURE . ".error.log", "cannot register capture script start time (file \"$procfilename\" is not WRITABLE. make sure the proc/ directory exists in your webroot and is writable by the cron user)");
+      die();
   }
 
-  $tweetbucket = array();
   $networkpath = isset($GLOBALS["HOSTROLE"][CAPTURE]) ? $GLOBALS["HOSTROLE"][CAPTURE] : 'https://stream.twitter.com/';
 
   // prepare queries
@@ -1085,6 +1102,8 @@ function tracker_start() {
   } elseif (CAPTURE == "onepercent") {
      logit(CAPTURE . ".error.log", "connecting to sample stream");
   }
+
+  $tweetbucket = array();
   $tmhOAuth->streaming_request('POST', $method, $params, 'tracker_streamCallback', array('Host' => 'stream.twitter.com'));
 
   // output any response we get back AFTER the Stream has stopped -- or it errors
@@ -1103,12 +1122,28 @@ function tracker_streamCallback($data, $length, $metrics) {
     global $tweetbucket, $lastinsert;
     $now = time();
     $data = json_decode($data, true);
-    if (isset($data["disconnect"])) {
-        $discerror = implode(",", $data["disconnect"]);
-        logit(CAPTURE . ".error.log", "connection dropped or timed out - error " . $discerror);
-        logit(CAPTURE . ".error.log", "(debug) drump of result data on disconnect" . var_export($data, true));
-    }
+  
     if ($data) {
+
+        if (array_key_exists('disconnect', $data)) {
+            $discerror = implode(",", $data["disconnect"]);
+            logit(CAPTURE . ".error.log", "connection dropped or timed out - error " . $discerror);
+            logit(CAPTURE . ".error.log", "(debug) dump of result data on disconnect" . var_export($data, true));
+            return;             // exit will take place in the previous function
+        }
+
+        if (array_key_exists('warning', $data)) {
+            // Twitter sent us a warning
+            $code = $data['warning']['code'];
+            $message = $data['warning']['message'];
+            if ($code === 'FALLING_BEHIND') {
+                $full = $data['warning']['percent_full'];
+                // @todo: avoid writing this on every callback
+                logit(CAPTURE . ".error.log", "twitter api warning received: ($code) $message [percentage full $full]");
+            } else {
+                logit(CAPTURE . ".error.log", "twitter api warning received: ($code) $message");
+            }
+        }
 
         // handle rate limiting
         if (array_key_exists('limit', $data)) {
@@ -1157,14 +1192,13 @@ function tracker_streamCallback($data, $length, $metrics) {
  */
 
 function processtweets($tweetbucket) {
-    global $path_local;
 
     if (CAPTURE == "track") {
         $querybins = getActiveTrackBins();
     } elseif (CAPTURE == "follow") {
         $querybins = getActiveFollowBins();
     } elseif (CAPTURE == "onepercent") {
-        $querybins =  array( 'onepercent' => '' );
+        $querybins = getActiveOnepercentBin();
     }
 
     // we run through every bin to check whether the received tweets fit
@@ -1177,19 +1211,6 @@ function processtweets($tweetbucket) {
         // running through every single tweet
         foreach ($tweetbucket as $data) {
 
-            if (array_key_exists('warning', $data)) {
-                // Twitter sent us a warning
-                $code = $data['warning']['code'];
-                $message = $data['warning']['message'];
-                if ($code === 'FALLING_BEHIND') {
-                    $full = $data['warning']['percent_full'];
-                    // @todo: avoid writing this on every callback
-                    logit(CAPTURE . ".error.log", "twitter api warning received: ($code) $message [percentage full $full]");
-                } else {
-                    logit(CAPTURE . ".error.log", "twitter api warning received: ($code) $message");
-                }
-            }
-
             if (!array_key_exists('entities', $data)) {
 
                 // unexpected/irregular tweet data
@@ -1199,7 +1220,7 @@ function processtweets($tweetbucket) {
                 }
 
                 // this can get very verbose when repeated?
-                //logit(CAPTURE . ".error.log", "irregular tweet data: " . var_export($data, 1));
+                logit(CAPTURE . ".error.log", "irregular tweet data received.");
                 continue;
             }
 
@@ -1354,7 +1375,7 @@ function processtweets($tweetbucket) {
                 logit(CAPTURE . ".error.log", "insert error: " . $sql);
             } elseif (database_activity()) {
                 $pid = getmypid();
-                file_put_contents($path_local . "proc/" . CAPTURE . ".procinfo", $pid . "|" . time());
+                file_put_contents(BASE_FILE . "proc/" . CAPTURE . ".procinfo", $pid . "|" . time());
             }
         }
 
