@@ -418,7 +418,7 @@ function controller_reload_config_role($role) {
             logit("controller.log", "controller_reload_config_role: starting new instance of $role script");
 
             // this command starts the capture task as a detached process and report back its pid
-            $cmd = PHP_CLI . " " . BASE_FILE . "capture/stream/$role.php > /dev/null & echo $!";
+            $cmd = PHP_CLI . " " . BASE_FILE . "capture/stream/dmitcat_$role.php > /dev/null & echo $!";
             $pid = shell_exec($cmd);
 
             return $pid;

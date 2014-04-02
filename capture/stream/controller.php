@@ -124,9 +124,9 @@ foreach ($roles as $role) {
                 if (isset($mail_to) && trim($mail_to) != "")
                     mail($mail_to, "DMI-TCAT controller killed a process", $restartmsg);
 
-                if (noduplicates("$role.php")) {
+                if (noduplicates("dmitcat_$role.php")) {
                     // restart script
-                    passthru(PHP_CLI . " " . BASE_FILE . "capture/stream/$role.php > /dev/null 2>&1 &");
+                    passthru(PHP_CLI . " " . BASE_FILE . "capture/stream/dmitcat_$role.php > /dev/null 2>&1 &");
                 }
 
             }
@@ -134,10 +134,10 @@ foreach ($roles as $role) {
     }
     if (!$running) {
 
-        if (noduplicates("$role.php")) {
+        if (noduplicates("dmitcat_$role.php")) {
             logit("controller.log", "script $role was not running - starting");
 
-            passthru(PHP_CLI . " " . BASE_FILE . "capture/stream/$role.php > /dev/null 2>&1 &");
+            passthru(PHP_CLI . " " . BASE_FILE . "capture/stream/dmitcat_$role.php > /dev/null 2>&1 &");
         }
     }
 }
