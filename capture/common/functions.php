@@ -376,31 +376,39 @@ function controller_reload_config_role($role) {
 
             logit("controller.log", "controller_reload_config_role: enforcing reload of config for $role");
 
-            // check whether the process was started by another user
-            posix_kill($pid, 0);
-            if (posix_get_last_error() == 1) {
-                logit("controller.log", "unable to kill $role, it seems to be running under another user\n");
-                return FALSE;
-            }
+            if (function_exists('posix_kill')) {
 
-            // kill script with pid $pid
-            logit("controller.log", "controller_reload_config_role: sending a TERM signal to $role for $pid");
-            posix_kill($pid, SIGTERM);
-
-            // test whether the process really has been killed
-            $i = 0;
-            $sleep = 5;
-            // while we can still signal the pid
-            while (posix_kill($pid, 0)) {
-                logit("controller.log", "controller_reload_config_role: waiting for graceful exit of script $role with pid $pid");
-                // we need some time to allow graceful exit
-                sleep($sleep);
-                $i++;
-                if ($i == 10) {
-                    $failmsg = "controller_reload_config_role: unable to kill script $role with pid $pid after " . ($sleep * $i) . " seconds";
-                    logit("controller.log", $failmsg);
+                // check whether the process was started by another user
+                posix_kill($pid, 0);
+                if (posix_get_last_error() == 1) {
+                    logit("controller.log", "unable to kill $role, it seems to be running under another user\n");
                     return FALSE;
                 }
+
+                // kill script with pid $pid
+                logit("controller.log", "controller_reload_config_role: sending a TERM signal to $role for $pid");
+                posix_kill($pid, SIGTERM);
+
+                // test whether the process really has been killed
+                $i = 0;
+                $sleep = 5;
+                // while we can still signal the pid
+                while (posix_kill($pid, 0)) {
+                    logit("controller.log", "controller_reload_config_role: waiting for graceful exit of script $role with pid $pid");
+                    // we need some time to allow graceful exit
+                    sleep($sleep);
+                    $i++;
+                    if ($i == 10) {
+                        $failmsg = "controller_reload_config_role: unable to kill script $role with pid $pid after " . ($sleep * $i) . " seconds";
+                        logit("controller.log", $failmsg);
+                        return FALSE;
+                    }
+                }
+
+            } else {
+
+                system("kill $pid");
+
             }
 
             logit("controller.log", "controller_reload_config_role: starting new instance of $role script");
