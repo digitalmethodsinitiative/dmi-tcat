@@ -104,6 +104,7 @@ foreach ($roles as $role) {
                     }
 
                     // kill script $role
+                    logit("controller.log", "sending a TERM signal to $role for $pid");
                     posix_kill($pid, SIGTERM);
 
                     // test whether the process really has been killed
