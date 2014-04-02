@@ -43,12 +43,14 @@ if ($rec->execute() && $rec->rowCount() > 0) {
 // now check for each role what needs to be done
 foreach ($roles as $role) {
 
+    $reload = false;
+
     if (!empty($commands[$role])) {
         foreach ($commands[$role] as $command) {
             logit("controller.log", "received instruction to execute '" . $command['instruction'] . "' for script $role");
             switch ($command['instruction']) {
                 case "reload":
-                    controller_reload_config_role($role);
+                    $reload = true;
                     break;
                 default:
                     break;
@@ -77,13 +79,20 @@ foreach ($roles as $role) {
         $running = check_running_role($role);
 
         // check whether the process has been idle for too long
-        if ($last < (time() - $idletime)) {
+        $idled =  ($last < (time() - $idletime)) ? true : false;
+
+        if ($reload || $idled) {
 
             // record confirmed gap
             gap_record($role, $last, time());
 
             if ($running) {
-                $restartmsg = "script $role was idle for more than " . $idletime . " seconds - killing and starting";
+
+                if ($reload) {
+                    $restartmsg = "enforcing reload of config for $role";
+                } else {
+                    $restartmsg = "script $role was idle for more than " . $idletime . " seconds - killing and starting";
+                }
                 logit("controller.log", $restartmsg);
 
                 if (function_exists('posix_kill')) {
