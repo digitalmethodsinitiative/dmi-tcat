@@ -74,12 +74,14 @@ foreach ($roles as $role) {
         $pid = $tmp[0];
         $last = $tmp[1];
 
-        logit("controller.log", "script $role may be running already - pid:" . $pid . "  idle:" . (time() - $last));
-
         $running = check_running_role($role);
+        
+        if($running)
+            logit("controller.log", "script $role is running with pid [" . $pid . "] and has been idle for " . (time() - $last) . " seconds");
+
 
         // check whether the process has been idle for too long
-        $idled =  ($last < (time() - $idletime)) ? true : false;
+        $idled = ($last < (time() - $idletime)) ? true : false;
 
         if ($reload || $idled) {
 
@@ -127,7 +129,6 @@ foreach ($roles as $role) {
 
                     logit("controller.log", "using system kill on pid $pid");
                     system("kill $pid");
-
                 }
 
                 // notify user via email when we restart an idle script
@@ -138,7 +139,6 @@ foreach ($roles as $role) {
                     // restart script
                     passthru(PHP_CLI . " " . BASE_FILE . "capture/stream/dmitcat_$role.php > /dev/null 2>&1 &");
                 }
-
             }
         }
     }
@@ -162,9 +162,10 @@ foreach ($roles as $role) {
  * If boolean parameter single is set, one execution of script is allowed (useful for a self-check)
  * Returns FALSE if something is running, otherwise TRUE
  */
+
 function noduplicates($script, $single_allowed = FALSE) {
 
-    $cmd = "ps ax | grep -v grep | grep '$script'";
+    $cmd = "ps ax | grep -v grep | grep -v Ss | grep '$script'";
     $found = FALSE;
 
     // check whether script is already running
@@ -176,19 +177,16 @@ function noduplicates($script, $single_allowed = FALSE) {
         $pid = preg_replace("/[\t ].*$/", "", $line);
 
         if (is_numeric($pid) && $pid > 0) {
-
+            
             if ($found || $single_allowed == FALSE) {
                 return FALSE;
             }
 
             $found = TRUE;
         }
-
     }
 
     return TRUE;
-
 }
-
 
 ?>
