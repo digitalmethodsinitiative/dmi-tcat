@@ -2,16 +2,6 @@
 
 error_reporting(E_ALL);
 
-if (php_sapi_name() == 'cli' && function_exists('pcntl_signal')) {
-
-      // tick use required as of PHP 4.3.0
-      declare(ticks = 1);
-
-      // See signal method discussion:
-      // http://darrendev.blogspot.nl/2010/11/php-53-ticks-pcntlsignal.html
-
-}
-
 function pdo_connect() {
     global $dbuser, $dbpass, $database, $hostname;
 
@@ -1001,6 +991,15 @@ function tracker_run() {
   // install the signal handler
   if (function_exists('pcntl_signal')) {
 
+      // tick use required as of PHP 4.3.0
+      declare(ticks = 1);
+
+      // See signal method discussion:
+      // http://darrendev.blogspot.nl/2010/11/php-53-ticks-pcntlsignal.html
+
+      logit(CAPTURE . ".error.log",  "installing term signal handler for this script");
+
+      // setup signal handlers
       pcntl_signal(SIGTERM, "capture_signal_handler_term");
 
   } else {
