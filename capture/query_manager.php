@@ -71,7 +71,13 @@ function create_new_bin($params) {
     $insert_periods = $dbh->prepare($sql);
     $insert_periods->execute();
 
-    create_bin($bin_name);
+    
+    $e = create_bin($bin_name);
+    if ($e !== TRUE) {
+        logit('controller.log', 'Failed to create database tables for bin ' . $bin_name . '. The error message was ' . $e);
+        echo '{"msg":"Failed to create database tables. Please read the controller.log file for details"}';
+        return;
+    }
 
     if ($type == "track") {
         $phrases = explode(",", $params["newbin_phrases"]);

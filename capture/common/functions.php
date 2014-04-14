@@ -1,7 +1,7 @@
 <?php
 
 error_reporting(E_ALL);
-if(isset($argc) && $argc>1) {
+if (isset($argc) && $argc > 1) {
     // tick use required as of PHP 4.3.0
     declare(ticks = 1);
     //setup signal handlers
@@ -29,110 +29,124 @@ function create_error_logs() {
     $h->execute();
 }
 
+// Enclose identifier in backticks; escape backticks inside by doubling them.
+function quoteIdent($field) {
+    return "`" . str_replace("`", "``", $field) . "`";
+}
+
 function create_bin($bin_name, $dbh = false) {
-    $dbh = pdo_connect();
-    $sql = "CREATE TABLE IF NOT EXISTS " . $bin_name . "_hashtags (
-		id int(11) NOT NULL AUTO_INCREMENT,
-		tweet_id bigint(20) NOT NULL,
-		created_at datetime,
-		from_user_name varchar(255),
-		from_user_id bigint,
-		`text` varchar(255),
-		PRIMARY KEY (id),
-                KEY `created_at` (`created_at`),
-		KEY `tweet_id` (`tweet_id`),
-		KEY `text` (`text`),
-                KEY `from_user_name` (`from_user_name`)
-		) ENGINE=MyISAM  DEFAULT CHARSET=utf8";
+    try {
 
-    $create_hashtags = $dbh->prepare($sql);
-    $create_hashtags->execute();
+        $dbh = pdo_connect();
 
-    $sql = "CREATE TABLE IF NOT EXISTS " . $bin_name . "_mentions (
-		id int(11) NOT NULL AUTO_INCREMENT,
-		tweet_id bigint(20) NOT NULL,
-		created_at datetime,
-		from_user_name varchar(255),
-		from_user_id bigint, 
-		to_user varchar(255),
-		to_user_id bigint,
-		PRIMARY KEY (id),
-                KEY `created_at` (`created_at`),
-		KEY `tweet_id` (`tweet_id`),
-                KEY `from_user_name` (`from_user_name`),
-                KEY `from_user_id` (`from_user_id`),
-                KEY `to_user` (`to_user`),
-                KEY `to_user_id` (`to_user_id`)
-		) ENGINE=MyISAM  DEFAULT CHARSET=utf8;";
+        $sql = "CREATE TABLE IF NOT EXISTS " . quoteIdent($bin_name . "_hashtags") . " (
+            `id` int(11) NOT NULL AUTO_INCREMENT,
+            `tweet_id` bigint(20) NOT NULL,
+            `created_at` datetime,
+            `from_user_name` varchar(255),
+            `from_user_id` bigint,
+            `text` varchar(255),
+            PRIMARY KEY (`id`),
+                    KEY `created_at` (`created_at`),
+                    KEY `tweet_id` (`tweet_id`),
+                    KEY `text` (`text`),
+                    KEY `from_user_name` (`from_user_name`)
+            ) ENGINE=MyISAM  DEFAULT CHARSET=utf8";
 
-    $create_mentions = $dbh->prepare($sql);
-    $create_mentions->execute();
+        $create_hashtags = $dbh->prepare($sql);
+        $create_hashtags->execute();
 
-    $sql = "CREATE TABLE IF NOT EXISTS " . $bin_name . "_tweets (
-		id bigint(20) NOT NULL,
-                created_at datetime NOT NULL,
-                from_user_name varchar(255) NOT NULL,
-                from_user_id bigint NOT NULL,
-                from_user_lang varchar(16),
-                from_user_tweetcount int(11),
-                from_user_followercount int(11),
-                from_user_friendcount int(11),
-                from_user_listed int(11),
-                from_user_realname varchar(255),
-                from_user_utcoffset int(11),
-                from_user_timezone varchar(255),
-                from_user_description varchar(255),
-                from_user_url varchar(2048),
-                from_user_verified bool DEFAULT false,
-                from_user_profile_image_url varchar(400),
-                source varchar(512),
-                location varchar(64),
-                geo_lat float(10,6),
-                geo_lng float(10,6),
-                text varchar(255) NOT NULL,
-                retweet_id bigint(20),
-                retweet_count int(11),
-                favorite_count int(11),
-                to_user_id bigint,
-                to_user_name varchar(255),
-                in_reply_to_status_id bigint(20),
-                filter_level varchar(6),
-                lang varchar(16),
-                PRIMARY KEY (id),
-                KEY `created_at` (`created_at`),
-                KEY `from_user_name` (`from_user_name`),
-                KEY `from_user_lang` (`from_user_lang`),
-                KEY `retweet_id` (`retweet_id`),
-                KEY `in_reply_to_status_id` (`in_reply_to_status_id`),
-                FULLTEXT KEY `from_user_description` (`from_user_description`),
-                FULLTEXT KEY `text` (`text`)
-                ) ENGINE=MyISAM DEFAULT CHARSET=utf8";
+        $sql = "CREATE TABLE IF NOT EXISTS " . quoteIdent($bin_name . "_mentions") . " (
+            `id` int(11) NOT NULL AUTO_INCREMENT,
+            `tweet_id` bigint(20) NOT NULL,
+            `created_at` datetime,
+            `from_user_name` varchar(255),
+            `from_user_id` bigint, 
+            `to_user` varchar(255),
+            `to_user_id` bigint,
+            PRIMARY KEY (`id`),
+                    KEY `created_at` (`created_at`),
+                    KEY `tweet_id` (`tweet_id`),
+                    KEY `from_user_name` (`from_user_name`),
+                    KEY `from_user_id` (`from_user_id`),
+                    KEY `to_user` (`to_user`),
+                    KEY `to_user_id` (`to_user_id`)
+            ) ENGINE=MyISAM  DEFAULT CHARSET=utf8";
 
-    $create_tweets = $dbh->prepare($sql);
-    $create_tweets->execute();
+        $create_mentions = $dbh->prepare($sql);
+        $create_mentions->execute();
 
-    $sql = "CREATE TABLE IF NOT EXISTS " . $bin_name . "_urls (
-		id int(11) NOT NULL AUTO_INCREMENT,
-		tweet_id bigint(20) NOT NULL,
-		created_at datetime,
-		from_user_name varchar(255),
-		from_user_id bigint,
-		url varchar(2048),
-		url_expanded varchar(2048),
-		url_followed varchar(4096),
-		domain varchar(2048),
-		error_code varchar(64),
-		PRIMARY KEY (id),
-                KEY `tweet_id` (`tweet_id`),                
-                KEY `created_at` (`created_at`),
-                KEY `from_user_id` (`from_user_id`),
-                FULLTEXT KEY `url_followed` (`url_followed`),
-                KEY `url_expanded` (`url_expanded`)
-		) ENGINE=MyISAM  DEFAULT CHARSET=utf8;";
+        $sql = "CREATE TABLE IF NOT EXISTS " . quoteIdent($bin_name . "_tweets") . " (
+            `id` bigint(20) NOT NULL,
+                    `created_at` datetime NOT NULL,
+                    `from_user_name` varchar(255) NOT NULL,
+                    `from_user_id` bigint NOT NULL,
+                    `from_user_lang` varchar(16),
+                    `from_user_tweetcount` int(11),
+                    `from_user_followercount` int(11),
+                    `from_user_friendcount` int(11),
+                    `from_user_listed` int(11),
+                    `from_user_realname` varchar(255),
+                    `from_user_utcoffset` int(11),
+                    `from_user_timezone` varchar(255),
+                    `from_user_description` varchar(255),
+                    `from_user_url` varchar(2048),
+                    `from_user_verified` bool DEFAULT false,
+                    `from_user_profile_image_url` varchar(400),
+                    `source` varchar(512),
+                    `location` varchar(64),
+                    `geo_lat` float(10,6),
+                    `geo_lng` float(10,6),
+                    `text` varchar(255) NOT NULL,
+                    `retweet_id` bigint(20),
+                    `retweet_count` int(11),
+                    `favorite_count` int(11),
+                    `to_user_id` bigint,
+                    `to_user_name` varchar(255),
+                    `in_reply_to_status_id` bigint(20),
+                    `filter_level` varchar(6),
+                    `lang` varchar(16),
+                    PRIMARY KEY (`id`),
+                    KEY `created_at` (`created_at`),
+                    KEY `from_user_name` (`from_user_name`),
+                    KEY `from_user_lang` (`from_user_lang`),
+                    KEY `retweet_id` (`retweet_id`),
+                    KEY `in_reply_to_status_id` (`in_reply_to_status_id`),
+                    FULLTEXT KEY `from_user_description` (`from_user_description`),
+                    FULLTEXT KEY `text` (`text`)
+                    ) ENGINE=MyISAM DEFAULT CHARSET=utf8";
 
-    $create_urls = $dbh->prepare($sql);
-    $create_urls->execute();
-    $dbh = false;
+        $create_tweets = $dbh->prepare($sql);
+        $create_tweets->execute();
+
+        $sql = "CREATE TABLE IF NOT EXISTS " . quoteIdent($bin_name . "_urls") . " (
+            `id` int(11) NOT NULL AUTO_INCREMENT,
+            `tweet_id` bigint(20) NOT NULL,
+            `created_at` datetime,
+            `from_user_name` varchar(255),
+            `from_user_id` bigint,
+            `url` varchar(2048),
+            `url_expanded` varchar(2048),
+            `url_followed` varchar(4096),
+            `domain` varchar(2048),
+            `error_code` varchar(64),
+            PRIMARY KEY (`id`),
+                    KEY `tweet_id` (`tweet_id`),                
+                    KEY `created_at` (`created_at`),
+                    KEY `from_user_id` (`from_user_id`),
+                    FULLTEXT KEY `url_followed` (`url_followed`),
+                    KEY `url_expanded` (`url_expanded`)
+            ) ENGINE=MyISAM  DEFAULT CHARSET=utf8";
+
+        $create_urls = $dbh->prepare($sql);
+        $create_urls->execute();
+        $dbh = false;
+
+        return TRUE;
+    } catch (PDOException $e) {
+        $errorMessage = $e->getCode() . ': ' . $e->getMessage();
+        return $errorMessage;
+    }
 }
 
 function create_admin() {
@@ -336,7 +350,6 @@ function check_running_role($role) {
 
                 if ($running)
                     return TRUE;
-
             } else {
 
                 exec("ps -p $pid", $output);
@@ -344,12 +357,10 @@ function check_running_role($role) {
 
                 if ($running)
                     return TRUE;
-
             }
         }
-        
+
         logit("controller.log", "check_running_role: no running $role script (pid $pid seems dead)");
- 
     }
 
     logit("controller.log", "check_running_role: no running $role script found");
@@ -407,11 +418,9 @@ function controller_reload_config_role($role) {
                         return FALSE;
                     }
                 }
-
             } else {
 
                 system("kill $pid");
-
             }
 
             logit("controller.log", "controller_reload_config_role: starting new instance of $role script");
