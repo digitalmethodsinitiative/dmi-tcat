@@ -785,6 +785,7 @@ class tmhOAuth {
       CURLOPT_USERAGENT      => $this->config['user_agent'],
       CURLOPT_CONNECTTIMEOUT => $this->config['curl_connecttimeout'],
       CURLOPT_TIMEOUT        => $this->config['curl_timeout'],
+      CURLOPT_NOSIGNAL       => true,
       CURLOPT_RETURNTRANSFER => true,
       CURLOPT_SSL_VERIFYPEER => $this->config['curl_ssl_verifypeer'],
       CURLOPT_SSL_VERIFYHOST => $this->config['curl_ssl_verifyhost'],

@@ -1,13 +1,12 @@
 <?php
 
 // ----- only run from command line -----
-if ($argc < 1)
+if (php_sapi_name() !== 'cli')
     exit();
 
 include_once("../../config.php");
 include "../../common/functions.php";
 include "../common/functions.php";
-
 
 // check whether controller script is already running
 if (!noduplicates('controller.php', TRUE)) {
@@ -43,18 +42,19 @@ if ($rec->execute() && $rec->rowCount() > 0) {
 // now check for each role what needs to be done
 foreach ($roles as $role) {
 
+    $reload = false;
+
     if (!empty($commands[$role])) {
         foreach ($commands[$role] as $command) {
             logit("controller.log", "received instruction to execute '" . $command['instruction'] . "' for script $role");
             switch ($command['instruction']) {
                 case "reload":
-                    controller_reload_config_role($role);
+                    $reload = true;
                     break;
                 default:
                     break;
             }
         }
-        continue;
     }
 
     if (defined('IDLETIME')) {
@@ -64,26 +64,37 @@ foreach ($roles as $role) {
     }
 
     $pid = 0;
+    $last = 0;
     $running = false;
     if (file_exists(BASE_FILE . "proc/$role.procinfo")) {
+
         $procfile = file_get_contents(BASE_FILE . "proc/$role.procinfo");
 
         $tmp = explode("|", $procfile);
         $pid = $tmp[0];
         $last = $tmp[1];
 
-        logit("controller.log", "script $role may be running already - pid:" . $pid . "  idle:" . (time() - $last));
-
         $running = check_running_role($role);
+        
+        if($running)
+            logit("controller.log", "script $role is running with pid [" . $pid . "] and has been idle for " . (time() - $last) . " seconds");
+
 
         // check whether the process has been idle for too long
-        if ($last < (time() - $idletime)) {
+        $idled = ($last < (time() - $idletime)) ? true : false;
+
+        if ($reload || $idled) {
 
             // record confirmed gap
             gap_record($role, $last, time());
 
             if ($running) {
-                $restartmsg = "script $role was idle for more than " . $idletime . " seconds - killing and starting";
+
+                if ($reload) {
+                    $restartmsg = "enforcing reload of config for $role";
+                } else {
+                    $restartmsg = "script $role was idle for more than " . $idletime . " seconds - killing and starting";
+                }
                 logit("controller.log", $restartmsg);
 
                 if (function_exists('posix_kill')) {
@@ -96,6 +107,7 @@ foreach ($roles as $role) {
                     }
 
                     // kill script $role
+                    logit("controller.log", "sending a TERM signal to $role for $pid");
                     posix_kill($pid, SIGTERM);
 
                     // test whether the process really has been killed
@@ -117,27 +129,30 @@ foreach ($roles as $role) {
 
                     logit("controller.log", "using system kill on pid $pid");
                     system("kill $pid");
-
                 }
 
-                // notify user via email
-                if (isset($mail_to) && trim($mail_to) != "")
+                // notify user via email when we restart an idle script
+                if ($idled && isset($mail_to) && trim($mail_to) != "")
                     mail($mail_to, "DMI-TCAT controller killed a process", $restartmsg);
 
-                if (noduplicates("$role.php")) {
+                if (noduplicates("dmitcat_$role.php")) {
                     // restart script
-                    passthru(PHP_CLI . " " . BASE_FILE . "capture/stream/$role.php > /dev/null 2>&1 &");
+                    passthru(PHP_CLI . " " . BASE_FILE . "capture/stream/dmitcat_$role.php > /dev/null 2>&1 &");
                 }
-
             }
         }
     }
     if (!$running) {
 
-        if (noduplicates("$role.php")) {
+        if (noduplicates("dmitcat_$role.php")) {
             logit("controller.log", "script $role was not running - starting");
 
-            passthru(PHP_CLI . " " . BASE_FILE . "capture/stream/$role.php > /dev/null 2>&1 &");
+            // record confirmed gap if we could measure it
+            if ($last) {
+                gap_record($role, $last, time());
+            }
+
+            passthru(PHP_CLI . " " . BASE_FILE . "capture/stream/dmitcat_$role.php > /dev/null 2>&1 &");
         }
     }
 }
@@ -147,9 +162,10 @@ foreach ($roles as $role) {
  * If boolean parameter single is set, one execution of script is allowed (useful for a self-check)
  * Returns FALSE if something is running, otherwise TRUE
  */
+
 function noduplicates($script, $single_allowed = FALSE) {
 
-    $cmd = "ps ax | grep -v grep | grep '$script'";
+    $cmd = "ps ax | grep -v grep | grep -v Ss | grep '$script'";
     $found = FALSE;
 
     // check whether script is already running
@@ -161,19 +177,16 @@ function noduplicates($script, $single_allowed = FALSE) {
         $pid = preg_replace("/[\t ].*$/", "", $line);
 
         if (is_numeric($pid) && $pid > 0) {
-
+            
             if ($found || $single_allowed == FALSE) {
                 return FALSE;
             }
 
             $found = TRUE;
         }
-
     }
 
     return TRUE;
-
 }
-
 
 ?>

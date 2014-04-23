@@ -1,12 +1,6 @@
 <?php
 
 error_reporting(E_ALL);
-if (isset($argc) && $argc > 1) {
-    // tick use required as of PHP 4.3.0
-    declare(ticks = 1);
-    //setup signal handlers
-    pcntl_signal(SIGTERM, "capture_signal_handler_term");
-}
 
 function pdo_connect() {
     global $dbuser, $dbpass, $database, $hostname;
@@ -350,6 +344,7 @@ function check_running_role($role) {
 
                 if ($running)
                     return TRUE;
+
             } else {
 
                 exec("ps -p $pid", $output);
@@ -357,81 +352,16 @@ function check_running_role($role) {
 
                 if ($running)
                     return TRUE;
+
             }
         }
-
+       
+         
         logit("controller.log", "check_running_role: no running $role script (pid $pid seems dead)");
+ 
     }
 
     logit("controller.log", "check_running_role: no running $role script found");
-
-    return FALSE;
-}
-
-/*
- * Force a task to reload it configuration, should be called by the controller process
- */
-
-function controller_reload_config_role($role) {
-
-    if (!check_running_role($role)) {
-        return FALSE;
-    }
-
-    if (file_exists(BASE_FILE . "proc/$role.procinfo")) {
-
-        $procfile = file_get_contents(BASE_FILE . "proc/$role.procinfo");
-
-        $tmp = explode("|", $procfile);
-        $pid = $tmp[0];
-        $last = $tmp[1];
-
-        if (is_numeric($pid) && $pid > 0) {
-
-            logit("controller.log", "controller_reload_config_role: enforcing reload of config for $role");
-
-            if (function_exists('posix_kill')) {
-
-                // check whether the process was started by another user
-                posix_kill($pid, 0);
-                if (posix_get_last_error() == 1) {
-                    logit("controller.log", "unable to kill $role, it seems to be running under another user\n");
-                    return FALSE;
-                }
-
-                // kill script with pid $pid
-                logit("controller.log", "controller_reload_config_role: sending a TERM signal to $role for $pid");
-                posix_kill($pid, SIGTERM);
-
-                // test whether the process really has been killed
-                $i = 0;
-                $sleep = 5;
-                // while we can still signal the pid
-                while (posix_kill($pid, 0)) {
-                    logit("controller.log", "controller_reload_config_role: waiting for graceful exit of script $role with pid $pid");
-                    // we need some time to allow graceful exit
-                    sleep($sleep);
-                    $i++;
-                    if ($i == 10) {
-                        $failmsg = "controller_reload_config_role: unable to kill script $role with pid $pid after " . ($sleep * $i) . " seconds";
-                        logit("controller.log", $failmsg);
-                        return FALSE;
-                    }
-                }
-            } else {
-
-                system("kill $pid");
-            }
-
-            logit("controller.log", "controller_reload_config_role: starting new instance of $role script");
-
-            // this command starts the capture task as a detached process and report back its pid
-            $cmd = PHP_CLI . " " . BASE_FILE . "capture/stream/$role.php > /dev/null & echo $!";
-            $pid = shell_exec($cmd);
-
-            return $pid;
-        }
-    }
 
     return FALSE;
 }
@@ -490,6 +420,22 @@ function getActiveFollowBins() {
     if ($rec->execute() && $rec->rowCount() > 0) {
         while ($res = $rec->fetch()) {
             $querybins[$res['querybin']][$res['uid']] = $res['uid'];
+        }
+    }
+    $dbh = false;
+    return $querybins;
+}
+
+
+function getActiveOnepercentBin() {
+    $dbh = pdo_connect();
+    $sql = "select querybin from tcat_query_bins where type = 'onepercent' and active = 1";
+    $rec = $dbh->prepare($sql);
+    $querybins = array();
+    if ($rec->execute() && $rec->rowCount() > 0) {
+        while ($res = $rec->fetch()) {
+            $querybins[$res['querybin']] = '';      // no value neccessary
+            break;     // only one bin should be act{ive
         }
     }
     $dbh = false;
@@ -1019,5 +965,458 @@ class UrlCollection implements IteratorAggregate {
     }
 
 }
+
+/*
+ * Start a tracking process
+ */
+
+function tracker_run() {
+
+  if (!defined("CAPTURE")) {
+
+      /* logged to no file in particular, because we don't know which one. this should not happen. */
+      error_log("tracker_run() called without defining CAPTURE. have you set up config.php ?");
+      die();
+
+  }
+
+  $roles = unserialize(CAPTUREROLES);
+  if (!in_array(CAPTURE, $roles)) {
+      /* incorrect script execution, report back error to user */
+      error_log("tracker_run() role " . CAPTURE . " is not configured to run");
+      die();
+  }
+
+  // log execution environment
+  $phpstring = phpversion() . " in mode " . php_sapi_name() . " with extensions ";
+  $extensions = get_loaded_extensions();
+  $first = true;
+  foreach ($extensions as $ext) {
+      if ($first) {
+          $first = false;
+      } else {
+          $phpstring .= ',';
+      }
+      $phpstring .= "$ext"; 
+  }
+  $phpstring .= " (ini file: " . php_ini_loaded_file() . ")";
+  logit(CAPTURE . ".error.log",  "running php version $phpstring");
+
+  // install the signal handler
+  if (function_exists('pcntl_signal')) {
+
+      // tick use required as of PHP 4.3.0
+      declare(ticks = 1);
+
+      // See signal method discussion:
+      // http://darrendev.blogspot.nl/2010/11/php-53-ticks-pcntlsignal.html
+
+      logit(CAPTURE . ".error.log",  "installing term signal handler for this script");
+
+      // setup signal handlers
+      pcntl_signal(SIGTERM, "capture_signal_handler_term");
+
+  } else {
+
+      logit(CAPTURE . ".error.log",  "your php installation does not support signal handlers. graceful reload will not work");
+
+  }
+
+  global $ratelimit, $exceeding, $ex_start, $last_insert_id;
+
+  $ratelimit = 0;     // rate limit counter since start of script
+  $exceeding = 0;     // are we exceeding the rate limit currently?
+  $ex_start = 0;      // time at which rate limit started being exceeded
+  $last_insert_id = -1;
+
+  global $twitter_consumer_key, $twitter_consumer_secret, $twitter_user_token, $twitter_user_secret, $lastinsert;
+
+  $pid = getmypid();
+  logit(CAPTURE . ".error.log", "started script " . CAPTURE . " with pid $pid");
+
+  $lastinsert = time();
+  $procfilename = BASE_FILE . "proc/" . CAPTURE . ".procinfo";
+  if (file_put_contents($procfilename, $pid . "|" . time()) === FALSE) {
+      logit(CAPTURE . ".error.log", "cannot register capture script start time (file \"$procfilename\" is not WRITABLE. make sure the proc/ directory exists in your webroot and is writable by the cron user)");
+      die();
+  }
+
+  $networkpath = isset($GLOBALS["HOSTROLE"][CAPTURE]) ? $GLOBALS["HOSTROLE"][CAPTURE] : 'https://stream.twitter.com/';
+
+  // prepare queries
+  if (CAPTURE == "track") {
+      $querylist = getActivePhrases();
+      if (empty($querylist)) {
+          logit(CAPTURE . ".error.log", "empty query list, aborting!");
+          return;
+      }
+      $method = $networkpath . '1.1/statuses/filter.json';
+      $params = array("track" => implode(",", $querylist));
+  }
+  elseif (CAPTURE == "follow") {
+      $querylist = getActiveUsers();
+      if (empty($querylist)) {
+          logit(CAPTURE . ".error.log", "empty query list, aborting!");
+          return;
+      }
+      $method = $networkpath . '1.1/statuses/filter.json';
+      $params = array("follow" => implode(",", $querylist));
+  }
+  elseif (CAPTURE == "onepercent") {
+      $method = $networkpath . '1.1/statuses/sample.json';
+      $params = array('stall_warnings' => 'true');
+  }
+
+  logit(CAPTURE . ".error.log", "connecting to API socket");
+  $tmhOAuth = new tmhOAuth(array(
+              'consumer_key' => $twitter_consumer_key,
+              'consumer_secret' => $twitter_consumer_secret,
+              'token' => $twitter_user_token,
+              'secret' => $twitter_user_secret,
+              'host' => 'stream.twitter.com',
+          ));
+  $tmhOAuth->request_settings['headers']['Host'] = 'stream.twitter.com';
+
+  if (CAPTURE == "track" || CAPTURE == "follow") {
+     logit(CAPTURE . ".error.log", "connecting - query " . var_export($params, 1));
+  } elseif (CAPTURE == "onepercent") {
+     logit(CAPTURE . ".error.log", "connecting to sample stream");
+  }
+
+  $tweetbucket = array();
+  $tmhOAuth->streaming_request('POST', $method, $params, 'tracker_streamCallback', array('Host' => 'stream.twitter.com'));
+
+  // output any response we get back AFTER the Stream has stopped -- or it errors
+  logit(CAPTURE . ".error.log", "stream stopped - error " . var_export($tmhOAuth, 1));
+
+  logit(CAPTURE . ".error.log", "processing buffer before exit");
+  processtweets($tweetbucket);
+
+}
+
+/*
+ * Stream callback function
+ */
+
+function tracker_streamCallback($data, $length, $metrics) {
+    global $tweetbucket, $lastinsert;
+    $now = time();
+    $data = json_decode($data, true);
+  
+    if ($data) {
+
+        if (array_key_exists('disconnect', $data)) {
+            $discerror = implode(",", $data["disconnect"]);
+            logit(CAPTURE . ".error.log", "connection dropped or timed out - error " . $discerror);
+            logit(CAPTURE . ".error.log", "(debug) dump of result data on disconnect" . var_export($data, true));
+            return;             // exit will take place in the previous function
+        }
+
+        if (array_key_exists('warning', $data)) {
+            // Twitter sent us a warning
+            $code = $data['warning']['code'];
+            $message = $data['warning']['message'];
+            if ($code === 'FALLING_BEHIND') {
+                $full = $data['warning']['percent_full'];
+                // @todo: avoid writing this on every callback
+                logit(CAPTURE . ".error.log", "twitter api warning received: ($code) $message [percentage full $full]");
+            } else {
+                logit(CAPTURE . ".error.log", "twitter api warning received: ($code) $message");
+            }
+        }
+
+        // handle rate limiting
+        if (array_key_exists('limit', $data)) {
+            global $ratelimit, $exceeding, $ex_start;
+            if (isset($data['limit'][CAPTURE])) {
+                $current = $data['limit'][CAPTURE];
+                if ($current > $ratelimit) {
+                    // currently exceeding rate limit
+                    if (!$exceeding) {
+                        // new disturbance!
+                        $ex_start = time();
+                        ratelimit_report_problem();
+                        // logit(CAPTURE . ".error.log", "you have hit a rate limit. consider reducing your query bin sizes");
+                    }
+                    $ratelimit = $current;
+                    $exceeding = 1;
+
+                    if (time() > ($ex_start + RATELIMIT_SILENCE * 6)) {
+                        // every half an hour (or: heartbeat x 6), record, but keep the exceeding flag set
+                        ratelimit_record($ratelimit, $ex_start);
+                        $ex_start = time();
+                    }
+                } elseif ($exceeding && time() < ($ex_start + RATELIMIT_SILENCE)) {
+                    // we are now no longer exceeding the rate limit
+                    // to avoid flip-flop we only reset our values after the minimal heartbeat has passed
+                    // store rate limit disturbance information in the database
+                    ratelimit_record($ratelimit, $ex_start);
+                    $ex_start = 0;
+                    $exceeding = 0;
+                }
+            }
+            unset($data['limit']);
+        }
+
+        $tweetbucket[] = $data;
+        if (count($tweetbucket) == 100 || $now > $lastinsert + 5) {
+            processtweets($tweetbucket);
+            $lastinsert = time();
+            $tweetbucket = array();
+        }
+    }
+}
+
+/*
+ * Process tweet function
+ */
+
+function processtweets($tweetbucket) {
+
+    if (CAPTURE == "track") {
+        $querybins = getActiveTrackBins();
+    } elseif (CAPTURE == "follow") {
+        $querybins = getActiveFollowBins();
+    } elseif (CAPTURE == "onepercent") {
+        $querybins = getActiveOnepercentBin();
+    }
+
+    // we run through every bin to check whether the received tweets fit
+    foreach ($querybins as $binname => $queries) {
+        $list_tweets = array();
+        $list_hashtags = array();
+        $list_urls = array();
+        $list_mentions = array();
+
+        // running through every single tweet
+        foreach ($tweetbucket as $data) {
+
+            if (!array_key_exists('entities', $data)) {
+
+                // unexpected/irregular tweet data
+                if (array_key_exists('delete', $data)) {
+                    // a tweet has been deleted. @todo: process
+                    continue;
+                }
+
+                // this can get very verbose when repeated?
+                logit(CAPTURE . ".error.log", "irregular tweet data received.");
+                continue;
+            }
+
+            $found = false;
+
+            if (CAPTURE == "track") {
+
+                // we check for every query in the bin if they fit
+
+                foreach ($queries as $query => $track) {
+
+                    $pass = false;
+
+                    // check for queries with more than one word, but go around quoted queries
+                    if (preg_match("/ /", $query) && !preg_match("/'/", $query)) {
+                        $tmplist = explode(" ", $query);
+
+                        $all = true;
+
+                        foreach ($tmplist as $tmp) {
+                            if (!preg_match("/" . $tmp . "/i", $data["text"])) {
+                                $all = false;
+                                break;
+                            }
+                        }
+
+                        // only if all words are found
+                        if ($all == true) {
+                            $pass = true;
+                        }
+                    } else {
+
+                        // treat quoted queries as single words
+                        $query = preg_replace("/'/", "", $query);
+
+                        if (preg_match("/" . $query . "/i", $data["text"])) {
+                            $pass = true;
+                        }
+                    }
+
+                    // at the first fitting query, we break
+                    if ($pass == true) {
+                     $found = true;
+                     $break;
+                    }
+                }
+
+            } elseif (CAPTURE == "follow") {
+
+                // we check for every query in the bin if they fit
+                $found = in_array($data["user"]["id"], $queries) ? TRUE : FALSE;
+
+            } elseif (CAPTURE == "onepercent") {
+
+                // always match in onepercent
+                $found = true;
+
+            }
+
+            // if the tweet does not fit in the current bin, go to the next tweet
+            if ($found == false) {
+                continue;
+            }
+
+            $t = array();
+            $t["id"] = $data["id_str"];
+            $t["created_at"] = date("Y-m-d H:i:s", strtotime($data["created_at"]));
+            $t["from_user_name"] = addslashes($data["user"]["screen_name"]);
+            $t["from_user_id"] = $data["user"]["id_str"];
+            $t["from_user_lang"] = $data["user"]["lang"];
+            $t["from_user_tweetcount"] = $data["user"]["statuses_count"];
+            $t["from_user_followercount"] = $data["user"]["followers_count"];
+            $t["from_user_friendcount"] = $data["user"]["friends_count"];
+            $t["from_user_listed"] = $data["user"]["listed_count"];
+            $t["from_user_realname"] = addslashes($data["user"]["name"]);
+            $t["from_user_utcoffset"] = $data["user"]["utc_offset"];
+            $t["from_user_timezone"] = addslashes($data["user"]["time_zone"]);
+            $t["from_user_description"] = addslashes($data["user"]["description"]);
+            $t["from_user_url"] = addslashes($data["user"]["url"]);
+            $t["from_user_verified"] = $data["user"]["verified"];
+            $t["from_user_profile_image_url"] = $data["user"]["profile_image_url"];
+            $t["source"] = addslashes($data["source"]);
+            $t["location"] = addslashes($data["user"]["location"]);
+            $t["geo_lat"] = 0;
+            $t["geo_lng"] = 0;
+            if ($data["geo"] != null) {
+                $t["geo_lat"] = $data["geo"]["coordinates"][0];
+                $t["geo_lng"] = $data["geo"]["coordinates"][1];
+            }
+            $t["text"] = addslashes($data["text"]);
+            $t["retweet_id"] = null;
+            if (isset($data["retweeted_status"])) {
+                $t["retweet_id"] = $data["retweeted_status"]["id_str"];
+            }
+            $t["to_user_id"] = $data["in_reply_to_user_id_str"];
+            $t["to_user_name"] = addslashes($data["in_reply_to_screen_name"]);
+            $t["in_reply_to_status_id"] = $data["in_reply_to_status_id_str"];
+            $t["filter_level"] = $data["filter_level"];
+
+            $list_tweets[] = "('" . implode("','", $t) . "')";
+
+
+            if (count($data["entities"]["hashtags"]) > 0) {
+                foreach ($data["entities"]["hashtags"] as $hashtag) {
+                    $h = array();
+                    $h["tweet_id"] = $t["id"];
+                    $h["created_at"] = $t["created_at"];
+                    $h["from_user_name"] = $t["from_user_name"];
+                    $h["from_user_id"] = $t["from_user_id"];
+                    $h["text"] = addslashes($hashtag["text"]);
+
+                    $list_hashtags[] = "('" . implode("','", $h) . "')";
+                }
+            }
+
+            if (count($data["entities"]["urls"]) > 0) {
+                foreach ($data["entities"]["urls"] as $url) {
+                    $u = array();
+                    $u["tweet_id"] = $t["id"];
+                    $u["created_at"] = $t["created_at"];
+                    $u["from_user_name"] = $t["from_user_name"];
+                    $u["from_user_id"] = $t["from_user_id"];
+                    $u["url"] = $url["url"];
+                    $u["url_expanded"] = addslashes($url["expanded_url"]);
+
+                    $list_urls[] = "('" . implode("','", $u) . "')";
+                }
+            }
+
+            if (count($data["entities"]["user_mentions"]) > 0) {
+                foreach ($data["entities"]["user_mentions"] as $mention) {
+                    $m = array();
+                    $m["tweet_id"] = $t["id"];
+                    $m["created_at"] = $t["created_at"];
+                    $m["from_user_name"] = $t["from_user_name"];
+                    $m["from_user_id"] = $t["from_user_id"];
+                    $m["to_user"] = $mention["screen_name"];
+                    $m["to_user_id"] = $mention["id_str"];
+
+                    $list_mentions[] = "('" . implode("','", $m) . "')";
+                }
+            }
+        }
+
+        // distribute tweets into bins
+        if (count($list_tweets) > 0) {
+
+            $sql = "INSERT DELAYED IGNORE INTO " . $binname . "_tweets (id,created_at,from_user_name,from_user_id,from_user_lang,from_user_tweetcount,from_user_followercount,from_user_friendcount,from_user_listed,from_user_realname,from_user_utcoffset,from_user_timezone,from_user_description,from_user_url,from_user_verified,from_user_profile_image_url,source,location,geo_lat,geo_lng,text,retweet_id,to_user_id,to_user_name,in_reply_to_status_id,filter_level) VALUES " . implode(",", $list_tweets);
+
+            $sqlresults = mysql_query($sql);
+            if (!$sqlresults) {
+                logit(CAPTURE . ".error.log", "insert error: " . $sql);
+            } elseif (database_activity()) {
+                $pid = getmypid();
+                file_put_contents(BASE_FILE . "proc/" . CAPTURE . ".procinfo", $pid . "|" . time());
+            }
+        }
+
+        if (count($list_hashtags) > 0) {
+
+            $sql = "INSERT DELAYED IGNORE INTO " . $binname . "_hashtags (tweet_id,created_at,from_user_name,from_user_id,text) VALUES " . implode(",", $list_hashtags);
+
+            $sqlresults = mysql_query($sql);
+            if (!$sqlresults) {
+                logit(CAPTURE . ".error.log", "insert error: " . $sql);
+            }
+        }
+
+        if (count($list_urls) > 0) {
+
+            $sql = "INSERT DELAYED IGNORE INTO " . $binname . "_urls (tweet_id,created_at,from_user_name,from_user_id,url,url_expanded) VALUES " . implode(",", $list_urls);
+
+            $sqlresults = mysql_query($sql);
+            if (!$sqlresults) {
+                logit(CAPTURE . ".error.log", "insert error: " . $sql);
+            }
+        }
+
+        if (count($list_mentions) > 0) {
+
+            $sql = "INSERT DELAYED IGNORE INTO " . $binname . "_mentions (tweet_id,created_at,from_user_name,from_user_id,to_user,to_user_id) VALUES " . implode(",", $list_mentions);
+
+            $sqlresults = mysql_query($sql);
+            if (!$sqlresults) {
+                logit(CAPTURE . ".error.log", "insert error: " . $sql);
+            }
+        }
+    }
+    return TRUE;
+}
+
+function safe_feof($fp, &$start = NULL) {
+    $start = microtime(true);
+    return feof($fp);
+}
+
+function database_activity() {
+    global $last_insert_id;
+    // we explicitely use the MySQL function last_insert_id
+    // we don't want any PHP caching of insert id's()
+    $results = mysql_query("SELECT LAST_INSERT_ID()");
+    if (!$results) {
+        return FALSE;
+    }
+    $row = mysql_fetch_row($results);
+    $lid = $row[0];
+    if ($lid === FALSE || $lid === 0) {
+        return FALSE;
+    }
+    if ($lid !== $last_insert_id) {
+        // update the value
+        $last_insert_id = $lid;
+        return TRUE;
+    }
+    return FALSE;
+}
+
 
 ?>
