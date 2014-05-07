@@ -15,6 +15,10 @@ monkey.patch_all(thread=False)
 import urllib2
 from urllib2 import HTTPError, URLError
 
+# set socket timeout in seconds
+timeout = 7
+socket.setdefaulttimeout(timeout)
+
 #conn = umysql.Connection()
 
 db = MySQLdb.connect(host='localhost', user='', passwd='', db="twittercapture")
@@ -52,7 +56,7 @@ def get_urls_from_db(table):
 def job(url, table):
     global finished
     try:
-        resp = urllib2.urlopen(url, timeout=7)
+        resp = urllib2.urlopen(url)
         url_followed = resp.geturl()
         status_code = resp.getcode()
 
