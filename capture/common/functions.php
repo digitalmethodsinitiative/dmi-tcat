@@ -1244,7 +1244,7 @@ function processtweets($tweetbucket) {
                     // at the first fitting query, we break
                     if ($pass == true) {
                      $found = true;
-                     $break;
+                     break;
                     }
                 }
 
