@@ -25,7 +25,7 @@ if (!empty($list_name)) { // instead of specying usernames, you can also fetch u
     if ($q->execute()) {
         $list_id = $q->fetchAll(PDO::FETCH_COLUMN, 0);
         $list_id = $list_id[0];
-        $q = $dbh->prepare("SELECT user_id FROM penw_lists_membership WHERE list_id = :list_id");
+        $q = $dbh->prepare("SELECT user_id FROM " . $bin_name . "_lists_membership WHERE list_id = :list_id");
         $q->bindParam(":list_id", $list_id, PDO::PARAM_INT);
         if ($q->execute()) {
             $user_ids = $q->fetchAll(PDO::FETCH_COLUMN, 0);
