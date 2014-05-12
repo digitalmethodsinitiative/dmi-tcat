@@ -374,7 +374,10 @@ function logit($file, $message) {
 
 function getActivePhrases() {
     $dbh = pdo_connect();
-    $sql = "SELECT DISTINCT(p.phrase) FROM tcat_query_phrases p, tcat_query_bins_phrases bp WHERE bp.endtime = '0000-00-00 00:00:00' AND p.id = bp.phrase_id";
+    // @TODO: added active = 1 here!
+    $sql = "SELECT DISTINCT(p.phrase) FROM tcat_query_phrases p, tcat_query_bins_phrases bp, tcat_query_bins b
+                                      WHERE bp.endtime = '0000-00-00 00:00:00' AND p.id = bp.phrase_id
+                                            AND bp.querybin_id = b.id AND b.type != 'geotrack' AND b.active = 1"; 
     $rec = $dbh->prepare($sql);
     $rec->execute();
     $results = $rec->fetchAll(PDO::FETCH_COLUMN);
@@ -383,6 +386,113 @@ function getActivePhrases() {
     $results = array_unique($results);
     $dbh = false;
     return $results;
+}
+
+function getBinType($binname) {
+    $dbh = pdo_connect();
+    $sql = "SELECT `type` FROM tcat_query_bins WHERE `type` = 'geotrack' and querybin = :querybin";
+    $rec = $dbh->prepare($sql);
+    $rec->bindParam(':querybin', $binname);
+    $rec->execute();
+    $results = $rec->fetchAll(PDO::FETCH_COLUMN);
+    foreach ($results as $k => $v) {
+        return $v;
+    }
+    $dbh = false;
+    return false;
+}
+
+function haveGeolocationQueries() {
+    $dbh = pdo_connect();
+    // TODO: should use active?
+    $sql = "SELECT COUNT(*) AS cnt FROM tcat_query_bins WHERE `type` = 'geotrack' and active = 1";
+    $rec = $dbh->prepare($sql);
+    $rec->execute();
+    $results = $rec->fetchAll(PDO::FETCH_COLUMN);
+    foreach ($results as $k => $v) {
+        if ($k == 'cnt' && $v > 0) {
+            return true;
+        }
+    }
+    $dbh = false;
+    return false;
+}
+
+function coordinatesInsideBoundingBox($point_lng, $point_lat, $sw_lng, $sw_lat, $ne_lng, $ne_lat) {
+
+    $min_lat = min($sw_lat, $ne_lat);
+    $min_lng = min($sw_lng, $ne_lng);
+    $max_lat = max($sw_lat, $ne_lat);
+    $max_lng = max($sw_lng, $ne_lng);
+
+    // @TODO: (untested code for 180 barrier)
+
+    /*
+        Note from Stack overflow:
+
+        Just bear in mind that if left_lng > right_lng your window straddles the date line and you need to split it into 2 boxes at +/-180 degrees.
+
+        Longitude generally increases from west to east with the exception of crossing the international date line where longitude changes from 180 degrees to -180 degrees. If you use the same query in a box that straddles this line you will get results for all longitudes outside the box. You need to detect the condition and split the query conditions into 2 boxes from lng_left to 180 and -180 to lng_right.
+
+     */
+    if ($point_lat >= $min_lat && $point_lat <= $max_lat) {
+
+       if ($sw_lng > $ne_lng) {
+           // southwest longitude is greater than northeast longitude, so the square wraps around the 180 longitude barrier
+           if ($point_lng >= $ne_lng || $point_lng <= $sw_lng) {
+                return true;
+           }
+       } else if ($point_lng >= $min_lng && $point_lng <= $max_lng) {
+           return true;
+       }
+
+    }
+
+    return false; 
+
+}
+
+function getActiveLocationsImploded() {
+    $dbh = pdo_connect();
+    // @TODO: should use active or endtime?
+    $sql = "select phrase from tcat_query_phrases where id in ( select phrase_id from tcat_query_bins_phrases where querybin_id in ( select id from tcat_query_bins where `type` = 'geotrack' and active = 1 ) )";
+    $rec = $dbh->prepare($sql);
+    $rec->execute();
+    $results = $rec->fetchAll(PDO::FETCH_COLUMN);
+    $locations = '';
+    foreach ($results as $k => $v) {
+        $locations .= $v;
+    }
+    $dbh = false;
+    return $locations;
+}
+
+function getGeoBoxes($track) {
+    $boxes = array();
+    $exp = explode(",", $track);
+    $latitude_expected = false;
+    $sw = true;
+    $box = array();
+    foreach ($exp as $e) {
+        if ($latitude_expected) {
+            $lat = $e;
+            if ($sw) {
+                $box['sw_lng'] = $lng;
+                $box['sw_lat'] = $lat;
+                $sw = false;
+            } else {
+                $box['ne_lng'] = $lng;
+                $box['ne_lat'] = $lat;
+                $boxes[] = $box;
+                $box = array();
+                $sw = true;
+            }
+        } else {
+            $lng = $e;
+        }
+        $latitude_expected = !$latitude_expected;
+    }
+    return $boxes;
 }
 
 function getActiveUsers() {
@@ -1045,13 +1155,25 @@ function tracker_run() {
 
   // prepare queries
   if (CAPTURE == "track") {
+
+      // check for geolocation bins
+      $locations = haveGeolocationQueries() ? getActiveLocationsImploded() : false;
+
+      // assemble query
       $querylist = getActivePhrases();
-      if (empty($querylist)) {
+      if (empty($querylist) && !haveGeolocationQueries()) {
           logit(CAPTURE . ".error.log", "empty query list, aborting!");
           return;
       }
       $method = $networkpath . '1.1/statuses/filter.json';
-      $params = array("track" => implode(",", $querylist));
+      $track = implode(",", $querylist);
+      $params = array();
+      if (haveGeolocationQueries()) {
+          $params['locations'] = $locations;
+      }
+      if (!empty($querylist)) {
+          $params['track'] = $track;
+      }
   }
   elseif (CAPTURE == "follow") {
       $querylist = getActiveUsers();
@@ -1102,7 +1224,7 @@ function tracker_streamCallback($data, $length, $metrics) {
     global $tweetbucket, $lastinsert;
     $now = time();
     $data = json_decode($data, true);
-  
+
     if ($data) {
 
         if (array_key_exists('disconnect', $data)) {
@@ -1188,6 +1310,8 @@ function processtweets($tweetbucket) {
         $list_urls = array();
         $list_mentions = array();
 
+        $geobin = (getBinType($binname) == 'geotrack');
+
         // running through every single tweet
         foreach ($tweetbucket as $data) {
 
@@ -1211,6 +1335,79 @@ function processtweets($tweetbucket) {
                 // we check for every query in the bin if they fit
 
                 foreach ($queries as $query => $track) {
+
+                    if ($geobin) {
+
+                        // look for geolocation matches
+
+                        /* @TODO: place this short documentation elsewhere?
+                         *
+                         * Some notes on geolocation tracking
+                         *
+                         * Geolocation tracking is done inside the capture role: track
+                         * Geolocation query bins have a special type: geotrack
+                         * Geolocation phrases have a specific format: 
+                         *             = these phrases are a chain of geoboxes defined as 4 comma separated values (sw long, sw lat, ne long, ne lat)
+                         *             = multiple world areas can thus be defined per bin
+                         *
+                         * Fetching
+                         *
+                         * 1) Twitter will give us all the tweets which have excplicit GPS coordinates inside one of our queried areas.
+                         * 2) Additionaly Twitter give us those tweets with a user 'place' definition. A place (i.e. Paris) is itself a gps polygon 
+                         *
+                         * And matching
+                         * 1) These tweets will be put in a bin if the coordinate pair (longitude, latitude) fits in any one of the areas in the bin.
+                         * 2) These tweets will be put in a bin if at least ONE the points of polygon fits inside one of the areas of the bin.
+                         *  *NOTE* = This means the place polygon Amsterdam-West should fit into a query bin with a geobox of Amsterdam, but the place polygon the Netherlands will fall outside of it. Similarly, if we are tracking the Jordaan, tweets with the place polygon of Amsterdam will fall outside of it.
+                         *
+    `                    */
+
+                        if ($data["geo"] != null) {
+                            $tweet_lat = $data["geo"]["coordinates"][0];
+                            $tweet_lng = $data["geo"]["coordinates"][1];
+                            if (!preg_match("/[^\-0-9,\.]/", $track)) {
+                                $boxes = getGeoBoxes($track);
+                                if (!empty($boxes)) {
+
+                                    // does the tweet geo data fit in on of the boxes?
+
+                                    foreach ($boxes as $box) {
+                                        if (coordinatesInsideBoundingBox($tweet_lng, $tweet_lat, $box['sw_lng'], $box['sw_lat'], $box['ne_lng'], $box['ne_lat'])) {
+                                            logit(CAPTURE . ".error.log", "(debug) tweet with lng $tweet_lng and lat $tweet_lat versus (sw: " . $box['sw_lng'] . "," . $box['sw_lat'] . " ne: " . $box['ne_lng'] . "," . $box['ne_lat'] . ") matched to be inside the area");
+                                            $found = true; break;
+                                        } else {
+                                            logit(CAPTURE . ".error.log", "(debug) tweet with lng $tweet_lng and lat $tweet_lat versus (sw: " . $box['sw_lng'] . "," . $box['sw_lat'] . " ne: " . $box['ne_lng'] . "," . $box['ne_lat'] . ") falls outside the area");
+                                        }
+                                    }
+
+                                }
+                            }
+                        } else if (!preg_match("/[^\-0-9,\.]/", $track)) {
+                            $boxes = getGeoBoxes($track);
+                            if (!empty($boxes)) {
+
+                                // this is a gps tracking query, but the tweet has no gps geo data
+                                // Twitter may have matched this tweet based on the user-defined location data
+                            
+                                if (array_key_exists('place', $data) && array_key_exists('bounding_box', $data['place'])) {
+                                    foreach ($data['place']['bounding_box']['coordinates'][0] as $i => $coords) {
+                                            $point_lng = $coords[0];
+                                            $point_lat = $coords[1];
+                                            // iterate over geoboxes in our track
+                                            foreach ($boxes as $box) {
+                                                if (coordinatesInsideBoundingBox($point_lng, $point_lat, $box['sw_lng'], $box['sw_lat'], $box['ne_lng'], $box['ne_lat'])) {
+                                                    logit(CAPTURE . ".error.log", "(debug) place polygon point with lng $point_lng and lat $point_lat found in track box (sw: " . $box['sw_lng'] . "," . $box['sw_lat'] . " ne: " . $box['ne_lng'] . "," . $box['ne_lat'] . ")");
+                                                    $found = true; break;
+                                                }
+                                            }
+                                    }
+                                }
+                            }
+                        }
+     
+                        if ($found) { break; }
+
+                    }
 
                     $pass = false;
 
@@ -1244,7 +1441,7 @@ function processtweets($tweetbucket) {
                     // at the first fitting query, we break
                     if ($pass == true) {
                      $found = true;
-                     $break;
+                     break;
                     }
                 }
 
@@ -1298,7 +1495,10 @@ function processtweets($tweetbucket) {
             $t["to_user_id"] = $data["in_reply_to_user_id_str"];
             $t["to_user_name"] = addslashes($data["in_reply_to_screen_name"]);
             $t["in_reply_to_status_id"] = $data["in_reply_to_status_id_str"];
-            $t["filter_level"] = $data["filter_level"];
+            $t["filter_level"] = '';
+            if (isset($data["filter_level"])) {
+                $t["filter_level"] = $data["filter_level"];
+            }
 
             $list_tweets[] = "('" . implode("','", $t) . "')";
 
