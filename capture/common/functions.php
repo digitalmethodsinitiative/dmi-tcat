@@ -374,7 +374,6 @@ function logit($file, $message) {
 
 function getActivePhrases() {
     $dbh = pdo_connect();
-    // @TODO: added active = 1 here!
     $sql = "SELECT DISTINCT(p.phrase) FROM tcat_query_phrases p, tcat_query_bins_phrases bp, tcat_query_bins b
                                       WHERE bp.endtime = '0000-00-00 00:00:00' AND p.id = bp.phrase_id
                                             AND bp.querybin_id = b.id AND b.type != 'geotrack' AND b.active = 1"; 
@@ -388,9 +387,13 @@ function getActivePhrases() {
     return $results;
 }
 
+/*
+ * What type is a bin (track, geotrack, follow, onepercent)
+ */
+
 function getBinType($binname) {
     $dbh = pdo_connect();
-    $sql = "SELECT `type` FROM tcat_query_bins WHERE `type` = 'geotrack' and querybin = :querybin";
+    $sql = "SELECT `type` FROM tcat_query_bins WHERE querybin = :querybin";
     $rec = $dbh->prepare($sql);
     $rec->bindParam(':querybin', $binname);
     $rec->execute();
@@ -402,9 +405,12 @@ function getBinType($binname) {
     return false;
 }
 
-function haveGeolocationQueries() {
+/*
+ * How many, if any, geobins are active?
+ */
+
+function geobinsActive() {
     $dbh = pdo_connect();
-    // TODO: should use active?
     $sql = "SELECT COUNT(*) AS cnt FROM tcat_query_bins WHERE `type` = 'geotrack' and active = 1";
     $rec = $dbh->prepare($sql);
     $rec->execute();
@@ -417,6 +423,10 @@ function haveGeolocationQueries() {
     $dbh = false;
     return false;
 }
+
+/*
+ * Does a longitude, latitude coordinate pair fit into a geobox (defined in the order southwest, northeast)?
+ */
 
 function coordinatesInsideBoundingBox($point_lng, $point_lat, $sw_lng, $sw_lat, $ne_lng, $ne_lat) {
 
@@ -452,10 +462,15 @@ function coordinatesInsideBoundingBox($point_lng, $point_lat, $sw_lng, $sw_lat, 
 
 }
 
+/*
+ * Create a full location query string from multiple coordinate 'phrases' (geobox phrases)
+ */
+
 function getActiveLocationsImploded() {
     $dbh = pdo_connect();
-    // @TODO: should use active or endtime?
-    $sql = "select phrase from tcat_query_phrases where id in ( select phrase_id from tcat_query_bins_phrases where querybin_id in ( select id from tcat_query_bins where `type` = 'geotrack' and active = 1 ) )";
+    $sql = "SELECT phrase FROM tcat_query_phrases p, tcat_query_bins_phrases bp, tcat_query_bins b
+                                      WHERE bp.endtime = '0000-00-00 00:00:00' AND p.id = bp.phrase_id
+                                            AND bp.querybin_id = b.id AND b.type = 'geotrack' AND b.active = 1"; 
     $rec = $dbh->prepare($sql);
     $rec->execute();
     $results = $rec->fetchAll(PDO::FETCH_COLUMN);
@@ -466,6 +481,16 @@ function getActiveLocationsImploded() {
     $dbh = false;
     return $locations;
 }
+
+/*
+ * Explode a geo location query string to an associative array of arrays
+ * 
+ * (0) => array ( sw_lng => ..
+ *                sw_lat => ..
+ *                ne_lng => ..
+ *                ne_lat => .. )
+ * (1) => ..etc
+ */
 
 function getGeoBoxes($track) {
     $boxes = array();
@@ -1157,18 +1182,18 @@ function tracker_run() {
   if (CAPTURE == "track") {
 
       // check for geolocation bins
-      $locations = haveGeolocationQueries() ? getActiveLocationsImploded() : false;
+      $locations = geobinsActive() ? getActiveLocationsImploded() : false;
 
       // assemble query
       $querylist = getActivePhrases();
-      if (empty($querylist) && !haveGeolocationQueries()) {
+      if (empty($querylist) && !geobinsActive()) {
           logit(CAPTURE . ".error.log", "empty query list, aborting!");
           return;
       }
       $method = $networkpath . '1.1/statuses/filter.json';
       $track = implode(",", $querylist);
       $params = array();
-      if (haveGeolocationQueries()) {
+      if (geobinsActive()) {
           $params['locations'] = $locations;
       }
       if (!empty($querylist)) {
