@@ -111,6 +111,12 @@ define('RATELIMIT_SILENCE', 300);
 define('RATELIMIT_MAIL_HOURS', 24);
 
 /*
+ * Use mysql INSERT DELAYED statements to insert data into the MySQL database.
+ * Recommended only for high-load sites.
+ */
+define('USE_INSERT_DELAYED', false);
+ 
+/*
  * Time zone
  */
 date_default_timezone_set("Europe/London");
