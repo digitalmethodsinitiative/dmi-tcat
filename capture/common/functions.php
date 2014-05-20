@@ -1,5 +1,7 @@
 <?php
 
+require_once("geoPHP/geoPHP.inc"); // geoPHP library
+
 error_reporting(E_ALL);
 
 function pdo_connect() {
@@ -429,37 +431,15 @@ function geobinsActive() {
  */
 
 function coordinatesInsideBoundingBox($point_lng, $point_lat, $sw_lng, $sw_lat, $ne_lng, $ne_lat) {
-
-    $min_lat = min($sw_lat, $ne_lat);
-    $min_lng = min($sw_lng, $ne_lng);
-    $max_lat = max($sw_lat, $ne_lat);
-    $max_lng = max($sw_lng, $ne_lng);
-
-    // @TODO: (untested code for 180 barrier)
-
-    /*
-        Note from Stack overflow:
-
-        Just bear in mind that if left_lng > right_lng your window straddles the date line and you need to split it into 2 boxes at +/-180 degrees.
-
-        Longitude generally increases from west to east with the exception of crossing the international date line where longitude changes from 180 degrees to -180 degrees. If you use the same query in a box that straddles this line you will get results for all longitudes outside the box. You need to detect the condition and split the query conditions into 2 boxes from lng_left to 180 and -180 to lng_right.
-
-     */
-    if ($point_lat >= $min_lat && $point_lat <= $max_lat) {
-
-       if ($sw_lng > $ne_lng) {
-           // southwest longitude is greater than northeast longitude, so the square wraps around the 180 longitude barrier
-           if ($point_lng >= $ne_lng || $point_lng <= $sw_lng) {
-                return true;
-           }
-       } else if ($point_lng >= $min_lng && $point_lng <= $max_lng) {
-           return true;
-       }
-
-    }
-
-    return false; 
-
+    $boxwkt = 'POLYGON((' . $sw_lng . ' ' . $sw_lat . ', '
+			              . $sw_lng . ' ' . $ne_lat . ', '
+			              . $ne_lng . ' ' . $ne_lat . ', '
+			              . $ne_lng . ' ' . $sw_lat . ', '
+			              . $sw_lng . ' ' . $sw_lat . '))';
+    $pointwkt = 'POINT(' . $point_lng . ' ' . $point_lat . ')';
+	$geobox = geoPHP::load($boxwkt, 'wkt');
+	$geopoint = geoPHP::load($pointwkt, 'wkt');
+    return $geobox->contains($geopoint);
 }
 
 /*
@@ -896,21 +876,21 @@ class Tweet {
     public function save(PDO $dbh, $bin_name) {
 
         $q = $dbh->prepare("REPLACE INTO " . $bin_name . '_tweets' . "
-			(id, created_at,  from_user_name, from_user_id, from_user_lang, 
-			from_user_tweetcount, from_user_followercount, from_user_friendcount, 
-			from_user_realname, source, location, geo_lat, geo_lng, text, 
-			to_user_id, to_user_name,in_reply_to_status_id, 
+                        (id, created_at,  from_user_name, from_user_id, from_user_lang, 
+                        from_user_tweetcount, from_user_followercount, from_user_friendcount, 
+                        from_user_realname, source, location, geo_lat, geo_lng, text, 
+                        to_user_id, to_user_name,in_reply_to_status_id, 
                         from_user_listed, from_user_utcoffset, from_user_timezone, from_user_description,from_user_url,from_user_verified,
                         retweet_id,retweet_count,favorite_count,filter_level,lang,from_user_profile_image_url) 
-			VALUES 
-			(:id, :created_at, :from_user_name, :from_user_id, :from_user_lang,
-			:from_user_tweetcount, :from_user_followercount, :from_user_friendcount, 
-			:from_user_realname, :source, :location, :geo_lat, :geo_lng, :text, 
-			:to_user_id, :to_user_name, :in_reply_to_status_id,
+                        VALUES 
+                        (:id, :created_at, :from_user_name, :from_user_id, :from_user_lang,
+                        :from_user_tweetcount, :from_user_followercount, :from_user_friendcount, 
+                        :from_user_realname, :source, :location, :geo_lat, :geo_lng, :text, 
+                        :to_user_id, :to_user_name, :in_reply_to_status_id,
                         :from_user_listed, :from_user_utcoffset, :from_user_timezone, :from_user_description, :from_user_url, :from_user_verified,
                         :retweet_id, :retweet_count, :favorite_count, :filter_level,:lang,:from_user_profile_image_url
                         ) 
-			;");
+                        ;");
         //var_export($this);
         $q->bindParam(':id', $this->id_str, PDO::PARAM_STR); //
         $date = date("Y-m-d H:i:s", strtotime($this->created_at));
@@ -956,8 +936,8 @@ class Tweet {
         if ($this->hashtags) {
             foreach ($this->hashtags as $hashtag) {
                 $q = $dbh->prepare("REPLACE INTO " . $bin_name . '_hashtags' . "
-					(tweet_id, created_at, from_user_name, from_user_id, text) 
-					VALUES (:tweet_id, :created_at , :from_user_name, :from_user_id, :text)");
+                                        (tweet_id, created_at, from_user_name, from_user_id, text) 
+                                        VALUES (:tweet_id, :created_at , :from_user_name, :from_user_id, :text)");
 
                 $q->bindParam(':tweet_id', $this->id_str, PDO::PARAM_STR);
                 $date = date("Y-m-d H:i:s", strtotime($this->created_at));
@@ -973,8 +953,8 @@ class Tweet {
         if ($this->urls) {
             foreach ($this->urls as $url) {
                 $q = $dbh->prepare("REPLACE INTO " . $bin_name . '_urls' . "
-					(tweet_id, created_at, from_user_name, from_user_id, url, url_expanded) 
-					VALUES (:tweet_id, :created_at , :from_user_name, :from_user_id, :url, :url_expanded)");
+                                        (tweet_id, created_at, from_user_name, from_user_id, url, url_expanded) 
+                                        VALUES (:tweet_id, :created_at , :from_user_name, :from_user_id, :url, :url_expanded)");
 
                 $q->bindParam(':tweet_id', $this->id_str, PDO::PARAM_STR);
                 $date = date("Y-m-d H:i:s", strtotime($this->created_at));
@@ -991,8 +971,8 @@ class Tweet {
         if ($this->user_mentions) {
             foreach ($this->user_mentions as $mention) {
                 $q = $dbh->prepare("REPLACE INTO " . $bin_name . '_mentions' . "
-					(tweet_id, created_at, from_user_name, from_user_id, to_user, to_user_id) 
-					VALUES (:tweet_id, :created_at , :from_user_name, :from_user_id, :to_user, :to_user_id)");
+                                        (tweet_id, created_at, from_user_name, from_user_id, to_user, to_user_id) 
+                                        VALUES (:tweet_id, :created_at , :from_user_name, :from_user_id, :to_user, :to_user_id)");
 
                 $q->bindParam(':tweet_id', $this->id_str, PDO::PARAM_STR);
                 $date = date("Y-m-d H:i:s", strtotime($this->created_at));
@@ -1050,9 +1030,9 @@ class TwitterRelations {
         foreach ($this->users as $user) {
             $q = $dbh->prepare(
                     "INSERT INTO " . $bin_name . '_relations' . "
-				(user1_id, user1_name, type, observed_at, user2_id, user2_name, user2_realname)
-				VALUES 
-				(:user1_id, :user1_name, :type, :observed_at, :user2_id, :user2_name, :user2_realname);");
+                                (user1_id, user1_name, type, observed_at, user2_id, user2_name, user2_realname)
+                                VALUES 
+                                (:user1_id, :user1_name, :type, :observed_at, :user2_id, :user2_name, :user2_realname);");
             $q->bindParam(":user1_id", $this->id, PDO::PARAM_INT); // @otod id_str?
             $q->bindParam(":user1_name", $this->screen_name, PDO::PARAM_STR);
             $q->bindParam(":type", $this->type, PDO::PARAM_STR);
@@ -1066,16 +1046,16 @@ class TwitterRelations {
 
     public static function create_relations_tables(PDO $dbh, $bin_name) {
         $sql = "CREATE TABLE IF NOT EXISTS " . $bin_name . "_relations (
-		user1_id bigint NOT NULL,
-                user1_name varchar(255) NOT NULL,		
+                user1_id bigint NOT NULL,
+                user1_name varchar(255) NOT NULL,               
                 type varchar(255),
-		observed_at datetime,
+                observed_at datetime,
                 user2_id bigint NOT NULL,
-		user2_name varchar(255) NOT NULL,
+                user2_name varchar(255) NOT NULL,
                 user2_realname varchar(255),
-		KEY `user1_id` (`user1_id`), 
+                KEY `user1_id` (`user1_id`), 
                 KEY `user2_id` (`user2_id`)
-		) ENGINE=MyISAM DEFAULT CHARSET=utf8";
+                ) ENGINE=MyISAM DEFAULT CHARSET=utf8";
 
         if ($dbh->exec($sql)) {
             return TRUE;
@@ -1361,12 +1341,11 @@ function processtweets($tweetbucket) {
 
                 foreach ($queries as $query => $track) {
 
-                    if ($geobin) {
+                    if ($geobin && array_key_exists('location', $data['user']) && $data['user']['location'] == true) {
 
                         // look for geolocation matches
 
-                        /* @TODO: place this short documentation elsewhere?
-                         *
+                        /*
                          * Some notes on geolocation tracking
                          *
                          * Geolocation tracking is done inside the capture role: track
@@ -1375,15 +1354,16 @@ function processtweets($tweetbucket) {
                          *             = these phrases are a chain of geoboxes defined as 4 comma separated values (sw long, sw lat, ne long, ne lat)
                          *             = multiple world areas can thus be defined per bin
                          *
-                         * Fetching
+                         * Fetching (from Twitter)
                          *
                          * 1) Twitter will give us all the tweets which have excplicit GPS coordinates inside one of our queried areas.
-                         * 2) Additionaly Twitter give us those tweets with a user 'place' definition. A place (i.e. Paris) is itself a gps polygon 
+                         * 2) Additionaly Twitter give us those tweets with a user 'place' definition. A place (i.e. Paris) is itself a (set of) gps polygons
+			 *    Twitter returns the tweets if one of these place polygons coverts the same area as our geo boxes.  
                          *
-                         * And matching
-                         * 1) These tweets will be put in a bin if the coordinate pair (longitude, latitude) fits in any one of the areas in the bin.
-                         * 2) These tweets will be put in a bin if at least ONE the points of polygon fits inside one of the areas of the bin.
-                         *  *NOTE* = This means the place polygon Amsterdam-West should fit into a query bin with a geobox of Amsterdam, but the place polygon the Netherlands will fall outside of it. Similarly, if we are tracking the Jordaan, tweets with the place polygon of Amsterdam will fall outside of it.
+                         * And matching (by us)
+			 *
+                         * 1) These tweets will be put in the bin if the coordinate pair (longitude, latitude) fits in any one of the defined geoboxes in the bin.
+                         * 2) These tweets will be put in the bin if the geobox is _not_ completely subsumed by the place (example: the place is France and the geobox is Paris), but the geobox does overlap the place polygon or the geobox subsumes the place polygon.
                          *
     `                    */
 
@@ -1408,24 +1388,62 @@ function processtweets($tweetbucket) {
                                 }
                             }
                         } else if (!preg_match("/[^\-0-9,\.]/", $track)) {
+
                             $boxes = getGeoBoxes($track);
                             if (!empty($boxes)) {
 
                                 // this is a gps tracking query, but the tweet has no gps geo data
                                 // Twitter may have matched this tweet based on the user-defined location data
-                            
+
                                 if (array_key_exists('place', $data) && array_key_exists('bounding_box', $data['place'])) {
-                                    foreach ($data['place']['bounding_box']['coordinates'][0] as $i => $coords) {
-                                            $point_lng = $coords[0];
-                                            $point_lat = $coords[1];
-                                            // iterate over geoboxes in our track
-                                            foreach ($boxes as $box) {
-                                                if (coordinatesInsideBoundingBox($point_lng, $point_lat, $box['sw_lng'], $box['sw_lat'], $box['ne_lng'], $box['ne_lat'])) {
-                                                    logit(CAPTURE . ".error.log", "(debug) place polygon point with lng $point_lng and lat $point_lat found in track box (sw: " . $box['sw_lng'] . "," . $box['sw_lat'] . " ne: " . $box['ne_lng'] . "," . $box['ne_lat'] . ")");
-                                                    $found = true; break;
-                                                }
-                                            }
+
+                                    // Make a geoPHP object of the polygon(s) defining the place, by using a WKT (well-known text) string
+                                    $wkt = 'POLYGON(';
+                                    $polfirst = true;
+                                    foreach ($data['place']['bounding_box']['coordinates'] as $p => $pol) {
+                                        if ($polfirst) { $polfirst = false; } else { $wkt .= ', '; }
+                                        $wkt .= '(';
+                                        $first = true;
+                                        $first_lng = 0; $first_lat = 0;
+                                        foreach ($data['place']['bounding_box']['coordinates'][$p] as $i => $coords) {
+                                               $point_lng = $coords[0];
+                                               $point_lat = $coords[1];
+                                               if ($first) {
+                                                       $first = false;
+                                                       $first_lng = $point_lng;
+                                                       $first_lat = $point_lat;
+                                               } else {
+                                                       $wkt .= ', ';
+                                               }
+                                               $wkt .= $point_lng . ' ' . $point_lat;
+                                        }
+                                        // end where we started
+                                        $wkt .= ', ' . $first_lng . ' ' . $first_lat;
+                                        $wkt .= ')'; 
                                     }
+                                    $wkt .= ')';
+                                    $place = geoPHP::load($wkt,'wkt');
+
+                                    // iterate over geoboxes in our track
+                                    // place should not spatially contain our box, but it should overlap with it
+                                    foreach ($boxes as $box) {
+                                        // 'POLYGON((x1 y1, x1 y2, x2 y2, x2 y1, x1 y1))'
+                                        $boxwkt = 'POLYGON((' . $box['sw_lng'] . ' ' . $box['sw_lat'] . ', '
+                                                          . $box['sw_lng'] . ' ' . $box['ne_lat'] . ', '
+                                                          . $box['ne_lng'] . ' ' . $box['ne_lat'] . ', '
+                                                          . $box['ne_lng'] . ' ' . $box['sw_lat'] . ', '
+                                                          . $box['sw_lng'] . ' ' . $box['sw_lat'] . '))';
+                                        $versus = geoPHP::load($boxwkt, 'wkt');
+                                        $contains = $place->contains($versus);
+                                        $boxcontains = $versus->contains($place);
+                                        $overlaps = $place->overlaps($versus);
+                                        if (!$contains && ($boxcontains || $overlaps)) {
+                                                logit(CAPTURE . ".error.log", "place polygon $wkt allies with geobox $boxwkt");
+                                                $found = true; break;
+                                        }
+
+                                    }
+                                    
                                 }
                             }
                         }
