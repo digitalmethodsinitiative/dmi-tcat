@@ -1333,6 +1333,11 @@ function processtweets($tweetbucket) {
                 continue;
             }
 
+            if ($geobin && (!array_key_exists('location', $data['user']) || $data['user']['location'] !== true)) {
+	        // in geobins, process only geo tweets
+		continue;
+	    }
+
             $found = false;
 
             if (CAPTURE == "track") {
@@ -1341,7 +1346,7 @@ function processtweets($tweetbucket) {
 
                 foreach ($queries as $query => $track) {
 
-                    if ($geobin && array_key_exists('location', $data['user']) && $data['user']['location'] == true) {
+                    if ($geobin) {
 
                         // look for geolocation matches
 
@@ -1450,42 +1455,46 @@ function processtweets($tweetbucket) {
      
                         if ($found) { break; }
 
-                    }
-
-                    $pass = false;
-
-                    // check for queries with more than one word, but go around quoted queries
-                    if (preg_match("/ /", $query) && !preg_match("/'/", $query)) {
-                        $tmplist = explode(" ", $query);
-
-                        $all = true;
-
-                        foreach ($tmplist as $tmp) {
-                            if (!preg_match("/" . $tmp . "/i", $data["text"])) {
-                                $all = false;
-                                break;
-                            }
-                        }
-
-                        // only if all words are found
-                        if ($all == true) {
-                            $pass = true;
-                        }
                     } else {
 
-                        // treat quoted queries as single words
-                        $query = preg_replace("/'/", "", $query);
+                        // look for keyword matches
 
-                        if (preg_match("/" . $query . "/i", $data["text"])) {
-                            $pass = true;
-                        }
-                    }
+			$pass = false;
 
-                    // at the first fitting query, we break
-                    if ($pass == true) {
-                     $found = true;
-                     break;
-                    }
+			// check for queries with more than one word, but go around quoted queries
+			if (preg_match("/ /", $query) && !preg_match("/'/", $query)) {
+			    $tmplist = explode(" ", $query);
+
+			    $all = true;
+
+			    foreach ($tmplist as $tmp) {
+				if (!preg_match("/" . $tmp . "/i", $data["text"])) {
+				    $all = false;
+				    break;
+				}
+			    }
+
+			    // only if all words are found
+			    if ($all == true) {
+				$pass = true;
+			    }
+			} else {
+
+			    // treat quoted queries as single words
+			    $query = preg_replace("/'/", "", $query);
+
+			    if (preg_match("/" . $query . "/i", $data["text"])) {
+				$pass = true;
+			    }
+			}
+
+			// at the first fitting query, we break
+			if ($pass == true) {
+			    $found = true;
+			    break;
+			}
+
+		    }
                 }
 
             } elseif (CAPTURE == "follow") {
