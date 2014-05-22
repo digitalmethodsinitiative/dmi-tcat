@@ -10,7 +10,7 @@ require_once 'common/functions.php';
     <head>
         <title>DMI Twitter Capturing and Analysis Toolset (DMI-TCAT)</title>
 
-        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <meta http-equiv="Content-Type" content="text/html; charset=<?php echo mb_internal_encoding(); ?>" />
 
         <link rel="stylesheet" href="css/main.css" type="text/css" />
 
