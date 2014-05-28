@@ -426,9 +426,9 @@ foreach ($bins as $id => $bin)
             alert("You cannot use an empty bin name");
             return false;
         }
-        var reg = /^[a-zA-Z0-9-_]+$/;
+        var reg = /^[a-zA-Z0-9_]+$/;
         if(!reg.test(binname.trim())) {
-            alert("bin names can only consist of alpha-numeric characters, dashes and underscores")
+            alert("bin names can only consist of alpha-numeric characters and underscores")
             return false;
         }
         return true;
