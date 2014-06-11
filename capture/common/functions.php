@@ -1385,10 +1385,7 @@ function processtweets($tweetbucket) {
 
                                     foreach ($boxes as $box) {
                                         if (coordinatesInsideBoundingBox($tweet_lng, $tweet_lat, $box['sw_lng'], $box['sw_lat'], $box['ne_lng'], $box['ne_lat'])) {
-                                            logit(CAPTURE . ".error.log", "(debug) tweet with lng $tweet_lng and lat $tweet_lat versus (sw: " . $box['sw_lng'] . "," . $box['sw_lat'] . " ne: " . $box['ne_lng'] . "," . $box['ne_lat'] . ") matched to be inside the area");
                                             $found = true; break;
-                                        } else {
-                                            logit(CAPTURE . ".error.log", "(debug) tweet with lng $tweet_lng and lat $tweet_lat versus (sw: " . $box['sw_lng'] . "," . $box['sw_lat'] . " ne: " . $box['ne_lng'] . "," . $box['ne_lat'] . ") falls outside the area");
                                         }
                                     }
 
@@ -1445,7 +1442,6 @@ function processtweets($tweetbucket) {
                                         $boxcontains = $versus->contains($place);
                                         $overlaps = $place->overlaps($versus);
                                         if (!$contains && ($boxcontains || $overlaps)) {
-                                                logit(CAPTURE . ".error.log", "place polygon $wkt allies with geobox $boxwkt");
                                                 $found = true; break;
                                         }
 
