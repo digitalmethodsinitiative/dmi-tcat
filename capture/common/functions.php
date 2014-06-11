@@ -456,8 +456,9 @@ function getActiveLocationsImploded() {
     $results = $rec->fetchAll(PDO::FETCH_COLUMN);
     $locations = '';
     foreach ($results as $k => $v) {
-        $locations .= $v;
+        $locations .= $v.",";
     }
+    $locations = substr($locations,0,-1);
     $dbh = false;
     return $locations;
 }
@@ -1310,6 +1311,7 @@ function processtweets($tweetbucket) {
 
     // we run through every bin to check whether the received tweets fit
     foreach ($querybins as $binname => $queries) {
+	create_bin($bin_name);
         $list_tweets = array();
         $list_hashtags = array();
         $list_urls = array();
@@ -1333,7 +1335,7 @@ function processtweets($tweetbucket) {
                 continue;
             }
 
-            if ($geobin && (!array_key_exists('location', $data['user']) || $data['user']['location'] !== true)) {
+            if ($geobin && (!array_key_exists('geo_enabled', $data['user']) || $data['user']['geo_enabled'] !== true)) {
 	        // in geobins, process only geo tweets
 		continue;
 	    }
@@ -1600,7 +1602,7 @@ function processtweets($tweetbucket) {
         // distribute tweets into bins
         if (count($list_tweets) > 0) {
 
-            $sql = "INSERT DELAYED IGNORE INTO " . $binname . "_tweets (id,created_at,from_user_name,from_user_id,from_user_lang,from_user_tweetcount,from_user_followercount,from_user_friendcount,from_user_listed,from_user_realname,from_user_utcoffset,from_user_timezone,from_user_description,from_user_url,from_user_verified,from_user_profile_image_url,source,location,geo_lat,geo_lng,text,retweet_id,to_user_id,to_user_name,in_reply_to_status_id,filter_level) VALUES " . implode(",", $list_tweets);
+            $sql = "INSERT IGNORE INTO " . $binname . "_tweets (id,created_at,from_user_name,from_user_id,from_user_lang,from_user_tweetcount,from_user_followercount,from_user_friendcount,from_user_listed,from_user_realname,from_user_utcoffset,from_user_timezone,from_user_description,from_user_url,from_user_verified,from_user_profile_image_url,source,location,geo_lat,geo_lng,text,retweet_id,to_user_id,to_user_name,in_reply_to_status_id,filter_level) VALUES " . implode(",", $list_tweets);
 
             $sqlresults = mysql_query($sql);
             if (!$sqlresults) {
@@ -1613,7 +1615,7 @@ function processtweets($tweetbucket) {
 
         if (count($list_hashtags) > 0) {
 
-            $sql = "INSERT DELAYED IGNORE INTO " . $binname . "_hashtags (tweet_id,created_at,from_user_name,from_user_id,text) VALUES " . implode(",", $list_hashtags);
+            $sql = "INSERT IGNORE INTO " . $binname . "_hashtags (tweet_id,created_at,from_user_name,from_user_id,text) VALUES " . implode(",", $list_hashtags);
 
             $sqlresults = mysql_query($sql);
             if (!$sqlresults) {
@@ -1623,7 +1625,7 @@ function processtweets($tweetbucket) {
 
         if (count($list_urls) > 0) {
 
-            $sql = "INSERT DELAYED IGNORE INTO " . $binname . "_urls (tweet_id,created_at,from_user_name,from_user_id,url,url_expanded) VALUES " . implode(",", $list_urls);
+            $sql = "INSERT IGNORE INTO " . $binname . "_urls (tweet_id,created_at,from_user_name,from_user_id,url,url_expanded) VALUES " . implode(",", $list_urls);
 
             $sqlresults = mysql_query($sql);
             if (!$sqlresults) {
@@ -1633,7 +1635,7 @@ function processtweets($tweetbucket) {
 
         if (count($list_mentions) > 0) {
 
-            $sql = "INSERT DELAYED IGNORE INTO " . $binname . "_mentions (tweet_id,created_at,from_user_name,from_user_id,to_user,to_user_id) VALUES " . implode(",", $list_mentions);
+            $sql = "INSERT IGNORE INTO " . $binname . "_mentions (tweet_id,created_at,from_user_name,from_user_id,to_user,to_user_id) VALUES " . implode(",", $list_mentions);
 
             $sqlresults = mysql_query($sql);
             if (!$sqlresults) {
