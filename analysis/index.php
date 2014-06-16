@@ -561,7 +561,7 @@ foreach ($linedata as $key => $value) {
                     <h3>Word frequency</h3>
                     <div class="txt_desc">Contains words and the number of times they have been used.</div>
                     <div class="txt_desc">Use: get a grasp of the most used language.</div>
-                    <div class="txt_link"> &raquo;  <a href="" onclick="var lowercase = askLowercase(); var minf = askFrequency(); $('#whattodo').val('word_frequency&lowercase='+lowercase+'&minf='+minf);sendUrl('mod.word_frequency.php');return false;">launch</a></div>
+                    <div class="txt_link"> &raquo;  <a href="" onclick="var lowercase = askLowercase(); var minf = askFrequency(); $('#whattodo').val('word_frequency&lowercase='+lowercase+'&minf='+minf+getInterval());sendUrl('mod.word_frequency.php');return false;">launch</a></div>
 
                 </div>
 

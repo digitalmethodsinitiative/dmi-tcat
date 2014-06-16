@@ -36,17 +36,21 @@ $minf = isset($_GET['minf']) ? $minf = $_GET['minf'] : 1;
         fputs($tempfile, chr(239) . chr(187) . chr(191));
 
         mysql_query("set names utf8");
-        $sql = "SELECT text FROM " . $esc['mysql']['dataset'] . "_tweets t ";
+        $sql = "SELECT text, " . sqlInterval() . " FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
+        //$sql .= " GROUP BY datepart ORDER BY datepart ASC";
+        $sql .= " ORDER BY datepart ASC";
         $sqlresults = mysql_query($sql);
+        $debug = '';
         if ($sqlresults) {
             while ($data = mysql_fetch_assoc($sqlresults)) {
                 $text = validate($data["text"], "tweet");
+                $datepart = str_replace(' ', '_', $data["datepart"]);
                 preg_match_all('/(https?:\/\/[^\s]+)|([@#\p{L}][\p{L}]+)/u', $text, $matches, PREG_PATTERN_ORDER);
                 foreach ($matches[0] as $word) {
                     if (preg_match('/(https?:\/\/)/u', $word)) continue;
                     if ($lowercase !== 0) $word = mb_strtolower($word);
-                    fputs($tempfile, $word . "\n");
+                    fputs($tempfile, "\"$datepart\" \"$word\"\n");
                 }
             }
         }
@@ -56,7 +60,7 @@ $minf = isset($_GET['minf']) ? $minf = $_GET['minf'] : 1;
         }
 
         if (function_exists('eio_fsync')) { eio_fsync($tempfile); }
-                                          else { fflush($tempfile); }
+                                     else { fflush($tempfile); }
 
         $tempmeta = stream_get_meta_data($tempfile);
         $templocation = $tempmeta["uri"];
@@ -66,8 +70,9 @@ $minf = isset($_GET['minf']) ? $minf = $_GET['minf'] : 1;
         $filename = get_filename_for_export("wordFrequency");
         $csv = fopen($filename, "w");
         fputs($csv, chr(239) . chr(187) . chr(191));
-        fputs($csv, "word,frequency\n");
-        system("sort -S 8% $templocation | uniq -c | sort -S 8% -r -n -b | sed -e 's/^[^0-9]*//' | perl -ane 'unless ( \$F[0] < $minf ) { print \"\$F[1],\$F[0]\\n\"; }' >> $filename");
+        fputs($csv, "interval,word,frequency\n");
+        system("sort -S 8% $templocation | uniq -c | sort -S 8% -b -k 2,2 -k 1,1nr -k 3,3 | awk '{ if ($1 >= $minf) { print $2 \",\" $3 \",\" $1} }' | sed -e 's/_/ /' >> $filename");
+ 
         fclose($csv);
         
         fclose($tempfile); // this removes the temporary file
