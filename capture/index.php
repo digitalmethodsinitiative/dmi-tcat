@@ -22,7 +22,7 @@ $lastRateLimitHit = getLastRateLimitHit();
 <html>
     <head>
         <title>DMI-TCAT query manager</title>
-
+	<meta charset='<?php echo mb_internal_encoding(); ?>'>
         <style type="text/css">
 
             body,html { font-family:Arial, Helvetica, sans-serif; font-size:12px; }
