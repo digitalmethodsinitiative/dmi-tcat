@@ -10,7 +10,7 @@ require_once 'common/functions.php';
     <head>
         <title>DMI Twitter Capturing and Analysis Toolset (DMI-TCAT)</title>
 
-        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <meta http-equiv="Content-Type" content="text/html; charset=<?php echo mb_internal_encoding(); ?>" />
 
         <link rel="stylesheet" href="css/main.css" type="text/css" />
 
@@ -83,6 +83,10 @@ if (defined('ANALYSIS_URL'))
     function askMentions() {
         var topu = prompt("Specify number of top users you want to get. (by number of mentions, enter 0 to get all)","500");
         return topu;
+    }
+    function askLowercase() {
+        var lower = prompt("Do you want to convert all words to lowercase? (enter 0 [=no] or 1 [=yes])", "0");
+        return lower;
     }
     function getInterval() {
         var selected = $('[name="interval"]:checked');
@@ -553,6 +557,11 @@ foreach ($linedata as $key => $value) {
                     <div class="txt_desc">Contains tweets and the number of times they have been (re)tweeted indentically.</div>
                     <div class="txt_desc">Use: get a grasp of the most "popular" content.</div>
                     <div class="txt_link"> &raquo;  <a href="" onclick="var minf = askFrequency(); $('#whattodo').val('retweet&minf='+minf+getInterval()); sendUrl('index.php');return false;">launch</a></div>
+
+                    <h3>Word frequency</h3>
+                    <div class="txt_desc">Contains words and the number of times they have been used.</div>
+                    <div class="txt_desc">Use: get a grasp of the most used language.</div>
+                    <div class="txt_link"> &raquo;  <a href="" onclick="var lowercase = askLowercase(); var minf = askFrequency(); $('#whattodo').val('word_frequency&lowercase='+lowercase+'&minf='+minf+getInterval());sendUrl('mod.word_frequency.php');return false;">launch</a></div>
 
                 </div>
 

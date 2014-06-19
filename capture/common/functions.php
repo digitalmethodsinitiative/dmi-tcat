@@ -1599,10 +1599,13 @@ function processtweets($tweetbucket) {
             }
         }
 
+        // use insert delayed
+        $delayed = (defined('USE_INSERT_DELAYED') && USE_INSERT_DELAYED) ? 'DELAYED' : '';
+
         // distribute tweets into bins
         if (count($list_tweets) > 0) {
 
-            $sql = "INSERT IGNORE INTO " . $binname . "_tweets (id,created_at,from_user_name,from_user_id,from_user_lang,from_user_tweetcount,from_user_followercount,from_user_friendcount,from_user_listed,from_user_realname,from_user_utcoffset,from_user_timezone,from_user_description,from_user_url,from_user_verified,from_user_profile_image_url,source,location,geo_lat,geo_lng,text,retweet_id,to_user_id,to_user_name,in_reply_to_status_id,filter_level) VALUES " . implode(",", $list_tweets);
+            $sql = "INSERT $delayed IGNORE INTO " . $binname . "_tweets (id,created_at,from_user_name,from_user_id,from_user_lang,from_user_tweetcount,from_user_followercount,from_user_friendcount,from_user_listed,from_user_realname,from_user_utcoffset,from_user_timezone,from_user_description,from_user_url,from_user_verified,from_user_profile_image_url,source,location,geo_lat,geo_lng,text,retweet_id,to_user_id,to_user_name,in_reply_to_status_id,filter_level) VALUES " . implode(",", $list_tweets);
 
             $sqlresults = mysql_query($sql);
             if (!$sqlresults) {
@@ -1615,7 +1618,7 @@ function processtweets($tweetbucket) {
 
         if (count($list_hashtags) > 0) {
 
-            $sql = "INSERT IGNORE INTO " . $binname . "_hashtags (tweet_id,created_at,from_user_name,from_user_id,text) VALUES " . implode(",", $list_hashtags);
+            $sql = "INSERT $delayed IGNORE INTO " . $binname . "_hashtags (tweet_id,created_at,from_user_name,from_user_id,text) VALUES " . implode(",", $list_hashtags);
 
             $sqlresults = mysql_query($sql);
             if (!$sqlresults) {
@@ -1625,7 +1628,7 @@ function processtweets($tweetbucket) {
 
         if (count($list_urls) > 0) {
 
-            $sql = "INSERT IGNORE INTO " . $binname . "_urls (tweet_id,created_at,from_user_name,from_user_id,url,url_expanded) VALUES " . implode(",", $list_urls);
+            $sql = "INSERT $delayed IGNORE INTO " . $binname . "_urls (tweet_id,created_at,from_user_name,from_user_id,url,url_expanded) VALUES " . implode(",", $list_urls);
 
             $sqlresults = mysql_query($sql);
             if (!$sqlresults) {
@@ -1635,7 +1638,7 @@ function processtweets($tweetbucket) {
 
         if (count($list_mentions) > 0) {
 
-            $sql = "INSERT IGNORE INTO " . $binname . "_mentions (tweet_id,created_at,from_user_name,from_user_id,to_user,to_user_id) VALUES " . implode(",", $list_mentions);
+            $sql = "INSERT $delayed IGNORE INTO " . $binname . "_mentions (tweet_id,created_at,from_user_name,from_user_id,to_user,to_user_id) VALUES " . implode(",", $list_mentions);
 
             $sqlresults = mysql_query($sql);
             if (!$sqlresults) {

@@ -38,9 +38,13 @@ require_once './common/functions.php';
         $sql .= sqlSubset();
 
         $sqlresults = mysql_query($sql);
-        $out = $header;
+        $filename = get_filename_for_export("fullExport");
+        $file = fopen($filename, "w");
+        fputs($file, chr(239) . chr(187) . chr(191));
+        fputs($file, $header);
         if ($sqlresults) {
             while ($data = mysql_fetch_assoc($sqlresults)) {
+                $out = '';
                 if (preg_match("/_urls/", $sql))
                     $id = $data['tweet_id'];
                 else
@@ -87,6 +91,7 @@ require_once './common/functions.php';
                     $out .= "," . $urls . "," . $expanded . "," . $followed . "," . $domain;
                 }
                 $out .= "\n";
+                fputs($file, $out);
             }
         }
 
@@ -94,8 +99,7 @@ require_once './common/functions.php';
             return preg_replace("/[\r\t\n,]/", " ", addslashes(trim(strip_tags(html_entity_decode($text)))));
         }
 
-        $filename = get_filename_for_export("fullExport");
-        file_put_contents($filename, chr(239) . chr(187) . chr(191) . $out);
+        fclose($file);
 
         echo '<fieldset class="if_parameters">';
         echo '<legend>Your File</legend>';
