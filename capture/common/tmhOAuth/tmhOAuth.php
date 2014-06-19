@@ -796,6 +796,7 @@ class tmhOAuth {
       CURLOPT_PROXY          => $this->config['curl_proxy'],
       CURLOPT_ENCODING       => $this->config['curl_encoding'],
       CURLOPT_URL            => $this->request_settings['url'],
+      CURLOPT_EXPECT_100_TIMEOUT_MS => 10000,
       // process the headers
       CURLOPT_HEADERFUNCTION => array($this, 'curlHeader'),
       CURLOPT_HEADER         => false,
