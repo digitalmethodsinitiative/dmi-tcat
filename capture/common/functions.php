@@ -664,8 +664,10 @@ class Tweet {
         } elseif ($name == "metadata") {
             return;
         } else {
-            print "Trying to set non existing class property: $name=$value\n";
-            //throw new Exception("Trying to set non existing class property: $name");
+            if (!is_object($name) && !is_object($value))
+                print "Trying to set non existing class property: $name=$value\n";
+            else
+                print "Trying to set non existing class property\n";
         }
     }
 
