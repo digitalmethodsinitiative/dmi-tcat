@@ -203,9 +203,6 @@ if (defined('ANALYSIS_URL'))
                             <td class="tbl_head">From user: </td><td><input type="text" id="ipt_from_user" size="60" name="from_user_name"  value="<?php echo $from_user_name; ?>" /> (empty: from any user*)</td>
                         </tr>
                         <tr>
-                            <td class="tbl_head">From twitter client: </td><td><input type="text" id="ipt_from_source" size="60" name="from_source"  value="<?php echo $from_source; ?>" /> (empty: from any user*)</td>
-                        </tr>
-                        <tr>
                             <td class="tbl_head">URL (or part of URL): </td><td><input type="text" id="ipt_url_query" size="60" name="url_query"  value="<?php echo $url_query; ?>" /> (empty: any or all URLs*)</td>
                         </tr>
                         <tr>
@@ -234,6 +231,7 @@ if (defined('ANALYSIS_URL'))
             $data = mysql_fetch_assoc($sqlresults);
             $numtweets = $data["count"];
 
+            //echo $sql;
             // count tweets containing links
             $sql = "SELECT count(distinct(t.id)) AS count FROM " . $esc['mysql']['dataset'] . "_urls u, " . $esc['mysql']['dataset'] . "_tweets t ";
             $where = "u.tweet_id = t.id AND ";
@@ -270,6 +268,11 @@ if (defined('ANALYSIS_URL'))
                         $show_url_export = true;
                 }
             }
+            // see whether the lang table exists
+            $show_lang_export = FALSE;
+            $sql = "SHOW TABLES LIKE '" . $esc['mysql']['dataset'] . "_lang'";
+            if (mysql_num_rows(mysql_query($sql)) == 1)
+                $show_lang_export = TRUE;
 
             // get data for the line graph
             $linedata = array();
@@ -642,6 +645,18 @@ foreach ($linedata as $key => $value) {
                         <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('export_tweets&includeUrls=1');sendUrl('mod.export_tweets.php');return false;">export with URLs</a> (much slower)</div>
                     <?php } ?>
                     <hr />
+
+                    <?php if ($show_lang_export) { ?>
+                        <h3>Export all tweets from selection, with language CLD data</h3>
+                        <div class="txt_desc">Contains all tweets and information about them (user, date created, ...), plus extra language analysis data.</div>
+                        <div class="txt_desc">Use: spend time with your data.</div>
+                        <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('export_tweets');sendUrl('mod.export_tweets_lang.php');return false;">export</a></div>
+                        <?php if ($show_url_export) { ?>
+                            <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('export_tweets&includeUrls=1');sendUrl('mod.export_tweets_lang.php');return false;">export with URLs</a> (much slower)</div>
+                        <?php } ?>
+                        <hr />
+                    <?php } ?>
+
 
                     <h3>List each individual retweet</h3>
                     <div class="txt_desc">Lists all retweets (and all the tweets metadata like follower_count) chronologically.</div>
