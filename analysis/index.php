@@ -194,11 +194,11 @@ if (defined('ANALYSIS_URL'))
                             <td class="tbl_head">URL (or part of URL): </td><td><input type="text" id="ipt_url_query" size="60" name="url_query"  value="<?php echo $url_query; ?>" /> (empty: any or all URLs*)</td>
                         </tr>
                         <tr>
-                            <td class="tbl_head">Startdate:</td><td><input type="text" id="ipt_startdate" size="60" name="startdate" value="<?php echo $startdate; ?>" /> (YYYY-MM-DD)</td>
+                            <td class="tbl_head">Startdate:</td><td><input type="text" id="ipt_startdate" size="60" name="startdate" value="<?php echo $startdate; ?>" /> (YYYY-MM-DD or YYYY-MM-DD HH:MM:SS)</td>
                         </tr>
 
                         <tr>
-                            <td class="tbl_head">Enddate:</td><td><input type="text" id="ipt_enddate" size="60" name="enddate" value="<?php echo $enddate; ?>" /> (YYYY-MM-DD)</td>
+                            <td class="tbl_head">Enddate:</td><td><input type="text" id="ipt_enddate" size="60" name="enddate" value="<?php echo $enddate; ?>" /> (YYYY-MM-DD or YYYY-MM-DD HH:MM:SS)</td>
                         </tr>
                         <tr>
                             <td><input type="submit" value="update overview" /></td>
@@ -257,24 +257,31 @@ if (defined('ANALYSIS_URL'))
             }
 
             // get data for the line graph
-            $period = ( (strtotime($esc['datetime']['enddate']) - strtotime($esc['datetime']['startdate'])) <= 86400 * 2) ? "hour" : "day"; // @todo
-            $curdate = strtotime($esc['datetime']['startdate']);
             $linedata = array();
+            $curdate = strtotime($esc['datetime']['startdate']);
+            $interval = strtotime($esc['datetime']['enddate']) - strtotime($esc['datetime']['startdate']);
+            $period = "day";
+            if ($interval <= 43200)
+                $period = "minute";
+            elseif ($interval <= 86400 * 2)
+                $period = "hour";
 
-            $sql = "SELECT COUNT(t.text) as count, COUNT(DISTINCT(t.from_user_name)) as usercount, COUNT(DISTINCT(t.location)) as loccount, COUNT(DISTINCT(t.geo_lat)) as geocount, ";
-            if ($period == "day") // @todo
-                $sql .= "DATE_FORMAT(t.created_at,'%Y.%d.%m') datepart ";
-            else
-                $sql .= "DATE_FORMAT(t.created_at,'%d. %H:00h') datepart ";
-            $sql .= "FROM " . $esc['mysql']['dataset'] . "_tweets t ";
-            $sql .= sqlSubset();
-            $sql .= "GROUP BY datepart";
-            $rec = mysql_query($sql);
             // initialize with empty dates
-            while ($curdate < strtotime($esc['datetime']['enddate'])) {
-                $thendate = ($period == "day") ? $curdate + 86400 : $curdate + 3600;
+            while ($curdate <= strtotime($esc['datetime']['enddate'])) {
+                if ($period == "day")
+                    $thendate = $curdate + 86400;
+                elseif ($period == "hour")
+                    $thendate = $curdate + 3600;
+                elseif ($period == "minute")
+                    $thendate = $curdate + 60;
 
-                $tmp = ($period == "day") ? strftime("%Y.%d.%m", $curdate) : strftime("%d. %H:%M", $curdate) . "h";
+                if ($period == "day")
+                    $tmp = strftime("%Y.%d.%m", $curdate);
+                elseif ($period == "hour")
+                    $tmp = strftime("%d %H:00", $curdate);
+                else
+                    $tmp = strftime("%H:%M", $curdate);
+
                 $linedata[$tmp] = array();
                 $linedata[$tmp]["tweets"] = 0;
                 $linedata[$tmp]["users"] = 0;
@@ -286,6 +293,18 @@ if (defined('ANALYSIS_URL'))
             }
 
             // overwrite zeroed dates
+            $sql = "SELECT COUNT(t.text) as count, COUNT(DISTINCT(t.from_user_name)) as usercount, COUNT(DISTINCT(t.location)) as loccount, COUNT(DISTINCT(t.geo_lat)) as geocount, ";
+            if ($period == "day")
+                $sql .= "DATE_FORMAT(t.created_at,'%Y.%d.%m') datepart ";
+            elseif ($period == "hour")
+                $sql .= "DATE_FORMAT(t.created_at,'%d %H:00') datepart ";
+            else
+                $sql .= "DATE_FORMAT(t.created_at,'%H:%i') datepart ";
+            $sql .= "FROM " . $esc['mysql']['dataset'] . "_tweets t ";
+            $sql .= sqlSubset();
+            $sql .= "GROUP BY datepart ORDER BY datepart";
+
+            $rec = mysql_query($sql);
             while ($res = mysql_fetch_assoc($rec)) {
                 $linedata[$res['datepart']]["tweets"] = $res['count'];
                 $linedata[$res['datepart']]["users"] = $res['usercount'];
@@ -298,11 +317,13 @@ if (defined('ANALYSIS_URL'))
                 $sql = "SELECT COUNT(t.text) as count, ";
                 if ($period == "day")
                     $sql .= "DATE_FORMAT(t.created_at,'%Y.%d.%m') datepart ";
+                elseif ($period == "hour")
+                    $sql .= "DATE_FORMAT(t.created_at,'%d %H:00') datepart ";
                 else
-                    $sql .= "DATE_FORMAT(t.created_at,'%d. %H:00h') datepart ";
+                    $sql .= "DATE_FORMAT(t.created_at,'%H:%i') datepart ";
                 $sql .= "FROM " . $esc['mysql']['dataset'] . "_tweets t ";
                 $sql .= "WHERE t.created_at >= '" . $esc['datetime']['startdate'] . "' AND t.created_at <= '" . $esc['datetime']['enddate'] . "' ";
-                $sql .= "GROUP BY datepart";
+                $sql .= "GROUP BY datepart ORDER BY datepart";
                 $rec = mysql_query($sql);
 
                 // overwrite found dates
@@ -557,6 +578,8 @@ foreach ($linedata as $key => $value) {
                     <div class="txt_desc">Contains tweets and the number of times they have been (re)tweeted indentically.</div>
                     <div class="txt_desc">Use: get a grasp of the most "popular" content.</div>
                     <div class="txt_link"> &raquo;  <a href="" onclick="var minf = askFrequency(); $('#whattodo').val('retweet&minf='+minf+getInterval()); sendUrl('index.php');return false;">launch</a></div>
+
+                    <hr/>
 
                     <h3>Word frequency</h3>
                     <div class="txt_desc">Contains words and the number of times they have been used.</div>
