@@ -14,9 +14,9 @@ require_once './common/functions.php';
         <link rel="stylesheet" href="css/main.css" type="text/css" />
 
         <script type="text/javascript" language="javascript">
-	
-	
-	
+
+
+
         </script>
 
     </head>
@@ -26,8 +26,8 @@ require_once './common/functions.php';
         <h1>Twitter Analytics - Random Tweets</h1>
         <!--
                 <table>
-        
-        
+
+
                     <form action="<?php echo "/coword/" . $_SERVER["PHP_SELF"]; ?>">
                         <input type="hidden" name="dataset" value="<?php echo $dataset; ?>" />
                         <input type="hidden" name="query" value="<?php echo $query; ?>" />
@@ -43,7 +43,7 @@ require_once './common/functions.php';
                             <td><input type="submit" value="create file" /></td>
                         </tr>
                     </form>
-        
+
                 </table>
         -->
 
@@ -57,7 +57,7 @@ require_once './common/functions.php';
             validate_all_variables();
             $filename = get_filename_for_export("randomTweets", $samplesize);
 
-            $header = "time,created_at,from_user_name,from_user_lang,text,source,location,lat,lng,hashtags,urls\n";
+            $header = "time,created_at,from_user_name,from_user_tweetcount,from_user_followercount,from_user_lang,text,source,location,lat,lng,hashtags,urls\n";
 
             $sql = "SELECT * FROM " . $esc['mysql']['dataset'] . "_tweets t ";
             $sql .= sqlSubset();
@@ -66,7 +66,7 @@ require_once './common/functions.php';
             $sqlresults = mysql_query($sql);
             $content = array();
             while ($data = mysql_fetch_assoc($sqlresults)) {
-                $content[$data['id']] = strtotime($data["created_at"]) . "," . $data["created_at"] . ",\"" . cleanText($data["from_user_name"]) . "\",\"" . $data['from_user_lang'] . "\",\"" . validate($data["text"], "tweet") . "\",\"" . cleanText($data["source"]) . "\",\"" . cleanText($data["location"]) . "\"," . $data['geo_lat'] . "," . $data['geo_lng'];
+                $content[$data['id']] = strtotime($data["created_at"]) . "," . $data["created_at"] . ",\"" . cleanText($data["from_user_name"]) . "\",\"" . $data['from_user_tweetcount'] . "\",\"" . $data['from_user_followercount'] . "\",\"" . $data['from_user_lang'] . "\",\"" . validate($data["text"], "tweet") . "\",\"" . cleanText($data["source"]) . "\",\"" . cleanText($data["location"]) . "\"," . $data['geo_lat'] . "," . $data['geo_lng'];
             }
 
             // get hashtags
