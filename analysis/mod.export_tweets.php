@@ -29,7 +29,7 @@ require_once './common/functions.php';
         validate_all_variables();
 
 
-        $header = "id,time,created_at,from_user_name,from_user_lang,text,source,location,lat,lng,from_user_followercount,from_user_friendcount,from_user_realname,to_user_name,in_reply_to_status_id,from_user_listed,from_user_utcoffset,from_user_timezone,from_user_description,from_user_url,from_user_verified,filter_level";
+        $header = "id,time,created_at,from_user_name,from_user_lang,text,source,location,lat,lng,from_user_follower_count,from_user_friend_count,from_user_realname,to_user_name,in_reply_to_status_id,from_user_listed,from_user_utcoffset,from_user_timezone,from_user_description,from_user_url,from_user_verified,filter_level";
         if (isset($_GET['includeUrls']) && $_GET['includeUrls'] == 1)
             $header .= ",urls,urls_expanded,urls_followed,domains";
         $header .= "\n";
@@ -38,13 +38,9 @@ require_once './common/functions.php';
         $sql .= sqlSubset();
 
         $sqlresults = mysql_query($sql);
-        $filename = get_filename_for_export("fullExport");
-        $file = fopen($filename, "w");
-        fputs($file, chr(239) . chr(187) . chr(191));
-        fputs($file, $header);
+        $out = $header;
         if ($sqlresults) {
             while ($data = mysql_fetch_assoc($sqlresults)) {
-                $out = '';
                 if (preg_match("/_urls/", $sql))
                     $id = $data['tweet_id'];
                 else
@@ -59,8 +55,8 @@ require_once './common/functions.php';
                         "\"" . cleanTExt($data["location"]) . "\"," .
                         $data['geo_lat'] . "," .
                         $data['geo_lng'] . "," .
-                        (isset($data['from_user_followercount']) ? $data['from_user_followercount'] : "") . "," .
-                        (isset($data['from_user_friendcount']) ? $data['from_user_friendcount'] : "") . "," .
+                        (isset($data['from_user_follower_count']) ? $data['from_user_follower_count'] : "") . "," .
+                        (isset($data['from_user_friend_count']) ? $data['from_user_friend_count'] : "") . "," .
                         (isset($data['from_user_realname']) ? "\"" . cleanText($data['from_user_realname']) . "\"" : "") . "," .
                         (isset($data['to_user_name']) ? "\"" . cleanText($data['to_user_name']) . "\"" : "") . "," .
                         (isset($data['in_reply_to_status_id']) ? $data['in_reply_to_status_id'] : "") . "," .
@@ -91,7 +87,6 @@ require_once './common/functions.php';
                     $out .= "," . $urls . "," . $expanded . "," . $followed . "," . $domain;
                 }
                 $out .= "\n";
-                fputs($file, $out);
             }
         }
 
@@ -99,7 +94,8 @@ require_once './common/functions.php';
             return preg_replace("/[\r\t\n,]/", " ", addslashes(trim(strip_tags(html_entity_decode($text)))));
         }
 
-        fclose($file);
+        $filename = get_filename_for_export("fullExport");
+        file_put_contents($filename, chr(239) . chr(187) . chr(191) . $out);
 
         echo '<fieldset class="if_parameters">';
         echo '<legend>Your File</legend>';
