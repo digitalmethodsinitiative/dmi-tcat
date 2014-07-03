@@ -40,16 +40,14 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
         
         $sqlresults = mysql_query($sql);
         
-        $filename = get_filename_for_export("location");
-        $file = fopen($filename, "w");
-        fputs($file, chr(239) . chr(187) . chr(191) .
-              "time,created_at,from_user_name,from_user_tweetcount,from_user_followercount,from_user_lang,text,source,location,geo_lat,geo_lng\n");
+        $content = "time,created_at,from_user_name,from_user_tweetcount,from_user_followercount,from_user_lang,text,source,location,geo_lat,geo_lng\n";
         
         while ($res = mysql_fetch_assoc($sqlresults)) {
-            fputs($file, strtotime($res["created_at"]) . "," . $res["created_at"] . "," . $res["from_user_name"] . "," . $res["from_user_tweetcount"] . "," . $res["from_user_followercount"] . "," . $res["from_user_lang"] . "," . validate($res["text"], "tweet") . ",\"" . strip_tags(html_entity_decode($res["source"])). "\",\"" . trim(strip_tags(html_entity_decode($res["location"]))). "\",".$res['geo_lat'].",".$res['geo_lng']."\n");
+            $content .= strtotime($res["created_at"]) . "," . $res["created_at"] . "," . $res["from_user_name"] . "," . $res["from_user_tweetcount"] . "," . $res["from_user_followercount"] . "," . $res["from_user_lang"] . "," . validate($res["text"], "tweet") . ",\"" . strip_tags(html_entity_decode($res["source"])). "\",\"" . trim(strip_tags(html_entity_decode($res["location"]))). "\",".$res['geo_lat'].",".$res['geo_lng']."\n"; 
         }
        
-        fclose($file);
+        $filename = get_filename_for_export("location");
+        file_put_contents($filename,  chr(239) . chr(187) . chr(191) . $content);
         
         echo '<fieldset class="if_parameters">';
 
