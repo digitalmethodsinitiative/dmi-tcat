@@ -77,7 +77,11 @@ if (isset($_GET['showvis']) && !empty($_GET['showvis']))
     $showvis = $_GET['showvis'];
 else
     $showvis = "";
-
+$graph_resolution = "day";
+if (isset($_GET['graph_resolution']) && !empty($_GET['graph_resolution'])) {
+    if (array_search($_GET['graph_resolution'], array("minute", "hour")) !== false)
+        $graph_resolution = $_GET['graph_resolution'];
+}
 $interval = "daily";
 if (isset($_REQUEST['interval'])) {
     if (in_array($_REQUEST['interval'], array('hourly', 'daily', 'weekly', 'monthly', 'yearly', 'overall', 'custom')))
@@ -550,12 +554,16 @@ function validate($what, $how) {
             break;
         // if date is not in yyyymmdd format, set startdate to 0
         case "startdate":
+            if (preg_match("/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/", $what))
+                break;
             if (!preg_match("/^\d{4}-\d{2}-\d{2}$/", $what))
                 $what = "2011-11-14";
             break;
         // if date is not in yyyymmdd format, set enddate to end of current day
         case "enddate":
             $now = date('U');
+            if (preg_match("/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/", $what))
+                break;
             if (!preg_match("/^\d{4}-\d{2}-\d{2}$/", $what)) // TODO, should never be more than 'now'
                 $what = "2011-11-15";
             break;
@@ -571,8 +579,7 @@ function validate($what, $how) {
             break;
         // escape non-mysql chars
         case "mysql":
-            if (substr($what, 0, 1) == "[" && substr($what, -1) == "]") // allow for queries with spaces
-                $what = substr($what, 1, -1);
+            $what = preg_replace("/[\[\]]/", "", $what);
             $what = mysql_real_escape_string($what);
             break;
         case "tweet":
@@ -613,8 +620,15 @@ function validate_all_variables() {
 
     $esc['date']['startdate'] = validate($startdate, "startdate");
     $esc['date']['enddate'] = validate($enddate, "enddate");
-    $esc['datetime']['startdate'] = $esc['date']['startdate'] . " 00:00:00";
-    $esc['datetime']['enddate'] = $esc['date']['enddate'] . " 23:59:59";
+
+    if (preg_match("/^\d{4}-\d{2}-\d{2}$/", $esc['date']['startdate']))
+        $esc['datetime']['startdate'] = $esc['date']['startdate'] . " 00:00:00";
+    else
+        $esc['datetime']['startdate'] = $esc['date']['startdate'];
+    if (preg_match("/^\d{4}-\d{2}-\d{2}$/", $esc['date']['enddate']))
+        $esc['datetime']['enddate'] = $esc['date']['enddate'] . " 23:59:59";
+    else
+        $esc['datetime']['enddate'] = $esc['date']['enddate'];
 }
 
 // Output format: {dataset}-{startdate}-{enddate}-{query}-{exclude}-{from_user_name}-{from_user_lang}-{url_query}-{module_name}-{module_settings}-{hash}.{filetype}
@@ -627,13 +641,12 @@ function get_filename_for_export($module, $settings = "", $filetype = "csv") {
     // construct filename
     $filename = $resultsdir;
     $filename .= $esc['shell']["datasetname"];
-    $filename .= "-" . str_replace("-", "", $esc['date']["startdate"]);
-    $filename .= "-" . str_replace("-", "", $esc['date']["enddate"]);
-    $filename .= "-" . $esc['shell']["query"];
+    $filename .= "-" . preg_replace("/[-: ]/", "", $esc['date']["startdate"]);
+    $filename .= "-" . preg_replace("/[-: ]/", "", $esc['date']["enddate"]);
+    $filename .= "-" . stripslashes($esc['shell']["query"]);
     $filename .= "-" . $esc['shell']["exclude"];
     $filename .= "-" . $esc['shell']["from_user_name"];
     $filename .= "-" . $esc['shell']["from_user_lang"];
-    $filename .= "-" . $esc['shell']["url_query"];
     $filename .= "-" . $module;
     $filename .= "-" . $settings;
     $filename .= "-" . $hash;   // sofware version

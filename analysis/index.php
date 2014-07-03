@@ -48,7 +48,8 @@ if (defined('ANALYSIS_URL'))
             "&from_user_name=" + $("#ipt_from_user").val() +
             "&startdate=" + $("#ipt_startdate").val() +
             "&enddate=" + $("#ipt_enddate").val() +
-            "&whattodo=" + $("#whattodo").val();
+            "&whattodo=" + $("#whattodo").val() +
+            "&graph_resolution=" + $("input[name=graph_resolution]:checked").val();
 
 
         document.location.href = _url;
@@ -202,6 +203,9 @@ if (defined('ANALYSIS_URL'))
                             <td class="tbl_head">From user: </td><td><input type="text" id="ipt_from_user" size="60" name="from_user_name"  value="<?php echo $from_user_name; ?>" /> (empty: from any user*)</td>
                         </tr>
                         <tr>
+                            <td class="tbl_head">From twitter client: </td><td><input type="text" id="ipt_from_source" size="60" name="from_source"  value="<?php echo $from_source; ?>" /> (empty: from any user*)</td>
+                        </tr>
+                        <tr>
                             <td class="tbl_head">URL (or part of URL): </td><td><input type="text" id="ipt_url_query" size="60" name="url_query"  value="<?php echo $url_query; ?>" /> (empty: any or all URLs*)</td>
                         </tr>
                         <tr>
@@ -268,24 +272,27 @@ if (defined('ANALYSIS_URL'))
             }
 
             // get data for the line graph
-            $period = ( (strtotime($esc['datetime']['enddate']) - strtotime($esc['datetime']['startdate'])) <= 86400 * 2) ? "hour" : "day"; // @todo
-            $curdate = strtotime($esc['datetime']['startdate']);
             $linedata = array();
+            $curdate = strtotime($esc['datetime']['startdate']);
 
-            $sql = "SELECT COUNT(t.text) as count, COUNT(DISTINCT(t.from_user_name)) as usercount, COUNT(DISTINCT(t.location)) as loccount, COUNT(DISTINCT(t.geo_lat)) as geocount, ";
-            if ($period == "day") // @todo
-                $sql .= "DATE_FORMAT(t.created_at,'%Y.%d.%m') datepart ";
-            else
-                $sql .= "DATE_FORMAT(t.created_at,'%d. %H:00h') datepart ";
-            $sql .= "FROM " . $esc['mysql']['dataset'] . "_tweets t ";
-            $sql .= sqlSubset();
-            $sql .= "GROUP BY datepart";
-            $rec = mysql_query($sql);
+            $period = $graph_resolution;
+
             // initialize with empty dates
-            while ($curdate < strtotime($esc['datetime']['enddate'])) {
-                $thendate = ($period == "day") ? $curdate + 86400 : $curdate + 3600;
+            while ($curdate <= strtotime($esc['datetime']['enddate'])) {
+                if ($period == "day")
+                    $thendate = $curdate + 86400;
+                elseif ($period == "hour")
+                    $thendate = $curdate + 3600;
+                elseif ($period == "minute")
+                    $thendate = $curdate + 60;
 
-                $tmp = ($period == "day") ? strftime("%Y.%d.%m", $curdate) : strftime("%d. %H:%M", $curdate) . "h";
+                if ($period == "day")
+                    $tmp = strftime("%Y-%m-%d", $curdate);
+                elseif ($period == "hour")
+                    $tmp = strftime("%Y-%m-%d %H:00", $curdate);
+                else
+                    $tmp = strftime("%Y-%m-%d %H:%M", $curdate);
+
                 $linedata[$tmp] = array();
                 $linedata[$tmp]["tweets"] = 0;
                 $linedata[$tmp]["users"] = 0;
@@ -297,6 +304,18 @@ if (defined('ANALYSIS_URL'))
             }
 
             // overwrite zeroed dates
+            $sql = "SELECT COUNT(t.text) as count, COUNT(DISTINCT(t.from_user_name)) as usercount, COUNT(DISTINCT(t.location)) as loccount, SUM(if(t.geo_lat != '0.000000', 1, 0)) AS geocount, ";
+            if ($period == "day")
+                $sql .= "DATE_FORMAT(t.created_at,'%Y-%m-%d') datepart ";
+            elseif ($period == "hour")
+                $sql .= "DATE_FORMAT(t.created_at,'%Y-%m-%d %H:00') datepart ";
+            else
+                $sql .= "DATE_FORMAT(t.created_at,'%Y-%m-%d %H:%i') datepart ";
+            $sql .= "FROM " . $esc['mysql']['dataset'] . "_tweets t ";
+            $sql .= sqlSubset();
+            $sql .= "GROUP BY datepart ORDER BY datepart";
+
+            $rec = mysql_query($sql);
             while ($res = mysql_fetch_assoc($rec)) {
                 $linedata[$res['datepart']]["tweets"] = $res['count'];
                 $linedata[$res['datepart']]["users"] = $res['usercount'];
@@ -308,15 +327,16 @@ if (defined('ANALYSIS_URL'))
 
                 $sql = "SELECT COUNT(t.text) as count, ";
                 if ($period == "day")
-                    $sql .= "DATE_FORMAT(t.created_at,'%Y.%d.%m') datepart ";
+                    $sql .= "DATE_FORMAT(t.created_at,'%Y-%m-%d') datepart ";
+                elseif ($period == "hour")
+                    $sql .= "DATE_FORMAT(t.created_at,'%Y-%m-%d %H:00') datepart ";
                 else
-                    $sql .= "DATE_FORMAT(t.created_at,'%d. %H:00h') datepart ";
+                    $sql .= "DATE_FORMAT(t.created_at,'%Y-%m-%d %H:%i') datepart ";
                 $sql .= "FROM " . $esc['mysql']['dataset'] . "_tweets t ";
                 $sql .= "WHERE t.created_at >= '" . $esc['datetime']['startdate'] . "' AND t.created_at <= '" . $esc['datetime']['enddate'] . "' ";
-                $sql .= "GROUP BY datepart";
+                $sql .= "GROUP BY datepart ORDER BY datepart";
                 $rec = mysql_query($sql);
 
-                // overwrite found dates
                 while ($res = mysql_fetch_assoc($rec)) {
                     $linedata[$res['datepart']]["full"] = $res['count'];
                 }
@@ -427,7 +447,7 @@ foreach ($linedata as $key => $value) {
 ?>
 
     var chart = new google.visualization.LineChart(document.getElementById('if_panel_linegraph'));
-    chart.draw(data, {width:1000, height:360, fontSize:9, lineWidth:1, hAxis:{slantedTextAngle:90, slantedText:true}, chartArea:{left:50,top:10,width:850,height:300}});
+    chart.draw(data, {width:1000, height:390, fontSize:9, lineWidth:1, hAxis:{slantedTextAngle:90, slantedText:true}, chartArea:{left:50,top:10,width:850,height:300}});
 
                 </script>
 
@@ -457,7 +477,7 @@ foreach ($linedata as $key => $value) {
     ?>
 
         var chart = new google.visualization.LineChart(document.getElementById('if_panel_linegraph_norm'));
-        chart.draw(data, {width:1000, height:160, fontSize:9, lineWidth:1, hAxis:{slantedTextAngle:90, slantedText:true}, vAxis:{minValue:0,maxValue:100}, chartArea:{left:50,top:10,width:850,height:100}});
+        chart.draw(data, {width:1000, height:190, fontSize:9, lineWidth:1, hAxis:{slantedTextAngle:90, slantedText:true}, vAxis:{minValue:0,maxValue:100}, chartArea:{left:50,top:10,width:850,height:100}});
 
                     </script>
                     <div class='svglink'>
@@ -468,6 +488,20 @@ foreach ($linedata as $key => $value) {
                 <?php } ?>
 
                 <div class="txt_desc"><br />Date and time are in GMT (London).</div>
+
+                <form action="index.php" method="get" id="form2">
+                    <table>
+                        <tr>
+                            <td class="tbl_head">Graph resolution</td>
+                            <td>
+                                <input type='radio' name='graph_resolution' value="day" <?php if ($graph_resolution == "day") echo "CHECKED"; ?>/> days
+                                <input type='radio' name='graph_resolution' value="hour" <?php if ($graph_resolution == "hour") echo "CHECKED"; ?>/> hours
+                                <input type='radio' name='graph_resolution' value="minute" <?php if ($graph_resolution == "minute") echo "CHECKED"; ?>/> minutes
+                            </td>
+                            <td><input type="submit" value="update graph" onclick="sendUrl('index.php');return false;" /></td>
+                        </tr>
+                    </table>
+                </form>
 
             </fieldset>
 
