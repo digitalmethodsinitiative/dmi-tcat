@@ -77,7 +77,11 @@ if (isset($_GET['showvis']) && !empty($_GET['showvis']))
     $showvis = $_GET['showvis'];
 else
     $showvis = "";
-
+$graph_resolution = "day";
+if (isset($_GET['graph_resolution']) && !empty($_GET['graph_resolution'])) {
+    if (array_search($_GET['graph_resolution'], array("minute", "hour")) !== false)
+        $graph_resolution = $_GET['graph_resolution'];
+}
 $interval = "daily";
 if (isset($_REQUEST['interval'])) {
     if (in_array($_REQUEST['interval'], array('hourly', 'daily', 'weekly', 'monthly', 'yearly', 'overall', 'custom')))
@@ -575,8 +579,7 @@ function validate($what, $how) {
             break;
         // escape non-mysql chars
         case "mysql":
-            if (substr($what, 0, 1) == "[" && substr($what, -1) == "]") // allow for queries with spaces
-                $what = substr($what, 1, -1);
+            $what = preg_replace("/[\[\]]/", "", $what);
             $what = mysql_real_escape_string($what);
             break;
         case "tweet":
@@ -638,9 +641,9 @@ function get_filename_for_export($module, $settings = "", $filetype = "csv") {
     // construct filename
     $filename = $resultsdir;
     $filename .= $esc['shell']["datasetname"];
-    $filename .= "-" . preg_replace("/[-: ]/", "",$esc['date']["startdate"]); 
-    $filename .= "-" . preg_replace("/[-: ]/", "",$esc['date']["enddate"]);
-    $filename .= "-" . $esc['shell']["query"];
+    $filename .= "-" . preg_replace("/[-: ]/", "", $esc['date']["startdate"]);
+    $filename .= "-" . preg_replace("/[-: ]/", "", $esc['date']["enddate"]);
+    $filename .= "-" . stripslashes($esc['shell']["query"]);
     $filename .= "-" . $esc['shell']["exclude"];
     $filename .= "-" . $esc['shell']["from_user_name"];
     $filename .= "-" . $esc['shell']["from_user_lang"];

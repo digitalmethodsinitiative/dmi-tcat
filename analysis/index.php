@@ -48,10 +48,22 @@ if (defined('ANALYSIS_URL'))
             "&from_user_name=" + $("#ipt_from_user").val() +
             "&startdate=" + $("#ipt_startdate").val() +
             "&enddate=" + $("#ipt_enddate").val() +
-            "&whattodo=" + $("#whattodo").val();
+            "&whattodo=" + $("#whattodo").val() +
+            "&graph_resolution=" + $("input[name=graph_resolution]:checked").val();
 
 
         document.location.href = _url;
+    }
+    
+    function saveSvg(id){
+
+        $("svg").attr({ version: '1.1' , xmlns:"http://www.w3.org/2000/svg"});
+        var e = document.getElementById(id);
+        var svg = e.getElementsByTagName('svg')[0].parentNode.innerHTML;
+        var b64 = window.btoa(unescape(encodeURIComponent(svg)));
+				 
+        // Works in Firefox 3.6 and Webit and possibly any browser which supports the data-uri
+        $("#download_"+id).html($('<a style="width:25px;height:25px;" href-lang="image/svg+xml" href="data:image/svg+xml;base64,\n'+b64+'" title="file.svg">Download SVG</a>'));
     }
     $(document).ready(function(){
         $('#form').submit(function(){
@@ -246,7 +258,7 @@ if (defined('ANALYSIS_URL'))
             $show_url_export = false;
             if ($numlinktweets) {
                 $sql = "SELECT count(u.id) as count FROM " . $esc['mysql']['dataset'] . "_urls u, " . $esc['mysql']['dataset'] . "_tweets t ";
-                $where = "u.tweet_id = t.id AND u.url_followed != '' AND ";
+                $where = "u.tweet_id = t.id AND u.error_code != '' AND ";
                 $sql .= sqlSubset($where);
                 $rec = mysql_query($sql);
                 if ($rec && mysql_num_rows($rec) > 0) {
@@ -259,12 +271,8 @@ if (defined('ANALYSIS_URL'))
             // get data for the line graph
             $linedata = array();
             $curdate = strtotime($esc['datetime']['startdate']);
-            $interval = strtotime($esc['datetime']['enddate']) - strtotime($esc['datetime']['startdate']);
-            $period = "day";
-            if ($interval <= 43200)
-                $period = "minute";
-            elseif ($interval <= 86400 * 2)
-                $period = "hour";
+
+            $period = $graph_resolution;
 
             // initialize with empty dates
             while ($curdate <= strtotime($esc['datetime']['enddate'])) {
@@ -276,11 +284,11 @@ if (defined('ANALYSIS_URL'))
                     $thendate = $curdate + 60;
 
                 if ($period == "day")
-                    $tmp = strftime("%Y.%d.%m", $curdate);
+                    $tmp = strftime("%Y-%m-%d", $curdate);
                 elseif ($period == "hour")
-                    $tmp = strftime("%d %H:00", $curdate);
+                    $tmp = strftime("%Y-%m-%d %H:00", $curdate);
                 else
-                    $tmp = strftime("%H:%M", $curdate);
+                    $tmp = strftime("%Y-%m-%d %H:%M", $curdate);
 
                 $linedata[$tmp] = array();
                 $linedata[$tmp]["tweets"] = 0;
@@ -293,13 +301,13 @@ if (defined('ANALYSIS_URL'))
             }
 
             // overwrite zeroed dates
-            $sql = "SELECT COUNT(t.text) as count, COUNT(DISTINCT(t.from_user_name)) as usercount, COUNT(DISTINCT(t.location)) as loccount, COUNT(DISTINCT(t.geo_lat)) as geocount, ";
+            $sql = "SELECT COUNT(t.text) as count, COUNT(DISTINCT(t.from_user_name)) as usercount, COUNT(DISTINCT(t.location)) as loccount, SUM(if(t.geo_lat != '0.000000', 1, 0)) AS geocount, ";
             if ($period == "day")
-                $sql .= "DATE_FORMAT(t.created_at,'%Y.%d.%m') datepart ";
+                $sql .= "DATE_FORMAT(t.created_at,'%Y-%m-%d') datepart ";
             elseif ($period == "hour")
-                $sql .= "DATE_FORMAT(t.created_at,'%d %H:00') datepart ";
+                $sql .= "DATE_FORMAT(t.created_at,'%Y-%m-%d %H:00') datepart ";
             else
-                $sql .= "DATE_FORMAT(t.created_at,'%H:%i') datepart ";
+                $sql .= "DATE_FORMAT(t.created_at,'%Y-%m-%d %H:%i') datepart ";
             $sql .= "FROM " . $esc['mysql']['dataset'] . "_tweets t ";
             $sql .= sqlSubset();
             $sql .= "GROUP BY datepart ORDER BY datepart";
@@ -316,17 +324,16 @@ if (defined('ANALYSIS_URL'))
 
                 $sql = "SELECT COUNT(t.text) as count, ";
                 if ($period == "day")
-                    $sql .= "DATE_FORMAT(t.created_at,'%Y.%d.%m') datepart ";
+                    $sql .= "DATE_FORMAT(t.created_at,'%Y-%m-%d') datepart ";
                 elseif ($period == "hour")
-                    $sql .= "DATE_FORMAT(t.created_at,'%d %H:00') datepart ";
+                    $sql .= "DATE_FORMAT(t.created_at,'%Y-%m-%d %H:00') datepart ";
                 else
-                    $sql .= "DATE_FORMAT(t.created_at,'%H:%i') datepart ";
+                    $sql .= "DATE_FORMAT(t.created_at,'%Y-%m-%d %H:%i') datepart ";
                 $sql .= "FROM " . $esc['mysql']['dataset'] . "_tweets t ";
                 $sql .= "WHERE t.created_at >= '" . $esc['datetime']['startdate'] . "' AND t.created_at <= '" . $esc['datetime']['enddate'] . "' ";
                 $sql .= "GROUP BY datepart ORDER BY datepart";
                 $rec = mysql_query($sql);
 
-                // overwrite found dates
                 while ($res = mysql_fetch_assoc($rec)) {
                     $linedata[$res['datepart']]["full"] = $res['count'];
                 }
@@ -395,12 +402,16 @@ if (defined('ANALYSIS_URL'))
                         chart.draw(data, {width: 380, height: 160});
 
                     </script>
+
                 </div>
 
                 <hr />
 
                 <div id="if_panel_linegraph"></div>
-
+                <div class='svglink'>
+                    <div class='generate_svglink' onclick="saveSvg('if_panel_linegraph')">Generate SVG</div>
+                    <div class='download_svglink' id="download_if_panel_linegraph"></div> 
+                </div>
                 <br />
 
                 <div id="if_panel_linegraph_norm"></div>
@@ -433,7 +444,7 @@ foreach ($linedata as $key => $value) {
 ?>
 
     var chart = new google.visualization.LineChart(document.getElementById('if_panel_linegraph'));
-    chart.draw(data, {width:1000, height:360, fontSize:9, lineWidth:1, hAxis:{slantedTextAngle:90, slantedText:true}, chartArea:{left:50,top:10,width:850,height:300}});
+    chart.draw(data, {width:1000, height:390, fontSize:9, lineWidth:1, hAxis:{slantedTextAngle:90, slantedText:true}, chartArea:{left:50,top:10,width:850,height:300}});
 
                 </script>
 
@@ -463,13 +474,31 @@ foreach ($linedata as $key => $value) {
     ?>
 
         var chart = new google.visualization.LineChart(document.getElementById('if_panel_linegraph_norm'));
-        chart.draw(data, {width:1000, height:160, fontSize:9, lineWidth:1, hAxis:{slantedTextAngle:90, slantedText:true}, vAxis:{minValue:0,maxValue:100}, chartArea:{left:50,top:10,width:850,height:100}});
+        chart.draw(data, {width:1000, height:190, fontSize:9, lineWidth:1, hAxis:{slantedTextAngle:90, slantedText:true}, vAxis:{minValue:0,maxValue:100}, chartArea:{left:50,top:10,width:850,height:100}});
 
                     </script>
-
+                    <div class='svglink'>
+                        <div class='generate_svglink' onclick="saveSvg('if_panel_linegraph_norm')">Generate SVG</div>
+                        <div class='download_svglink' id="download_if_panel_linegraph_norm"></div> 
+                    </div>
+                    <br />
                 <?php } ?>
 
                 <div class="txt_desc"><br />Date and time are in GMT (London).</div>
+
+                <form action="index.php" method="get" id="form2">
+                    <table>
+                        <tr>
+                            <td class="tbl_head">Graph resolution</td>
+                            <td>
+                                <input type='radio' name='graph_resolution' value="day" <?php if ($graph_resolution == "day") echo "CHECKED"; ?>/> days
+                                <input type='radio' name='graph_resolution' value="hour" <?php if ($graph_resolution == "hour") echo "CHECKED"; ?>/> hours
+                                <input type='radio' name='graph_resolution' value="minute" <?php if ($graph_resolution == "minute") echo "CHECKED"; ?>/> minutes
+                            </td>
+                            <td><input type="submit" value="update graph" onclick="sendUrl('index.php');return false;" /></td>
+                        </tr>
+                    </table>
+                </form>
 
             </fieldset>
 
