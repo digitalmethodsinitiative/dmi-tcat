@@ -27,7 +27,9 @@ require_once './common/functions.php';
 
         <?php
         validate_all_variables();
-        $min_nr_of_nodes = (isset($_GET['minf']) && is_numeric($_GET['minf'])) ? $min_nr_of_nodes = $_GET['minf'] : 4;
+        $min_nr_of_nodes = $esc['shell']['minf'];
+        if (isset($_GET['minf']) || !preg_match("/^\d+$/", $min_nr_of_nodes))
+            $min_nr_of_nodes = 4;
 
         // get identical tweets
         $sql = "SELECT text, COUNT(text) AS count FROM " . $esc['mysql']['dataset'] . "_tweets t ";
@@ -40,11 +42,7 @@ require_once './common/functions.php';
         flush();
 
         $header = "id,time,created_at,from_user_name,from_user_lang,text,source,location,lat,lng,from_user_follower_count,from_user_friend_count,from_user_realname,to_user_name,in_reply_to_status_id,from_user_listed,from_user_utcoffset,from_user_timezone,from_user_description,from_user_url,from_user_verified,filter_level\n";
-
-        $filename = get_filename_for_export("retweets_chain", $min_nr_of_nodes);
-        $file = fopen($filename, "w");
-        fputs($file, chr(239) . chr(187) . chr(191));
-        fputs($file, $header);
+        $out = $header;
 
         while ($res = mysql_fetch_assoc($rec)) {
 
@@ -94,7 +92,7 @@ require_once './common/functions.php';
             $rec2 = mysql_query($sql2);
             if ($rec2) {
                 while ($data = mysql_fetch_assoc($rec2)) {
-                    fputs($file, $data['id'] . "," .
+                    $out .= $data['id'] . "," .
                             strtotime($data["created_at"]) . "," .
                             $data["created_at"] . "," .
                             $data["from_user_name"] . "," .
@@ -115,7 +113,7 @@ require_once './common/functions.php';
                             "\"" . preg_replace("/[\r\t\n,]/", " ", trim(strip_tags(html_entity_decode($data['from_user_description'])))) . "\"," .
                             "\"" . preg_replace("/[\r\t\n,]/", " ", trim($data['from_user_url'])) . "\"," .
                             $data['from_user_verified'] . "," .
-                            $data['filter_level'] . "\n");
+                            $data['filter_level'] . "\n";
                 }
             }
         }
@@ -123,7 +121,8 @@ require_once './common/functions.php';
 
         echo '<legend>Your File</legend>';
 
-        fclose($file);
+        $filename = get_filename_for_export("retweets_chain", $min_nr_of_nodes);
+        file_put_contents($filename, chr(239) . chr(187) . chr(191) . $out);
 
         echo '<p><a href="' . str_replace("#", urlencode("#"), str_replace("\"", "%22", $filename)) . '">' . $filename . '</a></p>';
 
