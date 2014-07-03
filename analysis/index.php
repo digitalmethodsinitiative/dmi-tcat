@@ -44,6 +44,7 @@ if (defined('ANALYSIS_URL'))
             "?dataset=" + $("#ipt_dataset").val() +
             "&query=" + $("#ipt_query").val().replace(/#/g,"%23") +
             "&url_query=" + $("#ipt_url_query").val().replace(/#/g,"%23") +
+            "&geo_query=" + $("#ipt_geo_query").val()  +
             "&exclude=" + $("#ipt_exclude").val().replace(/#/g,"%23") +
             "&from_user_name=" + $("#ipt_from_user").val() +
             "&startdate=" + $("#ipt_startdate").val() +
@@ -204,6 +205,9 @@ if (defined('ANALYSIS_URL'))
                         </tr>
                         <tr>
                             <td class="tbl_head">URL (or part of URL): </td><td><input type="text" id="ipt_url_query" size="60" name="url_query"  value="<?php echo $url_query; ?>" /> (empty: any or all URLs*)</td>
+                        </tr>
+                        <tr>
+                            <td class="tbl_head">GEO bounding polygon: </td><td><input type="text" id="ipt_geo_query" size="180" name="geo_query"  value="<?php echo $geo_query; ?>" />POLYGON from <a href='http://en.wikipedia.org/wiki/Well-known_text'>WKT</a> format: point1lng point1lat, point2lng point2lat, point3lng point3lat, ...., point1lng point1lat<br />(example Bologna airport: 11.249631 44.520052,11.249631 44.551376,11.322587 44.551376, 11.322587 44.520052, 11.249631 44.520052)</td>
                         </tr>
                         <tr>
                             <td class="tbl_head">Startdate:</td><td><input type="text" id="ipt_startdate" size="60" name="startdate" value="<?php echo $startdate; ?>" /> (YYYY-MM-DD or YYYY-MM-DD HH:MM:SS)</td>
@@ -374,6 +378,9 @@ if (defined('ANALYSIS_URL'))
                             </tr>
                             <tr>
                                 <td class="tbl_head">(Part of) URL:</td><td><?php echo $esc['mysql']['url_query']; ?></td>
+                            </tr>
+                            <tr>
+                                <td class="tbl_head">GEO polygon:</td><td><?php echo $esc['mysql']['geo_query']; ?></td>
                             </tr>
                             <tr>
                                 <td class="tbl_head">Startdate:</td><td><?php echo $startdate; ?></td>
