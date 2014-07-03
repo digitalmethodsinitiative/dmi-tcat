@@ -32,6 +32,10 @@ if (isset($_GET['exclude']) && !empty($_GET['exclude']))
     $exclude = urldecode($_GET['exclude']);
 else
     $exclude = "";
+if (isset($_GET['from_source']) && !empty($_GET['from_source']))
+    $from_source = urldecode($_GET['from_source']);
+else
+    $from_source = "";
 if (isset($_GET['from_user_name']) && !empty($_GET['from_user_name']))
     $from_user_name = urldecode($_GET['from_user_name']);
 else
@@ -275,6 +279,9 @@ function sqlSubset($where = NULL) {
         $sql .= " ( t.geo_lat != '0.00000' and t.geo_lng != '0.00000' and ST_Contains(" . $polygonfromtext . ", " . $pointfromtext . ") ";
 
         $sql .= " ) AND ";
+    }
+    if (!empty($esc['mysql']['from_source'])) {
+        $sql .= "LOWER(t.source) LIKE '%" . $esc['mysql']['from_source'] . "%' AND ";
     }
     if (!empty($esc['mysql']['exclude'])) {
         if (strstr($esc['mysql']['exclude'], "AND") !== false) {
@@ -617,13 +624,14 @@ function validate($what, $how) {
 // make sure that we have all the right types and values
 // also make sure one cannot do a mysql injection attack
 function validate_all_variables() {
-    global $esc, $query, $url_query, $geo_query, $dataset, $exclude, $from_user_name, $startdate, $enddate, $databases, $connection, $keywords, $database, $minf, $topu, $from_user_lang;
+    global $esc, $query, $url_query, $geo_query, $dataset, $exclude, $from_user_name, $from_source, $startdate, $enddate, $databases, $connection, $keywords, $database, $minf, $topu, $from_user_lang;
 
     $esc['mysql']['dataset'] = validate($dataset, "mysql");
     $esc['mysql']['query'] = validate($query, "mysql");
     $esc['mysql']['url_query'] = validate($url_query, "mysql");
     $esc['mysql']['geo_query'] = validate($geo_query, "mysql");
     $esc['mysql']['exclude'] = validate($exclude, "mysql");
+    $esc['mysql']['from_source'] = validate($from_source, "mysql");
     $esc['mysql']['from_user_name'] = validate($from_user_name, "mysql");
     $esc['mysql']['from_user_lang'] = validate($from_user_lang, "mysql");
 

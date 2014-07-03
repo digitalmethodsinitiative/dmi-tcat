@@ -47,6 +47,7 @@ if (defined('ANALYSIS_URL'))
             "&geo_query=" + $("#ipt_geo_query").val()  +
             "&exclude=" + $("#ipt_exclude").val().replace(/#/g,"%23") +
             "&from_user_name=" + $("#ipt_from_user").val() +
+            "&from_source=" + $("#ipt_from_source").val() +
             "&startdate=" + $("#ipt_startdate").val() +
             "&enddate=" + $("#ipt_enddate").val() +
             "&whattodo=" + $("#whattodo").val() +
@@ -202,6 +203,9 @@ if (defined('ANALYSIS_URL'))
 
                         <tr>
                             <td class="tbl_head">From user: </td><td><input type="text" id="ipt_from_user" size="60" name="from_user_name"  value="<?php echo $from_user_name; ?>" /> (empty: from any user*)</td>
+                        </tr>
+                        <tr>
+                            <td class="tbl_head">From twitter client: </td><td><input type="text" id="ipt_from_source" size="60" name="from_source"  value="<?php echo $from_source; ?>" /> (empty: from any user*)</td>
                         </tr>
                         <tr>
                             <td class="tbl_head">URL (or part of URL): </td><td><input type="text" id="ipt_url_query" size="60" name="url_query"  value="<?php echo $url_query; ?>" /> (empty: any or all URLs*)</td>
@@ -375,6 +379,9 @@ if (defined('ANALYSIS_URL'))
 
                             <tr>
                                 <td class="tbl_head">From user:</td><td><?php echo $esc['mysql']['from_user_name']; ?></td>
+                            </tr>
+                            <tr>
+                                <td class="tbl_head">From twitter client: </td><td><?php echo $esc['mysql']['from_source']; ?></td>
                             </tr>
                             <tr>
                                 <td class="tbl_head">(Part of) URL:</td><td><?php echo $esc['mysql']['url_query']; ?></td>
@@ -738,6 +745,13 @@ foreach ($linedata as $key => $value) {
                         The more often they appear together, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>").</div>
                     <div class="txt_desc">Use: explore the relational <i>activity</i> between mentioned users and hashtags, find and analyze which users are considered experts around which topics.</div>
                     <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('mention_hashtags');sendUrl('mod.mention_hashtags.php');return false;">launch</a></div>
+
+                    <h3>Bipartite hashtag-source graph</h3>
+                    <div class="txt_desc">Produces a <a href="http://en.wikipedia.org/wiki/Bipartite_graph">bipartite graph</a> based on co-occurence of hashtags and "sources" (the client a
+                        tweet was sent from is its source) . If a hashtag is tweeted from a particular client, there will be a link between that client and the hashtag.
+                        The more often they appear together, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>").</div>
+                    <div class="txt_desc">Use: explore the relations between clients and hashtags, find and analyze which clients are related to which topics.</div>
+                    <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('mod.sources_hashtags');sendUrl('mod.sources_hashtags.php');return false;">launch</a></div>
 
                     <?php if ($show_url_export) { ?>
                         <hr />
