@@ -53,6 +53,17 @@ if (defined('ANALYSIS_URL'))
 
         document.location.href = _url;
     }
+    
+    function saveSvg(id){
+
+        $("svg").attr({ version: '1.1' , xmlns:"http://www.w3.org/2000/svg"});
+        var e = document.getElementById(id);
+        var svg = e.getElementsByTagName('svg')[0].parentNode.innerHTML;
+        var b64 = window.btoa(unescape(encodeURIComponent(svg)));
+				 
+        // Works in Firefox 3.6 and Webit and possibly any browser which supports the data-uri
+        $("#download_"+id).html($('<a style="width:25px;height:25px;" href-lang="image/svg+xml" href="data:image/svg+xml;base64,\n'+b64+'" title="file.svg">Download SVG</a>'));
+    }
     $(document).ready(function(){
         $('#form').submit(function(){
             sendUrl();
@@ -194,11 +205,11 @@ if (defined('ANALYSIS_URL'))
                             <td class="tbl_head">URL (or part of URL): </td><td><input type="text" id="ipt_url_query" size="60" name="url_query"  value="<?php echo $url_query; ?>" /> (empty: any or all URLs*)</td>
                         </tr>
                         <tr>
-                            <td class="tbl_head">Startdate:</td><td><input type="text" id="ipt_startdate" size="60" name="startdate" value="<?php echo $startdate; ?>" /> (YYYY-MM-DD)</td>
+                            <td class="tbl_head">Startdate:</td><td><input type="text" id="ipt_startdate" size="60" name="startdate" value="<?php echo $startdate; ?>" /> (YYYY-MM-DD or YYYY-MM-DD HH:MM:SS)</td>
                         </tr>
 
                         <tr>
-                            <td class="tbl_head">Enddate:</td><td><input type="text" id="ipt_enddate" size="60" name="enddate" value="<?php echo $enddate; ?>" /> (YYYY-MM-DD)</td>
+                            <td class="tbl_head">Enddate:</td><td><input type="text" id="ipt_enddate" size="60" name="enddate" value="<?php echo $enddate; ?>" /> (YYYY-MM-DD or YYYY-MM-DD HH:MM:SS)</td>
                         </tr>
                         <tr>
                             <td><input type="submit" value="update overview" /></td>
@@ -246,7 +257,7 @@ if (defined('ANALYSIS_URL'))
             $show_url_export = false;
             if ($numlinktweets) {
                 $sql = "SELECT count(u.id) as count FROM " . $esc['mysql']['dataset'] . "_urls u, " . $esc['mysql']['dataset'] . "_tweets t ";
-                $where = "u.tweet_id = t.id AND u.url_followed != '' AND ";
+                $where = "u.tweet_id = t.id AND u.error_code != '' AND ";
                 $sql .= sqlSubset($where);
                 $rec = mysql_query($sql);
                 if ($rec && mysql_num_rows($rec) > 0) {
@@ -374,12 +385,16 @@ if (defined('ANALYSIS_URL'))
                         chart.draw(data, {width: 380, height: 160});
 
                     </script>
+
                 </div>
 
                 <hr />
 
                 <div id="if_panel_linegraph"></div>
-
+                <div class='svglink'>
+                    <div class='generate_svglink' onclick="saveSvg('if_panel_linegraph')">Generate SVG</div>
+                    <div class='download_svglink' id="download_if_panel_linegraph"></div> 
+                </div>
                 <br />
 
                 <div id="if_panel_linegraph_norm"></div>
@@ -445,7 +460,11 @@ foreach ($linedata as $key => $value) {
         chart.draw(data, {width:1000, height:160, fontSize:9, lineWidth:1, hAxis:{slantedTextAngle:90, slantedText:true}, vAxis:{minValue:0,maxValue:100}, chartArea:{left:50,top:10,width:850,height:100}});
 
                     </script>
-
+                    <div class='svglink'>
+                        <div class='generate_svglink' onclick="saveSvg('if_panel_linegraph_norm')">Generate SVG</div>
+                        <div class='download_svglink' id="download_if_panel_linegraph_norm"></div> 
+                    </div>
+                    <br />
                 <?php } ?>
 
                 <div class="txt_desc"><br />Date and time are in GMT (London).</div>
@@ -557,6 +576,8 @@ foreach ($linedata as $key => $value) {
                     <div class="txt_desc">Contains tweets and the number of times they have been (re)tweeted indentically.</div>
                     <div class="txt_desc">Use: get a grasp of the most "popular" content.</div>
                     <div class="txt_link"> &raquo;  <a href="" onclick="var minf = askFrequency(); $('#whattodo').val('retweet&minf='+minf+getInterval()); sendUrl('index.php');return false;">launch</a></div>
+
+                    <hr/>
 
                     <h3>Word frequency</h3>
                     <div class="txt_desc">Contains words and the number of times they have been used.</div>
