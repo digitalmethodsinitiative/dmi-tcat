@@ -22,7 +22,7 @@ $screen_names = array(); // an array of screen_names, leave empty if you want to
 if (empty($bin_name))
     die("bin_name not set\n");
 
-$current_key = $looped = 0;
+$ratefree = $current_key = $looped = 0;
 
 if(empty($screen_names)) {
 	// retrieve users from a set of tweets
@@ -47,7 +47,14 @@ print "ended at " . strftime("%Y-%m-%d %H:%m:%S", date('U'));
 
 function get_friends($screen_name, $cursor = -1) {
     print "getting friends of $screen_name\n";
-    global $twitter_keys, $current_key, $bin_name, $dbh;
+    global $twitter_keys, $current_key, $ratefree, $bin_name, $dbh;
+
+    $ratefree--;
+    if ($ratefree < 1 || $ratefree % 10 == 0) {
+	$keyinfo = getRESTKey($current_key, 'friends', 'list');
+	$current_key = $keyinfo['key'];
+	$ratefree = $keyinfo['remaining'];
+    }
 
     $tmhOAuth = new tmhOAuth(array(
                 'consumer_key' => $twitter_keys[$current_key]['twitter_consumer_key'],
@@ -81,28 +88,6 @@ function get_friends($screen_name, $cursor = -1) {
         // store in db
         $tr = new TwitterRelations($screen_name, $friends, "friend", $observed_at);
         $tr->save($dbh, $bin_name);
-
-        // check rate limiting
-        $headers = $tmhOAuth->response['headers'];
-        $ratelimitremaining = $headers['x-rate-limit-remaining'];
-        $ratelimitreset = $headers['x-rate-limit-reset'];
-        print "remaining API requests: $ratelimitremaining\n";
-        if ($ratelimitremaining == 0) {
-            $current_key++;
-            print "next key $current_key\n";
-            if ($current_key >= count($twitter_keys)) {
-                $current_key = 0;
-                $looped = 1;
-                print "resetting key to 0\n";
-            } elseif ($current_key == 0 && $looped == 1) {
-                if (count($tweets) > 1)
-                    $looped = 0;
-                else {
-                    print "looped over all keys but still can't get new tweets, sleeping\n";
-                    sleep(5);
-                }
-            }
-        }
 
         // continue if there are still things to do
         if (!empty($cursor) && $cursor != -1) {
