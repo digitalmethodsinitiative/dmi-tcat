@@ -208,7 +208,7 @@ if (defined('ANALYSIS_URL'))
                             <td class="tbl_head">From twitter client: </td><td><input type="text" id="ipt_from_source" size="60" name="from_source"  value="<?php echo $from_source; ?>" /> (empty: from any user*)</td>
                         </tr>
                         <tr>
-                            <td class="tbl_head">URL (or part of URL): </td><td><input type="text" id="ipt_url_query" size="60" name="url_query"  value="<?php echo $url_query; ?>" /> (empty: any or all URLs*)</td>
+                            <td class="tbl_head">(Part of) URL: </td><td><input type="text" id="ipt_url_query" size="60" name="url_query"  value="<?php echo $url_query; ?>" /> (empty: any or all URLs*)</td>
                         </tr>
                         <tr>
                             <td class="tbl_head">GEO bounding polygon: </td><td><input type="text" id="ipt_geo_query" size="180" name="geo_query"  value="<?php echo $geo_query; ?>" />POLYGON from <a href='http://en.wikipedia.org/wiki/Well-known_text'>WKT</a> format: point1lng point1lat, point2lng point2lat, point3lng point3lat, ...., point1lng point1lat<br />(example Bologna airport: 11.249631 44.520052,11.249631 44.551376,11.322587 44.551376, 11.322587 44.520052, 11.249631 44.520052)</td>

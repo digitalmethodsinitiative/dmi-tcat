@@ -77,7 +77,7 @@ require_once './common/Gexf.class.php';
 
         echo '<legend>Your network (GEXF) file</legend>';
 
-        echo '<p><a href="' . str_replace("\\", "%5c", str_replace("[", "%5b", str_replace("]", "%5d", str_replace("#", urlencode("#"), str_replace("\"", "%22", $filename))))) . '">' . $filename . '</a></p>';
+        echo '<p><a href="' . filename_to_url($filename) . '">' . $filename . '</a></p>';
 
         echo '</fieldset>';
         ?>

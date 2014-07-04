@@ -91,7 +91,7 @@ require_once './common/functions.php';
                         $domain = substr($domain, 0, -3);
                         $error = substr($error, 0, -3);
                     }
-                    $out .= "," . $urls . "," . $expanded . "," . $followed . "," . $domain . ",".$error;
+                    $out .= "," . $urls . "," . $expanded . "," . $followed . "," . $domain . "," . $error;
                 }
                 $out .= "\n";
                 fputs($file, $out);
@@ -106,7 +106,7 @@ require_once './common/functions.php';
 
         echo '<fieldset class="if_parameters">';
         echo '<legend>Your File</legend>';
-        echo '<p><a href="' . str_replace("\\", "%5c", str_replace("[", "%5b", str_replace("]", "%5d", str_replace("#", urlencode("#"), str_replace("\"", "%22", $filename))))) . '">' . $filename . '</a></p>';
+        echo '<p><a href="' . filename_to_url($filename) . '">' . $filename . '</a></p>';
         echo '</fieldset>';
         ?>
 
