@@ -55,25 +55,15 @@ if (defined('ANALYSIS_URL'))
 
 
         document.location.href = _url;
-    }
-    
+    } 
     function saveSvg(id){
-
         $("svg").attr({ version: '1.1' , xmlns:"http://www.w3.org/2000/svg"});
         var e = document.getElementById(id);
         var svg = e.getElementsByTagName('svg')[0].parentNode.innerHTML;
-        var b64 = window.btoa(unescape(encodeURIComponent(svg)));
-				 
-        // Works in Firefox 3.6 and Webit and possibly any browser which supports the data-uri
+        var b64 = window.btoa(unescape(encodeURIComponent(svg)));	 
+        // Works in Firefox 3.6 and Webkit and possibly any browser which supports the data-uri
         $("#download_"+id).html($('<a style="width:25px;height:25px;" href-lang="image/svg+xml" href="data:image/svg+xml;base64,\n'+b64+'" title="file.svg">Download SVG</a>'));
     }
-    $(document).ready(function(){
-        $('#form').submit(function(){
-            sendUrl();
-            return false;
-        });
-    });
-
     function askFrequency() {
         var minf = prompt("Specify the minimum frequency for data to be included in the export:","2");
         return minf;
@@ -110,6 +100,12 @@ if (defined('ANALYSIS_URL'))
         var inter = "&interval="+selectedValue+"&customInterval="+$('[name="customInterval"]').val();
         return inter;
     }
+    $(document).ready(function(){
+        $('#form').submit(function(){
+            sendUrl();
+            return false;
+        });
+    });
 
         </script>
 
