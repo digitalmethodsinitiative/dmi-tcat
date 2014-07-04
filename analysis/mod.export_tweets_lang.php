@@ -1,16 +1,13 @@
 <?php
 require_once './common/config.php';
 require_once './common/functions.php';
-
-$variability = false;       // @todo used as hack for experiment in first issue mapping workshop
-$uselocalresults = false;   // @todo used as hack for experiment in first issue mapping workshop
 ?>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
-        <title>Twitter Analytics GEXF</title>
+        <title>Twitter Tool</title>
 
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
@@ -26,24 +23,24 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
 
     <body>
 
-        <h1>Twitter Analytics - Geo location</h1>
+        <h1>Twitter Analytics - Export Tweets</h1>
 
         <?php
         validate_all_variables();
 
-        $header = "id,time,created_at,from_user_name,from_user_lang,text,source,location,lat,lng,from_user_follower_count,from_user_friend_count,from_user_realname,to_user_name,in_reply_to_status_id,from_user_listed,from_user_utcoffset,from_user_timezone,from_user_description,from_user_url,from_user_verified,filter_level";
+
+        $header = "id,time,created_at,from_user_name,from_user_lang,text,source,location,lat,lng,from_user_follower_count,from_user_friend_count,from_user_realname,to_user_name,in_reply_to_status_id,from_user_listed,from_user_utcoffset,from_user_timezone,from_user_description,from_user_url,from_user_verified,filter_leveli,cld_name,cld_code,cld_reliable,cld_bytes,cld_percent";
         if (isset($_GET['includeUrls']) && $_GET['includeUrls'] == 1)
             $header .= ",urls,urls_expanded,urls_followed,domains";
         $header .= "\n";
 
-        $sql = "SELECT * FROM " . $esc['mysql']['dataset'] . "_tweets t ";
-        $where = "geo_lat != 0 AND geo_lng != 0 AND ";
-        $sql .= sqlSubset($where);
+	$langset = $esc['mysql']['dataset'] . '_lang';
 
-		//echo $sql; exit;
+        $sql = "SELECT * FROM " . $esc['mysql']['dataset'] . "_tweets t inner join $langset l on t.id = l.tweet_id ";
+        $sql .= sqlSubset();
 
         $sqlresults = mysql_query($sql);
-        $filename = get_filename_for_export("fullExport-location"); 
+        $filename = get_filename_for_export("fullExportLang");
         $file = fopen($filename, "w");
         fputs($file, chr(239) . chr(187) . chr(191));
         fputs($file, $header);
@@ -76,6 +73,11 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
                         "\"" . cleanText($data['from_user_url']) . "\"," .
                         $data['from_user_verified'] . "," .
                         $data['filter_level'];
+		$out .= ",\"" . $data['name'] . "\"," .
+			"\"" . $data['code'] . "\"," .
+			(($data['reliable'] == true) ? 1 : 0) . "," .
+			$data['bytes'] . "," .
+			$data['percent'];
                 if (isset($_GET['includeUrls']) && $_GET['includeUrls'] == 1) {
                     $urls = $expanded = $followed = $domain = "";
                     $sql2 = "SELECT url, url_expanded, url_followed, domain FROM " . $esc['mysql']['dataset'] . "_urls WHERE tweet_id = " . $data['id'];

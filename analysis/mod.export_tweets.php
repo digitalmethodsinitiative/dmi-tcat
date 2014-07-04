@@ -14,9 +14,9 @@ require_once './common/functions.php';
         <link rel="stylesheet" href="css/main.css" type="text/css" />
 
         <script type="text/javascript" language="javascript">
-	
-	
-	
+
+
+
         </script>
 
     </head>
@@ -31,11 +31,12 @@ require_once './common/functions.php';
 
         $header = "id,time,created_at,from_user_name,from_user_lang,text,source,location,lat,lng,from_user_follower_count,from_user_friend_count,from_user_realname,to_user_name,in_reply_to_status_id,from_user_listed,from_user_utcoffset,from_user_timezone,from_user_description,from_user_url,from_user_verified,filter_level";
         if (isset($_GET['includeUrls']) && $_GET['includeUrls'] == 1)
-            $header .= ",urls,urls_expanded,urls_followed,domains";
+            $header .= ",urls,urls_expanded,urls_followed,domains,HTTP status code";
         $header .= "\n";
 
         $sql = "SELECT * FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
+        $sql .= " ORDER BY id";
 
         $sqlresults = mysql_query($sql);
         $out = $header;
@@ -69,7 +70,7 @@ require_once './common/functions.php';
                         $data['filter_level'];
                 if (isset($_GET['includeUrls']) && $_GET['includeUrls'] == 1) {
                     $urls = $expanded = $followed = $domain = "";
-                    $sql2 = "SELECT url, url_expanded, url_followed, domain FROM " . $esc['mysql']['dataset'] . "_urls WHERE tweet_id = " . $data['id'];
+                    $sql2 = "SELECT url, url_expanded, url_followed, domain, error_code FROM " . $esc['mysql']['dataset'] . "_urls WHERE tweet_id = " . $data['id'];
                     $rec2 = mysql_query($sql2);
                     if (mysql_num_rows($rec2) > 0) {
                         $res2 = mysql_fetch_assoc($rec2);
@@ -77,14 +78,16 @@ require_once './common/functions.php';
                         $expanded = $res2['url_expanded'] . " ; ";
                         $followed = $res2['url_followed'] . " ; ";
                         $domain = $res2['domain'] . " ; ";
+                        $error = $res2['error_code'] . " ; ";
                     }
                     if (!empty($urls)) {
                         $urls = substr($urls, 0, -3);
                         $expanded = substr($expanded, 0, -3);
                         $followed = substr($followed, 0, -3);
                         $domain = substr($domain, 0, -3);
+                        $error = substr($error, 0, -3);
                     }
-                    $out .= "," . $urls . "," . $expanded . "," . $followed . "," . $domain;
+                    $out .= "," . $urls . "," . $expanded . "," . $followed . "," . $domain . ",".$error;
                 }
                 $out .= "\n";
             }
@@ -99,7 +102,7 @@ require_once './common/functions.php';
 
         echo '<fieldset class="if_parameters">';
         echo '<legend>Your File</legend>';
-        echo '<p><a href="' . str_replace("#", urlencode("#"), str_replace("\"", "%22", $filename)) . '">' . $filename . '</a></p>';
+        echo '<p><a href="' . str_replace("\\", "%5c", str_replace("[", "%5b", str_replace("]", "%5d", str_replace("#", urlencode("#"), str_replace("\"", "%22", $filename))))) . '">' . $filename . '</a></p>';
         echo '</fieldset>';
         ?>
 

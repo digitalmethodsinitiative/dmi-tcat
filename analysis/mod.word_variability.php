@@ -109,7 +109,7 @@ $method = "word";
 
             <table>
 
-                <form action="<?php echo "/coword/" . $_SERVER["PHP_SELF"]; ?>" method="GET">
+                <form action="<?php echo $_SERVER["PHP_SELF"]; ?>" method="GET">
                     <tr>
                         <td align='right'>Keyword to generate associational profile</td>
                         <td><input type="text" name="keywordToTrack" value="<?php echo $keywordToTrack; ?>" /> </td>

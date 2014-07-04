@@ -44,8 +44,10 @@ if (defined('ANALYSIS_URL'))
             "?dataset=" + $("#ipt_dataset").val() +
             "&query=" + $("#ipt_query").val().replace(/#/g,"%23") +
             "&url_query=" + $("#ipt_url_query").val().replace(/#/g,"%23") +
+            "&geo_query=" + $("#ipt_geo_query").val()  +
             "&exclude=" + $("#ipt_exclude").val().replace(/#/g,"%23") +
             "&from_user_name=" + $("#ipt_from_user").val() +
+            "&from_source=" + $("#ipt_from_source").val() +
             "&startdate=" + $("#ipt_startdate").val() +
             "&enddate=" + $("#ipt_enddate").val() +
             "&whattodo=" + $("#whattodo").val() +
@@ -203,7 +205,13 @@ if (defined('ANALYSIS_URL'))
                             <td class="tbl_head">From user: </td><td><input type="text" id="ipt_from_user" size="60" name="from_user_name"  value="<?php echo $from_user_name; ?>" /> (empty: from any user*)</td>
                         </tr>
                         <tr>
+                            <td class="tbl_head">From twitter client: </td><td><input type="text" id="ipt_from_source" size="60" name="from_source"  value="<?php echo $from_source; ?>" /> (empty: from any user*)</td>
+                        </tr>
+                        <tr>
                             <td class="tbl_head">URL (or part of URL): </td><td><input type="text" id="ipt_url_query" size="60" name="url_query"  value="<?php echo $url_query; ?>" /> (empty: any or all URLs*)</td>
+                        </tr>
+                        <tr>
+                            <td class="tbl_head">GEO bounding polygon: </td><td><input type="text" id="ipt_geo_query" size="180" name="geo_query"  value="<?php echo $geo_query; ?>" />POLYGON from <a href='http://en.wikipedia.org/wiki/Well-known_text'>WKT</a> format: point1lng point1lat, point2lng point2lat, point3lng point3lat, ...., point1lng point1lat<br />(example Bologna airport: 11.249631 44.520052,11.249631 44.551376,11.322587 44.551376, 11.322587 44.520052, 11.249631 44.520052)</td>
                         </tr>
                         <tr>
                             <td class="tbl_head">Startdate:</td><td><input type="text" id="ipt_startdate" size="60" name="startdate" value="<?php echo $startdate; ?>" /> (YYYY-MM-DD or YYYY-MM-DD HH:MM:SS)</td>
@@ -231,6 +239,7 @@ if (defined('ANALYSIS_URL'))
             $data = mysql_fetch_assoc($sqlresults);
             $numtweets = $data["count"];
 
+            //echo $sql;
             // count tweets containing links
             $sql = "SELECT count(distinct(t.id)) AS count FROM " . $esc['mysql']['dataset'] . "_urls u, " . $esc['mysql']['dataset'] . "_tweets t ";
             $where = "u.tweet_id = t.id AND ";
@@ -267,6 +276,11 @@ if (defined('ANALYSIS_URL'))
                         $show_url_export = true;
                 }
             }
+            // see whether the lang table exists
+            $show_lang_export = FALSE;
+            $sql = "SHOW TABLES LIKE '" . $esc['mysql']['dataset'] . "_lang'";
+            if (mysql_num_rows(mysql_query($sql)) == 1)
+                $show_lang_export = TRUE;
 
             // get data for the line graph
             $linedata = array();
@@ -367,7 +381,13 @@ if (defined('ANALYSIS_URL'))
                                 <td class="tbl_head">From user:</td><td><?php echo $esc['mysql']['from_user_name']; ?></td>
                             </tr>
                             <tr>
+                                <td class="tbl_head">From twitter client: </td><td><?php echo $esc['mysql']['from_source']; ?></td>
+                            </tr>
+                            <tr>
                                 <td class="tbl_head">(Part of) URL:</td><td><?php echo $esc['mysql']['url_query']; ?></td>
+                            </tr>
+                            <tr>
+                                <td class="tbl_head">GEO polygon:</td><td><?php echo $esc['mysql']['geo_query']; ?></td>
                             </tr>
                             <tr>
                                 <td class="tbl_head">Startdate:</td><td><?php echo $startdate; ?></td>
@@ -640,6 +660,18 @@ foreach ($linedata as $key => $value) {
                     <?php } ?>
                     <hr />
 
+                    <?php if ($show_lang_export) { ?>
+                        <h3>Export all tweets from selection, with language CLD data</h3>
+                        <div class="txt_desc">Contains all tweets and information about them (user, date created, ...), plus extra language analysis data.</div>
+                        <div class="txt_desc">Use: spend time with your data.</div>
+                        <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('export_tweets');sendUrl('mod.export_tweets_lang.php');return false;">export</a></div>
+                        <?php if ($show_url_export) { ?>
+                            <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('export_tweets&includeUrls=1');sendUrl('mod.export_tweets_lang.php');return false;">export with URLs</a> (much slower)</div>
+                        <?php } ?>
+                        <hr />
+                    <?php } ?>
+
+
                     <h3>List each individual retweet</h3>
                     <div class="txt_desc">Lists all retweets (and all the tweets metadata like follower_count) chronologically.</div>
                     <div class="txt_desc">Use: reconstruct retweet chains.</div>
@@ -713,6 +745,13 @@ foreach ($linedata as $key => $value) {
                         The more often they appear together, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>").</div>
                     <div class="txt_desc">Use: explore the relational <i>activity</i> between mentioned users and hashtags, find and analyze which users are considered experts around which topics.</div>
                     <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('mention_hashtags');sendUrl('mod.mention_hashtags.php');return false;">launch</a></div>
+
+                    <h3>Bipartite hashtag-source graph</h3>
+                    <div class="txt_desc">Produces a <a href="http://en.wikipedia.org/wiki/Bipartite_graph">bipartite graph</a> based on co-occurence of hashtags and "sources" (the client a
+                        tweet was sent from is its source) . If a hashtag is tweeted from a particular client, there will be a link between that client and the hashtag.
+                        The more often they appear together, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>").</div>
+                    <div class="txt_desc">Use: explore the relations between clients and hashtags, find and analyze which clients are related to which topics.</div>
+                    <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('mod.sources_hashtags');sendUrl('mod.sources_hashtags.php');return false;">launch</a></div>
 
                     <?php if ($show_url_export) { ?>
                         <hr />
