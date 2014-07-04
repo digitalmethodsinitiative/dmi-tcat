@@ -45,69 +45,69 @@ if (defined('ANALYSIS_URL'))
             "&query=" + $("#ipt_query").val().replace(/#/g,"%23") +
             "&url_query=" + $("#ipt_url_query").val().replace(/#/g,"%23") +
 <?php if (dbserver_has_geo_functions()) { ?>
-                        "&geo_query=" + $("#ipt_geo_query").val()  +
+            "&geo_query=" + $("#ipt_geo_query").val()  +
 <?php } ?>
-                        "&exclude=" + $("#ipt_exclude").val().replace(/#/g,"%23") +
-                            "&from_user_name=" + $("#ipt_from_user").val() +
-                            "&from_source=" + $("#ipt_from_source").val() +
-                            "&startdate=" + $("#ipt_startdate").val() +
-                            "&enddate=" + $("#ipt_enddate").val() +
-                            "&whattodo=" + $("#whattodo").val() +
-                            "&graph_resolution=" + $("input[name=graph_resolution]:checked").val();
+        "&exclude=" + $("#ipt_exclude").val().replace(/#/g,"%23") +
+            "&from_user_name=" + $("#ipt_from_user").val() +
+            "&from_source=" + $("#ipt_from_source").val() +
+            "&startdate=" + $("#ipt_startdate").val() +
+            "&enddate=" + $("#ipt_enddate").val() +
+            "&whattodo=" + $("#whattodo").val() +
+            "&graph_resolution=" + $("input[name=graph_resolution]:checked").val();
 
 
-                        document.location.href = _url;
-                    } 
-                    function saveSvg(id){
-                        $("svg").attr({ version: '1.1' , xmlns:"http://www.w3.org/2000/svg"});
-                        var e = document.getElementById(id);
-                        var svg = e.getElementsByTagName('svg')[0].parentNode.innerHTML;
-                        var b64 = window.btoa(unescape(encodeURIComponent(svg)));	 
-                        // Works in Firefox 3.6 and Webkit and possibly any browser which supports the data-uri
-                        $("#download_"+id).html($('<a style="width:25px;height:25px;" href-lang="image/svg+xml" href="data:image/svg+xml;base64,\n'+b64+'" title="file.svg">Download SVG</a>'));
-                    }
-                    function askFrequency() {
-                        var minf = prompt("Specify the minimum frequency for data to be included in the export:","2");
-                        return minf;
-                    }
-                    function askRetweetFrequency() {
-                        var minf = prompt("Specify the minimum times a tweet should be retweeted for it to be included in the export:","4");
-                        return minf;
-                    }
-                    function askInteractionFrequency() {
-                        var minf = prompt("Specify the minimum frequency for data to be included in the export:","4");
-                        return minf;
-                    }
-                    function askCascadeFrequency() {
-                        var minf = prompt("Specify the minimum number of tweets for the user to be included:","10");
-                        return minf;
-                    }
-                    function askTopht() {
-                        var topu = prompt("Specify number of top hashtags to get. (by frequency of hashtag, enter 0 to get all)","500");
-                        return topu;
-                    }
-                    function askMentions() {
-                        var topu = prompt("Specify number of top users you want to get. (by number of mentions, enter 0 to get all)","500");
-                        return topu;
-                    }
-                    function askLowercase() {
-                        var lower = prompt("Do you want to convert all words to lowercase? (enter 0 [=no] or 1 [=yes])", "0");
-                        return lower;
-                    }
-                    function getInterval() {
-                        var selected = $('[name="interval"]:checked');
-                        var selectedValue = "";
-                        if (selected.length > 0)
-                            selectedValue = selected.val();
-                        var inter = "&interval="+selectedValue+"&customInterval="+$('[name="customInterval"]').val();
-                        return inter;
-                    }
-                    $(document).ready(function(){
-                        $('#form').submit(function(){
-                            sendUrl();
-                            return false;
-                        });
-                    });
+        document.location.href = _url;
+    } 
+    function saveSvg(id){
+        $("svg").attr({ version: '1.1' , xmlns:"http://www.w3.org/2000/svg"});
+        var e = document.getElementById(id);
+        var svg = e.getElementsByTagName('svg')[0].parentNode.innerHTML;
+        var b64 = window.btoa(unescape(encodeURIComponent(svg)));	 
+        // Works in Firefox 3.6 and Webkit and possibly any browser which supports the data-uri
+        $("#download_"+id).html($('<a style="width:25px;height:25px;" href-lang="image/svg+xml" href="data:image/svg+xml;base64,\n'+b64+'" title="file.svg">Download SVG</a>'));
+    }
+    function askFrequency() {
+        var minf = prompt("Specify the minimum frequency for data to be included in the export:","2");
+        return minf;
+    }
+    function askRetweetFrequency() {
+        var minf = prompt("Specify the minimum times a tweet should be retweeted for it to be included in the export:","4");
+        return minf;
+    }
+    function askInteractionFrequency() {
+        var minf = prompt("Specify the minimum frequency for data to be included in the export:","4");
+        return minf;
+    }
+    function askCascadeFrequency() {
+        var minf = prompt("Specify the minimum number of tweets for the user to be included:","10");
+        return minf;
+    }
+    function askTopht() {
+        var topu = prompt("Specify number of top hashtags to get. (by frequency of hashtag, enter 0 to get all)","500");
+        return topu;
+    }
+    function askMentions() {
+        var topu = prompt("Specify number of top users you want to get. (by number of mentions, enter 0 to get all)","500");
+        return topu;
+    }
+    function askLowercase() {
+        var lower = prompt("Do you want to convert all words to lowercase? (enter 0 [=no] or 1 [=yes])", "0");
+        return lower;
+    }
+    function getInterval() {
+        var selected = $('[name="interval"]:checked');
+        var selectedValue = "";
+        if (selected.length > 0)
+            selectedValue = selected.val();
+        var inter = "&interval="+selectedValue+"&customInterval="+$('[name="customInterval"]').val();
+        return inter;
+    }
+    $(document).ready(function(){
+        $('#form').submit(function(){
+            sendUrl();
+            return false;
+        });
+    });
 
         </script>
 
@@ -208,10 +208,10 @@ if (defined('ANALYSIS_URL'))
                         <tr>
                             <td class="tbl_head">(Part of) URL: </td><td><input type="text" id="ipt_url_query" size="60" name="url_query"  value="<?php echo $url_query; ?>" /> (empty: any or all URLs*)</td>
                         </tr>
-                        <?php if(dbserver_has_geo_functions()) { ?>
-                        <tr>
-                            <td class="tbl_head">GEO bounding polygon: </td><td><input type="text" id="ipt_geo_query" size="60" name="geo_query"  value="<?php echo $geo_query; ?>" /> POLYGON in <a href='http://en.wikipedia.org/wiki/Well-known_text'>WKT</a> format.</td>
-                        </tr>
+                        <?php if (dbserver_has_geo_functions()) { ?>
+                            <tr>
+                                <td class="tbl_head">GEO bounding polygon: </td><td><input type="text" id="ipt_geo_query" size="60" name="geo_query"  value="<?php echo $geo_query; ?>" /> POLYGON in <a href='http://en.wikipedia.org/wiki/Well-known_text'>WKT</a> format.</td>
+                            </tr>
                         <?php } ?>
                         <tr>
                             <td class="tbl_head">Startdate:</td><td><input type="text" id="ipt_startdate" size="60" name="startdate" value="<?php echo $startdate; ?>" /> (YYYY-MM-DD or YYYY-MM-DD HH:MM:SS)</td>
@@ -786,6 +786,13 @@ foreach ($linedata as $key => $value) {
                     <div class="txt_desc">Use: visually explore temporal structures and retweets patterns.</div>
                     <div class="txt_desc"><b>Warning:</b> This view requires a large screen and is limited to (very) small data selections.</div>
                     <div class="txt_link"> &raquo; <a href="" onclick="var minf = askCascadeFrequency(); $('#whattodo').val('cascade&minf='+minf);sendUrl('mod.cascade.php');return false;">launch</a></div>
+
+                    <hr/>
+
+                    <h3>The Sankey Maker</h3>
+                    <div class="txt_desc">Produces an <a href='http://en.wikipedia.org/wiki/Alluvial_diagram' target='_blank'>alluvial diagram</a>.</div>
+                    <div class="txt_desc">Use: plot the relation between various fields such as from_user_lang, hashtags or Twitter client.</div>
+                    <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('mod.sankeymaker');sendUrl('mod.sankeymaker.php');return false;">launch</a></div>
 
                     <hr/>
 
