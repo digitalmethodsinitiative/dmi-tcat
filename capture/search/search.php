@@ -11,9 +11,11 @@ include_once BASE_FILE . '/capture/common/functions.php';
 
 require BASE_FILE . 'capture/common/tmhOAuth/tmhOAuth.php';
 
-$bin_name = '';
-$keywords = ''; // separate keywords by 'OR', limit your search to 10 keywords and operators - https://dev.twitter.com/docs/using-search
-$type = 'search'; // specify 'search' if you want this to be a standalone bin, or 'track' if you want to be able to continue tracking these keywords later on via BASE_URL/capture/index.php
+// DEFINE SEARCH PARAMETERS HERE
+
+$bin_name = '';       // name of the bin
+$keywords = '';       // separate keywords by 'OR', limit your search to 10 keywords and operators - https://dev.twitter.com/docs/using-search
+$type = 'search';     // specify 'search' if you want this to be a standalone bin, or 'track' if you want to be able to continue tracking these keywords later on via BASE_URL/capture/index.php
 
 if (empty($bin_name))
     die("bin_name not set\n");
@@ -29,12 +31,21 @@ $all_users = $all_tweet_ids = array();
 $dbh = pdo_connect();
 create_bin($bin_name, $dbh);
 
+$ratefree = 0;
+
 search($keywords);
 
 queryManagerCreateBinFromExistingTables($bin_name, $querybin_id, $type, explode("OR", $keywords));
 
 function search($keywords, $max_id = null) {
-    global $twitter_keys, $current_key, $all_users, $all_tweet_ids, $bin_name, $tweets_success, $tweets_failed, $tweets_processed, $dbh;
+    global $twitter_keys, $current_key, $ratefree, $all_users, $all_tweet_ids, $bin_name, $tweets_success, $tweets_failed, $tweets_processed, $dbh;
+
+    $ratefree--;
+    if ($ratefree < 1 || $ratefree % 10 == 0) {
+	$keyinfo = getRESTKey($current_key, 'search', 'tweets');
+	$current_key = $keyinfo['key'];
+	$ratefree = $keyinfo['remaining'];
+    }
 
     $tmhOAuth = new tmhOAuth(array(
                 'consumer_key' => $twitter_keys[$current_key]['twitter_consumer_key'],
@@ -58,29 +69,6 @@ function search($keywords, $max_id = null) {
     if ($tmhOAuth->response['code'] == 200) {
         $data = json_decode($tmhOAuth->response['response'], true);
         $tweets = $data['statuses'];
-        $search_metadata = $data['search_metadata'];
-        $headers = $tmhOAuth->response['headers'];
-        $ratelimitremaining = $headers['x-rate-limit-remaining'];
-        $ratelimitreset = $headers['x-rate-limit-reset'];
-        print "remaining $ratelimitremaining\n";
-
-        if ($ratelimitremaining == 0) {
-            $current_key++;
-            print "!!next key $current_key!!\n";
-            if ($current_key >= count($twitter_keys)) {
-                $current_key = 0;
-                $looped = 1;
-                print "resetting key to 0\n";
-            } elseif ($current_key == 0 && $looped == 1) {
-                if (count($tweets) > 1)
-                    $looped = 0;
-                else {
-                    print "looped over all keys but still can't get new tweets, sleeping\n";
-                    sleep(5);
-                }
-            }
-        }
-
         $tweet_ids = array();
         foreach ($tweets as $tweet) {
 
