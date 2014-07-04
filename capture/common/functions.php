@@ -344,7 +344,6 @@ function check_running_role($role) {
 
                 if ($running)
                     return TRUE;
-
             } else {
 
                 exec("ps -p $pid", $output);
@@ -352,13 +351,11 @@ function check_running_role($role) {
 
                 if ($running)
                     return TRUE;
-
             }
         }
-       
-         
+
+
         logit("controller.log", "check_running_role: no running $role script (pid $pid seems dead)");
- 
     }
 
     logit("controller.log", "check_running_role: no running $role script found");
@@ -425,7 +422,6 @@ function getActiveFollowBins() {
     $dbh = false;
     return $querybins;
 }
-
 
 function getActiveOnepercentBin() {
     $dbh = pdo_connect();
@@ -658,14 +654,17 @@ class Tweet {
             $this->id = $value;
         } elseif ($name == "in_reply_to_user_id_str") {
             $this->in_reply_to_user_id_str = $value;
-        } elseif ($name == "random_number" || $name == "withheld_scope" || $name == "status" || $name == "withheld_in_countries" || $name == "withheld_copyright") {
-            print $name . "=" . $value . " not available as a database field\n";
+        } elseif ($name == 'extended_entities' || $name == "random_number" || $name == "withheld_scope" || $name == "status" || $name == "withheld_in_countries" || $name == "withheld_copyright") {
+            if (is_string($value)) {
+                print $name . "=" . $value . " not available as a database field\n";
+            } else {
+                print $name . " is not available as a database field\n";
+            }
             return;
         } elseif ($name == "metadata") {
             return;
         } else {
-            print "Trying to set non existing class property: $name=$value\n";
-            //throw new Exception("Trying to set non existing class property: $name");
+            print "Trying to set non existing class property: " . var_export($name, 1) . "=" . var_export($value, 1) . "\n";
         }
     }
 
@@ -972,126 +971,120 @@ class UrlCollection implements IteratorAggregate {
 
 function tracker_run() {
 
-  if (!defined("CAPTURE")) {
+    if (!defined("CAPTURE")) {
 
-      /* logged to no file in particular, because we don't know which one. this should not happen. */
-      error_log("tracker_run() called without defining CAPTURE. have you set up config.php ?");
-      die();
+        /* logged to no file in particular, because we don't know which one. this should not happen. */
+        error_log("tracker_run() called without defining CAPTURE. have you set up config.php ?");
+        die();
+    }
 
-  }
+    $roles = unserialize(CAPTUREROLES);
+    if (!in_array(CAPTURE, $roles)) {
+        /* incorrect script execution, report back error to user */
+        error_log("tracker_run() role " . CAPTURE . " is not configured to run");
+        die();
+    }
 
-  $roles = unserialize(CAPTUREROLES);
-  if (!in_array(CAPTURE, $roles)) {
-      /* incorrect script execution, report back error to user */
-      error_log("tracker_run() role " . CAPTURE . " is not configured to run");
-      die();
-  }
+    // log execution environment
+    $phpstring = phpversion() . " in mode " . php_sapi_name() . " with extensions ";
+    $extensions = get_loaded_extensions();
+    $first = true;
+    foreach ($extensions as $ext) {
+        if ($first) {
+            $first = false;
+        } else {
+            $phpstring .= ',';
+        }
+        $phpstring .= "$ext";
+    }
+    $phpstring .= " (ini file: " . php_ini_loaded_file() . ")";
+    logit(CAPTURE . ".error.log", "running php version $phpstring");
 
-  // log execution environment
-  $phpstring = phpversion() . " in mode " . php_sapi_name() . " with extensions ";
-  $extensions = get_loaded_extensions();
-  $first = true;
-  foreach ($extensions as $ext) {
-      if ($first) {
-          $first = false;
-      } else {
-          $phpstring .= ',';
-      }
-      $phpstring .= "$ext"; 
-  }
-  $phpstring .= " (ini file: " . php_ini_loaded_file() . ")";
-  logit(CAPTURE . ".error.log",  "running php version $phpstring");
+    // install the signal handler
+    if (function_exists('pcntl_signal')) {
 
-  // install the signal handler
-  if (function_exists('pcntl_signal')) {
+        // tick use required as of PHP 4.3.0
+        declare(ticks = 1);
 
-      // tick use required as of PHP 4.3.0
-      declare(ticks = 1);
+        // See signal method discussion:
+        // http://darrendev.blogspot.nl/2010/11/php-53-ticks-pcntlsignal.html
 
-      // See signal method discussion:
-      // http://darrendev.blogspot.nl/2010/11/php-53-ticks-pcntlsignal.html
+        logit(CAPTURE . ".error.log", "installing term signal handler for this script");
 
-      logit(CAPTURE . ".error.log",  "installing term signal handler for this script");
+        // setup signal handlers
+        pcntl_signal(SIGTERM, "capture_signal_handler_term");
+    } else {
 
-      // setup signal handlers
-      pcntl_signal(SIGTERM, "capture_signal_handler_term");
+        logit(CAPTURE . ".error.log", "your php installation does not support signal handlers. graceful reload will not work");
+    }
 
-  } else {
+    global $ratelimit, $exceeding, $ex_start, $last_insert_id;
 
-      logit(CAPTURE . ".error.log",  "your php installation does not support signal handlers. graceful reload will not work");
+    $ratelimit = 0;     // rate limit counter since start of script
+    $exceeding = 0;     // are we exceeding the rate limit currently?
+    $ex_start = 0;      // time at which rate limit started being exceeded
+    $last_insert_id = -1;
 
-  }
+    global $twitter_consumer_key, $twitter_consumer_secret, $twitter_user_token, $twitter_user_secret, $lastinsert;
 
-  global $ratelimit, $exceeding, $ex_start, $last_insert_id;
+    $pid = getmypid();
+    logit(CAPTURE . ".error.log", "started script " . CAPTURE . " with pid $pid");
 
-  $ratelimit = 0;     // rate limit counter since start of script
-  $exceeding = 0;     // are we exceeding the rate limit currently?
-  $ex_start = 0;      // time at which rate limit started being exceeded
-  $last_insert_id = -1;
+    $lastinsert = time();
+    $procfilename = BASE_FILE . "proc/" . CAPTURE . ".procinfo";
+    if (file_put_contents($procfilename, $pid . "|" . time()) === FALSE) {
+        logit(CAPTURE . ".error.log", "cannot register capture script start time (file \"$procfilename\" is not WRITABLE. make sure the proc/ directory exists in your webroot and is writable by the cron user)");
+        die();
+    }
 
-  global $twitter_consumer_key, $twitter_consumer_secret, $twitter_user_token, $twitter_user_secret, $lastinsert;
+    $networkpath = isset($GLOBALS["HOSTROLE"][CAPTURE]) ? $GLOBALS["HOSTROLE"][CAPTURE] : 'https://stream.twitter.com/';
 
-  $pid = getmypid();
-  logit(CAPTURE . ".error.log", "started script " . CAPTURE . " with pid $pid");
+    // prepare queries
+    if (CAPTURE == "track") {
+        $querylist = getActivePhrases();
+        if (empty($querylist)) {
+            logit(CAPTURE . ".error.log", "empty query list, aborting!");
+            return;
+        }
+        $method = $networkpath . '1.1/statuses/filter.json';
+        $params = array("track" => implode(",", $querylist));
+    } elseif (CAPTURE == "follow") {
+        $querylist = getActiveUsers();
+        if (empty($querylist)) {
+            logit(CAPTURE . ".error.log", "empty query list, aborting!");
+            return;
+        }
+        $method = $networkpath . '1.1/statuses/filter.json';
+        $params = array("follow" => implode(",", $querylist));
+    } elseif (CAPTURE == "onepercent") {
+        $method = $networkpath . '1.1/statuses/sample.json';
+        $params = array('stall_warnings' => 'true');
+    }
 
-  $lastinsert = time();
-  $procfilename = BASE_FILE . "proc/" . CAPTURE . ".procinfo";
-  if (file_put_contents($procfilename, $pid . "|" . time()) === FALSE) {
-      logit(CAPTURE . ".error.log", "cannot register capture script start time (file \"$procfilename\" is not WRITABLE. make sure the proc/ directory exists in your webroot and is writable by the cron user)");
-      die();
-  }
+    logit(CAPTURE . ".error.log", "connecting to API socket");
+    $tmhOAuth = new tmhOAuth(array(
+                'consumer_key' => $twitter_consumer_key,
+                'consumer_secret' => $twitter_consumer_secret,
+                'token' => $twitter_user_token,
+                'secret' => $twitter_user_secret,
+                'host' => 'stream.twitter.com',
+            ));
+    $tmhOAuth->request_settings['headers']['Host'] = 'stream.twitter.com';
 
-  $networkpath = isset($GLOBALS["HOSTROLE"][CAPTURE]) ? $GLOBALS["HOSTROLE"][CAPTURE] : 'https://stream.twitter.com/';
+    if (CAPTURE == "track" || CAPTURE == "follow") {
+        logit(CAPTURE . ".error.log", "connecting - query " . var_export($params, 1));
+    } elseif (CAPTURE == "onepercent") {
+        logit(CAPTURE . ".error.log", "connecting to sample stream");
+    }
 
-  // prepare queries
-  if (CAPTURE == "track") {
-      $querylist = getActivePhrases();
-      if (empty($querylist)) {
-          logit(CAPTURE . ".error.log", "empty query list, aborting!");
-          return;
-      }
-      $method = $networkpath . '1.1/statuses/filter.json';
-      $params = array("track" => implode(",", $querylist));
-  }
-  elseif (CAPTURE == "follow") {
-      $querylist = getActiveUsers();
-      if (empty($querylist)) {
-          logit(CAPTURE . ".error.log", "empty query list, aborting!");
-          return;
-      }
-      $method = $networkpath . '1.1/statuses/filter.json';
-      $params = array("follow" => implode(",", $querylist));
-  }
-  elseif (CAPTURE == "onepercent") {
-      $method = $networkpath . '1.1/statuses/sample.json';
-      $params = array('stall_warnings' => 'true');
-  }
+    $tweetbucket = array();
+    $tmhOAuth->streaming_request('POST', $method, $params, 'tracker_streamCallback', array('Host' => 'stream.twitter.com'));
 
-  logit(CAPTURE . ".error.log", "connecting to API socket");
-  $tmhOAuth = new tmhOAuth(array(
-              'consumer_key' => $twitter_consumer_key,
-              'consumer_secret' => $twitter_consumer_secret,
-              'token' => $twitter_user_token,
-              'secret' => $twitter_user_secret,
-              'host' => 'stream.twitter.com',
-          ));
-  $tmhOAuth->request_settings['headers']['Host'] = 'stream.twitter.com';
+    // output any response we get back AFTER the Stream has stopped -- or it errors
+    logit(CAPTURE . ".error.log", "stream stopped - error " . var_export($tmhOAuth, 1));
 
-  if (CAPTURE == "track" || CAPTURE == "follow") {
-     logit(CAPTURE . ".error.log", "connecting - query " . var_export($params, 1));
-  } elseif (CAPTURE == "onepercent") {
-     logit(CAPTURE . ".error.log", "connecting to sample stream");
-  }
-
-  $tweetbucket = array();
-  $tmhOAuth->streaming_request('POST', $method, $params, 'tracker_streamCallback', array('Host' => 'stream.twitter.com'));
-
-  // output any response we get back AFTER the Stream has stopped -- or it errors
-  logit(CAPTURE . ".error.log", "stream stopped - error " . var_export($tmhOAuth, 1));
-
-  logit(CAPTURE . ".error.log", "processing buffer before exit");
-  processtweets($tweetbucket);
-
+    logit(CAPTURE . ".error.log", "processing buffer before exit");
+    processtweets($tweetbucket);
 }
 
 /*
@@ -1102,7 +1095,7 @@ function tracker_streamCallback($data, $length, $metrics) {
     global $tweetbucket, $lastinsert;
     $now = time();
     $data = json_decode($data, true);
-  
+
     if ($data) {
 
         if (array_key_exists('disconnect', $data)) {
@@ -1243,21 +1236,18 @@ function processtweets($tweetbucket) {
 
                     // at the first fitting query, we break
                     if ($pass == true) {
-                     $found = true;
-                     break;
+                        $found = true;
+                        break;
                     }
                 }
-
             } elseif (CAPTURE == "follow") {
 
                 // we check for every query in the bin if they fit
                 $found = in_array($data["user"]["id"], $queries) ? TRUE : FALSE;
-
             } elseif (CAPTURE == "onepercent") {
 
                 // always match in onepercent
                 $found = true;
-
             }
 
             // if the tweet does not fit in the current bin, go to the next tweet
@@ -1421,5 +1411,58 @@ function database_activity() {
     return FALSE;
 }
 
+// REST API key swapping functions.
+// Uses the global $twitter_keys
+
+// This function may cause a sleep when no key is available
+function getRESTKey($current_key, $resource = 'statuses', $query = 'lookup') {
+    global $twitter_keys;
+
+    $start_key = $current_key;
+    $remaining = getRemainingForKey($current_key, $resource, $query);
+    if ($remaining) return array ( 'key' => $current_key, 'remaining' => $remaining );
+    do {
+        $current_key++;
+        if ($current_key >= count($twitter_keys)) {
+            $current_key = 0;
+        }
+        if ($current_key == $start_key) sleep(180);
+        $remaining = getRemainingForKey($current_key, $resource, $query);
+    } while ($remaining == 0);
+
+    return array( 'key' => $current_key, 'remaining' => $remaining );
+}
+
+function getRemainingForKey($current_key, $resource = 'statuses', $query = 'lookup') {
+    global $twitter_keys;
+
+    // rate limit test
+
+    $tmhOAuth = new tmhOAuth(array(
+                'consumer_key' => $twitter_keys[$current_key]['twitter_consumer_key'],
+                'consumer_secret' => $twitter_keys[$current_key]['twitter_consumer_secret'],
+                'token' => $twitter_keys[$current_key]['twitter_user_token'],
+                'secret' => $twitter_keys[$current_key]['twitter_user_secret'],
+            ));
+    $params = array(
+        'resources' => $resource,
+    );
+
+    $code = $tmhOAuth->user_request(array(
+        'method' => 'GET',
+        'url' => $tmhOAuth->url('1.1/application/rate_limit_status'),
+        'params' => $params
+            ));
+
+    if ($tmhOAuth->response['code'] == 200) {
+        $data = json_decode($tmhOAuth->response['response'], true);
+        return $data['resources'][$resource]["/$resource/$query"]['remaining'];
+    } else {
+	echo "Warning: API key $current_key seems invalid (cannot receive rate limit status)\n";
+	return 0;
+	
+    }
+
+}
 
 ?>

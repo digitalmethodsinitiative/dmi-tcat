@@ -47,7 +47,7 @@ if (empty($user_ids))
 
 $querybin_id = queryManagerBinExists($bin_name);
 
-$current_key = $looped = 0;
+$ratefree = $current_key = $looped = 0;
 
 create_bin($bin_name, $dbh);
 
@@ -62,7 +62,14 @@ queryManagerCreateBinFromExistingTables($bin_name, $querybin_id, $type);
 
 function get_timeline($user_id, $type, $max_id = null) {
     print "doing $user_id\n";
-    global $twitter_keys, $current_key, $looped, $bin_name, $dbh;
+    global $twitter_keys, $current_key, $ratefree, $looped, $bin_name, $dbh;
+
+    $ratefree--;
+    if ($ratefree < 1 || $ratefree % 10 == 0) {
+	$keyinfo = getRESTKey($current_key, 'statuses', 'user_timeline');
+	$current_key = $keyinfo['key'];
+	$ratefree = $keyinfo['remaining'];
+    }
 
     $tmhOAuth = new tmhOAuth(array(
                 'consumer_key' => $twitter_keys[$current_key]['twitter_consumer_key'],
@@ -96,29 +103,6 @@ function get_timeline($user_id, $type, $max_id = null) {
 
     if ($tmhOAuth->response['code'] == 200) {
         $tweets = json_decode($tmhOAuth->response['response'], true);
-
-        // check rate limiting
-        $headers = $tmhOAuth->response['headers'];
-        $ratelimitremaining = $headers['x-rate-limit-remaining'];
-        $ratelimitreset = $headers['x-rate-limit-reset'];
-        print "remaining API requests: $ratelimitremaining\n";
-
-        if ($ratelimitremaining == 0) {
-            $current_key++;
-            print "next key $current_key\n";
-            if ($current_key >= count($twitter_keys)) {
-                $current_key = 0;
-                $looped = 1;
-                print "resetting key to 0\n";
-            } elseif ($current_key == 0 && $looped == 1) {
-                if (count($tweets) > 1)
-                    $looped = 0;
-                else {
-                    print "looped over all keys but still can't get new tweets, sleeping\n";
-                    sleep(5);
-                }
-            }
-        }
 
         // store in db
         $tweet_ids = array();
