@@ -596,7 +596,7 @@ $method = "word";
 
                                                                     echo '<fieldset class="if_parameters">';
                                                                     echo '<legend>Your co-hashtag time-series File</legend>';
-                                                                    echo '<p><a href="' . str_replace("#", urlencode("#"), str_replace("\"", "%22", $filename)) . '">' . $filename . '</a></p>';
+                                                                    echo '<p><a href="' . filename_to_url($filename) . '">' . $filename . '</a></p>';
                                                                     echo '</fieldset>';
                                                                 }
 
@@ -700,7 +700,7 @@ $method = "word";
                                                                     file_put_contents($filename, chr(239) . chr(187) . chr(191) . $out);
                                                                     echo '<fieldset class="if_parameters">';
                                                                     echo '<legend>Your co-hashtag variability File</legend>';
-                                                                    echo '<p><a href="' . str_replace("#", urlencode("#"), str_replace("\"", "%22", $filename)) . '">' . $filename . '</a></p>';
+                                                                    echo '<p><a href="' . filename_to_url($filename) . '">' . $filename . '</a></p>';
                                                                     echo '</fieldset>';
                                                                 }
 

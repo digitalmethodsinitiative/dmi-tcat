@@ -158,7 +158,7 @@ function get_file($what) {
     generate($what, $filename);
 
     // redirect to file
-    $location = str_replace("index.php", "", ANALYSIS_URL) . str_replace("#", "%23", $filename);
+    $location = str_replace("index.php", "", ANALYSIS_URL) . filename_to_url($filename);
     if (defined('LOCATION'))
         $location = LOCATION . $location;
     header("Content-type: text/csv");
@@ -640,6 +640,7 @@ function validate_all_variables() {
     $esc['shell']['url_query'] = validate($url_query, "shell");
     $esc['shell']['geo_query'] = validate($geo_query, "shell");
     $esc['shell']['exclude'] = validate($exclude, "shell");
+    $esc['shell']['from_source'] = validate($from_source, "shell");
     $esc['shell']['from_user_name'] = validate($from_user_name, "shell");
     $esc['shell']['from_user_lang'] = validate($from_user_lang, "shell");
     $esc['shell']['datasetname'] = validate($dataset, "shell");
@@ -674,6 +675,7 @@ function get_filename_for_export($module, $settings = "", $filetype = "csv") {
     $filename .= "-" . preg_replace("/[-: ]/", "", $esc['date']["enddate"]);
     $filename .= "-" . stripslashes($esc['shell']["query"]);
     $filename .= "-" . $esc['shell']["exclude"];
+    $filename .= "-" . $esc['shell']["from_source"];
     $filename .= "-" . $esc['shell']["from_user_name"];
     $filename .= "-" . $esc['shell']["from_user_lang"];
     $filename .= "-" . $esc['shell']["url_query"];
@@ -683,6 +685,10 @@ function get_filename_for_export($module, $settings = "", $filetype = "csv") {
     $filename .= "-" . $hash;   // sofware version
     $filename .= "." . $filetype;
     return $filename;
+}
+
+function filename_to_url($filename) {
+    return str_replace("\\", "%5c", str_replace("[", "%5b", str_replace("]", "%5d", str_replace("#", urlencode("#"), str_replace("\"", "%22", $filename)))));
 }
 
 // get all @replies in a message

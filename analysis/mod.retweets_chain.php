@@ -124,7 +124,7 @@ require_once './common/functions.php';
         $filename = get_filename_for_export("retweets_chain", $min_nr_of_nodes);
         file_put_contents($filename, chr(239) . chr(187) . chr(191) . $out);
 
-        echo '<p><a href="' . str_replace("#", urlencode("#"), str_replace("\"", "%22", $filename)) . '">' . $filename . '</a></p>';
+        echo '<p><a href="' . filename_to_url($filename) . '">' . $filename . '</a></p>';
 
         echo '</fieldset>';
         //print strftime("%T", date('U')) . "<br>";
