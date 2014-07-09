@@ -390,9 +390,6 @@ if (defined('ANALYSIS_URL'))
                                 </tr>
                             <?php } ?>
                             <tr>
-                                <td class="tbl_head">GEO polygon:</td><td><?php echo $esc['mysql']['geo_query']; ?></td>
-                            </tr>
-                            <tr>
                                 <td class="tbl_head">Startdate:</td><td><?php echo $startdate; ?></td>
                             </tr>
                             <tr>
