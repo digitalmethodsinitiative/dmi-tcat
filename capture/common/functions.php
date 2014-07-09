@@ -346,7 +346,6 @@ function check_running_role($role) {
 
                 if ($running)
                     return TRUE;
-
             } else {
 
                 exec("ps -p $pid", $output);
@@ -354,13 +353,11 @@ function check_running_role($role) {
 
                 if ($running)
                     return TRUE;
-
             }
         }
-       
-         
+
+
         logit("controller.log", "check_running_role: no running $role script (pid $pid seems dead)");
- 
     }
 
     logit("controller.log", "check_running_role: no running $role script found");
@@ -378,7 +375,7 @@ function getActivePhrases() {
     $dbh = pdo_connect();
     $sql = "SELECT DISTINCT(p.phrase) FROM tcat_query_phrases p, tcat_query_bins_phrases bp, tcat_query_bins b
                                       WHERE bp.endtime = '0000-00-00 00:00:00' AND p.id = bp.phrase_id
-                                            AND bp.querybin_id = b.id AND b.type != 'geotrack' AND b.active = 1"; 
+                                            AND bp.querybin_id = b.id AND b.type != 'geotrack' AND b.active = 1";
     $rec = $dbh->prepare($sql);
     $rec->execute();
     $results = $rec->fetchAll(PDO::FETCH_COLUMN);
@@ -432,13 +429,13 @@ function geobinsActive() {
 
 function coordinatesInsideBoundingBox($point_lng, $point_lat, $sw_lng, $sw_lat, $ne_lng, $ne_lat) {
     $boxwkt = 'POLYGON((' . $sw_lng . ' ' . $sw_lat . ', '
-			              . $sw_lng . ' ' . $ne_lat . ', '
-			              . $ne_lng . ' ' . $ne_lat . ', '
-			              . $ne_lng . ' ' . $sw_lat . ', '
-			              . $sw_lng . ' ' . $sw_lat . '))';
+            . $sw_lng . ' ' . $ne_lat . ', '
+            . $ne_lng . ' ' . $ne_lat . ', '
+            . $ne_lng . ' ' . $sw_lat . ', '
+            . $sw_lng . ' ' . $sw_lat . '))';
     $pointwkt = 'POINT(' . $point_lng . ' ' . $point_lat . ')';
-	$geobox = geoPHP::load($boxwkt, 'wkt');
-	$geopoint = geoPHP::load($pointwkt, 'wkt');
+    $geobox = geoPHP::load($boxwkt, 'wkt');
+    $geopoint = geoPHP::load($pointwkt, 'wkt');
     return $geobox->contains($geopoint);
 }
 
@@ -450,15 +447,15 @@ function getActiveLocationsImploded() {
     $dbh = pdo_connect();
     $sql = "SELECT phrase FROM tcat_query_phrases p, tcat_query_bins_phrases bp, tcat_query_bins b
                                       WHERE bp.endtime = '0000-00-00 00:00:00' AND p.id = bp.phrase_id
-                                            AND bp.querybin_id = b.id AND b.type = 'geotrack' AND b.active = 1"; 
+                                            AND bp.querybin_id = b.id AND b.type = 'geotrack' AND b.active = 1";
     $rec = $dbh->prepare($sql);
     $rec->execute();
     $results = $rec->fetchAll(PDO::FETCH_COLUMN);
     $locations = '';
     foreach ($results as $k => $v) {
-        $locations .= $v.",";
+        $locations .= $v . ",";
     }
-    $locations = substr($locations,0,-1);
+    $locations = substr($locations, 0, -1);
     $dbh = false;
     return $locations;
 }
@@ -541,7 +538,6 @@ function getActiveFollowBins() {
     $dbh = false;
     return $querybins;
 }
-
 
 function getActiveOnepercentBin() {
     $dbh = pdo_connect();
@@ -774,14 +770,17 @@ class Tweet {
             $this->id = $value;
         } elseif ($name == "in_reply_to_user_id_str") {
             $this->in_reply_to_user_id_str = $value;
-        } elseif ($name == "random_number" || $name == "withheld_scope" || $name == "status" || $name == "withheld_in_countries" || $name == "withheld_copyright") {
-            print $name . "=" . $value . " not available as a database field\n";
+        } elseif ($name == 'extended_entities' || $name == "random_number" || $name == "withheld_scope" || $name == "status" || $name == "withheld_in_countries" || $name == "withheld_copyright") {
+            if (is_string($value)) {
+                print $name . "=" . $value . " not available as a database field\n";
+            } else {
+                print $name . " is not available as a database field\n";
+            }
             return;
         } elseif ($name == "metadata") {
             return;
         } else {
-            print "Trying to set non existing class property: $name=$value\n";
-            //throw new Exception("Trying to set non existing class property: $name");
+            print "Trying to set non existing class property: " . var_export($name, 1) . "=" . var_export($value, 1) . "\n";
         }
     }
 
@@ -1088,138 +1087,132 @@ class UrlCollection implements IteratorAggregate {
 
 function tracker_run() {
 
-  if (!defined("CAPTURE")) {
+    if (!defined("CAPTURE")) {
 
-      /* logged to no file in particular, because we don't know which one. this should not happen. */
-      error_log("tracker_run() called without defining CAPTURE. have you set up config.php ?");
-      die();
+        /* logged to no file in particular, because we don't know which one. this should not happen. */
+        error_log("tracker_run() called without defining CAPTURE. have you set up config.php ?");
+        die();
+    }
 
-  }
+    $roles = unserialize(CAPTUREROLES);
+    if (!in_array(CAPTURE, $roles)) {
+        /* incorrect script execution, report back error to user */
+        error_log("tracker_run() role " . CAPTURE . " is not configured to run");
+        die();
+    }
 
-  $roles = unserialize(CAPTUREROLES);
-  if (!in_array(CAPTURE, $roles)) {
-      /* incorrect script execution, report back error to user */
-      error_log("tracker_run() role " . CAPTURE . " is not configured to run");
-      die();
-  }
+    // log execution environment
+    $phpstring = phpversion() . " in mode " . php_sapi_name() . " with extensions ";
+    $extensions = get_loaded_extensions();
+    $first = true;
+    foreach ($extensions as $ext) {
+        if ($first) {
+            $first = false;
+        } else {
+            $phpstring .= ',';
+        }
+        $phpstring .= "$ext";
+    }
+    $phpstring .= " (ini file: " . php_ini_loaded_file() . ")";
+    logit(CAPTURE . ".error.log", "running php version $phpstring");
 
-  // log execution environment
-  $phpstring = phpversion() . " in mode " . php_sapi_name() . " with extensions ";
-  $extensions = get_loaded_extensions();
-  $first = true;
-  foreach ($extensions as $ext) {
-      if ($first) {
-          $first = false;
-      } else {
-          $phpstring .= ',';
-      }
-      $phpstring .= "$ext"; 
-  }
-  $phpstring .= " (ini file: " . php_ini_loaded_file() . ")";
-  logit(CAPTURE . ".error.log",  "running php version $phpstring");
+    // install the signal handler
+    if (function_exists('pcntl_signal')) {
 
-  // install the signal handler
-  if (function_exists('pcntl_signal')) {
+        // tick use required as of PHP 4.3.0
+        declare(ticks = 1);
 
-      // tick use required as of PHP 4.3.0
-      declare(ticks = 1);
+        // See signal method discussion:
+        // http://darrendev.blogspot.nl/2010/11/php-53-ticks-pcntlsignal.html
 
-      // See signal method discussion:
-      // http://darrendev.blogspot.nl/2010/11/php-53-ticks-pcntlsignal.html
+        logit(CAPTURE . ".error.log", "installing term signal handler for this script");
 
-      logit(CAPTURE . ".error.log",  "installing term signal handler for this script");
+        // setup signal handlers
+        pcntl_signal(SIGTERM, "capture_signal_handler_term");
+    } else {
 
-      // setup signal handlers
-      pcntl_signal(SIGTERM, "capture_signal_handler_term");
+        logit(CAPTURE . ".error.log", "your php installation does not support signal handlers. graceful reload will not work");
+    }
 
-  } else {
+    global $ratelimit, $exceeding, $ex_start, $last_insert_id;
 
-      logit(CAPTURE . ".error.log",  "your php installation does not support signal handlers. graceful reload will not work");
+    $ratelimit = 0;     // rate limit counter since start of script
+    $exceeding = 0;     // are we exceeding the rate limit currently?
+    $ex_start = 0;      // time at which rate limit started being exceeded
+    $last_insert_id = -1;
 
-  }
+    global $twitter_consumer_key, $twitter_consumer_secret, $twitter_user_token, $twitter_user_secret, $lastinsert;
 
-  global $ratelimit, $exceeding, $ex_start, $last_insert_id;
+    $pid = getmypid();
+    logit(CAPTURE . ".error.log", "started script " . CAPTURE . " with pid $pid");
 
-  $ratelimit = 0;     // rate limit counter since start of script
-  $exceeding = 0;     // are we exceeding the rate limit currently?
-  $ex_start = 0;      // time at which rate limit started being exceeded
-  $last_insert_id = -1;
+    $lastinsert = time();
+    $procfilename = BASE_FILE . "proc/" . CAPTURE . ".procinfo";
+    if (file_put_contents($procfilename, $pid . "|" . time()) === FALSE) {
+        logit(CAPTURE . ".error.log", "cannot register capture script start time (file \"$procfilename\" is not WRITABLE. make sure the proc/ directory exists in your webroot and is writable by the cron user)");
+        die();
+    }
 
-  global $twitter_consumer_key, $twitter_consumer_secret, $twitter_user_token, $twitter_user_secret, $lastinsert;
+    $networkpath = isset($GLOBALS["HOSTROLE"][CAPTURE]) ? $GLOBALS["HOSTROLE"][CAPTURE] : 'https://stream.twitter.com/';
 
-  $pid = getmypid();
-  logit(CAPTURE . ".error.log", "started script " . CAPTURE . " with pid $pid");
+    // prepare queries
+    if (CAPTURE == "track") {
 
-  $lastinsert = time();
-  $procfilename = BASE_FILE . "proc/" . CAPTURE . ".procinfo";
-  if (file_put_contents($procfilename, $pid . "|" . time()) === FALSE) {
-      logit(CAPTURE . ".error.log", "cannot register capture script start time (file \"$procfilename\" is not WRITABLE. make sure the proc/ directory exists in your webroot and is writable by the cron user)");
-      die();
-  }
+        // check for geolocation bins
+        $locations = geobinsActive() ? getActiveLocationsImploded() : false;
 
-  $networkpath = isset($GLOBALS["HOSTROLE"][CAPTURE]) ? $GLOBALS["HOSTROLE"][CAPTURE] : 'https://stream.twitter.com/';
+        // assemble query
+        $querylist = getActivePhrases();
+        if (empty($querylist) && !geobinsActive()) {
+            logit(CAPTURE . ".error.log", "empty query list, aborting!");
+            return;
+        }
+        $method = $networkpath . '1.1/statuses/filter.json';
+        $track = implode(",", $querylist);
+        $params = array();
+        if (geobinsActive()) {
+            $params['locations'] = $locations;
+        }
+        if (!empty($querylist)) {
+            $params['track'] = $track;
+        }
+    } elseif (CAPTURE == "follow") {
+        $querylist = getActiveUsers();
+        if (empty($querylist)) {
+            logit(CAPTURE . ".error.log", "empty query list, aborting!");
+            return;
+        }
+        $method = $networkpath . '1.1/statuses/filter.json';
+        $params = array("follow" => implode(",", $querylist));
+    } elseif (CAPTURE == "onepercent") {
+        $method = $networkpath . '1.1/statuses/sample.json';
+        $params = array('stall_warnings' => 'true');
+    }
 
-  // prepare queries
-  if (CAPTURE == "track") {
+    logit(CAPTURE . ".error.log", "connecting to API socket");
+    $tmhOAuth = new tmhOAuth(array(
+                'consumer_key' => $twitter_consumer_key,
+                'consumer_secret' => $twitter_consumer_secret,
+                'token' => $twitter_user_token,
+                'secret' => $twitter_user_secret,
+                'host' => 'stream.twitter.com',
+            ));
+    $tmhOAuth->request_settings['headers']['Host'] = 'stream.twitter.com';
 
-      // check for geolocation bins
-      $locations = geobinsActive() ? getActiveLocationsImploded() : false;
+    if (CAPTURE == "track" || CAPTURE == "follow") {
+        logit(CAPTURE . ".error.log", "connecting - query " . var_export($params, 1));
+    } elseif (CAPTURE == "onepercent") {
+        logit(CAPTURE . ".error.log", "connecting to sample stream");
+    }
 
-      // assemble query
-      $querylist = getActivePhrases();
-      if (empty($querylist) && !geobinsActive()) {
-          logit(CAPTURE . ".error.log", "empty query list, aborting!");
-          return;
-      }
-      $method = $networkpath . '1.1/statuses/filter.json';
-      $track = implode(",", $querylist);
-      $params = array();
-      if (geobinsActive()) {
-          $params['locations'] = $locations;
-      }
-      if (!empty($querylist)) {
-          $params['track'] = $track;
-      }
-  }
-  elseif (CAPTURE == "follow") {
-      $querylist = getActiveUsers();
-      if (empty($querylist)) {
-          logit(CAPTURE . ".error.log", "empty query list, aborting!");
-          return;
-      }
-      $method = $networkpath . '1.1/statuses/filter.json';
-      $params = array("follow" => implode(",", $querylist));
-  }
-  elseif (CAPTURE == "onepercent") {
-      $method = $networkpath . '1.1/statuses/sample.json';
-      $params = array('stall_warnings' => 'true');
-  }
+    $tweetbucket = array();
+    $tmhOAuth->streaming_request('POST', $method, $params, 'tracker_streamCallback', array('Host' => 'stream.twitter.com'));
 
-  logit(CAPTURE . ".error.log", "connecting to API socket");
-  $tmhOAuth = new tmhOAuth(array(
-              'consumer_key' => $twitter_consumer_key,
-              'consumer_secret' => $twitter_consumer_secret,
-              'token' => $twitter_user_token,
-              'secret' => $twitter_user_secret,
-              'host' => 'stream.twitter.com',
-          ));
-  $tmhOAuth->request_settings['headers']['Host'] = 'stream.twitter.com';
+    // output any response we get back AFTER the Stream has stopped -- or it errors
+    logit(CAPTURE . ".error.log", "stream stopped - error " . var_export($tmhOAuth, 1));
 
-  if (CAPTURE == "track" || CAPTURE == "follow") {
-     logit(CAPTURE . ".error.log", "connecting - query " . var_export($params, 1));
-  } elseif (CAPTURE == "onepercent") {
-     logit(CAPTURE . ".error.log", "connecting to sample stream");
-  }
-
-  $tweetbucket = array();
-  $tmhOAuth->streaming_request('POST', $method, $params, 'tracker_streamCallback', array('Host' => 'stream.twitter.com'));
-
-  // output any response we get back AFTER the Stream has stopped -- or it errors
-  logit(CAPTURE . ".error.log", "stream stopped - error " . var_export($tmhOAuth, 1));
-
-  logit(CAPTURE . ".error.log", "processing buffer before exit");
-  processtweets($tweetbucket);
-
+    logit(CAPTURE . ".error.log", "processing buffer before exit");
+    processtweets($tweetbucket);
 }
 
 /*
@@ -1311,7 +1304,7 @@ function processtweets($tweetbucket) {
 
     // we run through every bin to check whether the received tweets fit
     foreach ($querybins as $binname => $queries) {
-	create_bin($binname);
+        create_bin($binname);
         $list_tweets = array();
         $list_hashtags = array();
         $list_urls = array();
@@ -1336,9 +1329,9 @@ function processtweets($tweetbucket) {
             }
 
             if ($geobin && (!array_key_exists('geo_enabled', $data['user']) || $data['user']['geo_enabled'] !== true)) {
-	        // in geobins, process only geo tweets
-		continue;
-	    }
+                // in geobins, process only geo tweets
+                continue;
+            }
 
             $found = false;
 
@@ -1365,14 +1358,14 @@ function processtweets($tweetbucket) {
                          *
                          * 1) Twitter will give us all the tweets which have excplicit GPS coordinates inside one of our queried areas.
                          * 2) Additionaly Twitter give us those tweets with a user 'place' definition. A place (i.e. Paris) is itself a (set of) gps polygons
-			 *    Twitter returns the tweets if one of these place polygons coverts the same area as our geo boxes.  
+                         *    Twitter returns the tweets if one of these place polygons coverts the same area as our geo boxes.  
                          *
                          * And matching (by us)
-			 *
+                         *
                          * 1) These tweets will be put in the bin if the coordinate pair (longitude, latitude) fits in any one of the defined geoboxes in the bin.
                          * 2) These tweets will be put in the bin if the geobox is _not_ completely subsumed by the place (example: the place is France and the geobox is Paris), but the geobox does overlap the place polygon or the geobox subsumes the place polygon.
                          *
-    `                    */
+                          ` */
 
                         if ($data["geo"] != null) {
                             $tweet_lat = $data["geo"]["coordinates"][0];
@@ -1386,12 +1379,12 @@ function processtweets($tweetbucket) {
                                     foreach ($boxes as $box) {
                                         if (coordinatesInsideBoundingBox($tweet_lng, $tweet_lat, $box['sw_lng'], $box['sw_lat'], $box['ne_lng'], $box['ne_lat'])) {
                                             # logit(CAPTURE . ".error.log", "(debug) tweet with lng $tweet_lng and lat $tweet_lat versus (sw: " . $box['sw_lng'] . "," . $box['sw_lat'] . " ne: " . $box['ne_lng'] . "," . $box['ne_lat'] . ") matched to be inside the area");
-                                            $found = true; break;
+                                            $found = true;
+                                            break;
                                         } else {
                                             # logit(CAPTURE . ".error.log", "(debug) tweet with lng $tweet_lng and lat $tweet_lat versus (sw: " . $box['sw_lng'] . "," . $box['sw_lat'] . " ne: " . $box['ne_lng'] . "," . $box['ne_lat'] . ") falls outside the area");
                                         }
                                     }
-
                                 }
                             }
                         } else if (!preg_match("/[^\-0-9,\.]/", $track)) {
@@ -1408,107 +1401,108 @@ function processtweets($tweetbucket) {
                                     $wkt = 'POLYGON(';
                                     $polfirst = true;
                                     foreach ($data['place']['bounding_box']['coordinates'] as $p => $pol) {
-                                        if ($polfirst) { $polfirst = false; } else { $wkt .= ', '; }
+                                        if ($polfirst) {
+                                            $polfirst = false;
+                                        } else {
+                                            $wkt .= ', ';
+                                        }
                                         $wkt .= '(';
                                         $first = true;
-                                        $first_lng = 0; $first_lat = 0;
+                                        $first_lng = 0;
+                                        $first_lat = 0;
                                         foreach ($data['place']['bounding_box']['coordinates'][$p] as $i => $coords) {
-                                               $point_lng = $coords[0];
-                                               $point_lat = $coords[1];
-                                               if ($first) {
-                                                       $first = false;
-                                                       $first_lng = $point_lng;
-                                                       $first_lat = $point_lat;
-                                               } else {
-                                                       $wkt .= ', ';
-                                               }
-                                               $wkt .= $point_lng . ' ' . $point_lat;
+                                            $point_lng = $coords[0];
+                                            $point_lat = $coords[1];
+                                            if ($first) {
+                                                $first = false;
+                                                $first_lng = $point_lng;
+                                                $first_lat = $point_lat;
+                                            } else {
+                                                $wkt .= ', ';
+                                            }
+                                            $wkt .= $point_lng . ' ' . $point_lat;
                                         }
                                         // end where we started
                                         $wkt .= ', ' . $first_lng . ' ' . $first_lat;
-                                        $wkt .= ')'; 
+                                        $wkt .= ')';
                                     }
                                     $wkt .= ')';
-                                    $place = geoPHP::load($wkt,'wkt');
+                                    $place = geoPHP::load($wkt, 'wkt');
 
                                     // iterate over geoboxes in our track
                                     // place should not spatially contain our box, but it should overlap with it
                                     foreach ($boxes as $box) {
                                         // 'POLYGON((x1 y1, x1 y2, x2 y2, x2 y1, x1 y1))'
                                         $boxwkt = 'POLYGON((' . $box['sw_lng'] . ' ' . $box['sw_lat'] . ', '
-                                                          . $box['sw_lng'] . ' ' . $box['ne_lat'] . ', '
-                                                          . $box['ne_lng'] . ' ' . $box['ne_lat'] . ', '
-                                                          . $box['ne_lng'] . ' ' . $box['sw_lat'] . ', '
-                                                          . $box['sw_lng'] . ' ' . $box['sw_lat'] . '))';
+                                                . $box['sw_lng'] . ' ' . $box['ne_lat'] . ', '
+                                                . $box['ne_lng'] . ' ' . $box['ne_lat'] . ', '
+                                                . $box['ne_lng'] . ' ' . $box['sw_lat'] . ', '
+                                                . $box['sw_lng'] . ' ' . $box['sw_lat'] . '))';
                                         $versus = geoPHP::load($boxwkt, 'wkt');
                                         $contains = $place->contains($versus);
                                         $boxcontains = $versus->contains($place);
                                         $overlaps = $place->overlaps($versus);
                                         if (!$contains && ($boxcontains || $overlaps)) {
-                                                // logit(CAPTURE . ".error.log", "place polygon $wkt allies with geobox $boxwkt");
-                                                $found = true; break;
+                                            // logit(CAPTURE . ".error.log", "place polygon $wkt allies with geobox $boxwkt");
+                                            $found = true;
+                                            break;
                                         }
-
                                     }
-                                    
                                 }
                             }
                         }
-     
-                        if ($found) { break; }
 
+                        if ($found) {
+                            break;
+                        }
                     } else {
 
                         // look for keyword matches
 
-			$pass = false;
+                        $pass = false;
 
-			// check for queries with more than one word, but go around quoted queries
-			if (preg_match("/ /", $query) && !preg_match("/'/", $query)) {
-			    $tmplist = explode(" ", $query);
+                        // check for queries with more than one word, but go around quoted queries
+                        if (preg_match("/ /", $query) && !preg_match("/'/", $query)) {
+                            $tmplist = explode(" ", $query);
 
-			    $all = true;
+                            $all = true;
 
-			    foreach ($tmplist as $tmp) {
-				if (!preg_match("/" . $tmp . "/i", $data["text"])) {
-				    $all = false;
-				    break;
-				}
-			    }
+                            foreach ($tmplist as $tmp) {
+                                if (!preg_match("/" . $tmp . "/i", $data["text"])) {
+                                    $all = false;
+                                    break;
+                                }
+                            }
 
-			    // only if all words are found
-			    if ($all == true) {
-				$pass = true;
-			    }
-			} else {
+                            // only if all words are found
+                            if ($all == true) {
+                                $pass = true;
+                            }
+                        } else {
 
-			    // treat quoted queries as single words
-			    $query = preg_replace("/'/", "", $query);
+                            // treat quoted queries as single words
+                            $query = preg_replace("/'/", "", $query);
 
-			    if (preg_match("/" . $query . "/i", $data["text"])) {
-				$pass = true;
-			    }
-			}
+                            if (preg_match("/" . $query . "/i", $data["text"])) {
+                                $pass = true;
+                            }
+                        }
 
-			// at the first fitting query, we break
-			if ($pass == true) {
-			    $found = true;
-			    break;
-			}
-
-		    }
+                        // at the first fitting query, we break
+                        if ($pass == true) {
+                            $found = true;
+                            break;
+                        }
+                    }
                 }
-
             } elseif (CAPTURE == "follow") {
 
                 // we check for every query in the bin if they fit
                 $found = in_array($data["user"]["id"], $queries) ? TRUE : FALSE;
-
             } elseif (CAPTURE == "onepercent") {
 
                 // always match in onepercent
                 $found = true;
-
             }
 
             // if the tweet does not fit in the current bin, go to the next tweet
@@ -1675,5 +1669,57 @@ function database_activity() {
     return FALSE;
 }
 
+// REST API key swapping functions.
+// Uses the global $twitter_keys
+// This function may cause a sleep when no key is available
+function getRESTKey($current_key, $resource = 'statuses', $query = 'lookup') {
+    global $twitter_keys;
+
+    $start_key = $current_key;
+    $remaining = getRemainingForKey($current_key, $resource, $query);
+    if ($remaining)
+        return array('key' => $current_key, 'remaining' => $remaining);
+    do {
+        $current_key++;
+        if ($current_key >= count($twitter_keys)) {
+            $current_key = 0;
+        }
+        if ($current_key == $start_key)
+            sleep(180);
+        $remaining = getRemainingForKey($current_key, $resource, $query);
+    } while ($remaining == 0);
+
+    return array('key' => $current_key, 'remaining' => $remaining);
+}
+
+function getRemainingForKey($current_key, $resource = 'statuses', $query = 'lookup') {
+    global $twitter_keys;
+
+    // rate limit test
+
+    $tmhOAuth = new tmhOAuth(array(
+                'consumer_key' => $twitter_keys[$current_key]['twitter_consumer_key'],
+                'consumer_secret' => $twitter_keys[$current_key]['twitter_consumer_secret'],
+                'token' => $twitter_keys[$current_key]['twitter_user_token'],
+                'secret' => $twitter_keys[$current_key]['twitter_user_secret'],
+            ));
+    $params = array(
+        'resources' => $resource,
+    );
+
+    $code = $tmhOAuth->user_request(array(
+        'method' => 'GET',
+        'url' => $tmhOAuth->url('1.1/application/rate_limit_status'),
+        'params' => $params
+            ));
+
+    if ($tmhOAuth->response['code'] == 200) {
+        $data = json_decode($tmhOAuth->response['response'], true);
+        return $data['resources'][$resource]["/$resource/$query"]['remaining'];
+    } else {
+        echo "Warning: API key $current_key seems invalid (cannot receive rate limit status)\n";
+        return 0;
+    }
+}
 
 ?>

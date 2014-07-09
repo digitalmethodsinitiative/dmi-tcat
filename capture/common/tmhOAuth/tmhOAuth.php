@@ -802,6 +802,10 @@ class tmhOAuth {
       CURLINFO_HEADER_OUT    => true,
     ));
 
+    if (defined('CURLOPT_EXPECT_100_TIMEOUT_MS')) {
+	curl_setopt($c, CURLOPT_EXPECT_100_TIMEOUT_MS, 10000);
+    }
+
     if ($this->config['curl_cainfo'] !== false)
       curl_setopt($c, CURLOPT_CAINFO, $this->config['curl_cainfo']);
 

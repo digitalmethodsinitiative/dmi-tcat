@@ -1,6 +1,9 @@
 <?php
 require_once './common/config.php';
 require_once './common/functions.php';
+
+$lowercase = isset($_GET['lowercase']) ? $lowercase = $_GET['lowercase'] : 0;
+$minf = isset($_GET['minf']) ? $minf = $_GET['minf'] : 1;
 ?>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -23,28 +26,36 @@ require_once './common/functions.php';
 
     <body>
 
-        <h1>Export Tweet IDs</h1>
+        <h1>Twitter Analytics - Word frequency</h1>
 
         <?php
         validate_all_variables();
 
-
-        $sql = "SELECT id FROM " . $esc['mysql']['dataset'] . "_tweets t ";
+        $filename = get_filename_for_export("wordList");
+        $csv = fopen($filename, "w");
+        
+        mysql_query("set names utf8");
+        $sql = "SELECT id, text FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
+        
         $sqlresults = mysql_query($sql);
-        $out = "";
+        $debug = '';
         if ($sqlresults) {
             while ($data = mysql_fetch_assoc($sqlresults)) {
-                if (preg_match("/_urls/", $sql))
-                    $id = $data['tweet_id'];
-                else
-                    $id = $data['id'];
-                $out .= $id . "\n";
+                $text = validate($data["text"], "tweet");
+                preg_match_all('/(https?:\/\/[^\s]+)|([\p{L}][\p{L}]+)/u', $text, $matches, PREG_PATTERN_ORDER);
+                foreach ($matches[0] as $word) {
+                    if (preg_match('/(https?:\/\/)/u', $word))
+                        continue;
+                    //if ($lowercase !== 0)
+                        $word = strtolower($word);
+                    fputs($csv, trim($word)."\t {'ids': [" . $data['id'] . "]}" . "\n");
+                }
             }
         }
 
-        $filename = get_filename_for_export("ids");
-        file_put_contents($filename, chr(239) . chr(187) . chr(191) . $out);
+
+        fclose($csv);
 
         echo '<fieldset class="if_parameters">';
         echo '<legend>Your File</legend>';

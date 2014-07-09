@@ -108,7 +108,7 @@ validate_all_variables();
 
             <table>
 
-                <form action="<?php echo "/coword/" . $_SERVER["PHP_SELF"]; ?>" method="GET">
+                <form action="<?php echo $_SERVER["PHP_SELF"]; ?>" method="GET">
                     <tr>
                         <td align='right'>Keyword to generate associational profile</td>
                         <td><input type="text" name="keywordToTrack" value="<?php echo $keywordToTrack; ?>" /> </td>
@@ -543,7 +543,7 @@ validate_all_variables();
 
                                                                 echo '<fieldset class="if_parameters">';
                                                                 echo '<legend>Your co-hashtag time-series File</legend>';
-                                                                echo '<p><a href="' . str_replace("#", urlencode("#"), str_replace("\"", "%22", $filename)) . '">' . $filename . '</a></p>';
+                                                                echo '<p><a href="' . filename_to_url($filename) . '">' . $filename . '</a></p>';
                                                                 echo '</fieldset>';
                                                             }
 
@@ -647,7 +647,7 @@ validate_all_variables();
                                                                 file_put_contents($filename, chr(239) . chr(187) . chr(191) . $out);
                                                                 echo '<fieldset class="if_parameters">';
                                                                 echo '<legend>Your co-hashtag variability File</legend>';
-                                                                echo '<p><a href="' . str_replace("#", urlencode("#"), str_replace("\"", "%22", $filename)) . '">' . $filename . '</a></p>';
+                                                                echo '<p><a href="' . filename_to_url($filename) . '">' . $filename . '</a></p>';
                                                                 echo '</fieldset>';
                                                             }
 

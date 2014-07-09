@@ -23,7 +23,7 @@ else
 if (isset($_GET['geo_query']) && !empty($_GET['geo_query'])) {
     $geo_query = urldecode($_GET['geo_query']);
     if (preg_match("/[^\,\.0-9 ]/", $geo_query)) {
-            die("<font size='+1' color='red'>The GEO polygon should contain only longitude latitude pairs (with dots inside for precision), seperated by a single whitespace, and after the pair a comma to mark the next point in the polygon.</font><br />Make the polygon end at the point where you started drawing it. Please see the provided example for the proper value of a WKT polygon.");
+        die("<font size='+1' color='red'>The GEO polygon should contain only longitude latitude pairs (with dots inside for precision), seperated by a single whitespace, and after the pair a comma to mark the next point in the polygon.</font><br />Make the polygon end at the point where you started drawing it. Please see the provided example for the proper value of a WKT polygon.");
     }
 } else {
     $geo_query = "";
@@ -32,6 +32,10 @@ if (isset($_GET['exclude']) && !empty($_GET['exclude']))
     $exclude = urldecode($_GET['exclude']);
 else
     $exclude = "";
+if (isset($_GET['from_source']) && !empty($_GET['from_source']))
+    $from_source = urldecode($_GET['from_source']);
+else
+    $from_source = "";
 if (isset($_GET['from_user_name']) && !empty($_GET['from_user_name']))
     $from_user_name = urldecode($_GET['from_user_name']);
 else
@@ -85,7 +89,11 @@ if (isset($_GET['showvis']) && !empty($_GET['showvis']))
     $showvis = $_GET['showvis'];
 else
     $showvis = "";
-
+$graph_resolution = "day";
+if (isset($_GET['graph_resolution']) && !empty($_GET['graph_resolution'])) {
+    if (array_search($_GET['graph_resolution'], array("minute", "hour")) !== false)
+        $graph_resolution = $_GET['graph_resolution'];
+}
 $interval = "daily";
 if (isset($_REQUEST['interval'])) {
     if (in_array($_REQUEST['interval'], array('hourly', 'daily', 'weekly', 'monthly', 'yearly', 'overall', 'custom')))
@@ -150,7 +158,7 @@ function get_file($what) {
     generate($what, $filename);
 
     // redirect to file
-    $location = str_replace("index.php", "", ANALYSIS_URL) . str_replace("#", "%23", $filename);
+    $location = str_replace("index.php", "", ANALYSIS_URL) . filename_to_url($filename);
     if (defined('LOCATION'))
         $location = LOCATION . $location;
     header("Content-type: text/csv");
@@ -261,20 +269,20 @@ function sqlSubset($where = NULL) {
             $sql .= ") AND ";
         }
     }
-    if (!empty($esc['mysql']['geo_query'])) {
 
-	// geo_lat != '0.00000' and geo_lng != '0.00000' and MBRContains(GeomFromText('POLYGON((11.249631 44.520052,11.249631 44.551376,11.322587 44.551376, 11.322587 44.520052, 11.249631 44.520052))'), PointFromText(CONCAT('POINT(',geo_lng,' ',geo_lat,')')) );
+    if (!empty($esc['mysql']['geo_query']) && dbserver_has_geo_functions()) {
 
-	$polygon = "POLYGON((" . $esc['mysql']['geo_query'] . "))";
+        $polygon = "POLYGON((" . $esc['mysql']['geo_query'] . "))";
 
-	$polygonfromtext = "GeomFromText('" . $polygon . "')";
+        $polygonfromtext = "GeomFromText('" . $polygon . "')";
         $pointfromtext = "PointFromText(CONCAT('POINT(',t.geo_lng,' ',t.geo_lat,')'))";
 
-	$sql .= " ( t.geo_lat != '0.00000' and t.geo_lng != '0.00000' and MBRContains(" . $polygonfromtext . ", " . $pointfromtext . ") ";
+        $sql .= " ( t.geo_lat != '0.00000' and t.geo_lng != '0.00000' and ST_Contains(" . $polygonfromtext . ", " . $pointfromtext . ") ";
 
-	$sql .= " ) AND ";
-
-
+        $sql .= " ) AND ";
+    }
+    if (!empty($esc['mysql']['from_source'])) {
+        $sql .= "LOWER(t.source) LIKE '%" . $esc['mysql']['from_source'] . "%' AND ";
     }
     if (!empty($esc['mysql']['exclude'])) {
         if (strstr($esc['mysql']['exclude'], "AND") !== false) {
@@ -574,12 +582,16 @@ function validate($what, $how) {
             break;
         // if date is not in yyyymmdd format, set startdate to 0
         case "startdate":
+            if (preg_match("/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/", $what))
+                break;
             if (!preg_match("/^\d{4}-\d{2}-\d{2}$/", $what))
                 $what = "2011-11-14";
             break;
         // if date is not in yyyymmdd format, set enddate to end of current day
         case "enddate":
             $now = date('U');
+            if (preg_match("/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/", $what))
+                break;
             if (!preg_match("/^\d{4}-\d{2}-\d{2}$/", $what)) // TODO, should never be more than 'now'
                 $what = "2011-11-15";
             break;
@@ -595,8 +607,7 @@ function validate($what, $how) {
             break;
         // escape non-mysql chars
         case "mysql":
-            if (substr($what, 0, 1) == "[" && substr($what, -1) == "]") // allow for queries with spaces
-                $what = substr($what, 1, -1);
+            $what = preg_replace("/[\[\]]/", "", $what);
             $what = mysql_real_escape_string($what);
             break;
         case "tweet":
@@ -615,13 +626,14 @@ function validate($what, $how) {
 // make sure that we have all the right types and values
 // also make sure one cannot do a mysql injection attack
 function validate_all_variables() {
-    global $esc, $query, $url_query, $geo_query, $dataset, $exclude, $from_user_name, $startdate, $enddate, $databases, $connection, $keywords, $database, $minf, $topu, $from_user_lang;
+    global $esc, $query, $url_query, $geo_query, $dataset, $exclude, $from_user_name, $from_source, $startdate, $enddate, $databases, $connection, $keywords, $database, $minf, $topu, $from_user_lang;
 
     $esc['mysql']['dataset'] = validate($dataset, "mysql");
     $esc['mysql']['query'] = validate($query, "mysql");
     $esc['mysql']['url_query'] = validate($url_query, "mysql");
     $esc['mysql']['geo_query'] = validate($geo_query, "mysql");
     $esc['mysql']['exclude'] = validate($exclude, "mysql");
+    $esc['mysql']['from_source'] = validate($from_source, "mysql");
     $esc['mysql']['from_user_name'] = validate($from_user_name, "mysql");
     $esc['mysql']['from_user_lang'] = validate($from_user_lang, "mysql");
 
@@ -630,6 +642,7 @@ function validate_all_variables() {
     $esc['shell']['url_query'] = validate($url_query, "shell");
     $esc['shell']['geo_query'] = validate($geo_query, "shell");
     $esc['shell']['exclude'] = validate($exclude, "shell");
+    $esc['shell']['from_source'] = validate($from_source, "shell");
     $esc['shell']['from_user_name'] = validate($from_user_name, "shell");
     $esc['shell']['from_user_lang'] = validate($from_user_lang, "shell");
     $esc['shell']['datasetname'] = validate($dataset, "shell");
@@ -639,8 +652,15 @@ function validate_all_variables() {
 
     $esc['date']['startdate'] = validate($startdate, "startdate");
     $esc['date']['enddate'] = validate($enddate, "enddate");
-    $esc['datetime']['startdate'] = $esc['date']['startdate'] . " 00:00:00";
-    $esc['datetime']['enddate'] = $esc['date']['enddate'] . " 23:59:59";
+
+    if (preg_match("/^\d{4}-\d{2}-\d{2}$/", $esc['date']['startdate']))
+        $esc['datetime']['startdate'] = $esc['date']['startdate'] . " 00:00:00";
+    else
+        $esc['datetime']['startdate'] = $esc['date']['startdate'];
+    if (preg_match("/^\d{4}-\d{2}-\d{2}$/", $esc['date']['enddate']))
+        $esc['datetime']['enddate'] = $esc['date']['enddate'] . " 23:59:59";
+    else
+        $esc['datetime']['enddate'] = $esc['date']['enddate'];
 }
 
 // Output format: {dataset}-{startdate}-{enddate}-{query}-{exclude}-{from_user_name}-{from_user_lang}-{url_query}-{module_name}-{module_settings}-{hash}.{filetype}
@@ -653,10 +673,11 @@ function get_filename_for_export($module, $settings = "", $filetype = "csv") {
     // construct filename
     $filename = $resultsdir;
     $filename .= $esc['shell']["datasetname"];
-    $filename .= "-" . str_replace("-", "", $esc['date']["startdate"]);
-    $filename .= "-" . str_replace("-", "", $esc['date']["enddate"]);
-    $filename .= "-" . $esc['shell']["query"];
+    $filename .= "-" . preg_replace("/[-: ]/", "", $esc['date']["startdate"]);
+    $filename .= "-" . preg_replace("/[-: ]/", "", $esc['date']["enddate"]);
+    $filename .= "-" . stripslashes($esc['shell']["query"]);
     $filename .= "-" . $esc['shell']["exclude"];
+    $filename .= "-" . $esc['shell']["from_source"];
     $filename .= "-" . $esc['shell']["from_user_name"];
     $filename .= "-" . $esc['shell']["from_user_lang"];
     $filename .= "-" . $esc['shell']["url_query"];
@@ -666,6 +687,10 @@ function get_filename_for_export($module, $settings = "", $filetype = "csv") {
     $filename .= "-" . $hash;   // sofware version
     $filename .= "." . $filetype;
     return $filename;
+}
+
+function filename_to_url($filename) {
+    return str_replace("\\", "%5c", str_replace("[", "%5b", str_replace("]", "%5d", str_replace("#", urlencode("#"), str_replace("\"", "%22", $filename)))));
 }
 
 // get all @replies in a message
@@ -762,6 +787,20 @@ function db_connect($db_host, $db_user, $db_pass, $db_name) {
         echo "Error: Unable to set the character set.\n";
         exit;
     }
+}
+
+function dbserver_has_geo_functions() {
+    // the analysis frontend currently uses the mysql_* functions
+    $version = mysql_get_server_info();
+    if (preg_match("/([0-9]*)\.([0-9]*)\.([0-9]*)/", $version, $matches)) {
+        $maj = $matches[1];
+        $min = $matches[2];
+        $upd = $matches[3];
+        if ($maj >= 5 && $min >= 6 && $upd >= 1) {
+            return true;
+        }
+    }
+    return false;
 }
 
 function pdo_connect() {

@@ -44,22 +44,27 @@ if (defined('ANALYSIS_URL'))
             "?dataset=" + $("#ipt_dataset").val() +
             "&query=" + $("#ipt_query").val().replace(/#/g,"%23") +
             "&url_query=" + $("#ipt_url_query").val().replace(/#/g,"%23") +
+<?php if (dbserver_has_geo_functions()) { ?>
             "&geo_query=" + $("#ipt_geo_query").val()  +
-            "&exclude=" + $("#ipt_exclude").val().replace(/#/g,"%23") +
+<?php } ?>
+        "&exclude=" + $("#ipt_exclude").val().replace(/#/g,"%23") +
             "&from_user_name=" + $("#ipt_from_user").val() +
+            "&from_source=" + $("#ipt_from_source").val() +
             "&startdate=" + $("#ipt_startdate").val() +
             "&enddate=" + $("#ipt_enddate").val() +
-            "&whattodo=" + $("#whattodo").val();
+            "&whattodo=" + $("#whattodo").val() +
+            "&graph_resolution=" + $("input[name=graph_resolution]:checked").val();
 
         document.location.href = _url;
+    } 
+    function saveSvg(id){
+        $("svg").attr({ version: '1.1' , xmlns:"http://www.w3.org/2000/svg"});
+        var e = document.getElementById(id);
+        var svg = e.getElementsByTagName('svg')[0].parentNode.innerHTML;
+        var b64 = window.btoa(unescape(encodeURIComponent(svg)));	 
+        // Works in Firefox 3.6 and Webkit and possibly any browser which supports the data-uri
+        $("#download_"+id).html($('<a style="width:25px;height:25px;" href-lang="image/svg+xml" href="data:image/svg+xml;base64,\n'+b64+'" title="file.svg">Download SVG</a>'));
     }
-    $(document).ready(function(){
-        $('#form').submit(function(){
-            sendUrl();
-            return false;
-        });
-    });
-
     function askFrequency() {
         var minf = prompt("Specify the minimum frequency for data to be included in the export:","2");
         return minf;
@@ -96,6 +101,12 @@ if (defined('ANALYSIS_URL'))
         var inter = "&interval="+selectedValue+"&customInterval="+$('[name="customInterval"]').val();
         return inter;
     }
+    $(document).ready(function(){
+        $('#form').submit(function(){
+            sendUrl();
+            return false;
+        });
+    });
 
         </script>
 
@@ -191,17 +202,22 @@ if (defined('ANALYSIS_URL'))
                             <td class="tbl_head">From user: </td><td><input type="text" id="ipt_from_user" size="60" name="from_user_name"  value="<?php echo $from_user_name; ?>" /> (empty: from any user*)</td>
                         </tr>
                         <tr>
-                            <td class="tbl_head">URL (or part of URL): </td><td><input type="text" id="ipt_url_query" size="60" name="url_query"  value="<?php echo $url_query; ?>" /> (empty: any or all URLs*)</td>
+                            <td class="tbl_head">From twitter client: </td><td><input type="text" id="ipt_from_source" size="60" name="from_source"  value="<?php echo $from_source; ?>" /> (empty: from any user*)</td>
                         </tr>
                         <tr>
-                            <td class="tbl_head">GEO bounding rectangle: </td><td><input type="text" id="ipt_geo_query" size="180" name="geo_query"  value="<?php echo $geo_query; ?>" />Minimal bounding rectangle defined by POLYGON from <a href='http://en.wikipedia.org/wiki/Well-known_text'>WKT</a> format: point1lng point1lat, point2lng point2lat, point3lng point3lat, ...., point1lng point1lat<br />(example Bologna airport: 11.249631 44.520052,11.249631 44.551376,11.322587 44.551376, 11.322587 44.520052, 11.249631 44.520052)</td>
+                            <td class="tbl_head">(Part of) URL: </td><td><input type="text" id="ipt_url_query" size="60" name="url_query"  value="<?php echo $url_query; ?>" /> (empty: any or all URLs*)</td>
                         </tr>
+                        <?php if (dbserver_has_geo_functions()) { ?>
+                            <tr>
+                                <td class="tbl_head">GEO bounding polygon: </td><td><input type="text" id="ipt_geo_query" size="60" name="geo_query"  value="<?php echo $geo_query; ?>" /> POLYGON in <a href='http://en.wikipedia.org/wiki/Well-known_text'>WKT</a> format.</td>
+                            </tr>
+                        <?php } ?>
                         <tr>
-                            <td class="tbl_head">Startdate:</td><td><input type="text" id="ipt_startdate" size="60" name="startdate" value="<?php echo $startdate; ?>" /> (YYYY-MM-DD)</td>
+                            <td class="tbl_head">Startdate:</td><td><input type="text" id="ipt_startdate" size="60" name="startdate" value="<?php echo $startdate; ?>" /> (YYYY-MM-DD or YYYY-MM-DD HH:MM:SS)</td>
                         </tr>
 
                         <tr>
-                            <td class="tbl_head">Enddate:</td><td><input type="text" id="ipt_enddate" size="60" name="enddate" value="<?php echo $enddate; ?>" /> (YYYY-MM-DD)</td>
+                            <td class="tbl_head">Enddate:</td><td><input type="text" id="ipt_enddate" size="60" name="enddate" value="<?php echo $enddate; ?>" /> (YYYY-MM-DD or YYYY-MM-DD HH:MM:SS)</td>
                         </tr>
                         <tr>
                             <td><input type="submit" value="update overview" /></td>
@@ -221,6 +237,7 @@ if (defined('ANALYSIS_URL'))
             $sqlresults = mysql_query($sql);
             $data = mysql_fetch_assoc($sqlresults);
             $numtweets = $data["count"];
+
             // count tweets containing links
             $sql = "SELECT count(distinct(t.id)) AS count FROM " . $esc['mysql']['dataset'] . "_urls u, " . $esc['mysql']['dataset'] . "_tweets t ";
             $where = "u.tweet_id = t.id AND ";
@@ -248,7 +265,7 @@ if (defined('ANALYSIS_URL'))
             $show_url_export = false;
             if ($numlinktweets) {
                 $sql = "SELECT count(u.id) as count FROM " . $esc['mysql']['dataset'] . "_urls u, " . $esc['mysql']['dataset'] . "_tweets t ";
-                $where = "u.tweet_id = t.id AND u.url_followed != '' AND ";
+                $where = "u.tweet_id = t.id AND u.error_code != '' AND ";
                 $sql .= sqlSubset($where);
                 $rec = mysql_query($sql);
                 if ($rec && mysql_num_rows($rec) > 0) {
@@ -264,24 +281,27 @@ if (defined('ANALYSIS_URL'))
                 $show_lang_export = TRUE;
 
             // get data for the line graph
-            $period = ( (strtotime($esc['datetime']['enddate']) - strtotime($esc['datetime']['startdate'])) <= 86400 * 2) ? "hour" : "day"; // @todo
-            $curdate = strtotime($esc['datetime']['startdate']);
             $linedata = array();
+            $curdate = strtotime($esc['datetime']['startdate']);
 
-            $sql = "SELECT COUNT(t.text) as count, COUNT(DISTINCT(t.from_user_name)) as usercount, COUNT(DISTINCT(t.location)) as loccount, COUNT(DISTINCT(t.geo_lat)) as geocount, ";
-            if ($period == "day") // @todo
-                $sql .= "DATE_FORMAT(t.created_at,'%Y.%d.%m') datepart ";
-            else
-                $sql .= "DATE_FORMAT(t.created_at,'%d. %H:00h') datepart ";
-            $sql .= "FROM " . $esc['mysql']['dataset'] . "_tweets t ";
-            $sql .= sqlSubset();
-            $sql .= "GROUP BY datepart";
-            $rec = mysql_query($sql);
+            $period = $graph_resolution;
+
             // initialize with empty dates
-            while ($curdate < strtotime($esc['datetime']['enddate'])) {
-                $thendate = ($period == "day") ? $curdate + 86400 : $curdate + 3600;
+            while ($curdate <= strtotime($esc['datetime']['enddate'])) {
+                if ($period == "day")
+                    $thendate = $curdate + 86400;
+                elseif ($period == "hour")
+                    $thendate = $curdate + 3600;
+                elseif ($period == "minute")
+                    $thendate = $curdate + 60;
 
-                $tmp = ($period == "day") ? strftime("%Y.%d.%m", $curdate) : strftime("%d. %H:%M", $curdate) . "h";
+                if ($period == "day")
+                    $tmp = strftime("%Y-%m-%d", $curdate);
+                elseif ($period == "hour")
+                    $tmp = strftime("%Y-%m-%d %H:00", $curdate);
+                else
+                    $tmp = strftime("%Y-%m-%d %H:%M", $curdate);
+
                 $linedata[$tmp] = array();
                 $linedata[$tmp]["tweets"] = 0;
                 $linedata[$tmp]["users"] = 0;
@@ -293,6 +313,18 @@ if (defined('ANALYSIS_URL'))
             }
 
             // overwrite zeroed dates
+            $sql = "SELECT COUNT(t.text) as count, COUNT(DISTINCT(t.from_user_name)) as usercount, COUNT(DISTINCT(t.location)) as loccount, SUM(if(t.geo_lat != '0.000000', 1, 0)) AS geocount, ";
+            if ($period == "day")
+                $sql .= "DATE_FORMAT(t.created_at,'%Y-%m-%d') datepart ";
+            elseif ($period == "hour")
+                $sql .= "DATE_FORMAT(t.created_at,'%Y-%m-%d %H:00') datepart ";
+            else
+                $sql .= "DATE_FORMAT(t.created_at,'%Y-%m-%d %H:%i') datepart ";
+            $sql .= "FROM " . $esc['mysql']['dataset'] . "_tweets t ";
+            $sql .= sqlSubset();
+            $sql .= "GROUP BY datepart ORDER BY datepart";
+
+            $rec = mysql_query($sql);
             while ($res = mysql_fetch_assoc($rec)) {
                 $linedata[$res['datepart']]["tweets"] = $res['count'];
                 $linedata[$res['datepart']]["users"] = $res['usercount'];
@@ -304,15 +336,16 @@ if (defined('ANALYSIS_URL'))
 
                 $sql = "SELECT COUNT(t.text) as count, ";
                 if ($period == "day")
-                    $sql .= "DATE_FORMAT(t.created_at,'%Y.%d.%m') datepart ";
+                    $sql .= "DATE_FORMAT(t.created_at,'%Y-%m-%d') datepart ";
+                elseif ($period == "hour")
+                    $sql .= "DATE_FORMAT(t.created_at,'%Y-%m-%d %H:00') datepart ";
                 else
-                    $sql .= "DATE_FORMAT(t.created_at,'%d. %H:00h') datepart ";
+                    $sql .= "DATE_FORMAT(t.created_at,'%Y-%m-%d %H:%i') datepart ";
                 $sql .= "FROM " . $esc['mysql']['dataset'] . "_tweets t ";
                 $sql .= "WHERE t.created_at >= '" . $esc['datetime']['startdate'] . "' AND t.created_at <= '" . $esc['datetime']['enddate'] . "' ";
-                $sql .= "GROUP BY datepart";
+                $sql .= "GROUP BY datepart ORDER BY datepart";
                 $rec = mysql_query($sql);
 
-                // overwrite found dates
                 while ($res = mysql_fetch_assoc($rec)) {
                     $linedata[$res['datepart']]["full"] = $res['count'];
                 }
@@ -346,8 +379,16 @@ if (defined('ANALYSIS_URL'))
                                 <td class="tbl_head">From user:</td><td><?php echo $esc['mysql']['from_user_name']; ?></td>
                             </tr>
                             <tr>
+                                <td class="tbl_head">From twitter client: </td><td><?php echo $esc['mysql']['from_source']; ?></td>
+                            </tr>
+                            <tr>
                                 <td class="tbl_head">(Part of) URL:</td><td><?php echo $esc['mysql']['url_query']; ?></td>
                             </tr>
+                            <?php if (dbserver_has_geo_functions()) { ?>
+                                <tr>
+                                    <td class="tbl_head">GEO polygon:</td><td><?php echo $esc['mysql']['geo_query']; ?></td>
+                                </tr>
+                            <?php } ?>
                             <tr>
                                 <td class="tbl_head">GEO polygon:</td><td><?php echo $esc['mysql']['geo_query']; ?></td>
                             </tr>
@@ -384,12 +425,16 @@ if (defined('ANALYSIS_URL'))
                         chart.draw(data, {width: 380, height: 160});
 
                     </script>
+
                 </div>
 
                 <hr />
 
                 <div id="if_panel_linegraph"></div>
-
+                <div class='svglink'>
+                    <div class='generate_svglink' onclick="saveSvg('if_panel_linegraph')">Generate SVG</div>
+                    <div class='download_svglink' id="download_if_panel_linegraph"></div> 
+                </div>
                 <br />
 
                 <div id="if_panel_linegraph_norm"></div>
@@ -422,7 +467,7 @@ foreach ($linedata as $key => $value) {
 ?>
 
     var chart = new google.visualization.LineChart(document.getElementById('if_panel_linegraph'));
-    chart.draw(data, {width:1000, height:360, fontSize:9, lineWidth:1, hAxis:{slantedTextAngle:90, slantedText:true}, chartArea:{left:50,top:10,width:850,height:300}});
+    chart.draw(data, {width:1000, height:390, fontSize:9, lineWidth:1, hAxis:{slantedTextAngle:90, slantedText:true}, chartArea:{left:50,top:10,width:850,height:300}});
 
                 </script>
 
@@ -452,13 +497,31 @@ foreach ($linedata as $key => $value) {
     ?>
 
         var chart = new google.visualization.LineChart(document.getElementById('if_panel_linegraph_norm'));
-        chart.draw(data, {width:1000, height:160, fontSize:9, lineWidth:1, hAxis:{slantedTextAngle:90, slantedText:true}, vAxis:{minValue:0,maxValue:100}, chartArea:{left:50,top:10,width:850,height:100}});
+        chart.draw(data, {width:1000, height:190, fontSize:9, lineWidth:1, hAxis:{slantedTextAngle:90, slantedText:true}, vAxis:{minValue:0,maxValue:100}, chartArea:{left:50,top:10,width:850,height:100}});
 
                     </script>
-
+                    <div class='svglink'>
+                        <div class='generate_svglink' onclick="saveSvg('if_panel_linegraph_norm')">Generate SVG</div>
+                        <div class='download_svglink' id="download_if_panel_linegraph_norm"></div> 
+                    </div>
+                    <br />
                 <?php } ?>
 
                 <div class="txt_desc"><br />Date and time are in GMT (London).</div>
+
+                <form action="index.php" method="get" id="form2">
+                    <table>
+                        <tr>
+                            <td class="tbl_head">Graph resolution</td>
+                            <td>
+                                <input type='radio' name='graph_resolution' value="day" <?php if ($graph_resolution == "day") echo "CHECKED"; ?>/> days
+                                <input type='radio' name='graph_resolution' value="hour" <?php if ($graph_resolution == "hour") echo "CHECKED"; ?>/> hours
+                                <input type='radio' name='graph_resolution' value="minute" <?php if ($graph_resolution == "minute") echo "CHECKED"; ?>/> minutes
+                            </td>
+                            <td><input type="submit" value="update graph" onclick="sendUrl('index.php');return false;" /></td>
+                        </tr>
+                    </table>
+                </form>
 
             </fieldset>
 
@@ -567,6 +630,8 @@ foreach ($linedata as $key => $value) {
                     <div class="txt_desc">Contains tweets and the number of times they have been (re)tweeted indentically.</div>
                     <div class="txt_desc">Use: get a grasp of the most "popular" content.</div>
                     <div class="txt_link"> &raquo;  <a href="" onclick="var minf = askFrequency(); $('#whattodo').val('retweet&minf='+minf+getInterval()); sendUrl('index.php');return false;">launch</a></div>
+
+                    <hr/>
 
                     <h3>Word frequency</h3>
                     <div class="txt_desc">Contains words and the number of times they have been used.</div>
@@ -683,6 +748,13 @@ foreach ($linedata as $key => $value) {
                     <div class="txt_desc">Use: explore the relational <i>activity</i> between mentioned users and hashtags, find and analyze which users are considered experts around which topics.</div>
                     <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('mention_hashtags');sendUrl('mod.mention_hashtags.php');return false;">launch</a></div>
 
+                    <h3>Bipartite hashtag-source graph</h3>
+                    <div class="txt_desc">Produces a <a href="http://en.wikipedia.org/wiki/Bipartite_graph">bipartite graph</a> based on co-occurence of hashtags and "sources" (the client a
+                        tweet was sent from is its source) . If a hashtag is tweeted from a particular client, there will be a link between that client and the hashtag.
+                        The more often they appear together, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>").</div>
+                    <div class="txt_desc">Use: explore the relations between clients and hashtags, find and analyze which clients are related to which topics.</div>
+                    <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('mod.sources_hashtags');sendUrl('mod.sources_hashtags.php');return false;">launch</a></div>
+
                     <?php if ($show_url_export) { ?>
                         <hr />
 
@@ -714,6 +786,13 @@ foreach ($linedata as $key => $value) {
                     <div class="txt_desc">Use: visually explore temporal structures and retweets patterns.</div>
                     <div class="txt_desc"><b>Warning:</b> This view requires a large screen and is limited to (very) small data selections.</div>
                     <div class="txt_link"> &raquo; <a href="" onclick="var minf = askCascadeFrequency(); $('#whattodo').val('cascade&minf='+minf);sendUrl('mod.cascade.php');return false;">launch</a></div>
+
+                    <hr/>
+
+                    <h3>The Sankey Maker</h3>
+                    <div class="txt_desc">Produces an <a href='http://en.wikipedia.org/wiki/Alluvial_diagram' target='_blank'>alluvial diagram</a>.</div>
+                    <div class="txt_desc">Use: plot the relation between various fields such as from_user_lang, hashtags or Twitter client.</div>
+                    <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('mod.sankeymaker');sendUrl('mod.sankeymaker.php');return false;">launch</a></div>
 
                     <hr/>
 

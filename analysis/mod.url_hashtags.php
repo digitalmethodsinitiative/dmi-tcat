@@ -29,7 +29,7 @@ require_once './common/Gexf.class.php';
         <?php
         validate_all_variables();
 
-        $sql = "SELECT COUNT(LOWER(h.text)) AS frequency, LOWER(h.text) AS hashtag, u.url_followed AS url, u.domain AS domain FROM ";
+        $sql = "SELECT COUNT(LOWER(h.text)) AS frequency, LOWER(h.text) AS hashtag, u.url_followed AS url, u.domain AS domain, u.error_code AS status_code FROM ";
         $sql .= $esc['mysql']['dataset'] . "_tweets t, " . $esc['mysql']['dataset'] . "_hashtags h, " . $esc['mysql']['dataset'] . "_urls u ";
         $where = "t.id = h.tweet_id AND h.tweet_id = u.tweet_id AND u.url_followed !='' AND ";
         $sql .= sqlSubset($where);
@@ -38,11 +38,12 @@ require_once './common/Gexf.class.php';
 
         $sqlresults = mysql_query($sql);
 
-        $content = "frequency, hashtag, url, domain\n";
+        $content = "frequency, hashtag, url, domain, status_code\n";
         while ($res = mysql_fetch_assoc($sqlresults)) {
-            $content .= $res['frequency'] . "," . $res['hashtag'] . "," . $res['url'] . "," . $res['domain'] . "\n";
+            $content .= $res['frequency'] . "," . $res['hashtag'] . "," . $res['url'] . "," . $res['domain'] . "," . $res['status_code'] . "\n";
             $urlHashtags[$res['url']][$res['hashtag']] = $res['frequency'];
             $urlDomain[$res['url']] = $res['domain'];
+            $urlStatusCode[$res['url']] = $res['status_code'];
         }
         $filename = get_filename_for_export("urlHashtag");
         file_put_contents($filename, chr(239) . chr(187) . chr(191) . $content);
@@ -55,8 +56,8 @@ require_once './common/Gexf.class.php';
 
         echo '</fieldset>';
 
-        
-        
+
+
         $gexf = new Gexf();
         $gexf->setTitle("URL-hashtag " . $filename);
         $gexf->setEdgeType(GEXF_EDGE_UNDIRECTED);
@@ -66,6 +67,7 @@ require_once './common/Gexf.class.php';
                 $node1 = new GexfNode($url);
                 $node1->addNodeAttribute("type", 'url', $type = "string");
                 $node1->addNodeAttribute('shortlabel', $urlDomain[$url], $type = "string");
+                $node1->addNodeAttribute('status_code', $urlStatusCode[$url], $type = "string");
                 $gexf->addNode($node1);
                 $node2 = new GexfNode($hashtag);
                 $node2->addNodeAttribute("type", 'hashtag', $type = "string");
@@ -84,7 +86,7 @@ require_once './common/Gexf.class.php';
 
         echo '<legend>Your network (GEXF) file</legend>';
 
-        echo '<p><a href="' . str_replace("#", urlencode("#"), str_replace("\"", "%22", $filename)) . '">' . $filename . '</a></p>';
+        echo '<p><a href="' . filename_to_url($filename) . '">' . $filename . '</a></p>';
 
         echo '</fieldset>';
         ?>

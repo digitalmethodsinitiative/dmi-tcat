@@ -8,62 +8,59 @@ require_once './common/Gexf.class.php';
 
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
-        <title>Twitter Analytics host hashtag co-occurence</title>
+        <title>Twitter Analytics - Language / hashtag co-occurence</title>
 
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
         <link rel="stylesheet" href="css/main.css" type="text/css" />
 
         <script type="text/javascript" language="javascript">
-	
-	
-	
+
+
+
         </script>
 
     </head>
 
     <body>
 
-        <h1>Twitter Analytics - host hashtag co-occurence</h1>
+        <h1>Twitter Analytics - Language / hashtag co-occurence</h1>
 
         <?php
         validate_all_variables();
-        $filename = get_filename_for_export("hostHashtag");
+        $filename = get_filename_for_export("languageHashtag");
 
-        $sql = "SELECT COUNT(LOWER(h.text)) AS frequency, LOWER(h.text) AS hashtag, u.domain AS domain FROM ";
-        $sql .= $esc['mysql']['dataset'] . "_tweets t, " . $esc['mysql']['dataset'] . "_hashtags h, " . $esc['mysql']['dataset'] . "_urls u ";
-        $where = "t.id = h.tweet_id AND h.tweet_id = u.tweet_id AND u.url_followed !='' AND ";
+        //print_r($_GET);
+
+        $sql = "SELECT LOWER(t.from_user_lang) AS language, LOWER(h.text) AS hashtag FROM ";
+        $sql .= $esc['mysql']['dataset'] . "_tweets t, " . $esc['mysql']['dataset'] . "_hashtags h ";
+        $where = "t.id = h.tweet_id AND ";
         $sql .= sqlSubset($where);
-        $sql .= " GROUP BY u.domain, LOWER(h.text) ORDER BY frequency DESC";
-        //print $sql." - <br>";
 
         $sqlresults = mysql_query($sql);
 
-        $content = "frequency, hashtag, domain\n";
         while ($res = mysql_fetch_assoc($sqlresults)) {
-            $content .= $res['frequency'] . "," . $res['hashtag'] . "," . $res['domain'] . "\n";
-            $urlHashtags[$res['domain']][$res['hashtag']] = $res['frequency'];
+
+            //print_r($res); exit;
+
+            $res['language'] = preg_replace("/<.+>/U", "", $res['language']);
+            $res['language'] = preg_replace("/[ \s\t]+/", " ", $res['language']);
+            $res['language'] = trim($res['language']);
+
+            if (!isset($languagesHashtags[$res['language']][$res['hashtag']])) {
+                $languagesHashtags[$res['language']][$res['hashtag']] = 0;
+            }
+            $languagesHashtags[$res['language']][$res['hashtag']]++;
         }
-        file_put_contents($filename, chr(239) . chr(187) . chr(191) . $content);
-
-        echo '<fieldset class="if_parameters">';
-
-        echo '<legend>Your spreadsheet (CSV) file</legend>';
-
-        echo '<p><a href="' . str_replace("#", urlencode("#"), str_replace("\"", "%22", $filename)) . '">' . $filename . '</a></p>';
-
-        echo '</fieldset>';
-
-
 
         $gexf = new Gexf();
-        $gexf->setTitle("URL-hashtag " . $filename);
+        $gexf->setTitle("from_user_lang-hashtag " . $filename);
         $gexf->setEdgeType(GEXF_EDGE_UNDIRECTED);
         $gexf->setCreator("tools.digitalmethods.net");
-        foreach ($urlHashtags as $url => $hashtags) {
+        foreach ($languagesHashtags as $language => $hashtags) {
             foreach ($hashtags as $hashtag => $frequency) {
-                $node1 = new GexfNode($url);
-                $node1->addNodeAttribute("type", 'host', $type = "string");
+                $node1 = new GexfNode($language);
+                $node1->addNodeAttribute("type", 'from_user_lang', $type = "string");
                 $gexf->addNode($node1);
                 $node2 = new GexfNode($hashtag);
                 $node2->addNodeAttribute("type", 'hashtag', $type = "string");

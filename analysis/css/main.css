@@ -34,3 +34,17 @@ hr { border:0; color:#aaa; background-color:#aaa; height:1px; width:100%; margin
 .txt_link { font-size:12px; margin-left:10px; }
 
 .if_export_block { padding-left:15px; }
+
+.svglink {
+    float: right;
+    font-size: 12px;
+}
+.generate_svglink {
+    float: left;
+    text-decoration:underline;
+    cursor: pointer;
+}
+.download_svglink {
+    float: left;    
+    margin-left: 5px;
+}

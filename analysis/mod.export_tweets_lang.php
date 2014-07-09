@@ -34,7 +34,7 @@ require_once './common/functions.php';
             $header .= ",urls,urls_expanded,urls_followed,domains";
         $header .= "\n";
 
-	$langset = $esc['mysql']['dataset'] . '_lang';
+        $langset = $esc['mysql']['dataset'] . '_lang';
 
         $sql = "SELECT * FROM " . $esc['mysql']['dataset'] . "_tweets t inner join $langset l on t.id = l.tweet_id ";
         $sql .= sqlSubset();
@@ -73,11 +73,11 @@ require_once './common/functions.php';
                         "\"" . cleanText($data['from_user_url']) . "\"," .
                         $data['from_user_verified'] . "," .
                         $data['filter_level'];
-		$out .= ",\"" . $data['name'] . "\"," .
-			"\"" . $data['code'] . "\"," .
-			(($data['reliable'] == true) ? 1 : 0) . "," .
-			$data['bytes'] . "," .
-			$data['percent'];
+                $out .= ",\"" . $data['name'] . "\"," .
+                        "\"" . $data['code'] . "\"," .
+                        (($data['reliable'] == true) ? 1 : 0) . "," .
+                        $data['bytes'] . "," .
+                        $data['percent'];
                 if (isset($_GET['includeUrls']) && $_GET['includeUrls'] == 1) {
                     $urls = $expanded = $followed = $domain = "";
                     $sql2 = "SELECT url, url_expanded, url_followed, domain FROM " . $esc['mysql']['dataset'] . "_urls WHERE tweet_id = " . $data['id'];
@@ -110,7 +110,7 @@ require_once './common/functions.php';
 
         echo '<fieldset class="if_parameters">';
         echo '<legend>Your File</legend>';
-        echo '<p><a href="' . str_replace("#", urlencode("#"), str_replace("\"", "%22", $filename)) . '">' . $filename . '</a></p>';
+        echo '<p><a href="' . filename_to_url($filename) . '">' . $filename . '</a></p>';
         echo '</fieldset>';
         ?>
 

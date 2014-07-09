@@ -122,7 +122,7 @@ require_once './common/functions.php';
 
         echo '<legend>Your File</legend>';
 
-        echo '<p><a href="' . str_replace("#", urlencode("#"), $filename) . '">' . $filename . '</a></p>';
+        echo '<p><a href="' . filename_to_url($filename) . '">' . $filename . '</a></p>';
 
         echo '</fieldset>';
 
