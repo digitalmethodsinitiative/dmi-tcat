@@ -44,12 +44,12 @@ if (defined('ANALYSIS_URL'))
             "?dataset=" + $("#ipt_dataset").val() +
             "&query=" + $("#ipt_query").val().replace(/#/g,"%23") +
             "&url_query=" + $("#ipt_url_query").val().replace(/#/g,"%23") +
+            "&geo_query=" + $("#ipt_geo_query").val()  +
             "&exclude=" + $("#ipt_exclude").val().replace(/#/g,"%23") +
             "&from_user_name=" + $("#ipt_from_user").val() +
             "&startdate=" + $("#ipt_startdate").val() +
             "&enddate=" + $("#ipt_enddate").val() +
             "&whattodo=" + $("#whattodo").val();
-
 
         document.location.href = _url;
     }
@@ -194,6 +194,9 @@ if (defined('ANALYSIS_URL'))
                             <td class="tbl_head">URL (or part of URL): </td><td><input type="text" id="ipt_url_query" size="60" name="url_query"  value="<?php echo $url_query; ?>" /> (empty: any or all URLs*)</td>
                         </tr>
                         <tr>
+                            <td class="tbl_head">GEO bounding rectangle: </td><td><input type="text" id="ipt_geo_query" size="180" name="geo_query"  value="<?php echo $geo_query; ?>" />Minimal bounding rectangle defined by POLYGON from <a href='http://en.wikipedia.org/wiki/Well-known_text'>WKT</a> format: point1lng point1lat, point2lng point2lat, point3lng point3lat, ...., point1lng point1lat<br />(example Bologna airport: 11.249631 44.520052,11.249631 44.551376,11.322587 44.551376, 11.322587 44.520052, 11.249631 44.520052)</td>
+                        </tr>
+                        <tr>
                             <td class="tbl_head">Startdate:</td><td><input type="text" id="ipt_startdate" size="60" name="startdate" value="<?php echo $startdate; ?>" /> (YYYY-MM-DD)</td>
                         </tr>
 
@@ -218,7 +221,6 @@ if (defined('ANALYSIS_URL'))
             $sqlresults = mysql_query($sql);
             $data = mysql_fetch_assoc($sqlresults);
             $numtweets = $data["count"];
-
             // count tweets containing links
             $sql = "SELECT count(distinct(t.id)) AS count FROM " . $esc['mysql']['dataset'] . "_urls u, " . $esc['mysql']['dataset'] . "_tweets t ";
             $where = "u.tweet_id = t.id AND ";
@@ -255,6 +257,11 @@ if (defined('ANALYSIS_URL'))
                         $show_url_export = true;
                 }
             }
+            // see whether the lang table exists
+            $show_lang_export = FALSE;
+            $sql = "SHOW TABLES LIKE '" . $esc['mysql']['dataset'] . "_lang'";
+            if (mysql_num_rows(mysql_query($sql)) == 1)
+                $show_lang_export = TRUE;
 
             // get data for the line graph
             $period = ( (strtotime($esc['datetime']['enddate']) - strtotime($esc['datetime']['startdate'])) <= 86400 * 2) ? "hour" : "day"; // @todo
@@ -340,6 +347,9 @@ if (defined('ANALYSIS_URL'))
                             </tr>
                             <tr>
                                 <td class="tbl_head">(Part of) URL:</td><td><?php echo $esc['mysql']['url_query']; ?></td>
+                            </tr>
+                            <tr>
+                                <td class="tbl_head">GEO polygon:</td><td><?php echo $esc['mysql']['geo_query']; ?></td>
                             </tr>
                             <tr>
                                 <td class="tbl_head">Startdate:</td><td><?php echo $startdate; ?></td>
@@ -587,6 +597,17 @@ foreach ($linedata as $key => $value) {
                         <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('export_tweets&includeUrls=1');sendUrl('mod.export_tweets.php');return false;">export with URLs</a> (much slower)</div>
                     <?php } ?>
                     <hr />
+
+                    <?php if ($show_lang_export) { ?>
+                        <h3>Export all tweets from selection, with language CLD data</h3>
+                        <div class="txt_desc">Contains all tweets and information about them (user, date created, ...), plus extra language analysis data.</div>
+                        <div class="txt_desc">Use: spend time with your data.</div>
+                        <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('export_tweets');sendUrl('mod.export_tweets_lang.php');return false;">export</a></div>
+                        <?php if ($show_url_export) { ?>
+                            <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('export_tweets&includeUrls=1');sendUrl('mod.export_tweets_lang.php');return false;">export with URLs</a> (much slower)</div>
+                        <?php } ?>
+                        <hr />
+                    <?php } ?>
 
                     <h3>List each individual retweet</h3>
                     <div class="txt_desc">Lists all retweets (and all the tweets metadata like follower_count) chronologically.</div>

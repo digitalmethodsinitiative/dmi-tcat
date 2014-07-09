@@ -20,6 +20,14 @@ if (isset($_GET['url_query']) && !empty($_GET['url_query']))
     $url_query = urldecode($_GET['url_query']);
 else
     $url_query = "";
+if (isset($_GET['geo_query']) && !empty($_GET['geo_query'])) {
+    $geo_query = urldecode($_GET['geo_query']);
+    if (preg_match("/[^\,\.0-9 ]/", $geo_query)) {
+            die("<font size='+1' color='red'>The GEO polygon should contain only longitude latitude pairs (with dots inside for precision), seperated by a single whitespace, and after the pair a comma to mark the next point in the polygon.</font><br />Make the polygon end at the point where you started drawing it. Please see the provided example for the proper value of a WKT polygon.");
+    }
+} else {
+    $geo_query = "";
+}
 if (isset($_GET['exclude']) && !empty($_GET['exclude']))
     $exclude = urldecode($_GET['exclude']);
 else
@@ -253,6 +261,21 @@ function sqlSubset($where = NULL) {
             $sql .= ") AND ";
         }
     }
+    if (!empty($esc['mysql']['geo_query'])) {
+
+	// geo_lat != '0.00000' and geo_lng != '0.00000' and MBRContains(GeomFromText('POLYGON((11.249631 44.520052,11.249631 44.551376,11.322587 44.551376, 11.322587 44.520052, 11.249631 44.520052))'), PointFromText(CONCAT('POINT(',geo_lng,' ',geo_lat,')')) );
+
+	$polygon = "POLYGON((" . $esc['mysql']['geo_query'] . "))";
+
+	$polygonfromtext = "GeomFromText('" . $polygon . "')";
+        $pointfromtext = "PointFromText(CONCAT('POINT(',t.geo_lng,' ',t.geo_lat,')'))";
+
+	$sql .= " ( t.geo_lat != '0.00000' and t.geo_lng != '0.00000' and MBRContains(" . $polygonfromtext . ", " . $pointfromtext . ") ";
+
+	$sql .= " ) AND ";
+
+
+    }
     if (!empty($esc['mysql']['exclude'])) {
         if (strstr($esc['mysql']['exclude'], "AND") !== false) {
             $subqueries = explode(" AND ", $esc['mysql']['exclude']);
@@ -289,6 +312,7 @@ function sqlSubset($where = NULL) {
     }
     $sql .= " t.created_at >= '" . $esc['datetime']['startdate'] . "' AND t.created_at <= '" . $esc['datetime']['enddate'] . "' ";
     //print $sql."<br>"; die;
+
     return $sql;
 }
 
@@ -591,11 +615,12 @@ function validate($what, $how) {
 // make sure that we have all the right types and values
 // also make sure one cannot do a mysql injection attack
 function validate_all_variables() {
-    global $esc, $query, $url_query, $dataset, $exclude, $from_user_name, $startdate, $enddate, $databases, $connection, $keywords, $database, $minf, $topu, $from_user_lang;
+    global $esc, $query, $url_query, $geo_query, $dataset, $exclude, $from_user_name, $startdate, $enddate, $databases, $connection, $keywords, $database, $minf, $topu, $from_user_lang;
 
     $esc['mysql']['dataset'] = validate($dataset, "mysql");
     $esc['mysql']['query'] = validate($query, "mysql");
     $esc['mysql']['url_query'] = validate($url_query, "mysql");
+    $esc['mysql']['geo_query'] = validate($geo_query, "mysql");
     $esc['mysql']['exclude'] = validate($exclude, "mysql");
     $esc['mysql']['from_user_name'] = validate($from_user_name, "mysql");
     $esc['mysql']['from_user_lang'] = validate($from_user_lang, "mysql");
@@ -603,6 +628,7 @@ function validate_all_variables() {
     $esc['shell']['dataset'] = validate($dataset, "shell");
     $esc['shell']['query'] = validate($query, "shell");
     $esc['shell']['url_query'] = validate($url_query, "shell");
+    $esc['shell']['geo_query'] = validate($geo_query, "shell");
     $esc['shell']['exclude'] = validate($exclude, "shell");
     $esc['shell']['from_user_name'] = validate($from_user_name, "shell");
     $esc['shell']['from_user_lang'] = validate($from_user_lang, "shell");
@@ -634,6 +660,7 @@ function get_filename_for_export($module, $settings = "", $filetype = "csv") {
     $filename .= "-" . $esc['shell']["from_user_name"];
     $filename .= "-" . $esc['shell']["from_user_lang"];
     $filename .= "-" . $esc['shell']["url_query"];
+    $filename .= "-" . str_replace(",", "_", str_replace(" ", "x", $esc['shell']["geo_query"]));
     $filename .= "-" . $module;
     $filename .= "-" . $settings;
     $filename .= "-" . $hash;   // sofware version
