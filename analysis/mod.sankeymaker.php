@@ -79,10 +79,10 @@ require_once './common/Gexf.class.php';
             <div class="form_row">
                 col1:
                 <select name="col1_type">
-                    <option value="source" <?php echo ($_GET["col1_type"] == "source") ? "selected":""; ?>>sources</option>
-                    <option value="from_user_lang" <?php echo ($_GET["col1_type"] == "from_user_lang") ? "selected":""; ?>>languages</option>
-                    <option value="from_user_utcoffset" <?php echo ($_GET["col1_type"] == "from_user_utcoffset") ? "selected":""; ?>>utcoffsets</option>
-                    <option value="hashtag" <?php echo ($_GET["col1_type"] == "hashtag") ? "selected":""; ?>>hashtags</option>
+                    <option value="source" <?php echo ($_GET["col1_type"] == "source") ? "selected" : ""; ?>>sources</option>
+                    <option value="from_user_lang" <?php echo ($_GET["col1_type"] == "from_user_lang") ? "selected" : ""; ?>>languages</option>
+                    <option value="from_user_utcoffset" <?php echo ($_GET["col1_type"] == "from_user_utcoffset") ? "selected" : ""; ?>>utcoffsets</option>
+                    <option value="hashtag" <?php echo ($_GET["col1_type"] == "hashtag") ? "selected" : ""; ?>>hashtags</option>
                 </select>
 
                 cutoff (0 = all) <input name="col1_cutoff" value="<?php echo ($_GET["col1_cutoff"] == "") ? 0 : $_GET["col1_cutoff"]; ?>" />
@@ -90,18 +90,18 @@ require_once './common/Gexf.class.php';
 
             <div class="form_row">
                 col2:
-               <select name="col2_type">
-                    <option value="source" <?php echo ($_GET["col2_type"] == "source") ? "selected":""; ?>>sources</option>
-                    <option value="from_user_lang" <?php echo ($_GET["col2_type"] == "from_user_lang") ? "selected":""; ?>>languages</option>
-                    <option value="from_user_utcoffset" <?php echo ($_GET["col2_type"] == "from_user_utcoffset") ? "selected":""; ?>>utcoffsets</option>
-                    <option value="hashtag" <?php echo ($_GET["col2_type"] == "hashtag") ? "selected":""; ?>>hashtags</option>
-               </select>
+                <select name="col2_type">
+                    <option value="source" <?php echo ($_GET["col2_type"] == "source") ? "selected" : ""; ?>>sources</option>
+                    <option value="from_user_lang" <?php echo ($_GET["col2_type"] == "from_user_lang") ? "selected" : ""; ?>>languages</option>
+                    <option value="from_user_utcoffset" <?php echo ($_GET["col2_type"] == "from_user_utcoffset") ? "selected" : ""; ?>>utcoffsets</option>
+                    <option value="hashtag" <?php echo ($_GET["col2_type"] == "hashtag") ? "selected" : ""; ?>>hashtags</option>
+                </select>
 
                 cutoff (0 = all) <input name="col2_cutoff" value="<?php echo ($_GET["col2_cutoff"] == "") ? 0 : $_GET["col2_cutoff"]; ?>" />
             </div>
 
             <div class="form_row">
-                <input name="discard_other" type="checkbox" <?php echo ($_GET["discard_other"] == "on") ? 'checked="checked"':""; ?> /> discard "other" from diagram
+                <input name="discard_other" type="checkbox" <?php if (isset($_GET["discard_other"]) && $_GET["discard_other"] == "on") echo 'checked="checked"'; ?> /> discard "other" from diagram
             </div>
 
             <div class="form_row">
@@ -111,7 +111,6 @@ require_once './common/Gexf.class.php';
 
 
         <?php
-
         validate_all_variables();
 
         if ($_GET["col1_type"] == $_GET["col2_type"]) {
@@ -119,9 +118,9 @@ require_once './common/Gexf.class.php';
             exit;
         }
 
-		$sql = "SELECT LOWER(" . $_GET["col1_type"] . ") AS col1, LOWER(t." . $_GET["col2_type"] . ") AS col2 FROM ";
+        $sql = "SELECT LOWER(" . $_GET["col1_type"] . ") AS col1, LOWER(t." . $_GET["col2_type"] . ") AS col2 FROM ";
         $sql .= $esc['mysql']['dataset'] . "_tweets t ";
-        $sql .= sqlSubset($where);
+        $sql .= sqlSubset();
 
         if ($_GET["col1_type"] == "hashtag") {
             $sql = "SELECT LOWER(h.text) AS col1, LOWER(t." . $_GET["col2_type"] . ") AS col2 FROM ";
@@ -136,8 +135,8 @@ require_once './common/Gexf.class.php';
             $sql .= sqlSubset($where);
         }
 
-		//echo "sql:" . $sql;
-		//exit;
+        //echo "sql:" . $sql;
+        //exit;
 
         $sqlresults = mysql_query($sql);
 
@@ -195,13 +194,13 @@ require_once './common/Gexf.class.php';
             $col2 = $res['col2'];
 
             if (!isset($toplists["col1"][$col1])) {
-                if ($_GET["discard_other"] == "on") {
+                if (isset($_GET["discard_other"]) && $_GET["discard_other"] == "on") {
                     continue;
                 }
                 $col1 = "other " . $_GET["col1_type"];
             }
             if (!isset($toplists["col2"][$col2])) {
-                if ($_GET["discard_other"] == "on") {
+                if (isset($_GET["discard_other"]) && $_GET["discard_other"] == "on") {
                     continue;
                 }
                 $col2 = "other " . $_GET["col2_type"];
@@ -235,25 +234,25 @@ require_once './common/Gexf.class.php';
             $newwork["nodes"][$i] = array("name" => $network["nodes"][$i]);
         }
 
-		$highestcounter = array();							// count element frequency from edges (nodes have full frequency and not the proportional needed for correct coloring)
+        $highestcounter = array();       // count element frequency from edges (nodes have full frequency and not the proportional needed for correct coloring)
         foreach ($network["links"] as $key => $value) {
             $elements = explode("_XXX_", $key);
             $edge = array("source" => $translate[$elements[0]], "target" => $translate[$elements[1]], "value" => $value);
             $newwork["links"][] = $edge;
 
-			if(!isset($highestcounter[$elements[0]])) {
-				$highestcounter[$elements[0]] = 0;
-			}
-			if(!isset($highestcounter[$elements[1]])) {
-				$highestcounter[$elements[1]] = 0;
-			}
-			$highestcounter[$elements[0]] += $value;
-			$highestcounter[$elements[1]] += $value;
+            if (!isset($highestcounter[$elements[0]])) {
+                $highestcounter[$elements[0]] = 0;
+            }
+            if (!isset($highestcounter[$elements[1]])) {
+                $highestcounter[$elements[1]] = 0;
+            }
+            $highestcounter[$elements[0]] += $value;
+            $highestcounter[$elements[1]] += $value;
         }
 
-		arsort($highestcounter);
-		$highest = array_values($highestcounter)[0];
-
+        arsort($highestcounter);
+        $highest = array_values($highestcounter);
+        $highest = $highest[0];
         ?>
 
         <div id="chart"></div>
@@ -281,66 +280,66 @@ require_once './common/Gexf.class.php';
 
             var path = sankey.link();
 
-		    var color1 = d3.scale.linear()
-		    .domain([0, <?php echo $highest; ?>])
-		    .range(["#3399ff","#ffff00"]);
+            var color1 = d3.scale.linear()
+            .domain([0, <?php echo $highest; ?>])
+            .range(["#3399ff","#ffff00"]);
 
-		    var energy = <?php echo json_encode($newwork); ?>;
+            var energy = <?php echo json_encode($newwork); ?>;
 
-		    sankey
-		    .nodes(energy.nodes)
-		    .links(energy.links)
-		    .layout(32);
+            sankey
+            .nodes(energy.nodes)
+            .links(energy.links)
+            .layout(32);
 
-		    var link = svg.append("g").selectAll(".link")
-		    .data(energy.links)
-		    .enter().append("path")
-		    .attr("class", "link")
-		    .attr("d", path)
-		    .style("stroke-width", function(d) { return Math.max(1, d.dy); })
-		    .style("stroke", "#aaa")
-		    .sort(function(a, b) { return b.dy - a.dy; });
+            var link = svg.append("g").selectAll(".link")
+            .data(energy.links)
+            .enter().append("path")
+            .attr("class", "link")
+            .attr("d", path)
+            .style("stroke-width", function(d) { return Math.max(1, d.dy); })
+            .style("stroke", "#aaa")
+            .sort(function(a, b) { return b.dy - a.dy; });
 
-		    link.append("title")
-		    .text(function(d) { return d.source.name + " → " + d.target.name + "\n" + format(d.value); });
+            link.append("title")
+            .text(function(d) { return d.source.name + " → " + d.target.name + "\n" + format(d.value); });
 
-		    var node = svg.append("g").selectAll(".node")
-		    .data(energy.nodes)
-		    .enter().append("g")
-		    .attr("class", "node")
-		    .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
-		    .call(d3.behavior.drag()
-		    .origin(function(d) { return d; })
-		    .on("dragstart", function() { this.parentNode.appendChild(this); })
-		    .on("drag", dragmove));
+            var node = svg.append("g").selectAll(".node")
+            .data(energy.nodes)
+            .enter().append("g")
+            .attr("class", "node")
+            .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
+            .call(d3.behavior.drag()
+            .origin(function(d) { return d; })
+            .on("dragstart", function() { this.parentNode.appendChild(this); })
+            .on("drag", dragmove));
 
-		    node.append("rect")
-		    .attr("height", function(d) { return d.dy; })
-		    .attr("width", sankey.nodeWidth())
-		    //.style("fill", "#57B7B9")
-		    //.attr("fill", function(d) { return color(d.division); });
-		    .style("fill", function(d) { return color1(d.value); })
-		    .style("stroke", function(d) { return color1(d.value); })
-		    //.style("stroke-width", )
-		    .append("title")
-		    .text(function(d) { return d.name + "\n" + format(d.value); });
+            node.append("rect")
+            .attr("height", function(d) { return d.dy; })
+            .attr("width", sankey.nodeWidth())
+            //.style("fill", "#57B7B9")
+            //.attr("fill", function(d) { return color(d.division); });
+            .style("fill", function(d) { return color1(d.value); })
+            .style("stroke", function(d) { return color1(d.value); })
+            //.style("stroke-width", )
+            .append("title")
+            .text(function(d) { return d.name + "\n" + format(d.value); });
 
-		    node.append("text")
-		    .attr("x", -6)
-		    .attr("y", function(d) { return d.dy / 2; })
-		    .attr("dy", ".35em")
-		    .attr("text-anchor", "end")
-		    .attr("transform", null)
-		    .text(function(d) { return d.name; })
-		    .filter(function(d) { return d.x < width / 2; })
-		    .attr("x", 6 + sankey.nodeWidth())
-		    .attr("text-anchor", "start");
+            node.append("text")
+            .attr("x", -6)
+            .attr("y", function(d) { return d.dy / 2; })
+            .attr("dy", ".35em")
+            .attr("text-anchor", "end")
+            .attr("transform", null)
+            .text(function(d) { return d.name; })
+            .filter(function(d) { return d.x < width / 2; })
+            .attr("x", 6 + sankey.nodeWidth())
+            .attr("text-anchor", "start");
 
-		    function dragmove(d) {
-		        d3.select(this).attr("transform", "translate(" + d.x + "," + (d.y = Math.max(0, Math.min(height - d.dy, d3.event.y))) + ")");
-		        sankey.relayout();
-		        link.attr("d", path);
-		    }
+            function dragmove(d) {
+                d3.select(this).attr("transform", "translate(" + d.x + "," + (d.y = Math.max(0, Math.min(height - d.dy, d3.event.y))) + ")");
+                sankey.relayout();
+                link.attr("d", path);
+            }
 
 
         </script>
