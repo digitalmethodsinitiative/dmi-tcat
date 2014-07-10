@@ -757,8 +757,8 @@ class Tweet {
         $t->hashtags = $object->twitter_entities->hashtags;
 
         if (count($t->user_mentions) > 0) {
-            $t->to_user_id = $t->user_mentions[0]->id_str;
-            $t->to_user_name = $t->user_mentions[0]->screen_name;
+            $t->in_reply_to_user_id_str = $t->user_mentions[0]->id_str;
+            $t->in_reply_to_screen_name = $t->user_mentions[0]->screen_name;
         }
 
         return $t;
