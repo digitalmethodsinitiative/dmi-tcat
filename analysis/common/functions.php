@@ -781,7 +781,7 @@ function db_connect($db_host, $db_user, $db_pass, $db_name) {
     $connection = mysql_connect($db_host, $db_user, $db_pass);
     if (!mysql_select_db($db_name, $connection))
         die("could not connect");
-    if (!mysql_set_charset('utf8', $connection)) {
+    if (!mysql_set_charset('utf8mb4', $connection)) {
         echo "Error: Unable to set the character set.\n";
         exit;
     }
@@ -804,7 +804,7 @@ function dbserver_has_geo_functions() {
 function pdo_connect() {
     global $dbuser, $dbpass, $database, $hostname;
 
-    $dbh = new PDO("mysql:host=$hostname;dbname=$database;charset=utf8", $dbuser, $dbpass);
+    $dbh = new PDO("mysql:host=$hostname;dbname=$database;charset=utf8mb4", $dbuser, $dbpass);
     $dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
     return $dbh;

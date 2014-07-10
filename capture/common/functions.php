@@ -7,7 +7,7 @@ include_once('upgrades.php');
 function pdo_connect() {
     global $dbuser, $dbpass, $database, $hostname;
 
-    $dbh = new PDO("mysql:host=$hostname;dbname=$database;charset=utf8", $dbuser, $dbpass);
+    $dbh = new PDO("mysql:host=$hostname;dbname=$database;charset=utf8mb4", $dbuser, $dbpass);
     $dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
     return $dbh;
@@ -47,7 +47,7 @@ function create_bin($bin_name, $dbh = false) {
                     KEY `tweet_id` (`tweet_id`),
                     KEY `text` (`text`),
                     KEY `from_user_name` (`from_user_name`)
-            ) ENGINE=MyISAM  DEFAULT CHARSET=utf8";
+            ) ENGINE=MyISAM  DEFAULT CHARSET=utf8mb4";
 
         $create_hashtags = $dbh->prepare($sql);
         $create_hashtags->execute();
@@ -67,7 +67,7 @@ function create_bin($bin_name, $dbh = false) {
                     KEY `from_user_id` (`from_user_id`),
                     KEY `to_user` (`to_user`),
                     KEY `to_user_id` (`to_user_id`)
-            ) ENGINE=MyISAM  DEFAULT CHARSET=utf8";
+            ) ENGINE=MyISAM  DEFAULT CHARSET=utf8mb4";
 
         $create_mentions = $dbh->prepare($sql);
         $create_mentions->execute();
@@ -110,7 +110,7 @@ function create_bin($bin_name, $dbh = false) {
                     KEY `in_reply_to_status_id` (`in_reply_to_status_id`),
                     FULLTEXT KEY `from_user_description` (`from_user_description`),
                     FULLTEXT KEY `text` (`text`)
-                    ) ENGINE=MyISAM DEFAULT CHARSET=utf8";
+                    ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4";
 
         $create_tweets = $dbh->prepare($sql);
         $create_tweets->execute();
@@ -132,7 +132,7 @@ function create_bin($bin_name, $dbh = false) {
                     KEY `from_user_id` (`from_user_id`),
                     FULLTEXT KEY `url_followed` (`url_followed`),
                     KEY `url_expanded` (`url_expanded`)
-            ) ENGINE=MyISAM  DEFAULT CHARSET=utf8";
+            ) ENGINE=MyISAM  DEFAULT CHARSET=utf8mb4";
 
         $create_urls = $dbh->prepare($sql);
         $create_urls->execute();
@@ -157,7 +157,7 @@ function create_admin() {
     KEY `querybin` (`querybin`),
     KEY `type` (`type`),
     KEY `active` (`active`)
-    ) ENGINE = MyISAM DEFAULT CHARSET = utf8";
+    ) ENGINE = MyISAM DEFAULT CHARSET = utf8mb4";
     $create = $dbh->prepare($sql);
     $create->execute();
 
@@ -170,7 +170,7 @@ function create_admin() {
     KEY `querybin_id` (`querybin_id`),
     KEY `starttime` (`starttime`),
     KEY `endtime` (`endtime`)
-    ) ENGINE = MyISAM DEFAULT CHARSET = utf8";
+    ) ENGINE = MyISAM DEFAULT CHARSET = utf8mb4";
     $create = $dbh->prepare($sql);
     $create->execute();
 
@@ -179,7 +179,7 @@ function create_admin() {
     `phrase` VARCHAR(255) NOT NULL,
     PRIMARY KEY (`id`),
     KEY `phrase` (`phrase`)
-    ) ENGINE = MyISAM DEFAULT CHARSET = utf8";
+    ) ENGINE = MyISAM DEFAULT CHARSET = utf8mb4";
     $create = $dbh->prepare($sql);
     $create->execute();
 
@@ -187,7 +187,7 @@ function create_admin() {
     `id` bigint NOT NULL AUTO_INCREMENT,
     `user_name` varchar(255),
     PRIMARY KEY `id` (`id`)
-    ) ENGINE = MyISAM DEFAULT CHARSET = utf8";
+    ) ENGINE = MyISAM DEFAULT CHARSET = utf8mb4";
     $create = $dbh->prepare($sql);
     $create->execute();
 
@@ -202,7 +202,7 @@ function create_admin() {
     KEY `endtime` (`endtime`),
     KEY `phrase_id` (`phrase_id`),
     KEY `querybin_id` (`querybin_id`)
-    ) ENGINE = MyISAM DEFAULT CHARSET = utf8";
+    ) ENGINE = MyISAM DEFAULT CHARSET = utf8mb4";
     $create = $dbh->prepare($sql);
     $create->execute();
 
@@ -217,7 +217,7 @@ function create_admin() {
     KEY `endtime` (`endtime`),
     KEY `user_id` (`user_id`),
     KEY `querybin_id` (`querybin_id`)
-    ) ENGINE = MyISAM DEFAULT CHARSET = utf8";
+    ) ENGINE = MyISAM DEFAULT CHARSET = utf8mb4";
     $create = $dbh->prepare($sql);
     $create->execute();
     $dbh = false;
@@ -948,7 +948,7 @@ class TwitterRelations {
                 user2_realname varchar(255),
 		KEY `user1_id` (`user1_id`), 
                 KEY `user2_id` (`user2_id`)
-		) ENGINE=MyISAM DEFAULT CHARSET=utf8";
+		) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4";
 
         if ($dbh->exec($sql)) {
             return TRUE;
