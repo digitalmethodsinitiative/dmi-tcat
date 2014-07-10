@@ -605,7 +605,6 @@ class Tweet {
     // Fields copied from a sample timeline provided by the Twitter API
     // @see https://dev.twitter.com/docs/api/1.1/get/statuses/mentions_timeline
 
-    public $favorited;
     public $contributors;
     public $truncated;
     public $text;
@@ -718,6 +717,7 @@ class Tweet {
         $t->user = new StdClass();
         $t->user->screen_name = $object->actor->preferredUsername;
         $t->user->id = str_replace("id:twitter.com:", "", $object->actor->id);
+        $t->user->id_str = $t->user->id;
         $t->user->url = $object->actor->link;
         $t->user->lang = $object->actor->languages[0];
         $t->user->statuses_count = $object->actor->statusesCount;
@@ -730,12 +730,14 @@ class Tweet {
         $t->user->utcoffset = $object->actor->utcOffset;
         $t->user->timezone = $object->actor->twitterTimeZone;
         $t->user->description = $object->actor->summary;
-        $t->user->from_user_profile_image_url = $object->actor->image;
+        $t->user->profile_image_url = $object->actor->image;
         $t->user->verified = $object->actor->verified;
 
-        $t->source = $object->generator->displayName; // @todo, is this right?
-        $t->geo->coordinates[0] = null; // @todo
-        $t->geo->coordinates[1] = null; // @todo
+        $t->source = $object->generator->displayName;
+        if (isset($object->geo) && $object->geo->type == "Point") {
+            $t->geo->coordinates[0] = $object->geo->coordinates[0];
+            $t->geo->coordinates[1] = $object->geo->coordinates[1];
+        }
 
         $t->in_reply_to_user_id = null; // @todo
         $t->in_reply_to_screen_name = null; // @todo
@@ -745,16 +747,21 @@ class Tweet {
         if ($t->retweet_count != 0 && isset($object->object)) {
             $t->retweet_id = preg_replace("/tag:.*:/", "", $object->object->id);
         }
-        $t->filter_level = $object->twitter_filter_level;
+        if (isset($object->twitter_filter_level))
+            $t->filter_level = $object->twitter_filter_level;
         if (isset($object->twitter_entities->twitter_lang))
             $t->lang = $object->twitter_entities->twitter_lang;
 
         $t->favorite_count = $object->favoritesCount;
 
-
         $t->urls = $object->twitter_entities->urls;
         $t->user_mentions = $object->twitter_entities->user_mentions;
         $t->hashtags = $object->twitter_entities->hashtags;
+
+        if (count($t->user_mentions) > 0) {
+            $t->in_reply_to_user_id_str = $t->user_mentions[0]->id_str;
+            $t->in_reply_to_screen_name = $t->user_mentions[0]->screen_name;
+        }
 
         return $t;
     }
@@ -1418,24 +1425,25 @@ function database_activity() {
 
 // REST API key swapping functions.
 // Uses the global $twitter_keys
-
 // This function may cause a sleep when no key is available
 function getRESTKey($current_key, $resource = 'statuses', $query = 'lookup') {
     global $twitter_keys;
 
     $start_key = $current_key;
     $remaining = getRemainingForKey($current_key, $resource, $query);
-    if ($remaining) return array ( 'key' => $current_key, 'remaining' => $remaining );
+    if ($remaining)
+        return array('key' => $current_key, 'remaining' => $remaining);
     do {
         $current_key++;
         if ($current_key >= count($twitter_keys)) {
             $current_key = 0;
         }
-        if ($current_key == $start_key) sleep(180);
+        if ($current_key == $start_key)
+            sleep(180);
         $remaining = getRemainingForKey($current_key, $resource, $query);
     } while ($remaining == 0);
 
-    return array( 'key' => $current_key, 'remaining' => $remaining );
+    return array('key' => $current_key, 'remaining' => $remaining);
 }
 
 function getRemainingForKey($current_key, $resource = 'statuses', $query = 'lookup') {
@@ -1463,11 +1471,9 @@ function getRemainingForKey($current_key, $resource = 'statuses', $query = 'look
         $data = json_decode($tmhOAuth->response['response'], true);
         return $data['resources'][$resource]["/$resource/$query"]['remaining'];
     } else {
-	echo "Warning: API key $current_key seems invalid (cannot receive rate limit status)\n";
-	return 0;
-	
+        echo "Warning: API key $current_key seems invalid (cannot receive rate limit status)\n";
+        return 0;
     }
-
 }
 
 ?>

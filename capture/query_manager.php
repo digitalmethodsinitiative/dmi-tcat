@@ -24,6 +24,8 @@ if (isset($_POST) && isset($_POST['action'])) {
         case "modifybin":
             modify_bin($_POST);
             break;
+        case "removebin":
+            remove_bin($_POST);
         default:
             break;
     }
@@ -71,7 +73,7 @@ function create_new_bin($params) {
     $insert_periods = $dbh->prepare($sql);
     $insert_periods->execute();
 
-    
+
     $e = create_bin($bin_name);
     if ($e !== TRUE) {
         logit('controller.log', 'Failed to create database tables for bin ' . $bin_name . '. The error message was ' . $e);
@@ -134,6 +136,104 @@ function create_new_bin($params) {
     } else {
         echo '{"msg":"The new query bin has been created but the ' . $type . ' script could NOT be restarted"}';
     }
+    $dbh = false;
+}
+
+function remove_bin($params) {
+    global $captureroles, $now;
+
+    $bin_id = trim($params["bin"]);
+    $type = trim($params['type']);
+
+    $dbh = pdo_connect();
+
+    // get name of the query_bin
+    $sql = "SELECT querybin FROM tcat_query_bins WHERE id = :bin_id AND type = :type";
+    $select_querybin = $dbh->prepare($sql);
+    $select_querybin->bindParam(':bin_id', $bin_id, PDO::PARAM_INT);
+    $select_querybin->bindParam(':type', $type, PDO::PARAM_STR);
+    $select_querybin->execute();
+    if ($select_querybin->rowCount() == 0) {
+        echo '{"msg":"The query bin with id [' . $bin_id . '] cannot be found."}';
+        return;
+    }
+    if ($select_querybin->rowCount() > 1) {
+        echo '{"msg":"There seem to be multiple query bins with id [' . $bin_id . ']. You will have to remove it manually."}';
+        return;
+    }
+    if ($select_querybin->rowCount() > 0) {
+        $results = $select_querybin->fetch();
+        $bin_name = $results['querybin'];
+    }
+
+    // delete tcat_query_bin table
+    $sql = "DELETE FROM tcat_query_bins WHERE id = :id";
+    $delete_querybin = $dbh->prepare($sql);
+    $delete_querybin->bindParam(':id', $bin_id, PDO::PARAM_INT);
+    $delete_querybin->execute();
+
+    // delete periods associated with the query bin
+    $sql = "DELETE FROM tcat_query_bins_periods WHERE querybin_id = :id";
+    $delete_querybin_periods = $dbh->prepare($sql);
+    $delete_querybin_periods->bindParam(':id', $bin_id, PDO::PARAM_INT);
+    $delete_querybin_periods->execute();
+
+
+    if ($type == "track") { // delete phrases
+        $sql = "SELECT phrase_id FROM tcat_query_bins_phrases WHERE querybin_id = :id";
+        $select_query_bins_phrases = $dbh->prepare($sql);
+        $select_query_bins_phrases->bindParam(":id", $bin_id, PDO::PARAM_INT);
+        $select_query_bins_phrases->execute();
+        if ($select_query_bins_phrases->rowCount() > 0) {
+            while ($results = $select_query_bins_phrases->fetch()) {
+                $sql = "DELETE FROM tcat_query_phrases WHERE id = :phrase_id";
+                $delete_query_phrases = $dbh->prepare($sql);
+                $delete_query_phrases->bindParam(":phrase_id", $results['phrase_id'], PDO::PARAM_INT);
+                $delete_query_phrases->execute();
+            }
+            $sql = "DELETE FROM tcat_query_bins_phrases WHERE querybin_id = :id";
+            $delete_query_bins_phrases = $dbh->prepare($sql);
+            $delete_query_bins_phrases->bindParam(":id", $bin_id, PDO::PARAM_INT);
+            $delete_query_bins_phrases->execute();
+        }
+    } elseif ($type == "follow") { // delete users
+        $sql = "SELECT user_id FROM tcat_query_bins_users WHERE querybin_id = :id";
+        $select_query_bins_users = $dbh->prepare($sql);
+        $select_query_bins_users->bindParam(":id", $bin_id, PDO::PARAM_INT);
+        $select_query_bins_users->execute();
+        if ($select_query_bins_users->rowCount() > 0) {
+            while ($results = $select_query_bins_users->fetch()) {
+                $sql = "DELETE FROM tcat_query_users WHERE id = :user_id";
+                $delete_query_users = $dbh->prepare($sql);
+                $delete_query_users->bindParam(":user_id", $results['user_id'], PDO::PARAM_INT);
+                $delete_query_users->execute();
+            }
+            $sql = "DELETE FROM tcat_query_bins_users WHERE querybin_id = :id";
+            $delete_query_bins_users = $dbh->prepare($sql);
+            $delete_query_bins_users->bindParam(":id", $bin_id, PDO::PARAM_INT);
+            $delete_query_bins_users->execute();
+        }
+    }
+
+    $sql = "DROP TABLE " . $bin_name . "_tweets";
+    $delete_table = $dbh->prepare($sql);
+    $delete_table->execute();
+
+    $sql = "DROP TABLE " . $bin_name . "_mentions";
+    $delete_table = $dbh->prepare($sql);
+    $delete_table->execute();
+
+    $sql = "DROP TABLE " . $bin_name . "_hashtags";
+    $delete_table = $dbh->prepare($sql);
+    $delete_table->execute();
+
+    $sql = "DROP TABLE " . $bin_name . "_urls";
+    $delete_table = $dbh->prepare($sql);
+    $delete_table->execute();
+
+
+    echo '{"msg":"Query bin [' . $bin_name . ']has been deleted"}';
+
     $dbh = false;
 }
 
