@@ -7,10 +7,17 @@ if (php_sapi_name() !== 'cli')
 include_once("../../config.php");
 include "../../common/functions.php";
 include "../common/functions.php";
+include "../common/upgrades.php";
 
 // check whether controller script is already running
 if (!noduplicates('controller.php', TRUE)) {
     logit("controller.log", "controller.php already running, skipping this check");
+    exit();
+}
+
+// check whether an upgrade is in progress
+if (upgrade_locked()) {
+    logit("controller.log", "an upgrade seems to be in progress, skipping check on trackers");
     exit();
 }
 
