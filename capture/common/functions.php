@@ -89,6 +89,9 @@ function create_bin($bin_name, $dbh = false) {
                     `from_user_url` varchar(2048),
                     `from_user_verified` bool DEFAULT false,
                     `from_user_profile_image_url` varchar(400),
+                    `from_user_withheld_scope` varchar(255),
+                    `from_user_favorites_count` int(11),
+                    `from_user_created_at` datetime,
                     `source` varchar(512),
                     `location` varchar(64),
                     `geo_lat` float(10,6),
@@ -102,6 +105,12 @@ function create_bin($bin_name, $dbh = false) {
                     `in_reply_to_status_id` bigint(20),
                     `filter_level` varchar(6),
                     `lang` varchar(16),
+                    `favorited` tinyint(1),
+                    `possibly_sensitive` tinyint(1),
+                    `truncated` tinyint(1),
+                    `scopes` varchar(255),
+                    `withheld_copyright` tinyint(1),
+                    `withheld_scope` varchar(255),
                     PRIMARY KEY (`id`),
                     KEY `created_at` (`created_at`),
                     KEY `from_user_name` (`from_user_name`),
@@ -622,6 +631,13 @@ class Tweet {
     public $id;
     public $id_str;
     public $possibly_sensitive;
+    public $scopes;
+    public $withheld_copyright;
+    public $withheld_scope;
+    public $from_user_withheld_scope;
+    public $from_user_favorites_count;
+    public $from_user_created_at;
+    public $favorited;
     public $in_reply_to_user_id;
     public $user_mentions = array();
     public $hashtags = array();
@@ -655,7 +671,7 @@ class Tweet {
             $this->id = $value;
         } elseif ($name == "in_reply_to_user_id_str") {
             $this->in_reply_to_user_id_str = $value;
-        } elseif ($name == 'extended_entities' || $name == "random_number" || $name == "withheld_scope" || $name == "status" || $name == "withheld_in_countries" || $name == "withheld_copyright") {
+        } elseif ($name == 'extended_entities' || $name == "random_number" || $name == "status" || $name == "withheld_in_countries") {
             if (is_string($value)) {
                 print $name . "=" . $value . " not available as a database field\n";
             } else {
@@ -774,16 +790,21 @@ class Tweet {
 			from_user_realname, source, location, geo_lat, geo_lng, text, 
 			to_user_id, to_user_name,in_reply_to_status_id, 
                         from_user_listed, from_user_utcoffset, from_user_timezone, from_user_description,from_user_url,from_user_verified,
-                        retweet_id,retweet_count,favorite_count,filter_level,lang,from_user_profile_image_url) 
+                        retweet_id,retweet_count,favorite_count,filter_level,lang,from_user_profile_image_url,
+            possibly_sensitive,scopes,truncated,withheld_copyright,withheld_scope,from_user_favorites_count,from_user_created_at,
+            from_user_withheld_scope,favorited
+            ) 
 			VALUES 
 			(:id, :created_at, :from_user_name, :from_user_id, :from_user_lang,
 			:from_user_tweetcount, :from_user_followercount, :from_user_friendcount, 
 			:from_user_realname, :source, :location, :geo_lat, :geo_lng, :text, 
 			:to_user_id, :to_user_name, :in_reply_to_status_id,
                         :from_user_listed, :from_user_utcoffset, :from_user_timezone, :from_user_description, :from_user_url, :from_user_verified,
-                        :retweet_id, :retweet_count, :favorite_count, :filter_level,:lang,:from_user_profile_image_url
+                        :retweet_id, :retweet_count, :favorite_count, :filter_level,:lang,:from_user_profile_image_url,
+            :possibly_sensitive,:scopes,:truncated,:withheld_copyright,:withheld_scope,:from_user_favorites_count,:from_user_created_at,
+            :from_user_withheld_scope,:favorited
                         ) 
-			;");
+			");
         //var_export($this);
         $q->bindParam(':id', $this->id_str, PDO::PARAM_STR); //
         $date = date("Y-m-d H:i:s", strtotime($this->created_at));
@@ -819,6 +840,19 @@ class Tweet {
         $q->bindParam(':favorite_count', $this->favorite_count, PDO::PARAM_STR); //
         $q->bindParam(':filter_level', $this->filter_level, PDO::PARAM_STR); //
         $q->bindParam(':lang', $this->lang, PDO::PARAM_STR); //
+        $bool = $this->possibly_sensitive ? 1 : 0;
+        $q->bindParam(':possibly_sensitive', $bool, PDO::PARAM_INT);
+        $q->bindParam(':scopes', $this->scopes, PDO::PARAM_STR);
+        $bool = $this->truncated ? 1 : 0;
+        $q->bindParam(':truncated', $bool, PDO::PARAM_INT);
+        $bool = $this->withheld_copyright ? 1 : 0;
+        $q->bindParam(':withheld_copyright', $bool, PDO::PARAM_INT);
+        $q->bindParam(':withheld_scope', $this->withheld_scope, PDO::PARAM_STR);
+        $q->bindParam(':from_user_favorites_count', $this->from_user_favorites_count, PDO::PARAM_INT);
+        $q->bindParam(':from_user_created_at', $this->from_user_created_at, PDO::PARAM_STR);        // TODO check is this conversion working?
+        $q->bindParam(':from_user_withheld_scope', $this->from_user_withheld_scope, PDO::PARAM_STR);
+        $bool = $this->favorited ? 1 : 0;
+        $q->bindParam(':favorited', $bool, PDO::PARAM_INT);
 
         $saved_tweet = $q->execute();
         // if tweet already exists, do not update hashtags, mentions, urls. As they have no unique constraint, it would just add extra info. _tweets has id as its unique primary key
