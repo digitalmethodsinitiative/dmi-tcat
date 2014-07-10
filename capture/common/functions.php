@@ -2,6 +2,8 @@
 
 error_reporting(E_ALL);
 
+include_once('upgrades.php');
+
 function pdo_connect() {
     global $dbuser, $dbpass, $database, $hostname;
 
@@ -977,6 +979,9 @@ function tracker_run() {
         error_log("tracker_run() called without defining CAPTURE. have you set up config.php ?");
         die();
     }
+
+    // See if an upgrade is possible.
+    upgrades();     // this may lock for a long time
 
     $roles = unserialize(CAPTUREROLES);
     if (!in_array(CAPTURE, $roles)) {
