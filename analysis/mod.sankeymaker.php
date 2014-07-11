@@ -234,25 +234,28 @@ require_once './common/Gexf.class.php';
             $newwork["nodes"][$i] = array("name" => $network["nodes"][$i]);
         }
 
-        $highestcounter = array();       // count element frequency from edges (nodes have full frequency and not the proportional needed for correct coloring)
+        $highestnode = array();       // count element frequency from edges (nodes have full frequency and not the proportional needed for correct coloring)
+        $highestlink = 0;
         foreach ($network["links"] as $key => $value) {
             $elements = explode("_XXX_", $key);
             $edge = array("source" => $translate[$elements[0]], "target" => $translate[$elements[1]], "value" => $value);
             $newwork["links"][] = $edge;
 
-            if (!isset($highestcounter[$elements[0]])) {
-                $highestcounter[$elements[0]] = 0;
+            if (!isset($highestnode[$elements[0]])) {
+                $highestnode[$elements[0]] = 0;
             }
-            if (!isset($highestcounter[$elements[1]])) {
-                $highestcounter[$elements[1]] = 0;
+            if (!isset($highestnode[$elements[1]])) {
+                $highestnode[$elements[1]] = 0;
             }
-            $highestcounter[$elements[0]] += $value;
-            $highestcounter[$elements[1]] += $value;
+            $highestnode[$elements[0]] += $value;
+            $highestnode[$elements[1]] += $value;
+
+			if($value > $highestlink) { $highestlink = $value; }
         }
 
-        arsort($highestcounter);
-        $highest = array_values($highestcounter);
-        $highest = $highest[0];
+        arsort($highestnode);
+        $highestnode = array_values($highestnode);
+        $highestnode = $highestnode[0];
         ?>
 
         <div id="chart"></div>
@@ -281,15 +284,19 @@ require_once './common/Gexf.class.php';
             var path = sankey.link();
 
             var color1 = d3.scale.linear()
-            .domain([0, <?php echo $highest; ?>])
-            .range(["#3399ff","#ffff00"]);
+            .domain([0,<?php echo $highestnode/2; ?>,<?php echo $highestnode; ?>])
+            .range(["#3399ff","#ffff00","#ff0000"]);
+
+            var color2 = d3.scale.linear()
+            .domain([0,<?php echo $highestlink/2; ?>, <?php echo $highestlink; ?>])
+            .range(["#3399ff","#ffff00","#ff0000"]);
 
             var energy = <?php echo json_encode($newwork); ?>;
 
             sankey
             .nodes(energy.nodes)
             .links(energy.links)
-            .layout(32);
+            .layout(64);
 
             var link = svg.append("g").selectAll(".link")
             .data(energy.links)
@@ -297,11 +304,11 @@ require_once './common/Gexf.class.php';
             .attr("class", "link")
             .attr("d", path)
             .style("stroke-width", function(d) { return Math.max(1, d.dy); })
-            .style("stroke", "#aaa")
+            .style("stroke", function(d) { return color2(d.value); })
             .sort(function(a, b) { return b.dy - a.dy; });
 
             link.append("title")
-            .text(function(d) { return d.source.name + " → " + d.target.name + "\n" + format(d.value); });
+            .text(function(d) { return d.source.name + " and " + d.target.name + "\n" + format(d.value); });
 
             var node = svg.append("g").selectAll(".node")
             .data(energy.nodes)
@@ -319,8 +326,8 @@ require_once './common/Gexf.class.php';
             //.style("fill", "#57B7B9")
             //.attr("fill", function(d) { return color(d.division); });
             .style("fill", function(d) { return color1(d.value); })
-            .style("stroke", function(d) { return color1(d.value); })
-            //.style("stroke-width", )
+            .style("stroke", "#555")
+            .style("stroke-width", 1)
             .append("title")
             .text(function(d) { return d.name + "\n" + format(d.value); });
 
