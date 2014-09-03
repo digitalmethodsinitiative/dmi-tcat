@@ -89,9 +89,9 @@ function create_bin($bin_name, $dbh = false) {
                     `from_user_url` varchar(2048),
                     `from_user_verified` bool DEFAULT false,
                     `from_user_profile_image_url` varchar(400),
-                    `from_user_withheld_scope` varchar(255),
-                    `from_user_favorites_count` int(11),
                     `from_user_created_at` datetime,
+                    `from_user_withheld_scope` varchar(32),
+                    `from_user_favourites_count` int(11),
                     `source` varchar(512),
                     `location` varchar(64),
                     `geo_lat` float(10,6),
@@ -105,12 +105,10 @@ function create_bin($bin_name, $dbh = false) {
                     `in_reply_to_status_id` bigint(20),
                     `filter_level` varchar(6),
                     `lang` varchar(16),
-                    `favorited` tinyint(1),
                     `possibly_sensitive` tinyint(1),
                     `truncated` tinyint(1),
-                    `scopes` varchar(255),
                     `withheld_copyright` tinyint(1),
-                    `withheld_scope` varchar(255),
+                    `withheld_scope` varchar(32),
                     PRIMARY KEY (`id`),
                     KEY `created_at` (`created_at`),
                     KEY `from_user_name` (`from_user_name`),
@@ -449,6 +447,22 @@ function getActiveOnepercentBin() {
     return $querybins;
 }
 
+function getActiveBins() {
+    if (!defined('CAPTURE')) {
+        // situation: import scripts
+        $none = array();
+        return $none;
+    }
+    if (CAPTURE == "track") {
+        $querybins = getActiveTrackBins();
+    } elseif (CAPTURE == "follow") {
+        $querybins = getActiveFollowBins();
+    } elseif (CAPTURE == "onepercent") {
+        $querybins = getActiveOnepercentBin();
+    }
+    return $querybins;
+}
+
 function queryManagerBinExists($binname) {
     $dbh = pdo_connect();
     $rec = $dbh->prepare("SELECT id FROM tcat_query_bins WHERE querybin = :binname");
@@ -571,12 +585,12 @@ function queryManagerInsertUsers($querybin_id, $users, $starttime = "0000-00-00 
 
 function capture_flush_buffer() {
 
-    global $tweetbucket;
+    global $capturebucket;
 
-    if (is_array($tweetbucket) && is_callable('processtweets')) {
+    if (is_array($capturebucket) && is_callable('processtweets')) {
         logit(CAPTURE . ".error.log", "flushing the capture buffer");
-        $copy = $tweetbucket;         // avoid any parallel processing by copy and then empty
-        $tweetbucket = array();
+        $copy = $capturebucket;         // avoid any parallel processing by copy and then empty
+        $capturebucket = array();
 
         processtweets($copy);
     } else {
@@ -611,102 +625,59 @@ function capture_signal_handler_term($signo) {
  */
 class Tweet {
 
-    // Fields copied from a sample timeline provided by the Twitter API
-    // @see https://dev.twitter.com/docs/api/1.1/get/statuses/mentions_timeline
+    public $id;
+    public $id_str;
+    public $created_at;
+    public $from_user_name;
+    public $from_user_id;
+    public $from_user_lang;
+    public $from_user_tweetcount;
+    public $from_user_followercount;
+    public $from_user_friendcount;
+    public $from_user_listed;
+    public $from_user_realname;
+    public $from_user_utcoffset;
+    public $from_user_timezone;
+    public $from_user_description;
+    public $from_user_url;
+    public $from_user_verified;
+    public $from_user_profile_image_url;
+    public $from_user_created_at;
+    public $from_user_withheld_scope;
+    public $from_user_favourites_count;
+    public $source;
+    public $location;
+    public $geo_lat;
+    public $geo_lng;
+    public $text;
+    public $retweet_id = null;
+    public $retweet_count;
+    public $favorite_count;
+    public $to_user_id;
+    public $to_user_name;
+    public $in_reply_to_status_id;
+    public $filter_level;
+    public $lang;
+    public $possibly_sensitive;
+    public $truncated;
+    public $withheld_copyright;
+    public $withheld_scope;
 
     public $contributors;
-    public $truncated;
-    public $text;
-    public $created_at;
     public $retweeted;
     public $retweeted_status;
-    public $in_reply_to_status_id;
     public $coordinates;
     public $in_reply_to_status_id_str;
     public $in_reply_to_screen_name;
     public $place;
-    public $retweet_count;
     public $geo;
-    public $source;
-    public $id;
-    public $id_str;
-    public $possibly_sensitive;
-    public $scopes;
-    public $withheld_copyright;
-    public $withheld_scope;
-    public $from_user_withheld_scope;
-    public $from_user_favorites_count;
-    public $from_user_created_at;
-    public $favorited;
     public $in_reply_to_user_id;
+
     public $user_mentions = array();
     public $hashtags = array();
     public $urls = array();
-    public $user;
-    public $retweet_id = null;
-    public $favorite_count;
-    public $filter_level;
-    public $timezone;
-    public $lang;
 
-    public function __construct($obj = null) {
-        if (isset($obj)) {
-            foreach ($obj as $k => $v) {
-                $this->{$k} = $v;
-            }
-        }
-    }
-
-    public function __set($name, $value) {
-
-        if (in_array($name, get_class_vars(get_class($this)))) {
-            if (is_array($this->{$k})) {
-                print 'array';
-            } else {
-                $this->{$name} = $value;
-            }
-        } elseif ($name == "_id") {
-            $this->id = $value;
-        } elseif ($name == "_id_str") {
-            $this->id = $value;
-        } elseif ($name == "in_reply_to_user_id_str") {
-            $this->in_reply_to_user_id_str = $value;
-        } elseif ($name == 'extended_entities' || $name == "random_number" || $name == "status" || $name == "withheld_in_countries") {
-            if (is_string($value)) {
-                print $name . "=" . $value . " not available as a database field\n";
-            } else {
-                print $name . " is not available as a database field\n";
-            }
-            return;
-        } elseif ($name == "metadata") {
-            return;
-        } else {
-            print "Trying to set non existing class property: " . var_export($name, 1) . "=" . var_export($value, 1) . "\n";
-        }
-    }
-
-    public static function fromJSON($json) {
-        // Parse JSON when fed JSON string
-        if (is_string($json)) {
-            $object = json_decode($json);
-        } else if (is_object($json)) {
-            $object = $json;
-        } else {
-            throw new Exception('Invalid JSON input');
-        }
-
-        $urls = $object->entities->urls;
-        $user_mentions = $object->entities->user_mentions;
-        $hashtags = $object->entities->hashtags;
-        unset($object->entities);
-
-        $tweet = new self($object);
-        $tweet->urls = $urls;
-        $tweet->user_mentions = $user_mentions;
-        $tweet->hashtags = $hashtags;
-
-        return $tweet;
-    }
+    // @todo: check against old new Tweet(x) constructor usage, and check all fromJSON() calls in the code (especially import scripts)
 
     public static function fromGnip($json) {
         // Parse JSON when fed JSON string
@@ -726,28 +697,27 @@ class Tweet {
         $t->id_str = $t->id;
         $t->created_at = $object->postedTime;
         $t->text = $object->body;
-        $t->timezone = null;
-        if (isset($object->twitterTimeZone))
-            $t->timezone = $object->twitterTimeZone;
-
-        $t->user = new StdClass();
-        $t->user->screen_name = $object->actor->preferredUsername;
-        $t->user->id = str_replace("id:twitter.com:", "", $object->actor->id);
-        $t->user->id_str = $t->user->id;
-        $t->user->url = $object->actor->link;
-        $t->user->lang = $object->actor->languages[0];
-        $t->user->statuses_count = $object->actor->statusesCount;
-        $t->user->followers_count = $object->actor->followersCount;
-        $t->user->friends_count = $object->actor->friendsCount;
-        $t->user->name = $object->actor->displayName;
         if (isset($object->actor->location))
-            $t->user->location = $object->actor->location->displayName;
-        $t->user->listed_count = $object->actor->listedCount;
-        $t->user->utcoffset = $object->actor->utcOffset;
-        $t->user->timezone = $object->actor->twitterTimeZone;
-        $t->user->description = $object->actor->summary;
-        $t->user->profile_image_url = $object->actor->image;
-        $t->user->verified = $object->actor->verified;
+             $t->location = $object->actor->location->displayName;
+
+        $t->from_user_name = $object->actor->preferredUsername;
+        $t->from_user_id = str_replace("id:twitter.com:", "", $object->actor->id);
+        $t->from_user_url = $object->actor->link;
+        $t->from_user_lang = $object->actor->languages[0];
+        $t->from_user_tweetcount = $object->actor->statusesCount;
+        $t->from_user_followercount = $object->actor->followersCount;
+        $t->from_user_friendcount = $object->actor->friendsCount;
+        $t->from_user_favourites_count = $object->actor->favoritesCount;
+        $t->from_user_realname = $object->actor->displayName;
+        $t->from_user_listed = $object->actor->listedCount;
+        $t->from_user_utcoffset = $object->actor->utcOffset;
+        $t->from_user_timezone = $object->actor->twitterTimeZone;
+        $t->from_user_description = $object->actor->summary;
+        $t->from_user_profile_image_url = $object->actor->image;
+        $t->from_user_verified = $object->actor->verified;
+        $t->from_user_timezone = null;
+        if (isset($object->twitterTimeZone))
+            $t->from_user_timezone = $object->twitterTimeZone;
 
         $t->source = $object->generator->displayName;
         if (isset($object->geo) && $object->geo->type == "Point") {
@@ -779,141 +749,316 @@ class Tweet {
             $t->in_reply_to_screen_name = $t->user_mentions[0]->screen_name;
         }
 
+        $this->fromComplete();
+
         return $t;
     }
 
-    public function save(PDO $dbh, $bin_name) {
+    // Map Twitter API result object to our database table format
+    public function fromJSON($data) {
 
-        $q = $dbh->prepare("REPLACE INTO " . $bin_name . '_tweets' . "
-			(id, created_at,  from_user_name, from_user_id, from_user_lang, 
-			from_user_tweetcount, from_user_followercount, from_user_friendcount, 
-			from_user_realname, source, location, geo_lat, geo_lng, text, 
-			to_user_id, to_user_name,in_reply_to_status_id, 
-                        from_user_listed, from_user_utcoffset, from_user_timezone, from_user_description,from_user_url,from_user_verified,
-                        retweet_id,retweet_count,favorite_count,filter_level,lang,from_user_profile_image_url,
-            possibly_sensitive,scopes,truncated,withheld_copyright,withheld_scope,from_user_favorites_count,from_user_created_at,
-            from_user_withheld_scope,favorited
-            ) 
-			VALUES 
-			(:id, :created_at, :from_user_name, :from_user_id, :from_user_lang,
-			:from_user_tweetcount, :from_user_followercount, :from_user_friendcount, 
-			:from_user_realname, :source, :location, :geo_lat, :geo_lng, :text, 
-			:to_user_id, :to_user_name, :in_reply_to_status_id,
-                        :from_user_listed, :from_user_utcoffset, :from_user_timezone, :from_user_description, :from_user_url, :from_user_verified,
-                        :retweet_id, :retweet_count, :favorite_count, :filter_level,:lang,:from_user_profile_image_url,
-            :possibly_sensitive,:scopes,:truncated,:withheld_copyright,:withheld_scope,:from_user_favorites_count,:from_user_created_at,
-            :from_user_withheld_scope,:favorited
-                        ) 
-			");
-        //var_export($this);
-        $q->bindParam(':id', $this->id_str, PDO::PARAM_STR); //
-        $date = date("Y-m-d H:i:s", strtotime($this->created_at));
-        $q->bindParam(':created_at', $date, PDO::PARAM_STR); //
-        $q->bindParam(':from_user_name', $this->user->screen_name, PDO::PARAM_STR); //
-        $q->bindParam(':from_user_id', $this->user->id_str, PDO::PARAM_STR);    //
-        $q->bindParam(':from_user_lang', $this->user->lang, PDO::PARAM_STR); //
-        $q->bindParam(':from_user_tweetcount', $this->user->statuses_count, PDO::PARAM_STR); //
-        $q->bindParam(':from_user_followercount', $this->user->followers_count, PDO::PARAM_INT); //
-        $q->bindParam(':from_user_friendcount', $this->user->friends_count, PDO::PARAM_INT); //
-        $q->bindParam(':from_user_realname', $this->user->name, PDO::PARAM_STR); //
-        $q->bindParam(':source', $this->source, PDO::PARAM_STR); //
-        $q->bindParam(':location', $this->user->location, PDO::PARAM_STR); //
-        $geo_lat = $this->geo ? (string) $this->geo->coordinates[0] : 'null'; //
-        $geo_lng = $this->geo ? (string) $this->geo->coordinates[1] : 'null'; //
-        $q->bindParam(':geo_lat', $geo_lat, PDO::PARAM_STR); //
-        $q->bindParam(':geo_lng', $geo_lng, PDO::PARAM_STR); //
-        $q->bindParam(':text', $this->text, PDO::PARAM_STR); //
-        $q->bindParam(':to_user_id', $this->in_reply_to_user_id_str, PDO::PARAM_STR); //
-        $q->bindParam(':to_user_name', $this->in_reply_to_screen_name, PDO::PARAM_STR); //
-        $q->bindParam(':in_reply_to_status_id', $this->in_reply_to_status_id_str, PDO::PARAM_STR); //
-
-        $q->bindParam(':from_user_listed', $this->user->listed_count, PDO::PARAM_INT); //
-        $q->bindParam(':from_user_utcoffset', $this->user->utcoffset, PDO::PARAM_STR); //  
-        $q->bindParam(':from_user_timezone', $this->user->timezone, PDO::PARAM_STR); //   
-        $q->bindParam(':from_user_description', $this->user->description, PDO::PARAM_STR); //
-        $q->bindParam(':from_user_url', $this->user->url, PDO::PARAM_STR); //     
-        $q->bindParam(':from_user_profile_image_url', $this->user->profile_image_url, PDO::PARAM_STR);
-        $q->bindParam(':from_user_verified', $this->user->verified, PDO::PARAM_STR); //
-        $retweet_id = $this->retweeted_status ? (string) $this->retweeted_status->id_str : null;
-        $q->bindParam(':retweet_id', $retweet_id, PDO::PARAM_STR); //    
-        $q->bindParam(':retweet_count', $this->retweet_count, PDO::PARAM_STR); // 
-        $q->bindParam(':favorite_count', $this->favorite_count, PDO::PARAM_STR); //
-        $q->bindParam(':filter_level', $this->filter_level, PDO::PARAM_STR); //
-        $q->bindParam(':lang', $this->lang, PDO::PARAM_STR); //
-        $bool = $this->possibly_sensitive ? 1 : 0;
-        $q->bindParam(':possibly_sensitive', $bool, PDO::PARAM_INT);
-        $q->bindParam(':scopes', $this->scopes, PDO::PARAM_STR);
-        $bool = $this->truncated ? 1 : 0;
-        $q->bindParam(':truncated', $bool, PDO::PARAM_INT);
-        $bool = $this->withheld_copyright ? 1 : 0;
-        $q->bindParam(':withheld_copyright', $bool, PDO::PARAM_INT);
-        $q->bindParam(':withheld_scope', $this->withheld_scope, PDO::PARAM_STR);
-        $q->bindParam(':from_user_favorites_count', $this->from_user_favorites_count, PDO::PARAM_INT);
-        $q->bindParam(':from_user_created_at', $this->from_user_created_at, PDO::PARAM_STR);        // TODO check is this conversion working?
-        $q->bindParam(':from_user_withheld_scope', $this->from_user_withheld_scope, PDO::PARAM_STR);
-        $bool = $this->favorited ? 1 : 0;
-        $q->bindParam(':favorited', $bool, PDO::PARAM_INT);
-
-        $saved_tweet = $q->execute();
-        // if tweet already exists, do not update hashtags, mentions, urls. As they have no unique constraint, it would just add extra info. _tweets has id as its unique primary key
-        if ($q->rowCount() > 1) {   // The affected-rows count makes it easy to determine whether REPLACE only added a row or whether it also replaced any rows: Check whether the count is 1 (added) or greater (replaced).
-            return $q->rowCount();
+        $this->id = $data["id_str"];
+        $this->created_at = date("Y-m-d H:i:s", strtotime($data["created_at"]));
+        $this->from_user_name = addslashes($data["user"]["screen_name"]);
+        $this->from_user_id = $data["user"]["id_str"];
+        $this->from_user_lang = $data["user"]["lang"];
+        $this->from_user_tweetcount = $data["user"]["statuses_count"];
+        $this->from_user_followercount = $data["user"]["followers_count"];
+        $this->from_user_friendcount = $data["user"]["friends_count"];
+        $this->from_user_listed = $data["user"]["listed_count"];
+        $this->from_user_realname = addslashes($data["user"]["name"]);
+        $this->from_user_utcoffset = $data["user"]["utc_offset"];
+        $this->from_user_timezone = addslashes($data["user"]["time_zone"]);
+        $this->from_user_description = addslashes($data["user"]["description"]);
+        $this->from_user_url = addslashes($data["user"]["url"]);
+        $this->from_user_verified = $data["user"]["verified"];
+        $this->from_user_profile_image_url = $data["user"]["profile_image_url"];
+        $this->from_user_created_at = date("Y-m-d H:i:s", strtotime($data["user"]["created_at"]));
+        if (isset($data["user"]["withheld_scope"])) {
+            $this->from_user_withheld_scope = $data["user"]["withheld_scope"];
         }
+        $this->from_user_favourites_count = $data["user"]["favourites_count"];
+        $this->source = addslashes($data["source"]);
+        $this->location = addslashes($data["user"]["location"]);
+        $this->geo_lat = 0;
+        $this->geo_lng = 0;
+        if ($data["geo"] != null) {
+            $this->geo_lat = $data["geo"]["coordinates"][0];
+            $this->geo_lng = $data["geo"]["coordinates"][1];
+        }
+        $this->text = addslashes($data["text"]);
+        $this->retweet_id = null;
+        if (isset($data["retweeted_status"])) {
+            $this->retweet_id = $data["retweeted_status"]["id_str"];
+        }
+        $this->to_user_id = $data["in_reply_to_user_id_str"];
+        $this->to_user_name = addslashes($data["in_reply_to_screen_name"]);
+        $this->in_reply_to_status_id = $data["in_reply_to_status_id_str"];
+        $this->filter_level = $data["filter_level"];
+        $this->possibly_sensitive = $data["possibly_sensitive"];
+        $this->truncated = $data["truncated"];
+        if (isset($data["withheld_copyright"])) {
+            $this->withheld_copyright = $data["withheld_copyright"];
+        } else {
+            $this->withheld_copyright = null;
+        }
+        if (isset($data["withheld_scope"])) {
+            $this->withheld_scope = $data["withheld_scope"];
+        } else {
+            $this->withheld_scope = null;
+        }
+        // convert from array to object
+        $this->urls = json_decode(json_encode($data["entities"]["urls"]), FALSE);
+        $this->user_mentions = json_decode(json_encode($data["entities"]["user_mentions"]), FALSE);
+        $this->hashtags = json_decode(json_encode($data["entities"]["hashtags"]), FALSE);
+
+        $this->fromComplete();
+
+    }
+
+    // maps the users, mentions and hashtags data in the object to their database table fields
+    // this function must be called at the end of the fromJSON/fromGnip and other from-functions
+    function fromComplete() {
 
         if ($this->hashtags) {
             foreach ($this->hashtags as $hashtag) {
-                $q = $dbh->prepare("REPLACE INTO " . $bin_name . '_hashtags' . "
-					(tweet_id, created_at, from_user_name, from_user_id, text) 
-					VALUES (:tweet_id, :created_at , :from_user_name, :from_user_id, :text)");
-
-                $q->bindParam(':tweet_id', $this->id_str, PDO::PARAM_STR);
-                $date = date("Y-m-d H:i:s", strtotime($this->created_at));
-                $q->bindParam(':created_at', $date, PDO::PARAM_STR);
-                $q->bindParam(':from_user_name', $this->user->screen_name, PDO::PARAM_STR);
-                $q->bindParam(':from_user_id', $this->user->id_str, PDO::PARAM_STR);
-                $q->bindParam(':text', $hashtag->text, PDO::PARAM_STR);
-
-                $saved_hashtags = $q->execute();
-            }
-        }
-
-        if ($this->urls) {
-            foreach ($this->urls as $url) {
-                $q = $dbh->prepare("REPLACE INTO " . $bin_name . '_urls' . "
-					(tweet_id, created_at, from_user_name, from_user_id, url, url_expanded) 
-					VALUES (:tweet_id, :created_at , :from_user_name, :from_user_id, :url, :url_expanded)");
-
-                $q->bindParam(':tweet_id', $this->id_str, PDO::PARAM_STR);
-                $date = date("Y-m-d H:i:s", strtotime($this->created_at));
-                $q->bindParam(':created_at', $date, PDO::PARAM_STR);
-                $q->bindParam(':from_user_name', $this->user->screen_name, PDO::PARAM_STR);
-                $q->bindParam(':from_user_id', $this->user->id_str, PDO::PARAM_STR);
-                $q->bindParam(':url', $url->url, PDO::PARAM_STR);
-                $q->bindParam(':url_expanded', $url->expanded_url, PDO::PARAM_STR);
-
-                $saved_urls = $q->execute();
+                $hashtag->tweet_id = $this->id;
+                $hashtag->created_at = $this->created_at;
+                $hashtag->from_user_name = $this->from_user_name;
+                $hashtag->from_user_id = $this->from_user_id;
+                $hashtag->text = $this->text;
             }
         }
 
         if ($this->user_mentions) {
             foreach ($this->user_mentions as $mention) {
-                $q = $dbh->prepare("REPLACE INTO " . $bin_name . '_mentions' . "
-					(tweet_id, created_at, from_user_name, from_user_id, to_user, to_user_id) 
-					VALUES (:tweet_id, :created_at , :from_user_name, :from_user_id, :to_user, :to_user_id)");
-
-                $q->bindParam(':tweet_id', $this->id_str, PDO::PARAM_STR);
-                $date = date("Y-m-d H:i:s", strtotime($this->created_at));
-                $q->bindParam(':created_at', $date, PDO::PARAM_STR);
-                $q->bindParam(':from_user_name', $this->user->screen_name, PDO::PARAM_STR);
-                $q->bindParam(':from_user_id', $this->user->id_str, PDO::PARAM_STR);
-                $q->bindParam(':to_user', $mention->screen_name, PDO::PARAM_STR);
-                $q->bindParam(':to_user_id', $mention->id_str, PDO::PARAM_STR);
-
-                $saved_mentions = $q->execute();
+                $mention->tweet_id = $this->id;
+                $mention->created_at = $this->created_at;
+                $mention->from_user_name = $this->from_user_name;
+                $mention->from_user_id = $this->from_user_id;
+                $mention->to_user = $mention->screen_name;
+                $mention->to_user_id = $mention->id_str;
             }
         }
 
-        return $saved_tweet;
+        if ($this->urls) {
+            foreach ($this->urls as $url) {
+                $url->tweet_id = $this->id;
+                $url->created_at = $this->created_at;
+                $url->from_user_name = $this->from_user_name;
+                $url->from_user_id = $this->from_user_id;
+                $url->url_followed = null;
+                $url->domain = null;
+                $url->error_code = null;
+            }
+        }
+
+    }
+
+}
+
+class TweetQueue {
+
+    public $binColumnsCache;       // contains table structure of all active bins */
+    public $queue;
+
+    public $option_replace;
+    public $option_delayed;
+    public $option_ignore;
+
+    function setoption($option, $value) {
+        if ($option == 'replace') { $this->option_replace = $value; }
+        if ($option == 'delayed') { $this->option_delayed = $value; }
+        if ($option == 'ignore') { $this->option_ignore = $value; }
+    }
+
+    function cacheBin($bin) {
+        $dbh = pdo_connect();
+        $tables = array( 'tweets', 'mentions', 'urls', 'hashtags' );
+        foreach ($tables as $table) {
+            $sql = "show columns from $bin" . "_$table";
+            $rec = $dbh->prepare($sql);
+            $rec->execute();
+            $results = $rec->fetchAll(PDO::FETCH_COLUMN);
+            $this->binColumnsCache[$bin][$table] = array_values($results);
+        }
+        $dbh = null;
+    }
+
+    function hasCached($bin) {
+        return isset($this->binColumnsCache[$bin]);
+    }
+
+    function __construct() {
+        $this->queue = array();
+        $this->option_replace = true;
+        $this->option_delayed = false;
+        $this->option_ignore = false;
+        // cache the table structure of all active bins
+        $this->binColumnsCache = array();
+        $querybins = getActiveBins();
+        if (is_array($querybins) && !empty($querybins)) {
+            foreach (array_keys($querybins) as $bin) {
+                $this->cacheBin($bin);
+            }
+        }
+    }
+
+    function push($tweet, $bin_name) {
+        $obj = array ( 'bin_name' => $bin_name,
+                       'tweet' => $tweet );
+        $this->queue[] = $obj;
+    }
+
+    function headMultiInsert($bin_name, $table_extension, $rowcount) {
+        if ($rowcount == 0) return '';
+        $statement = ($this->option_replace) ? 'REPLACE ' : 'INSERT ';
+        $statement .= ($this->option_delayed) ? 'DELAYED ' : '';
+        $statement .= ($this->option_ignore && !$this->option_replace) ? 'IGNORE ' : '';        // never combine REPLACE INTO with IGNORE
+        $statement .= "INTO " . $bin_name . "_" . $table_extension . " ( ";
+        $fields = $this->binColumnsCache[$bin_name][$table_extension];
+        $first = true;
+        foreach ($fields as $f) {
+            // for the hashtags, urls and mentions table the 'id' field is ignored, because it is not explicitely inserted, but is an auto_increment)
+            if ($f == 'id' && ($table_extension == 'mentions' || $table_extension == 'hashtags' || $table_extension == 'urls')) continue;
+            if (!$first) { $statement .= ","; } else { $first = false; }
+            $statement .= $f;
+        }
+        $statement .= " ) VALUES ";
+        // add placeholder marks
+        $count = count($this->binColumnsCache[$bin_name][$table_extension]);
+        // for the hashtags, urls and mentions tables, again discount the 'id' field
+        if ($table_extension == 'mentions' || $table_extension == 'hashtags' || $table_extension == 'urls') $count--;
+        $statement .= rtrim(str_repeat("( " . rtrim(str_repeat("?,", $count), ',') . " ),", $rowcount), ',');
+        return $statement;
+    }
+
+    function insertDB() {
+        // insert all Tweets into the database and empty the queue
+
+        $dbh = pdo_connect();
+
+        // make a list of all bins in the queue and count the number of placeholders needed per insert query
+        $binlist = array();
+        foreach ($this->queue as $obj) {
+            $bin_name = $obj['bin_name'];
+            if (isset($binlist[$bin_name])) {
+                $binlist[$bin_name]['tweets']++;
+                $binlist[$bin_name]['hashtags'] += count($obj['tweet']->hashtags);
+                $binlist[$bin_name]['urls'] += count($obj['tweet']->urls);
+                $binlist[$bin_name]['mentions'] += count($obj['tweet']->user_mentions);
+                continue;
+            }
+            if (!$this->hasCached($bin_name)) $this->cacheBin($bin_name);
+            $binlist[$bin_name] = array( 'tweets' => 1,
+                                         'hashtags' => count($obj['tweet']->hashtags),
+                                         'urls' => count($obj['tweet']->urls),
+                                         'mentions' => count($obj['tweet']->user_mentions) );
+        }
+
+        // process the queue bin by bin
+
+        foreach ($binlist as $bin_name => $counts) {
+
+            // first prepare the multiple insert statements for tweets, mentions, hashtags, urls
+            $statement = array(); $extensions = array( 'tweets', 'mentions', 'hashtags', 'urls' );
+            foreach ($extensions as $ext) {
+                $statement[$ext] = $this->headMultiInsert($bin_name, $ext, $counts[$ext]);
+            }
+            $tweeti = 1; $tweetq = $dbh->prepare($statement['tweets']);
+            $hashtagsi = 1; $hashtagsq = $dbh->prepare($statement['hashtags']);
+            $urlsi = 1; $urlsq = $dbh->prepare($statement['urls']);
+            $mentionsi = 1; $mentionsq = $dbh->prepare($statement['mentions']);
+
+            // go now and iterate the queue item by item
+            foreach ($this->queue as $obj) {
+                if ($obj['bin_name'] !== $bin_name) continue;
+
+                $t = $obj['tweet'];
+                // read the tweets table structure from cache
+                $fields = $this->binColumnsCache[$bin_name]['tweets'];
+                foreach ($fields as $f) {
+                    if ($f == 'id') {
+                        $tweetq->bindParam($tweeti++, $t->$f, PDO::PARAM_STR);  // i think this is redundant but we want to be sure to support big number tweet ids (as strings!)
+                    } else {
+                        $tweetq->bindParam($tweeti++, $t->$f);
+                    }
+                }
+
+                // and the other tables
+
+                if ($t->hashtags) {
+                    $fields = $this->binColumnsCache[$bin_name]['hashtags'];
+                    foreach ($t->hashtags as $hashtag) {
+                        foreach ($fields as $f) {
+                            if ($f == 'id') continue;
+                            $hashtagsq->bindParam($hashtagsi++, $hashtag->$f);
+                        }
+                    }
+                }
+
+                if ($t->user_mentions) {
+                    $fields = $this->binColumnsCache[$bin_name]['mentions'];
+                    foreach ($t->user_mentions as $mention) {
+                        foreach ($fields as $f) {
+                            if ($f == 'id') continue;
+                            $mentionsq->bindParam($mentionsi++, $mention->$f);
+                        }
+                    }
+                }
+
+                if ($t->urls) {
+                    $fields = $this->binColumnsCache[$bin_name]['urls'];
+                    foreach ($t->urls as $url) {
+                        foreach ($fields as $f) {
+                            if ($f == 'id') continue;
+                            $urlsq->bindParam($urlsi++, $url->$f);
+                        }
+                    }
+                }
+
+            }
+
+            // finaly insert the tweets and other data
+            if ($statement['tweets'] !== '') {
+                try {
+                    $tweetq->execute(); 
+                } catch( PDOException $e) {
+                    $errorMessage = $e->getCode() . ': ' . $e->getMessage();
+                    logit(CAPTURE . ".error.log", "insert into $bin_name" . "_tweets failed with '$errorMessage'");
+                }
+            }
+            if ($statement['hashtags'] !== '') {
+                try {
+                $hashtagsq->execute();
+                } catch( PDOException $e) {
+                    $errorMessage = $e->getCode() . ': ' . $e->getMessage();
+                    logit(CAPTURE . ".error.log", "insert into $bin_name" . "_hashtags failed with '$errorMessage'");
+                    // DEBEUG
+                    print_r($statement['hashtags']);exit();
+                }
+            }
+            if ($statement['urls'] !== '') {
+                try {
+                $urlsq->execute();
+                } catch( PDOException $e) {
+                    $errorMessage = $e->getCode() . ': ' . $e->getMessage();
+                    logit(CAPTURE . ".error.log", "insert into $bin_name" . "_urls failed with '$errorMessage'");
+                }
+            }
+            if ($statement['mentions'] !== '') {
+                try {
+                $mentionsq->execute();
+                } catch( PDOException $e) {
+                    $errorMessage = $e->getCode() . ': ' . $e->getMessage();
+                    logit(CAPTURE . ".error.log", "insert into $bin_name" . "_mentions failed with '$errorMessage'");
+                }
+            }
+
+        }
+
+        $dbh = null;
+        $this->queue = array();
     }
 
 }
@@ -1013,6 +1158,18 @@ class UrlCollection implements IteratorAggregate {
  */
 
 function tracker_run() {
+
+    global $tweetQueue;
+    $tweetQueue = new TweetQueue();
+    $tweetQueue->setoption('replace', false);
+    if (defined('USE_INSERT_DELAYED') && USE_INSERT_DELAYED) {
+        $tweetQueue->setoption('delayed', true);
+    }
+    if (defined('DISABLE_INSERT_IGNORE') && DISABLE_INSERT_IGNORE) {
+        $tweetQueue->setoption('ignore', false);
+    } else {
+        $tweetQueue->setoption('ignore', true);
+    }
 
     if (!defined("CAPTURE")) {
 
@@ -1123,14 +1280,14 @@ function tracker_run() {
         logit(CAPTURE . ".error.log", "connecting to sample stream");
     }
 
-    $tweetbucket = array();
+    $capturebucket = array();
     $tmhOAuth->streaming_request('POST', $method, $params, 'tracker_streamCallback', array('Host' => 'stream.twitter.com'));
 
     // output any response we get back AFTER the Stream has stopped -- or it errors
     logit(CAPTURE . ".error.log", "stream stopped - error " . var_export($tmhOAuth, 1));
 
     logit(CAPTURE . ".error.log", "processing buffer before exit");
-    processtweets($tweetbucket);
+    processtweets($capturebucket);
 }
 
 /*
@@ -1138,7 +1295,7 @@ function tracker_run() {
  */
 
 function tracker_streamCallback($data, $length, $metrics) {
-    global $tweetbucket, $lastinsert;
+    global $capturebucket, $lastinsert;
     $now = time();
     $data = json_decode($data, true);
 
@@ -1197,11 +1354,11 @@ function tracker_streamCallback($data, $length, $metrics) {
             unset($data['limit']);
         }
 
-        $tweetbucket[] = $data;
-        if (count($tweetbucket) == 100 || $now > $lastinsert + 5) {
-            processtweets($tweetbucket);
+        $capturebucket[] = $data;
+        if (count($capturebucket) == 100 || $now > $lastinsert + 5) {
+            processtweets($capturebucket);
             $lastinsert = time();
-            $tweetbucket = array();
+            $capturebucket = array();
         }
     }
 }
@@ -1210,25 +1367,17 @@ function tracker_streamCallback($data, $length, $metrics) {
  * Process tweet function
  */
 
-function processtweets($tweetbucket) {
+function processtweets($capturebucket) {
 
-    if (CAPTURE == "track") {
-        $querybins = getActiveTrackBins();
-    } elseif (CAPTURE == "follow") {
-        $querybins = getActiveFollowBins();
-    } elseif (CAPTURE == "onepercent") {
-        $querybins = getActiveOnepercentBin();
-    }
+    global $tweetQueue;
+
+    $querybins = getActiveBins();
 
     // we run through every bin to check whether the received tweets fit
     foreach ($querybins as $binname => $queries) {
-        $list_tweets = array();
-        $list_hashtags = array();
-        $list_urls = array();
-        $list_mentions = array();
 
         // running through every single tweet
-        foreach ($tweetbucket as $data) {
+        foreach ($capturebucket as $data) {
 
             if (!array_key_exists('entities', $data)) {
 
@@ -1301,133 +1450,13 @@ function processtweets($tweetbucket) {
                 continue;
             }
 
-            $t = array();
-            $t["id"] = $data["id_str"];
-            $t["created_at"] = date("Y-m-d H:i:s", strtotime($data["created_at"]));
-            $t["from_user_name"] = addslashes($data["user"]["screen_name"]);
-            $t["from_user_id"] = $data["user"]["id_str"];
-            $t["from_user_lang"] = $data["user"]["lang"];
-            $t["from_user_tweetcount"] = $data["user"]["statuses_count"];
-            $t["from_user_followercount"] = $data["user"]["followers_count"];
-            $t["from_user_friendcount"] = $data["user"]["friends_count"];
-            $t["from_user_listed"] = $data["user"]["listed_count"];
-            $t["from_user_realname"] = addslashes($data["user"]["name"]);
-            $t["from_user_utcoffset"] = $data["user"]["utc_offset"];
-            $t["from_user_timezone"] = addslashes($data["user"]["time_zone"]);
-            $t["from_user_description"] = addslashes($data["user"]["description"]);
-            $t["from_user_url"] = addslashes($data["user"]["url"]);
-            $t["from_user_verified"] = $data["user"]["verified"];
-            $t["from_user_profile_image_url"] = $data["user"]["profile_image_url"];
-            $t["source"] = addslashes($data["source"]);
-            $t["location"] = addslashes($data["user"]["location"]);
-            $t["geo_lat"] = 0;
-            $t["geo_lng"] = 0;
-            if ($data["geo"] != null) {
-                $t["geo_lat"] = $data["geo"]["coordinates"][0];
-                $t["geo_lng"] = $data["geo"]["coordinates"][1];
-            }
-            $t["text"] = addslashes($data["text"]);
-            $t["retweet_id"] = null;
-            if (isset($data["retweeted_status"])) {
-                $t["retweet_id"] = $data["retweeted_status"]["id_str"];
-            }
-            $t["to_user_id"] = $data["in_reply_to_user_id_str"];
-            $t["to_user_name"] = addslashes($data["in_reply_to_screen_name"]);
-            $t["in_reply_to_status_id"] = $data["in_reply_to_status_id_str"];
-            $t["filter_level"] = $data["filter_level"];
+            $tweet = new Tweet();
+            $tweet->fromJSON($data);
+            $tweetQueue->push($tweet, $binname);
 
-            $list_tweets[] = "('" . implode("','", $t) . "')";
-
-
-            if (count($data["entities"]["hashtags"]) > 0) {
-                foreach ($data["entities"]["hashtags"] as $hashtag) {
-                    $h = array();
-                    $h["tweet_id"] = $t["id"];
-                    $h["created_at"] = $t["created_at"];
-                    $h["from_user_name"] = $t["from_user_name"];
-                    $h["from_user_id"] = $t["from_user_id"];
-                    $h["text"] = addslashes($hashtag["text"]);
-
-                    $list_hashtags[] = "('" . implode("','", $h) . "')";
-                }
-            }
-
-            if (count($data["entities"]["urls"]) > 0) {
-                foreach ($data["entities"]["urls"] as $url) {
-                    $u = array();
-                    $u["tweet_id"] = $t["id"];
-                    $u["created_at"] = $t["created_at"];
-                    $u["from_user_name"] = $t["from_user_name"];
-                    $u["from_user_id"] = $t["from_user_id"];
-                    $u["url"] = $url["url"];
-                    $u["url_expanded"] = addslashes($url["expanded_url"]);
-
-                    $list_urls[] = "('" . implode("','", $u) . "')";
-                }
-            }
-
-            if (count($data["entities"]["user_mentions"]) > 0) {
-                foreach ($data["entities"]["user_mentions"] as $mention) {
-                    $m = array();
-                    $m["tweet_id"] = $t["id"];
-                    $m["created_at"] = $t["created_at"];
-                    $m["from_user_name"] = $t["from_user_name"];
-                    $m["from_user_id"] = $t["from_user_id"];
-                    $m["to_user"] = $mention["screen_name"];
-                    $m["to_user_id"] = $mention["id_str"];
-
-                    $list_mentions[] = "('" . implode("','", $m) . "')";
-                }
-            }
-        }
-
-        // use insert delayed
-        $delayed = (defined('USE_INSERT_DELAYED') && USE_INSERT_DELAYED) ? 'DELAYED' : '';
-
-        // distribute tweets into bins
-        if (count($list_tweets) > 0) {
-
-            $sql = "INSERT $delayed IGNORE INTO " . $binname . "_tweets (id,created_at,from_user_name,from_user_id,from_user_lang,from_user_tweetcount,from_user_followercount,from_user_friendcount,from_user_listed,from_user_realname,from_user_utcoffset,from_user_timezone,from_user_description,from_user_url,from_user_verified,from_user_profile_image_url,source,location,geo_lat,geo_lng,text,retweet_id,to_user_id,to_user_name,in_reply_to_status_id,filter_level) VALUES " . implode(",", $list_tweets);
-
-            $sqlresults = mysql_query($sql);
-            if (!$sqlresults) {
-                logit(CAPTURE . ".error.log", "insert error: " . $sql);
-            } elseif (database_activity()) {
-                $pid = getmypid();
-                file_put_contents(BASE_FILE . "proc/" . CAPTURE . ".procinfo", $pid . "|" . time());
-            }
-        }
-
-        if (count($list_hashtags) > 0) {
-
-            $sql = "INSERT $delayed IGNORE INTO " . $binname . "_hashtags (tweet_id,created_at,from_user_name,from_user_id,text) VALUES " . implode(",", $list_hashtags);
-
-            $sqlresults = mysql_query($sql);
-            if (!$sqlresults) {
-                logit(CAPTURE . ".error.log", "insert error: " . $sql);
-            }
-        }
-
-        if (count($list_urls) > 0) {
-
-            $sql = "INSERT $delayed IGNORE INTO " . $binname . "_urls (tweet_id,created_at,from_user_name,from_user_id,url,url_expanded) VALUES " . implode(",", $list_urls);
-
-            $sqlresults = mysql_query($sql);
-            if (!$sqlresults) {
-                logit(CAPTURE . ".error.log", "insert error: " . $sql);
-            }
-        }
-
-        if (count($list_mentions) > 0) {
-
-            $sql = "INSERT $delayed IGNORE INTO " . $binname . "_mentions (tweet_id,created_at,from_user_name,from_user_id,to_user,to_user_id) VALUES " . implode(",", $list_mentions);
-
-            $sqlresults = mysql_query($sql);
-            if (!$sqlresults) {
-                logit(CAPTURE . ".error.log", "insert error: " . $sql);
-            }
         }
     }
+    $tweetQueue->insertDB();
     return TRUE;
 }
 
