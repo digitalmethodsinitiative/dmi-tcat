@@ -921,6 +921,17 @@ class Tweet {
         }
 
     }
+    
+    // checks whether this Tweet is in a particular bin in the database
+    function isInBin($bin_name) {
+        $dbh = pdo_connect();
+        $query = "SELECT EXISTS(SELECT 1 FROM " . quoteIdent($bin_name . "_tweets") . " WHERE id = " . $this->id . ")";
+        $test = $dbh->prepare($query);
+        $test->execute();
+        $row = $test->fetch();
+        $dbh = null;
+        return $row[0];
+    }
 
 }
 

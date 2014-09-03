@@ -79,14 +79,7 @@ function search($keywords, $max_id = null) {
 
             $t = new Tweet();
             $t->fromJSON($tweet);
-
-            // check if this tweet is not already in the bin
-            $query = "SELECT EXISTS(SELECT 1 FROM " . quoteIdent($bin_name . "_tweets") . " WHERE id = " . $t->id . ")";
-            $test = $dbh->prepare($query);
-            $test->execute();
-            $row = $test->fetch();
-
-            if ($row[0] == 0) {
+            if (!$t->isInBin($bin_name)) {
                 $all_users[] = $t->from_user_id;
                 $all_tweet_ids[] = $t->id;
                 $tweet_ids[] = $t->id;
