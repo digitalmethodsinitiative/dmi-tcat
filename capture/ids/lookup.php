@@ -14,8 +14,8 @@ require BASE_FILE . 'capture/common/tmhOAuth/tmhOAuth.php';
 
 // DEFINE LOOKUP PARAMETERS HERE
 
-$bin_name = 'emoji';       // name of the bin
-$idfile = 'idfile';        // path to the input file name. the file must contain only a tweet ID on every line
+$bin_name = '';            // name of the bin
+$idfile = '';              // path to the input file name. the file must contain only a tweet ID on every line
 $type = 'lookup';          // specify 'lookup'
 
 if (empty($bin_name))
