@@ -14,9 +14,9 @@ require BASE_FILE . 'capture/common/tmhOAuth/tmhOAuth.php';
 
 // DEFINE LOOKUP PARAMETERS HERE
 
-$bin_name = '';       // name of the bin
-$idfile = '';         // path to the input file name. the file must contain only a tweet ID on every line
-$type = 'lookup';     // specify 'lookup'
+$bin_name = 'emoji';       // name of the bin
+$idfile = 'idfile';        // path to the input file name. the file must contain only a tweet ID on every line
+$type = 'lookup';          // specify 'lookup'
 
 if (empty($bin_name))
     die("bin_name not set\n");
@@ -35,12 +35,14 @@ $all_users = $all_tweet_ids = array();
 $dbh = pdo_connect();
 create_bin($bin_name, $dbh);
 
+$tweetQueue = new TweetQueue();
+
 search($idlist);
 
 queryManagerCreateBinFromExistingTables($bin_name, $querybin_id, 'import tweetset');
 
 function search($idlist) {
-    global $twitter_keys, $current_key, $all_users, $all_tweet_ids, $bin_name, $dbh;
+    global $twitter_keys, $current_key, $all_users, $all_tweet_ids, $bin_name, $dbh, $tweetQueue;
 
     $keyinfo = getRESTKey(0);
     $current_key = $keyinfo['key'];
@@ -70,57 +72,60 @@ function search($idlist) {
             		));
 	    }
 
-            $q = $idlist[$i];
-            $n = $i + 1;
-            while ($n < $i + 100) {
-                if (!isset($idlist[$n])) break;
-                $q .= "," . $idlist[$n];
-                $n++;
-            }
+        $q = $idlist[$i];
+        $n = $i + 1;
+        while ($n < $i + 100) {
+            if (!isset($idlist[$n])) break;
+            $q .= "," . $idlist[$n];
+            $n++;
+        }
 
-            $params = array(
-                'id' => $q,
-            );
+        $params = array(
+            'id' => $q,
+        );
 
-            $code = $tmhOAuth->user_request(array(
-                'method' => 'GET',
-                'url' => $tmhOAuth->url('1.1/statuses/lookup'),
-                'params' => $params
-                    ));
+        $code = $tmhOAuth->user_request(array(
+            'method' => 'GET',
+            'url' => $tmhOAuth->url('1.1/statuses/lookup'),
+            'params' => $params
+                ));
 
 	    $ratefree--;
 
-            if ($tmhOAuth->response['code'] == 200) {
-                $data = json_decode($tmhOAuth->response['response'], true);
+        if ($tmhOAuth->response['code'] == 200) {
+            $data = json_decode($tmhOAuth->response['response'], true);
 
-                if (is_array($data) && empty($data)) {
-                        // all tweets in set are deleted
-                        continue;
-                }
-
-                $tweets = $data;
-
-                $tweet_ids = array();
-                foreach ($tweets as $tweet) {
-
-                    $t = Tweet::fromJSON(json_encode($tweet)); // @todo: dubbelop
-
-                    $all_users[] = $t->user->id;
-                    $all_tweet_ids[] = $t->id;
-                    $tweet_ids[] = $t->id;
-
-                    $saved = $t->save($dbh, $bin_name);
-
-                    print ".";
-                }
-                sleep(1);
-            } else {
-                echo "Failure with code " . $tmhOAuth->response['response']['code'] . "\n";
-                var_dump($tmhOAuth->response['response']['info']);
-                var_dump($tmhOAuth->response['response']['error']);
-                var_dump($tmhOAuth->response['response']['errno']);
-                die();
+            if (is_array($data) && empty($data)) {
+                // all tweets in set are deleted
+                continue;
             }
+
+            $tweets = $data;
+
+            $tweet_ids = array();
+            foreach ($tweets as $tweet) {
+
+                $t = new Tweet();
+                $t->fromJSON($tweet);
+
+                $all_users[] = $t->from_user_id;
+                $all_tweet_ids[] = $t->id;
+                $tweet_ids[] = $t->id;
+
+                $tweetQueue->push($t, $bin_name);
+
+                print ".";
+            }
+            sleep(1);
+        } else {
+            echo "Failure with code " . $tmhOAuth->response['response']['code'] . "\n";
+            var_dump($tmhOAuth->response['response']['info']);
+            var_dump($tmhOAuth->response['response']['error']);
+            var_dump($tmhOAuth->response['response']['errno']);
+            die();
         }
+
+        $tweetQueue->insertDB();
+    }
 }
 ?>
