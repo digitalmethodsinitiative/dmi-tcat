@@ -52,6 +52,20 @@ function create_bin($bin_name, $dbh = false) {
         $create_hashtags = $dbh->prepare($sql);
         $create_hashtags->execute();
 
+        $sql = "CREATE TABLE IF NOT EXISTS " . quoteIdent($bin_name . "_withheld") . " (
+            `id` int(11) NOT NULL AUTO_INCREMENT,
+            `tweet_id` bigint(20),
+            `user_id` bigint(20),
+            `country` char(5),
+            PRIMARY KEY (`id`),
+                    KEY `user_id` (`user_id`),
+                    KEY `tweet_id` (`user_id`),
+                    KEY `country` (`country`)
+            ) ENGINE=MyISAM  DEFAULT CHARSET=utf8mb4";
+
+        $create_withheld = $dbh->prepare($sql);
+        $create_withheld->execute();
+
         $sql = "CREATE TABLE IF NOT EXISTS " . quoteIdent($bin_name . "_mentions") . " (
             `id` int(11) NOT NULL AUTO_INCREMENT,
             `tweet_id` bigint(20) NOT NULL,
@@ -235,8 +249,6 @@ function create_admin() {
  */
 
 function ratelimit_record($ratelimit, $ex_start) {
-    /* for debugging */
-    logit("controller.log", "ratelimit_record() has been called");
     $dbh = pdo_connect();
     $sql = "insert into tcat_error_ratelimit ( type, start, end, tweets ) values ( :type, :start, :end, :ratelimit)";
     $h = $dbh->prepare($sql);
@@ -660,6 +672,8 @@ class Tweet {
     public $lang;
     public $possibly_sensitive;
     public $truncated;
+    public $withheld_in_countries;              // not used as tweet database field
+    public $from_user_withheld_in_countries;    // not used as tweet database field
     public $withheld_copyright;
     public $withheld_scope;
 
@@ -749,7 +763,18 @@ class Tweet {
             $t->in_reply_to_screen_name = $t->user_mentions[0]->screen_name;
         }
 
-        $this->fromComplete();
+        if (isset($object->user_withheld->withheld_in_countries)) {
+            $t->withheld_in_countries = $object->user_withheld->withheld_in_countries;
+        } else {
+            $t->withheld_in_countries = array();
+        }
+        if (isset($object->status_withheld->withheld_in_countries)) {
+            $t->from_user_withheld_in_countries = $object->status_withheld->withheld_in_countries;
+        } else {
+            $t->from_user_withheld_in_countries = array();
+        }
+
+        $t->fromComplete();
 
         return $t;
     }
@@ -811,6 +836,16 @@ class Tweet {
         $this->urls = json_decode(json_encode($data["entities"]["urls"]), FALSE);
         $this->user_mentions = json_decode(json_encode($data["entities"]["user_mentions"]), FALSE);
         $this->hashtags = json_decode(json_encode($data["entities"]["hashtags"]), FALSE);
+        if (isset($data["withheld_in_countries"])) {
+            $this->withheld_in_countries = json_decode(json_encode($data["withheld_in_countries"]), FALSE);
+        } else {
+            $this->withheld_in_countries = array();
+        }
+        if (isset($data["user"]["withheld_in_countries"])) {
+            $this->from_user_withheld_in_countries = json_decode(json_encode($data["user"]["withheld_in_countries"]), FALSE);
+        } else {
+            $this->from_user_withheld_in_countries = array();
+        }
 
         $this->fromComplete();
 
@@ -826,7 +861,6 @@ class Tweet {
                 $hashtag->created_at = $this->created_at;
                 $hashtag->from_user_name = $this->from_user_name;
                 $hashtag->from_user_id = $this->from_user_id;
-                $hashtag->text = $this->text;
             }
         }
 
@@ -853,6 +887,25 @@ class Tweet {
             }
         }
 
+        if ($this->withheld_in_countries || $this->from_user_withheld_in_countries) {
+            $list = array();
+            foreach ($this->withheld_in_countries as $country) {
+                $row = new stdClass;
+                $row->tweet_id = $this->id;
+                $row->user_id = null;
+                $row->country = $country;
+                $list[] = $row;
+            }
+            foreach ($this->from_user_withheld_in_countries as $country) {
+                $row = new stdClass;
+                $row->tweet_id = null;
+                $row->user_id = $this->from_user_id;
+                $row->country = $country;
+                $list[] = $row;
+            }
+            $this->withheld_in_countries = $list;       // this array will populate the _withheld table
+        }
+
     }
 
 }
@@ -874,11 +927,17 @@ class TweetQueue {
 
     function cacheBin($bin) {
         $dbh = pdo_connect();
-        $tables = array( 'tweets', 'mentions', 'urls', 'hashtags' );
+        $tables = array( 'tweets', 'mentions', 'urls', 'hashtags', 'withheld' );
         foreach ($tables as $table) {
             $sql = "show columns from $bin" . "_$table";
             $rec = $dbh->prepare($sql);
-            $rec->execute();
+            try {
+                $rec->execute();
+            } catch( PDOException $e) {
+                // table does not exist, make an empty cache struct
+                $this->binColumnsCache[$bin][$table] = array();
+                continue;
+            }
             $results = $rec->fetchAll(PDO::FETCH_COLUMN);
             $this->binColumnsCache[$bin][$table] = array_values($results);
         }
@@ -910,6 +969,10 @@ class TweetQueue {
         $this->queue[] = $obj;
     }
 
+    function length() {
+        return count($this->queue);
+    }
+
     function headMultiInsert($bin_name, $table_extension, $rowcount) {
         if ($rowcount == 0) return '';
         $statement = ($this->option_replace) ? 'REPLACE ' : 'INSERT ';
@@ -919,16 +982,16 @@ class TweetQueue {
         $fields = $this->binColumnsCache[$bin_name][$table_extension];
         $first = true;
         foreach ($fields as $f) {
-            // for the hashtags, urls and mentions table the 'id' field is ignored, because it is not explicitely inserted, but is an auto_increment)
-            if ($f == 'id' && ($table_extension == 'mentions' || $table_extension == 'hashtags' || $table_extension == 'urls')) continue;
+            // for these tables the 'id' field is ignored, because it is not explicitely inserted, but is an auto_increment
+            if ($f == 'id' && ($table_extension == 'mentions' || $table_extension == 'hashtags' || $table_extension == 'urls' || $table_extension == 'withheld')) continue;
             if (!$first) { $statement .= ","; } else { $first = false; }
             $statement .= $f;
         }
         $statement .= " ) VALUES ";
         // add placeholder marks
         $count = count($this->binColumnsCache[$bin_name][$table_extension]);
-        // for the hashtags, urls and mentions tables, again discount the 'id' field
-        if ($table_extension == 'mentions' || $table_extension == 'hashtags' || $table_extension == 'urls') $count--;
+        // for these tanbles, again discount the 'id' field
+        if ($table_extension == 'mentions' || $table_extension == 'hashtags' || $table_extension == 'urls' || $table_extension == 'withheld') $count--;
         $statement .= rtrim(str_repeat("( " . rtrim(str_repeat("?,", $count), ',') . " ),", $rowcount), ',');
         return $statement;
     }
@@ -947,21 +1010,24 @@ class TweetQueue {
                 $binlist[$bin_name]['hashtags'] += count($obj['tweet']->hashtags);
                 $binlist[$bin_name]['urls'] += count($obj['tweet']->urls);
                 $binlist[$bin_name]['mentions'] += count($obj['tweet']->user_mentions);
+                $binlist[$bin_name]['withheld'] += count($obj['tweet']->withheld_in_countries);
                 continue;
             }
             if (!$this->hasCached($bin_name)) $this->cacheBin($bin_name);
             $binlist[$bin_name] = array( 'tweets' => 1,
                                          'hashtags' => count($obj['tweet']->hashtags),
                                          'urls' => count($obj['tweet']->urls),
-                                         'mentions' => count($obj['tweet']->user_mentions) );
+                                         'mentions' => count($obj['tweet']->user_mentions),
+                                         'withheld' => count($obj['tweet']->withheld_in_countries)
+                                       );
         }
 
         // process the queue bin by bin
 
         foreach ($binlist as $bin_name => $counts) {
 
-            // first prepare the multiple insert statements for tweets, mentions, hashtags, urls
-            $statement = array(); $extensions = array( 'tweets', 'mentions', 'hashtags', 'urls' );
+            // first prepare the multiple insert statements for tweets, mentions, hashtags, urls, withheld
+            $statement = array(); $extensions = array( 'tweets', 'mentions', 'hashtags', 'urls', 'withheld' );
             foreach ($extensions as $ext) {
                 $statement[$ext] = $this->headMultiInsert($bin_name, $ext, $counts[$ext]);
             }
@@ -969,6 +1035,7 @@ class TweetQueue {
             $hashtagsi = 1; $hashtagsq = $dbh->prepare($statement['hashtags']);
             $urlsi = 1; $urlsq = $dbh->prepare($statement['urls']);
             $mentionsi = 1; $mentionsq = $dbh->prepare($statement['mentions']);
+            $withheldi = 1; $withheldq = $dbh->prepare($statement['withheld']);
 
             // go now and iterate the queue item by item
             foreach ($this->queue as $obj) {
@@ -978,11 +1045,7 @@ class TweetQueue {
                 // read the tweets table structure from cache
                 $fields = $this->binColumnsCache[$bin_name]['tweets'];
                 foreach ($fields as $f) {
-                    if ($f == 'id') {
-                        $tweetq->bindParam($tweeti++, $t->$f, PDO::PARAM_STR);  // i think this is redundant but we want to be sure to support big number tweet ids (as strings!)
-                    } else {
-                        $tweetq->bindParam($tweeti++, $t->$f);
-                    }
+                    $tweetq->bindParam($tweeti++, $t->$f);
                 }
 
                 // and the other tables
@@ -1017,6 +1080,16 @@ class TweetQueue {
                     }
                 }
 
+                if ($t->withheld_in_countries && !empty($t->withheld_in_countries) && !empty($this->binColumnsCache[$bin_name]['withheld'])) {
+                    $fields = $this->binColumnsCache[$bin_name]['withheld'];
+                    foreach ($t->withheld_in_countries as $withheld) {
+                        foreach ($fields as $f) {
+                            if ($f == 'id') continue;
+                            $withheldq->bindParam($withheldi++, $withheld->$f);
+                        }
+                    }
+                }
+
             }
 
             // finaly insert the tweets and other data
@@ -1034,8 +1107,6 @@ class TweetQueue {
                 } catch( PDOException $e) {
                     $errorMessage = $e->getCode() . ': ' . $e->getMessage();
                     logit(CAPTURE . ".error.log", "insert into $bin_name" . "_hashtags failed with '$errorMessage'");
-                    // DEBEUG
-                    print_r($statement['hashtags']);exit();
                 }
             }
             if ($statement['urls'] !== '') {
@@ -1052,6 +1123,14 @@ class TweetQueue {
                 } catch( PDOException $e) {
                     $errorMessage = $e->getCode() . ': ' . $e->getMessage();
                     logit(CAPTURE . ".error.log", "insert into $bin_name" . "_mentions failed with '$errorMessage'");
+                }
+            }
+            if ($statement['withheld'] !== '') {
+                try {
+                $withheldq->execute();
+                } catch( PDOException $e) {
+                    $errorMessage = $e->getCode() . ': ' . $e->getMessage();
+                    logit(CAPTURE . ".error.log", "insert into $bin_name" . "_withheld failed with '$errorMessage'");
                 }
             }
 
@@ -1354,6 +1433,8 @@ function tracker_streamCallback($data, $length, $metrics) {
             unset($data['limit']);
         }
 
+        if (empty($data)) return;   // sometimes we only get rate limit info
+
         $capturebucket[] = $data;
         if (count($capturebucket) == 100 || $now > $lastinsert + 5) {
             processtweets($capturebucket);
@@ -1373,24 +1454,24 @@ function processtweets($capturebucket) {
 
     $querybins = getActiveBins();
 
-    // we run through every bin to check whether the received tweets fit
-    foreach ($querybins as $binname => $queries) {
+    // running through every single tweet
+    foreach ($capturebucket as $data) {
 
-        // running through every single tweet
-        foreach ($capturebucket as $data) {
-
-            if (!array_key_exists('entities', $data)) {
-
-                // unexpected/irregular tweet data
-                if (array_key_exists('delete', $data)) {
-                    // a tweet has been deleted. @todo: process
-                    continue;
-                }
-
-                // this can get very verbose when repeated?
-                logit(CAPTURE . ".error.log", "irregular tweet data received.");
+        if (!array_key_exists('entities', $data)) {
+           
+            // unexpected/irregular tweet data
+            if (array_key_exists('delete', $data)) {
+                // a tweet has been deleted. @todo: process
                 continue;
             }
+
+            // this can get very verbose when repeated?
+            logit(CAPTURE . ".error.log", "irregular tweet data received.");
+            continue;
+        }
+
+        // we run through every bin to check whether the received tweets fit
+        foreach ($querybins as $binname => $queries) {
 
             $found = false;
 
