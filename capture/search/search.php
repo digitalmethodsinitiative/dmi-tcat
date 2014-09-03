@@ -27,6 +27,8 @@ $querybin_id = queryManagerBinExists($bin_name);
 $current_key = $looped = $tweets_success = $tweets_failed = $tweets_processed = 0;
 $all_users = $all_tweet_ids = array();
 
+$tweetQueue = new TweetQueue();
+
 // ----- connection -----
 $dbh = pdo_connect();
 create_bin($bin_name, $dbh);
@@ -34,11 +36,14 @@ create_bin($bin_name, $dbh);
 $ratefree = 0;
 
 search($keywords);
+if ($tweetQueue->length() > 0) {
+    $tweetQueue->insertDB();
+}
 
 queryManagerCreateBinFromExistingTables($bin_name, $querybin_id, $type, explode("OR", $keywords));
 
 function search($keywords, $max_id = null) {
-    global $twitter_keys, $current_key, $ratefree, $all_users, $all_tweet_ids, $bin_name, $tweets_success, $tweets_failed, $tweets_processed, $dbh;
+    global $twitter_keys, $current_key, $ratefree, $all_users, $all_tweet_ids, $bin_name, $tweets_success, $tweets_failed, $tweets_processed, $dbh, $tweetQueue;
 
     $ratefree--;
     if ($ratefree < 1 || $ratefree % 10 == 0) {
@@ -72,15 +77,27 @@ function search($keywords, $max_id = null) {
         $tweet_ids = array();
         foreach ($tweets as $tweet) {
 
-            $t = Tweet::fromJSON(json_encode($tweet)); // @todo: dubbelop
+            $t = new Tweet();
+            $t->fromJSON($tweet);
 
-            $all_users[] = $t->user->id;
-            $all_tweet_ids[] = $t->id;
-            $tweet_ids[] = $t->id;
+            // check if this tweet is not already in the bin
+            $query = "SELECT EXISTS(SELECT 1 FROM " . quoteIdent($bin_name . "_tweets") . " WHERE id = " . $t->id . ")";
+            $test = $dbh->prepare($query);
+            $test->execute();
+            $row = $test->fetch();
 
-            $saved = $t->save($dbh, $bin_name);
+            if ($row[0] == 0) {
+                $all_users[] = $t->from_user_id;
+                $all_tweet_ids[] = $t->id;
+                $tweet_ids[] = $t->id;
 
-            print ".";
+                $tweetQueue->push($t, $bin_name);
+                if ($tweetQueue->length() > 100) {
+                    $tweetQueue->insertDB();
+                }
+
+                print ".";
+            }
         }
 
         if (!empty($tweet_ids)) {
