@@ -162,6 +162,7 @@ $lastRateLimitHit = getLastRateLimitHit();
         echo '<th>Periods in which the query bin was active</th>';
         echo '<th></th>';
         echo '<th></th>';
+        echo '<th></th>';
         echo '</tr>';
         echo '</thead>';
         echo '<tbody>';
@@ -216,6 +217,7 @@ $lastRateLimitHit = getLastRateLimitHit();
             if (array_search($bin->type, $captureroles) !== false)
                 echo '<a href="" onclick="sendPause(\'' . $bin->id . '\',\'' . $action . '\',\'' . $bin->type . '\'); return false;">' . $action . '</a>';
             echo '</td>';
+            echo '<td><a href="" onclick="sendDelete(\'' . $bin->id . '\',\'' . $bin->active . '\',\'' . $bin->type . '\'); return false;">delete</a></td>';
             echo '</tr>';
         }
         echo '</tbody>';
@@ -334,6 +336,36 @@ foreach ($bins as $id => $bin)
         if(_check == true) {
 
             var _params = {action:"modifybin",bin:_bin,type:_type,oldphrases:_phrases,newphrases:_newphrases,active:_active};
+
+            $.ajax({
+                dataType: "json",
+                url: "query_manager.php",
+                type: 'POST',
+                data: _params
+            }).done(function(_data) {
+                alert(_data["msg"]);
+                location.reload();
+            });   
+        }
+        return false;
+    }
+    
+    function sendDelete(_bin,_active,_type) {
+        
+        var _check = window.confirm("Are you sure that you want to REMOVE this bin?");
+        
+        if(_check == true) {
+            
+            if(_active == 1)
+                var _check = window.confirm("The query bin is STILL RUNNING! Are you absolutely sure that you want to completely remove it?");
+            if(_check == false)
+                return false;
+            
+            var _check = window.confirm("Last time: are you really sure that you want to REMOVE the query bin?");
+            if(_check == false)
+                return false;
+
+            var _params = {action:"removebin",bin:_bin,type:_type,active:_active};
 
             $.ajax({
                 dataType: "json",

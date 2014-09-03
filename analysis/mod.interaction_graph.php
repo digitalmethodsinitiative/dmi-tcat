@@ -32,7 +32,7 @@ require_once './common/Gexf.class.php';
         $min_nr_of_nodes = $esc['shell']['minf'];
 
         // get all tweets which have in_reply_to_status_id set
-        $sql = "SELECT id, created_at, from_user_name, text, in_reply_to_status_id, from_user_lang, from_user_tweetcount, from_user_followercount, from_user_friendcount, from_user_listed, source  FROM " . $esc['mysql']['dataset'] . "_tweets t ";
+        $sql = "SELECT id, created_at, from_user_name, text, in_reply_to_status_id, from_user_lang, from_user_tweetcount, from_user_followercount, from_user_friendcount, from_user_listed, source, geo_lng, geo_lat  FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
         $sql .= " AND in_reply_to_status_id != '' ORDER BY id ";
 
@@ -196,6 +196,8 @@ require_once './common/Gexf.class.php';
                     $node1->addNodeAttribute('from_user_followercount', $tweet['from_user_followercount'], 'integer');
                     $node1->addNodeAttribute('from_user_friendcount', $tweet['from_user_friendcount'], 'integer');
                     $node1->addNodeAttribute('from_user_listed', $tweet['from_user_listed'], 'integer');
+                    $node1->addNodeAttribute('geo_lng', $tweet['geo_lng'], 'integer');
+                    $node1->addNodeAttribute('geo_lat', $tweet['geo_lat'], 'integer');
                     $node1->addNodeAttribute('source', $tweet['source'], 'string');
                 }
             } else {
@@ -207,6 +209,8 @@ require_once './common/Gexf.class.php';
                 $node1->addNodeAttribute('from_user_followercount', $tweets[$in_reply_to_status_id]['from_user_followercount'], 'integer');
                 $node1->addNodeAttribute('from_user_friendcount', $tweets[$in_reply_to_status_id]['from_user_friendcount'], 'integer');
                 $node1->addNodeAttribute('from_user_listed', $tweets[$in_reply_to_status_id]['from_user_listed'], 'integer');
+                $node1->addNodeAttribute('geo_lng', $tweet['geo_lng'], 'integer');
+                $node1->addNodeAttribute('geo_lat', $tweet['geo_lat'], 'integer');
                 $node1->addNodeAttribute('source', $tweets[$in_reply_to_status_id]['source'], 'string');
             }
             if (isset($indegree[$in_reply_to_status_id]))
@@ -233,6 +237,8 @@ require_once './common/Gexf.class.php';
             $node2->addNodeAttribute('from_user_followercount', $tweets[$tweet_id]['from_user_followercount'], 'integer');
             $node2->addNodeAttribute('from_user_friendcount', $tweets[$tweet_id]['from_user_friendcount'], 'integer');
             $node2->addNodeAttribute('from_user_listed', $tweets[$tweet_id]['from_user_listed'], 'integer');
+            $node2->addNodeAttribute('geo_lng', $tweet['geo_lng'], 'integer');
+            $node2->addNodeAttribute('geo_lat', $tweet['geo_lat'], 'integer');
             $node2->addNodeAttribute('source', $tweets[$tweet_id]['source'], 'string');
             if (isset($indegree[$tweet_id]))
                 $node2->addNodeAttribute('indegree', $indegree[$tweet_id], 'integer');
