@@ -38,6 +38,8 @@ function process_json_file_timeline($filepath, $dbh) {
     print $filepath . "\n";
     global $tweets_processed, $tweets_failed, $tweets_success, $all_tweet_ids, $all_users, $bin_name;
 
+    $tweetQueue = new TweetQueue();
+
     ini_set('auto_detect_line_endings', true);
 
     $handle = @fopen($filepath, "r");
@@ -55,16 +57,23 @@ function process_json_file_timeline($filepath, $dbh) {
             if ($t === false)
                 continue;
 
-            $all_users[] = $t->user->id;
+            $all_users[] = $t->from_user_id;
             $all_tweet_ids[] = $t->id;
 
-            $saved = $t->save($dbh, $bin_name);
+            $tweetQueue->push($t, $bin_name); $saved = true;
+            
+            if ($tweetQueue->length() > 100) {
+                $tweetQueue->insertDB();
+            }
 
+            /*
+            $saved = $t->save($dbh, $bin_name);
             if ($saved) {
                 $tweets_success++;
             } else {
                 $tweets_failed++;
             }
+            */
 
             $tweets_processed++;
 
@@ -75,15 +84,20 @@ function process_json_file_timeline($filepath, $dbh) {
         }
         fclose($handle);
     }
+
+    if ($tweetQueue->length() > 0) {
+        $tweetQueue->insertDB();
+    }
 }
+
 
 print "\n\n\n\n";
 print "Number of tweets: " . count($all_tweet_ids) . "\n";
 print "Unique tweets: " . count(array_unique($all_tweet_ids)) . "\n";
 print "Unique users: " . count(array_unique($all_users)) . "\n";
 
-print "Processed $tweets_processed tweets!\n";
-print "Failed storing $tweets_failed tweets!\n";
-print "Succesfully stored $tweets_success tweets!\n";
+//print "Processed $tweets_processed tweets!\n";
+//print "Failed storing $tweets_failed tweets!\n";
+//print "Succesfully stored $tweets_success tweets!\n";
 print "\n";
 ?>
