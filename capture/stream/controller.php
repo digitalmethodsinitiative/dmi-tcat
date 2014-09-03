@@ -7,7 +7,6 @@ if (php_sapi_name() !== 'cli')
 include_once("../../config.php");
 include "../../common/functions.php";
 include "../common/functions.php";
-include "../common/upgrades.php";
 
 // check whether controller script is already running
 if (!noduplicates('controller.php', TRUE)) {
@@ -17,7 +16,7 @@ if (!noduplicates('controller.php', TRUE)) {
 
 // check whether an upgrade is in progress
 if (upgrade_locked()) {
-    logit("controller.log", "an upgrade seems to be in progress, skipping check on trackers");
+    logit("controller.log", "an upgrade seems to be in progress, skipping all check on trackers");
     exit();
 }
 
@@ -126,12 +125,16 @@ foreach ($roles as $role) {
                         // we need some time to allow graceful exit
                         sleep($sleep);
                         $i++;
-                        if ($i == 10) {
+                        if ($i == 3) {
                             $failmsg = "unable to kill script $role with pid $pid after " . ($sleep * $i) . " seconds";
                             logit("controller.log", $failmsg);
-                            exit();
+                            $failmsg = "hard kill of pid $pid";
+                            logit("controller.log", $failmsg);
+                            posix_kill($pid, SIGKILL);
+                            break;
                         }
                     }
+
                 } else {
 
                     logit("controller.log", "using system kill on pid $pid");
