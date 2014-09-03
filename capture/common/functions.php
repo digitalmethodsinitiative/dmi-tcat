@@ -54,7 +54,7 @@ function create_bin($bin_name, $dbh = false) {
 
         $sql = "CREATE TABLE IF NOT EXISTS " . quoteIdent($bin_name . "_withheld") . " (
             `id` int(11) NOT NULL AUTO_INCREMENT,
-            `tweet_id` bigint(20),
+            `tweet_id` bigint(20) NOT NULL,
             `user_id` bigint(20),
             `country` char(5),
             PRIMARY KEY (`id`),
@@ -387,7 +387,11 @@ function check_running_role($role) {
 function logit($file, $message) {
     $file = BASE_FILE . "logs/" . $file;
     $message = date("Y-m-d H:i:s") . " " . $message . "\n";
-    file_put_contents($file, $message, FILE_APPEND);
+    if (php_sapi_name() == "cli") {
+        error_log($message);
+    } else {
+        file_put_contents($file, $message, FILE_APPEND);
+    }
 }
 
 function getActivePhrases() {
@@ -747,8 +751,11 @@ class Tweet {
         if ($t->retweet_count != 0 && isset($object->object)) {
             $t->retweet_id = preg_replace("/tag:.*:/", "", $object->object->id);
         }
-        if (isset($object->twitter_filter_level))
+        if (isset($object->twitter_filter_level)) {
             $t->filter_level = $object->twitter_filter_level;
+        } else {
+            $t->filter_level = 'none';
+        }
         if (isset($object->twitter_entities->twitter_lang))
             $t->lang = $object->twitter_entities->twitter_lang;
 
@@ -781,7 +788,6 @@ class Tweet {
 
     // Map Twitter API result object to our database table format
     public function fromJSON($data) {
-
         $this->id = $data["id_str"];
         $this->created_at = date("Y-m-d H:i:s", strtotime($data["created_at"]));
         $this->from_user_name = addslashes($data["user"]["screen_name"]);
@@ -819,8 +825,16 @@ class Tweet {
         $this->to_user_id = $data["in_reply_to_user_id_str"];
         $this->to_user_name = addslashes($data["in_reply_to_screen_name"]);
         $this->in_reply_to_status_id = $data["in_reply_to_status_id_str"];
-        $this->filter_level = $data["filter_level"];
-        $this->possibly_sensitive = $data["possibly_sensitive"];
+        if (isset($data['filter_level'])) {
+            $this->filter_level = $data["filter_level"];
+        } else {
+            $this->filter_level = 'none';
+        }
+        if (isset($data['possibly_sensitive'])) {
+            $this->possibly_sensitive = $data["possibly_sensitive"];
+        } else {
+            $this->possibly_sensitive = null;
+        }
         $this->truncated = $data["truncated"];
         if (isset($data["withheld_copyright"])) {
             $this->withheld_copyright = $data["withheld_copyright"];
@@ -898,7 +912,7 @@ class Tweet {
             }
             foreach ($this->from_user_withheld_in_countries as $country) {
                 $row = new stdClass;
-                $row->tweet_id = null;
+                $row->tweet_id = $this->id;
                 $row->user_id = $this->from_user_id;
                 $row->country = $country;
                 $list[] = $row;
