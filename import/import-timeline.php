@@ -73,16 +73,18 @@ function process_json_file_timeline($filepath, $dbh) {
 
             $t = new Tweet();
             $t->fromJSON($tweet);
-            $tweetQueue->push($t, $bin_name);
+            if (!$t->isInBin($bin_name)) {
+                $tweetQueue->push($t, $bin_name);
 
-            if ($tweetQueue->length() > 100) {
-                $tweetQueue->insertDB();
+                if ($tweetQueue->length() > 100) {
+                    $tweetQueue->insertDB();
+                }
+
+                $all_users[] = $t->user->id;
+                $all_tweet_ids[] = $t->id;
+
+                $tweets_processed++;
             }
-
-            $all_users[] = $t->user->id;
-            $all_tweet_ids[] = $t->id;
-
-            $tweets_processed++;
         }
     }
 

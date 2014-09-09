@@ -107,12 +107,14 @@ function search($idlist) {
 
                 $t = new Tweet();
                 $t->fromJSON($tweet);
+                if (!$t->isInBin($bin_name)) {
 
-                $all_users[] = $t->from_user_id;
-                $all_tweet_ids[] = $t->id;
-                $tweet_ids[] = $t->id;
+                    $all_users[] = $t->from_user_id;
+                    $all_tweet_ids[] = $t->id;
+                    $tweet_ids[] = $t->id;
 
-                $tweetQueue->push($t, $bin_name);
+                    $tweetQueue->push($t, $bin_name);
+                }
 
                 print ".";
             }

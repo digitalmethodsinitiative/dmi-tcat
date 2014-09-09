@@ -57,16 +57,18 @@ function process_json_file_timeline($filepath, $dbh) {
             if ($t === false)
                 continue;
 
-            $all_users[] = $t->from_user_id;
-            $all_tweet_ids[] = $t->id;
+            if (!$t->isInBin($bin_name)) {
+                $all_users[] = $t->from_user_id;
+                $all_tweet_ids[] = $t->id;
 
-            $tweetQueue->push($t, $bin_name);
-            
-            if ($tweetQueue->length() > 100) {
-                $tweetQueue->insertDB();
+                $tweetQueue->push($t, $bin_name);
+                
+                if ($tweetQueue->length() > 100) {
+                    $tweetQueue->insertDB();
+                }
+
+                $tweets_processed++;
             }
-
-            $tweets_processed++;
 
             print ".";
         }
@@ -87,7 +89,7 @@ print "Number of tweets: " . count($all_tweet_ids) . "\n";
 print "Unique tweets: " . count(array_unique($all_tweet_ids)) . "\n";
 print "Unique users: " . count(array_unique($all_users)) . "\n";
 
-//print "Processed $tweets_processed tweets!\n";
+print "Processed $tweets_processed tweets!\n";
 //print "Failed storing $tweets_failed tweets!\n";
 //print "Succesfully stored $tweets_success tweets!\n";
 print "\n";
