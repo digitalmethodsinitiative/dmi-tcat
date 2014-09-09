@@ -60,20 +60,11 @@ function process_json_file_timeline($filepath, $dbh) {
             $all_users[] = $t->from_user_id;
             $all_tweet_ids[] = $t->id;
 
-            $tweetQueue->push($t, $bin_name); $saved = true;
+            $tweetQueue->push($t, $bin_name);
             
             if ($tweetQueue->length() > 100) {
                 $tweetQueue->insertDB();
             }
-
-            /*
-            $saved = $t->save($dbh, $bin_name);
-            if ($saved) {
-                $tweets_success++;
-            } else {
-                $tweets_failed++;
-            }
-            */
 
             $tweets_processed++;
 
