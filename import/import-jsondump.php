@@ -46,6 +46,8 @@ function process_json_file_timeline($filepath, $dbh) {
     $valid_timeline, $empty_timeline, $invalid_timeline, $populated_timeline,
     $total_timeline, $all_tweet_ids, $all_users, $bin_name;
 
+    $tweetQueue = new TweetQueue();
+
     $total_timeline++;
 
     ini_set('auto_detect_line_endings', true);
@@ -57,18 +59,15 @@ function process_json_file_timeline($filepath, $dbh) {
             //var_export($tweet); print "\n\n";
             $buffer = "";
 
-            $t = Tweet::fromJSON($tweet);
+            $t = new Tweet();
+            $t->fromJSON($tweet);
+            $tweetQueue->push($tweet, $bin_name);
+            if ($tweetQueue->length() > 100) {
+                $tweetQueue->insertDB();
+            }
 
             $all_users[] = $t->user->id;
             $all_tweet_ids[] = $t->id;
-
-            $saved = $t->save($dbh, $bin_name);
-
-            if ($saved) {
-                $tweets_success++;
-            } else {
-                $tweets_failed++;
-            }
 
             $tweets_processed++;
 
@@ -79,6 +78,10 @@ function process_json_file_timeline($filepath, $dbh) {
         }
         fclose($handle);
     }
+
+    if ($tweetQueue->length() > 0) {
+        $tweetQueue->insertDB();
+    }
 }
 
 print "\n\n\n\n";
@@ -87,8 +90,8 @@ print "Unique tweets: " . count(array_unique($all_tweet_ids)) . "\n";
 print "Unique users: " . count(array_unique($all_users)) . "\n";
 
 print "Processed $tweets_processed tweets!\n";
-print "Failed storing $tweets_failed tweets!\n";
-print "Succesfully stored $tweets_success tweets!\n";
+//print "Failed storing $tweets_failed tweets!\n";
+//print "Succesfully stored $tweets_success tweets!\n";
 print "\n";
 print "Total number of timelines: $total_timeline\n";
 print "Valid timelines: $valid_timeline\n";
