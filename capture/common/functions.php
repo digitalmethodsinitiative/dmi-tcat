@@ -145,6 +145,7 @@ function create_bin($bin_name, $dbh = false) {
             `url` varchar(2048),
             `url_expanded` varchar(2048),
             `url_followed` varchar(4096),
+            `url_is_media` tinyint(1),
             `domain` varchar(2048),
             `error_code` varchar(64),
             PRIMARY KEY (`id`),
@@ -851,13 +852,14 @@ class Tweet {
         
         // a tweet text can contain multiple URLs, and multiple media URLs can be packed into a single link inside the tweet
         // all unpacked media link data is available under extended_entities->urls
-        // all other link data i available under entities->urls
+        // all other link data is available under entities->urls
         // by concatenating this information we do not get duplicates
         $plain = array();
         foreach ($data["entities"]["urls"] as $url) {
             $u = $url;
             $u['url_expanded'] = addslashes($u["expanded_url"]);
             unset($u["expanded_url"]);
+            $u['url_is_media'] = 0;
             $plain[] = $u;
         }
         $extended = array();
@@ -867,6 +869,7 @@ class Tweet {
                 $u = array();
                 $u["url"] = $media["url"];
                 $u["url_expanded"] = addslashes($media["expanded_url"]);
+                $u['url_is_media'] = 1;
                 $extended[] = $u;
             }
         }
