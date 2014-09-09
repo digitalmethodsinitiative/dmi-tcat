@@ -761,6 +761,7 @@ class Tweet {
 
         $t->favorite_count = $object->favoritesCount;
 
+        // @todo: support multiple media entities in Gnip import
         $t->urls = $object->twitter_entities->urls;
         $t->user_mentions = $object->twitter_entities->user_mentions;
         $t->hashtags = $object->twitter_entities->hashtags;
@@ -847,7 +848,31 @@ class Tweet {
             $this->withheld_scope = null;
         }
         // convert from array to object
-        $this->urls = json_decode(json_encode($data["entities"]["urls"]), FALSE);
+        
+        // a tweet text can contain multiple URLs, and multiple media URLs can be packed into a single link inside the tweet
+        // all unpacked media link data is available under extended_entities->urls
+        // all other link data i available under entities->urls
+        // by concatenating this information we do not get duplicates
+        $plain = array();
+        foreach ($data["entities"]["urls"] as $url) {
+            $u = $url;
+            $u['url_expanded'] = addslashes($u["expanded_url"]);
+            unset($u["expanded_url"]);
+            $plain[] = $u;
+        }
+        $extended = array();
+        if (array_key_exists('extended_entities', $data) &&
+            array_key_exists('media', $data["extended_entities"])) {
+            foreach ($data["extended_entities"]["media"] as $media) {
+                $u = array();
+                $u["url"] = $media["url"];
+                $u["url_expanded"] = addslashes($media["expanded_url"]);
+                $extended[] = $u;
+            }
+        }
+
+        $urls = array_merge($plain, $extended);
+        $this->urls = json_decode(json_encode($urls, FALSE));
         $this->user_mentions = json_decode(json_encode($data["entities"]["user_mentions"]), FALSE);
         $this->hashtags = json_decode(json_encode($data["entities"]["hashtags"]), FALSE);
         if (isset($data["withheld_in_countries"])) {
