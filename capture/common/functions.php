@@ -2,8 +2,6 @@
 
 error_reporting(E_ALL);
 
-include_once('upgrades.php');
-
 function pdo_connect() {
     global $dbuser, $dbpass, $database, $hostname;
 
@@ -65,6 +63,18 @@ function create_bin($bin_name, $dbh = false) {
 
         $create_withheld = $dbh->prepare($sql);
         $create_withheld->execute();
+
+
+        $sql = "CREATE TABLE IF NOT EXISTS " . quoteIdent($bin_name . "_places") . " (
+            `id` varchar(32) NOT NULL,
+            `tweet_id` bigint(20) NOT NULL,
+            PRIMARY KEY (`id`, `tweet_id`)
+            ) ENGINE=MyISAM  DEFAULT CHARSET=utf8mb4";
+
+        $create_places = $dbh->prepare($sql);
+        $create_places->execute();
+
+
 
         $sql = "CREATE TABLE IF NOT EXISTS " . quoteIdent($bin_name . "_mentions") . " (
             `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -648,6 +658,8 @@ class Tweet {
     public $lang;
     public $possibly_sensitive;
     public $truncated;
+    public $place_ids;
+    public $places;
     public $withheld_in_countries;              // not used as tweet database field
     public $from_user_withheld_in_countries;    // not used as tweet database field
     public $withheld_copyright;
@@ -666,8 +678,6 @@ class Tweet {
     public $user_mentions = array();
     public $hashtags = array();
     public $urls = array();
-
-    // @todo: check against old new Tweet(x) constructor usage, and check all fromJSON() calls in the code (especially import scripts)
 
     public static function fromGnip($json) {
         // Parse JSON when fed JSON string
@@ -733,6 +743,9 @@ class Tweet {
 
         $t->favorite_count = $object->favoritesCount;
 
+        // @todo: support for places in JSON/stream import
+        $t->place_ids = array();
+        $t->places= array();
         // @todo: support multiple media entities in Gnip import
         $t->urls = $object->twitter_entities->urls;
         $t->user_mentions = $object->twitter_entities->user_mentions;
@@ -809,6 +822,13 @@ class Tweet {
             $this->possibly_sensitive = null;
         }
         $this->truncated = $data["truncated"];
+        $this->place_ids = array();
+        $this->places= array();
+        if (isset($data["place"]) && isset($data["place"]["id"])) {
+            // at this point in time a tweet seems to be limited to a single place
+            $this->place_ids[] = $data["place"]["id"];
+            // places is made on fromComplete()
+        }
         if (isset($data["withheld_copyright"])) {
             $this->withheld_copyright = $data["withheld_copyright"];
         } else {
@@ -919,6 +939,17 @@ class Tweet {
             $this->withheld_in_countries = $list;       // this array will populate the _withheld table
         }
 
+        if (is_array($this->place_ids)) {
+            $list = array();
+            foreach ($this->place_ids as $place_id) {
+                $row = new stdClass;
+                $row->id = $place_id;
+                $row->tweet_id = $this->id;
+                $list[] = $row;
+            }
+            $this->places = $list;                      // this array will populate the _places table
+        }
+
     }
     
     // checks whether this Tweet is in a particular bin in the database
@@ -951,7 +982,7 @@ class TweetQueue {
 
     function cacheBin($bin) {
         $dbh = pdo_connect();
-        $tables = array( 'tweets', 'mentions', 'urls', 'hashtags', 'withheld' );
+        $tables = array( 'tweets', 'mentions', 'urls', 'hashtags', 'withheld', 'places' );
         foreach ($tables as $table) {
             $sql = "show columns from $bin" . "_$table";
             $rec = $dbh->prepare($sql);
@@ -1014,7 +1045,7 @@ class TweetQueue {
         $statement .= " ) VALUES ";
         // add placeholder marks
         $count = count($this->binColumnsCache[$bin_name][$table_extension]);
-        // for these tanbles, again discount the 'id' field
+        // for these tables, again discount the 'id' field
         if ($table_extension == 'mentions' || $table_extension == 'hashtags' || $table_extension == 'urls' || $table_extension == 'withheld') $count--;
         $statement .= rtrim(str_repeat("( " . rtrim(str_repeat("?,", $count), ',') . " ),", $rowcount), ',');
         return $statement;
@@ -1035,6 +1066,7 @@ class TweetQueue {
                 $binlist[$bin_name]['urls'] += count($obj['tweet']->urls);
                 $binlist[$bin_name]['mentions'] += count($obj['tweet']->user_mentions);
                 $binlist[$bin_name]['withheld'] += count($obj['tweet']->withheld_in_countries);
+                $binlist[$bin_name]['places'] += count($obj['tweet']->places);
                 continue;
             }
             if (!$this->hasCached($bin_name)) $this->cacheBin($bin_name);
@@ -1042,7 +1074,8 @@ class TweetQueue {
                                          'hashtags' => count($obj['tweet']->hashtags),
                                          'urls' => count($obj['tweet']->urls),
                                          'mentions' => count($obj['tweet']->user_mentions),
-                                         'withheld' => count($obj['tweet']->withheld_in_countries)
+                                         'withheld' => count($obj['tweet']->withheld_in_countries),
+                                         'places' => count($obj['tweet']->places)
                                        );
         }
 
@@ -1050,8 +1083,8 @@ class TweetQueue {
 
         foreach ($binlist as $bin_name => $counts) {
 
-            // first prepare the multiple insert statements for tweets, mentions, hashtags, urls, withheld
-            $statement = array(); $extensions = array( 'tweets', 'mentions', 'hashtags', 'urls', 'withheld' );
+            // first prepare the multiple insert statements for tweets, mentions, hashtags, urls, withheld, places
+            $statement = array(); $extensions = array( 'tweets', 'mentions', 'hashtags', 'urls', 'withheld', 'places' );
             foreach ($extensions as $ext) {
                 $statement[$ext] = $this->headMultiInsert($bin_name, $ext, $counts[$ext]);
             }
@@ -1060,6 +1093,7 @@ class TweetQueue {
             $urlsi = 1; $urlsq = $dbh->prepare($statement['urls']);
             $mentionsi = 1; $mentionsq = $dbh->prepare($statement['mentions']);
             $withheldi = 1; $withheldq = $dbh->prepare($statement['withheld']);
+            $placesi = 1; $placesq = $dbh->prepare($statement['places']);
 
             // go now and iterate the queue item by item
             foreach ($this->queue as $obj) {
@@ -1104,15 +1138,31 @@ class TweetQueue {
                     }
                 }
 
-                if ($t->withheld_in_countries && !empty($t->withheld_in_countries) && !empty($this->binColumnsCache[$bin_name]['withheld'])) {
-                    $fields = $this->binColumnsCache[$bin_name]['withheld'];
-                    foreach ($t->withheld_in_countries as $withheld) {
-                        foreach ($fields as $f) {
-                            if ($f == 'id') continue;
-                            $withheldq->bindParam($withheldi++, $withheld->$f);
+                if ($statement['withheld'] !== '') {
+                        if ($t->withheld_in_countries && !empty($t->withheld_in_countries) && !empty($this->binColumnsCache[$bin_name]['withheld'])) {
+                            $fields = $this->binColumnsCache[$bin_name]['withheld'];
+                            foreach ($t->withheld_in_countries as $withheld) {
+                                foreach ($fields as $f) {
+                                    if ($f == 'id') continue;
+                                    $withheldq->bindParam($withheldi++, $withheld->$f);
+                                }
+                            }
+                        }
+                }
+                if ($statement['places'] !== '') {
+
+                    if ($t->places && !empty($t->places) && !empty($this->binColumnsCache[$bin_name]['places'])) {
+                        $fields = $this->binColumnsCache[$bin_name]['places'];
+                        foreach ($t->places as $place) {
+                            foreach ($fields as $f) {
+                                $placesq->bindParam($placesi++, $place->$f);
+                            }
                         }
                     }
+
                 }
+
+
 
             }
 
@@ -1155,6 +1205,14 @@ class TweetQueue {
                 } catch( PDOException $e) {
                     $errorMessage = $e->getCode() . ': ' . $e->getMessage();
                     logit(CAPTURE . ".error.log", "insert into $bin_name" . "_withheld failed with '$errorMessage'");
+                }
+            }
+            if ($statement['places'] !== '') {
+                try {
+                $placesq->execute();
+                } catch( PDOException $e) {
+                    $errorMessage = $e->getCode() . ': ' . $e->getMessage();
+                    logit(CAPTURE . ".error.log", "insert into $bin_name" . "_places failed with '$errorMessage'");
                 }
             }
 
@@ -1280,9 +1338,6 @@ function tracker_run() {
         error_log("tracker_run() called without defining CAPTURE. have you set up config.php ?");
         die();
     }
-
-    // See if an upgrade is possible.
-    upgrades();     // this may lock for a long time
 
     $roles = unserialize(CAPTUREROLES);
     if (!in_array(CAPTURE, $roles)) {
