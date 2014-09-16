@@ -8,15 +8,10 @@ include_once("../../config.php");
 include "../../common/functions.php";
 include "../common/functions.php";
 
-// check whether controller script is already running
-if (!noduplicates('controller.php', TRUE)) {
+// make sure only one controller script is running
+$thislockfp = script_lock('controller');
+if (!is_resource($thislockfp)) {
     logit("controller.log", "controller.php already running, skipping this check");
-    exit();
-}
-
-// check whether an upgrade is in progress
-if (upgrade_locked()) {
-    logit("controller.log", "an upgrade seems to be in progress, skipping all check on trackers");
     exit();
 }
 
@@ -80,7 +75,7 @@ foreach ($roles as $role) {
         $pid = $tmp[0];
         $last = $tmp[1];
 
-        $running = check_running_role($role);
+        $running = (script_lock($role, true) !== true);
         
         if($running)
             logit("controller.log", "script $role is running with pid [" . $pid . "] and has been idle for " . (time() - $last) . " seconds");
@@ -142,10 +137,10 @@ foreach ($roles as $role) {
                 }
 
                 // notify user via email when we restart an idle script
-                if ($idled && isset($mail_to) && trim($mail_to) != "")
+                if (!$reload && $idled && isset($mail_to) && trim($mail_to) != "")
                     mail($mail_to, "DMI-TCAT controller killed a process", $restartmsg);
 
-                if (noduplicates("dmitcat_$role.php")) {
+                if (script_lock($role, true) === true) {
                     // restart script
                     passthru(PHP_CLI . " " . BASE_FILE . "capture/stream/dmitcat_$role.php > /dev/null 2>&1 &");
                 }
@@ -154,7 +149,7 @@ foreach ($roles as $role) {
     }
     if (!$running) {
 
-        if (noduplicates("dmitcat_$role.php")) {
+        if (script_lock($role, true) === true) {
             logit("controller.log", "script $role was not running - starting");
 
             // record confirmed gap if we could measure it
@@ -165,38 +160,6 @@ foreach ($roles as $role) {
             passthru(PHP_CLI . " " . BASE_FILE . "capture/stream/dmitcat_$role.php > /dev/null 2>&1 &");
         }
     }
-}
-
-/*
- * Check for existing invocations of a particular script to avoid duplicate executions
- * If boolean parameter single is set, one execution of script is allowed (useful for a self-check)
- * Returns FALSE if something is running, otherwise TRUE
- */
-
-function noduplicates($script, $single_allowed = FALSE) {
-
-    $cmd = "ps ax | grep -v grep | grep -v Ss | grep '$script'";
-    $found = FALSE;
-
-    // check whether script is already running
-    $out = exec($cmd, $output);
-
-    foreach ($output as $line) {
-
-        $line = preg_replace("/^[\t ]*/", "", $line);
-        $pid = preg_replace("/[\t ].*$/", "", $line);
-
-        if (is_numeric($pid) && $pid > 0) {
-            
-            if ($found || $single_allowed == FALSE) {
-                return FALSE;
-            }
-
-            $found = TRUE;
-        }
-    }
-
-    return TRUE;
 }
 
 ?>

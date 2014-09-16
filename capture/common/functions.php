@@ -327,62 +327,33 @@ function web_reload_config_role($role) {
 }
 
 /*
- * This function returns TRUE if there is an active capture script for role.
+ * Acquire a lock as script $script
+ * If test is true, only test if the lock could be gained, but do not hold on to it (this is how we test if a script is running)
+ * Returns true on a lock success (in test), false on failure and a lock filepointer if really locking
  */
+function script_lock($script, $test = false) {
+    $lockfile = BASE_FILE . "proc/$script.lock";
 
-function check_running_role($role) {
+    if (!file_exists($lockfile)) {
+        touch($lockfile);
+    } 
+    $lockfp = fopen($lockfile, "r+");
 
-    if (!defined('CAPTUREROLES')) {
-        logit("controller.log", "check_running_role: You do not seem to have CAPTUREROLES defined in your config.php");
-        return FALSE;
-    }
-
-    $roles = unserialize(CAPTUREROLES);
-
-    if (!in_array($role, $roles)) {
-        logit("controller.log", "check_running_role: $role not defined in CAPTUREROLES");
-        return FALSE;
-    }
-
-    // is the appropriate script running?
-    if (file_exists(BASE_FILE . "proc/$role.procinfo")) {
-
-        $procfile = file_get_contents(BASE_FILE . "proc/$role.procinfo");
-
-        $tmp = explode("|", $procfile);
-        $pid = $tmp[0];
-        $last = $tmp[1];
-
-        if (is_numeric($pid) && $pid > 0) {
-
-            if (function_exists('posix_kill')) {
-
-                // check whether the pid is running by checking whether it is possible to send the process a signal
-                $running = posix_kill($pid, 0);
-
-                // running as another user
-                if (posix_get_last_error() == 1)
-                    $running = TRUE;
-
-                if ($running)
-                    return TRUE;
-            } else {
-
-                exec("ps -p $pid", $output);
-                $running = (count($output) > 1) ? TRUE : FALSE;
-
-                if ($running)
-                    return TRUE;
-            }
+    if (flock($lockfp, LOCK_EX|LOCK_NB)) {  // acquire an exclusive lock
+        ftruncate($lockfp, 0);      // truncate file
+        fwrite($lockfp, "Locked task '$script' on: " . date("D M d, Y G:i") . "\n");
+        fflush($lockfp);            // flush output
+        if ($test) {
+            flock($lockfp, LOCK_UN);
+            fclose($lockfp);
+            unlink($lockfile);
+            return true;
         }
-
-
-        logit("controller.log", "check_running_role: no running $role script (pid $pid seems dead)");
+        return $lockfp;
+    } else {
+        fclose($lockfp);
+        return false;
     }
-
-    logit("controller.log", "check_running_role: no running $role script found");
-
-    return FALSE;
 }
 
 function logit($file, $message) {
