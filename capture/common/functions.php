@@ -461,15 +461,17 @@ function getActiveBins() {
     return $querybins;
 }
 
-function queryManagerBinExists($binname) {
+function queryManagerBinExists($binname, $cronjob = false) {
     $dbh = pdo_connect();
     $rec = $dbh->prepare("SELECT id FROM tcat_query_bins WHERE querybin = :binname");
     $rec->bindParam(":binname", $binname, PDO::PARAM_STR);
     if ($rec->execute() && $rec->rowCount() > 0) { // check whether the table has already been imported
         $res = $rec->fetch();
-        print "The query bin '$binname' already exists. Are you sure you want to add tweets to '$binname'? (yes/no)" . PHP_EOL;
-        if (trim(fgets(fopen("php://stdin", "r"))) != 'yes')
-            die('Abort' . PHP_EOL);
+        if ($cronjob == false) {
+            print "The query bin '$binname' already exists. Are you sure you want to add tweets to '$binname'? (yes/no)" . PHP_EOL;
+            if (trim(fgets(fopen("php://stdin", "r"))) != 'yes')
+                die('Abort' . PHP_EOL);
+        }
         return $res['id'];
     }
     return false;

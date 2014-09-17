@@ -13,8 +13,9 @@ require BASE_FILE . 'capture/common/tmhOAuth/tmhOAuth.php';
 
 // DEFINE SEARCH PARAMETERS HERE
 
+$cronjob = true;      // set to true, if running from cron
 $bin_name = '';       // name of the bin
-$keywords = '';       // separate keywords by 'OR', limit your search to 10 keywords and operators - https://dev.twitter.com/docs/using-search
+$keywords = '';
 $type = 'search';     // specify 'search' if you want this to be a standalone bin, or 'track' if you want to be able to continue tracking these keywords later on via BASE_URL/capture/index.php
 
 if (empty($bin_name))
@@ -22,7 +23,7 @@ if (empty($bin_name))
 if (empty($keywords))
     die("keywords not set\n");
 
-$querybin_id = queryManagerBinExists($bin_name);
+$querybin_id = queryManagerBinExists($bin_name, $cronjob);
 
 $current_key = $looped = $tweets_success = $tweets_failed = $tweets_processed = 0;
 $all_users = $all_tweet_ids = array();
