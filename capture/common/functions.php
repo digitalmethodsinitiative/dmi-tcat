@@ -757,10 +757,10 @@ class Tweet {
 
         $t->favorite_count = $object->favoritesCount;
 
-        // @todo: support for places in JSON/stream import
+        // @todo: support for setting places in Gnip import
         $t->place_ids = array();
         $t->places= array();
-        // @todo: support multiple media entities in Gnip import, and: photo_size_xy, and media_type!
+        // @todo: support extended media entities in Gnip import, and setting photo_size_xy, and media_typ
         $t->urls = $object->twitter_entities->urls;
         $t->user_mentions = $object->twitter_entities->user_mentions;
         $t->hashtags = $object->twitter_entities->hashtags;
@@ -1498,7 +1498,6 @@ function tracker_streamCallback($data, $length, $metrics) {
             $message = $data['warning']['message'];
             if ($code === 'FALLING_BEHIND') {
                 $full = $data['warning']['percent_full'];
-                // @todo: avoid writing this on every callback
                 logit(CAPTURE . ".error.log", "twitter api warning received: ($code) $message [percentage full $full]");
             } else {
                 logit(CAPTURE . ".error.log", "twitter api warning received: ($code) $message");
