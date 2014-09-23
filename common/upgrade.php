@@ -4,9 +4,9 @@
 if (php_sapi_name() !== 'cli')
     exit();
 
-include_once("../../config.php");
-include "../../common/functions.php";
-include "../common/functions.php";
+include_once("../config.php");
+include "functions.php";
+include "../capture/common/functions.php";
 
 // make sure only one upgrade script is running
 $thislockfp = script_lock('upgrade');
