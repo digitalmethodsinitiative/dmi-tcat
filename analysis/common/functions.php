@@ -791,9 +791,7 @@ function dbserver_has_geo_functions() {
     // the analysis frontend currently uses the mysql_* functions
     $version = mysql_get_server_info();
     if (preg_match("/([0-9]*)\.([0-9]*)\.([0-9]*)/", $version, $matches)) {
-        $maj = $matches[1];
-        $min = $matches[2];
-        $upd = $matches[3];
+        $maj = $matches[1]; $min = $matches[2]; $upd = $matches[3];
         if ($maj >= 5 && $min >= 6 && $upd >= 1) {
             return true;
         }

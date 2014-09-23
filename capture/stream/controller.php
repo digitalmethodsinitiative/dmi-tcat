@@ -15,6 +15,11 @@ if (!is_resource($thislockfp)) {
     exit();
 }
 
+if (dbserver_has_utf8mb4_support() == false) {
+    logit("controller.log", "DMI-TCAT requires at least MySQL version 5.5.3 - please upgrade your server");
+    exit();
+}
+
 $dbh = pdo_connect();
 
 $roles = unserialize(CAPTUREROLES);

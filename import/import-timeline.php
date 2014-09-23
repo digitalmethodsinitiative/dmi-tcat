@@ -11,6 +11,10 @@ $dir = '';
 
 if (empty($bin_name))
     die("bin_name not set\n");
+
+if (dbserver_has_utf8mb4_support() == false) {
+    die("DMI-TCAT requires at least MySQL version 5.5.3 - please upgrade your server\n");
+}
 $querybin_id = queryManagerBinExists($bin_name);
 
 $dbh = pdo_connect();

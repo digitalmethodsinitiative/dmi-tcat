@@ -82,7 +82,10 @@ $lastRateLimitHit = getLastRateLimitHit();
             print "a one percent sample";
         print ".<br/>";
         if ($lastRateLimitHit) {
-            print "<font color='red'>Your latest rate limit hit was on $lastRateLimitHit</font><bR>";
+            print "<br /><font color='red'>Your latest rate limit hit was on $lastRateLimitHit</font><br>";
+        }
+        if (!dbserver_has_utf8mb4_support()) {
+            print "<br /><font color='red'>Your MySQL version is too old, please upgrade to at least MySQL 5.5.3 to use DMI-TCAT.</font><br>";
         }
         ?>
         <h3>New query bin</h3>
