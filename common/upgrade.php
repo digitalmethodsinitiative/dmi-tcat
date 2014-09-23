@@ -1,8 +1,8 @@
 <?php
 
 // ----- only run from command line -----
-if (php_sapi_name() !== 'cli')
-    exit();
+if (php_sapi_name() !== 'cli' && php_sapi_name() !== 'cgi-fcgi')
+    die;
 
 include_once("../config.php");
 include "functions.php";
@@ -13,6 +13,14 @@ $thislockfp = script_lock('upgrade');
 if (!is_resource($thislockfp)) {
     logit("cli", "upgrade.php already running, skipping this check");
     exit();
+}
+
+if (isset($argv[1])) {
+    $single = $argv[1];
+    logit("cli", "Restricting upgrade to bin $single");
+} else {
+    $single = false;
+    logit("cli", "Executing global upgrade");
 }
 
 function get_all_bins() {
@@ -33,53 +41,9 @@ function upgrades() {
     
     global $database;
     global $all_bins;
+    global $single;
     $all_bins = get_all_bins();
-
-    // 10/07/2014 Set global database collation to utf8mb4
-
-    $query = "show variables like \"character_set_database\"";
     $dbh = pdo_connect();
-    $rec = $dbh->prepare($query);
-    $rec->execute();
-    $results = $rec->fetch(PDO::FETCH_ASSOC);
-    $character_set_database = isset($results['Value']) ? $results['Value'] : 'unknown';
-    
-    $query = "show variables like \"collation_database\"";
-    $rec = $dbh->prepare($query);
-    $rec->execute();
-    $results = $rec->fetch(PDO::FETCH_ASSOC);
-    $collation_database = isset($results['Value']) ? $results['Value'] : 'unknown';
-    
-    if ($character_set_database == 'utf8' && ($collation_database == 'utf8_general_ci' || $collation_database == 'utf8_unicode_ci')) {
-
-        logit("cli", "Converting database character set from utf8 to utf8mb4");
-
-        $query = "ALTER DATABASE $database CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci";
-        $rec = $dbh->prepare($query);
-        $rec->execute();
-
-        $query = "SHOW TABLES";
-        $rec = $dbh->prepare($query);
-        $rec->execute();
-        $results = $rec->fetchAll(PDO::FETCH_COLUMN);
-        foreach ($results as $k => $v) {
-            logit("cli", "Converting table $v character set utf8 to utf8mb4");
-            $query ="ALTER TABLE $v DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci";
-            $rec = $dbh->prepare($query);
-            $rec->execute();
-            $query ="ALTER TABLE $v CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci";
-            $rec = $dbh->prepare($query);
-            $rec->execute();
-            logit("cli", "Repairing and optimizing table $v");
-            $query ="REPAIR TABLE $v";
-            $rec = $dbh->prepare($query);
-            $rec->execute();
-            $query ="OPTIMIZE TABLE $v";
-            $rec = $dbh->prepare($query);
-            $rec->execute();
-        }
-
-    }
 
     // 29/08/2014 Alter tweets tables to add new fields, ex. 'possibly_sensitive'
 
@@ -89,6 +53,7 @@ function upgrades() {
     $results = $rec->fetchAll(PDO::FETCH_COLUMN);
     foreach ($results as $k => $v) {
         if (!preg_match("/_tweets$/", $v)) continue; 
+        if ($single && $v !== $single . '_tweets') { continue; }
         $query = "SHOW COLUMNS FROM $v";
         $rec = $dbh->prepare($query);
         $rec->execute();
@@ -129,6 +94,7 @@ function upgrades() {
 
     // 16/09/2014 Create a new withheld table for every bin
     foreach ($all_bins as $bin) {
+        if ($single && $bin !== $single) { continue; }
         $exists = false;
         foreach ($results as $k => $v) {
             if ($v == $bin . '_places') {
@@ -138,7 +104,7 @@ function upgrades() {
         if (!$exists) {
             $create = $bin . '_withheld';
             logit("cli", "Creating new table $create");
-            $sql = "CREATE TABLE IF NOT EXISTS " . quoteIdent($create . "_withheld") . " (
+            $sql = "CREATE TABLE IF NOT EXISTS " . quoteIdent($create) . " (
                     `id` int(11) NOT NULL AUTO_INCREMENT,
                     `tweet_id` bigint(20) NOT NULL,
                     `user_id` bigint(20),
@@ -155,6 +121,7 @@ function upgrades() {
 
     // 16/09/2014 Create a new places table for every bin
     foreach ($all_bins as $bin) {
+        if ($single && $bin !== $single) { continue; }
         $exists = false;
         foreach ($results as $k => $v) {
             if ($v == $bin . '_places') {
@@ -181,6 +148,7 @@ function upgrades() {
     $results = $rec->fetchAll(PDO::FETCH_COLUMN);
     foreach ($results as $k => $v) {
         if (!preg_match("/_urls$/", $v)) continue; 
+        if ($single && $v !== $single . '_urls') { continue; }
         $query = "SHOW COLUMNS FROM $v";
         $rec = $dbh->prepare($query);
         $rec->execute();
@@ -204,6 +172,54 @@ function upgrades() {
             $rec = $dbh->prepare($query);
             $rec->execute();
         }
+    }
+
+    // 23/09/2014 Set global database collation to utf8mb4
+
+    $query = "show variables like \"character_set_database\"";
+    $rec = $dbh->prepare($query);
+    $rec->execute();
+    $results = $rec->fetch(PDO::FETCH_ASSOC);
+    $character_set_database = isset($results['Value']) ? $results['Value'] : 'unknown';
+    
+    $query = "show variables like \"collation_database\"";
+    $rec = $dbh->prepare($query);
+    $rec->execute();
+    $results = $rec->fetch(PDO::FETCH_ASSOC);
+    $collation_database = isset($results['Value']) ? $results['Value'] : 'unknown';
+    
+    if ($character_set_database == 'utf8' && ($collation_database == 'utf8_general_ci' || $collation_database == 'utf8_unicode_ci')) {
+
+        if ($single === false) {
+            logit("cli", "Converting database character set from utf8 to utf8mb4");
+            $query = "ALTER DATABASE $database CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci";
+            $rec = $dbh->prepare($query);
+            $rec->execute();
+        }
+
+        $query = "SHOW TABLES";
+        $rec = $dbh->prepare($query);
+        $rec->execute();
+        $results = $rec->fetchAll(PDO::FETCH_COLUMN);
+        foreach ($results as $k => $v) {
+            if (preg_match("/_places$/", $v) || preg_match("/_withheld$/", $v)) continue; 
+            if ($single && $v !== $single . '_tweets' && $v !== $single . '_hashtags' && $v !== $single . '_mentions' && $v !== $single . '_urls') continue;
+            logit("cli", "Converting table $v character set utf8 to utf8mb4");
+            $query ="ALTER TABLE $v DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci";
+            $rec = $dbh->prepare($query);
+            $rec->execute();
+            $query ="ALTER TABLE $v CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci";
+            $rec = $dbh->prepare($query);
+            $rec->execute();
+            logit("cli", "Repairing and optimizing table $v");
+            $query ="REPAIR TABLE $v";
+            $rec = $dbh->prepare($query);
+            $rec->execute();
+            $query ="OPTIMIZE TABLE $v";
+            $rec = $dbh->prepare($query);
+            $rec->execute();
+        }
+
     }
 
     // End of upgrades
