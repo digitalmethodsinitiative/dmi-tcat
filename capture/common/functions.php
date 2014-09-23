@@ -778,18 +778,18 @@ class Tweet {
     public function fromJSON($data) {
         $this->id = $data["id_str"];
         $this->created_at = date("Y-m-d H:i:s", strtotime($data["created_at"]));
-        $this->from_user_name = addslashes($data["user"]["screen_name"]);
+        $this->from_user_name = $data["user"]["screen_name"];
         $this->from_user_id = $data["user"]["id_str"];
         $this->from_user_lang = $data["user"]["lang"];
         $this->from_user_tweetcount = $data["user"]["statuses_count"];
         $this->from_user_followercount = $data["user"]["followers_count"];
         $this->from_user_friendcount = $data["user"]["friends_count"];
         $this->from_user_listed = $data["user"]["listed_count"];
-        $this->from_user_realname = addslashes($data["user"]["name"]);
+        $this->from_user_realname = $data["user"]["name"];
         $this->from_user_utcoffset = $data["user"]["utc_offset"];
-        $this->from_user_timezone = addslashes($data["user"]["time_zone"]);
-        $this->from_user_description = addslashes($data["user"]["description"]);
-        $this->from_user_url = addslashes($data["user"]["url"]);
+        $this->from_user_timezone = $data["user"]["time_zone"];
+        $this->from_user_description = $data["user"]["description"];
+        $this->from_user_url = $data["user"]["url"];
         $this->from_user_verified = $data["user"]["verified"];
         $this->from_user_profile_image_url = $data["user"]["profile_image_url"];
         $this->from_user_created_at = date("Y-m-d H:i:s", strtotime($data["user"]["created_at"]));
@@ -797,21 +797,21 @@ class Tweet {
             $this->from_user_withheld_scope = $data["user"]["withheld_scope"];
         }
         $this->from_user_favourites_count = $data["user"]["favourites_count"];
-        $this->source = addslashes($data["source"]);
-        $this->location = addslashes($data["user"]["location"]);
+        $this->source = $data["source"];
+        $this->location = $data["user"]["location"];
         $this->geo_lat = 0;
         $this->geo_lng = 0;
         if ($data["geo"] != null) {
             $this->geo_lat = $data["geo"]["coordinates"][0];
             $this->geo_lng = $data["geo"]["coordinates"][1];
         }
-        $this->text = addslashes($data["text"]);
+        $this->text = $data["text"];
         $this->retweet_id = null;
         if (isset($data["retweeted_status"])) {
             $this->retweet_id = $data["retweeted_status"]["id_str"];
         }
         $this->to_user_id = $data["in_reply_to_user_id_str"];
-        $this->to_user_name = addslashes($data["in_reply_to_screen_name"]);
+        $this->to_user_name = $data["in_reply_to_screen_name"];
         $this->in_reply_to_status_id = $data["in_reply_to_status_id_str"];
         if (isset($data['filter_level'])) {
             $this->filter_level = $data["filter_level"];
@@ -850,7 +850,7 @@ class Tweet {
         $plain = array();
         foreach ($data["entities"]["urls"] as $url) {
             $u = $url;
-            $u['url_expanded'] = addslashes($u["expanded_url"]);
+            $u['url_expanded'] = $u["expanded_url"];
             unset($u["expanded_url"]);
             $u['url_is_media'] = 0;
             $plain[] = $u;
@@ -861,7 +861,7 @@ class Tweet {
             foreach ($data["extended_entities"]["media"] as $media) {
                 $u = array();
                 $u["url"] = $media["url"];
-                $u["url_expanded"] = addslashes($media["expanded_url"]);
+                $u["url_expanded"] = $media["expanded_url"];
                 $u['url_is_media'] = 1;
                 $extended[] = $u;
             }
