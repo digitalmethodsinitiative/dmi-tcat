@@ -161,7 +161,7 @@ function create_bin($bin_name, $dbh = false) {
             `url` varchar(2048),
             `url_expanded` varchar(2048),
             `url_followed` varchar(4096),
-            `url_is_media` tinyint(1),
+            `url_is_media_upload` tinyint(1),
             `media_type` varchar(32),
             `photo_size_width` int(11),
             `photo_size_height` int(11),
@@ -171,7 +171,7 @@ function create_bin($bin_name, $dbh = false) {
                     KEY `tweet_id` (`tweet_id`),                
                     KEY `created_at` (`created_at`),
                     KEY `from_user_id` (`from_user_id`),
-                    KEY `url_is_media` (`url_is_media`),
+                    KEY `url_is_media_upload` (`url_is_media_upload`),
                     KEY `media_type` (`media_type`),
                     FULLTEXT KEY `url_followed` (`url_followed`),
                     KEY `url_expanded` (`url_expanded`)
@@ -865,7 +865,7 @@ class Tweet {
             $u = $url;
             $u['url_expanded'] = $u["expanded_url"];
             unset($u["expanded_url"]);
-            $u['url_is_media'] = 0;
+            $u['url_is_media_upload'] = 0;
             $u['media_type'] = null;
             $u['photo_size_width'] = null;
             $u['photo_size_height'] = null;
@@ -878,7 +878,7 @@ class Tweet {
                 $u = array();
                 $u["url"] = $media["url"];
                 $u["url_expanded"] = $media["expanded_url"];
-                $u['url_is_media'] = 1;
+                $u['url_is_media_upload'] = 1;
                 $u['media_type'] = $media['type'];
                 if (isset($media['sizes']['large'])) {
                     $u['photo_size_width'] = $media['sizes']['large']['w'];

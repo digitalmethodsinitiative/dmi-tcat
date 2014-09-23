@@ -141,7 +141,7 @@ function upgrades() {
         }
     }
 
-    // 23/09/2014 add url_is_media, media_type, photo_size_width and photo_size_height fields to _urls table (and set default null)
+    // 23/09/2014 add url_is_media_upload, media_type, photo_size_width and photo_size_height fields to _urls table (and set default null)
     $query = "SHOW TABLES";
     $rec = $dbh->prepare($query);
     $rec->execute();
@@ -155,19 +155,19 @@ function upgrades() {
         $columns = $rec->fetchAll(PDO::FETCH_COLUMN);
         $update = TRUE;
         foreach ($columns as $i => $c) {
-            if ($c == 'url_is_media') {
+            if ($c == 'url_is_media_upload') {
                 $update = FALSE;
                 break;
             }
         }
         if ($update) {
-            logit("cli", "Adding new columns url_is_media, media_type, photo_size_width and photo_size_height to table $v");
+            logit("cli", "Adding new columns url_is_media_upload, media_type, photo_size_width and photo_size_height to table $v");
             $query = "ALTER TABLE " . quoteIdent($v) .
-                        " ADD COLUMN `url_is_media` tinyint(1) DEFAULT NULL," .
+                        " ADD COLUMN `url_is_media_upload` tinyint(1) DEFAULT NULL," .
                         " ADD COLUMN `media_type` varchar(32) DEFAULT NULL," .
                         " ADD COLUMN `photo_size_width` int(11) DEFAULT NULL," .
                         " ADD COLUMN `photo_size_height` int(11) DEFAULT NULL," .
-                        " ADD KEY `url_is_media` (`url_is_media`)," .
+                        " ADD KEY `url_is_media_upload` (`url_is_media_upload`)," .
                         " ADD KEY `media_type` (`media_type`)";
             $rec = $dbh->prepare($query);
             $rec->execute();
