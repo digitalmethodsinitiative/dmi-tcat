@@ -124,7 +124,7 @@ error_reporting(E_ALL);
 /*
  * How long the script is allowed to run
  */
-ini_set("max_execution_time", PHP_INT_MAX);
+ini_set("max_execution_time", 3600);
 
 /*
  * How much memory the script is allowed to take

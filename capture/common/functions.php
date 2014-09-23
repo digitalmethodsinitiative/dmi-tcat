@@ -1,6 +1,7 @@
 <?php
 
 error_reporting(E_ALL);
+ini_set("max_execution_time", 0);       // capture script want unlimited execution time
 
 function pdo_connect() {
     global $dbuser, $dbpass, $database, $hostname;
