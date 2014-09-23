@@ -157,6 +157,9 @@ function create_bin($bin_name, $dbh = false) {
             `url_expanded` varchar(2048),
             `url_followed` varchar(4096),
             `url_is_media` tinyint(1),
+            `media_type` varchar(32),
+            `photo_size_width` int(11),
+            `photo_size_height` int(11),
             `domain` varchar(2048),
             `error_code` varchar(64),
             PRIMARY KEY (`id`),
@@ -749,7 +752,7 @@ class Tweet {
         // @todo: support for places in JSON/stream import
         $t->place_ids = array();
         $t->places= array();
-        // @todo: support multiple media entities in Gnip import
+        // @todo: support multiple media entities in Gnip import, and: photo_size_xy, and media_type!
         $t->urls = $object->twitter_entities->urls;
         $t->user_mentions = $object->twitter_entities->user_mentions;
         $t->hashtags = $object->twitter_entities->hashtags;
@@ -842,7 +845,8 @@ class Tweet {
         } else {
             $this->withheld_scope = null;
         }
-        // convert from array to object
+
+        // tweet data (arrays) to object conversion
         
         // a tweet text can contain multiple URLs, and multiple media URLs can be packed into a single link inside the tweet
         // all unpacked media link data is available under extended_entities->urls
@@ -854,6 +858,9 @@ class Tweet {
             $u['url_expanded'] = $u["expanded_url"];
             unset($u["expanded_url"]);
             $u['url_is_media'] = 0;
+            $u['media_type'] = null;
+            $u['photo_size_width'] = null;
+            $u['photo_size_height'] = null;
             $plain[] = $u;
         }
         $extended = array();
@@ -864,10 +871,17 @@ class Tweet {
                 $u["url"] = $media["url"];
                 $u["url_expanded"] = $media["expanded_url"];
                 $u['url_is_media'] = 1;
+                $u['media_type'] = $media['type'];
+                if (isset($media['sizes']['large'])) {
+                    $u['photo_size_width'] = $media['sizes']['large']['w'];
+                    $u['photo_size_height'] = $media['sizes']['large']['h'];
+                } else {
+                    $u['photo_size_width'] = null;
+                    $u['photo_size_height'] = null;
+                }
                 $extended[] = $u;
             }
         }
-
         $urls = array_merge($plain, $extended);
         $this->urls = json_decode(json_encode($urls, FALSE));
         $this->user_mentions = json_decode(json_encode($data["entities"]["user_mentions"]), FALSE);

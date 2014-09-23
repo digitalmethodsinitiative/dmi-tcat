@@ -168,7 +168,7 @@ function upgrades() {
         }
     }
 
-    // 16/09/2014 add url_is_media field to _urls table (and set default null)
+    // 23/09/2014 add url_is_media, media_type, photo_size_width and photo_size_height fields to _urls table (and set default null)
     $query = "SHOW TABLES";
     $rec = $dbh->prepare($query);
     $rec->execute();
@@ -187,13 +187,16 @@ function upgrades() {
             }
         }
         if ($update) {
-            logit("cli", "Adding new column url_is_media to table $v");
-            $query = "ALTER TABLE " . quoteIdent($v) . " ADD COLUMN `url_is_media` tinyint(1) DEFAULT NULL";
+            logit("cli", "Adding new columns url_is_media, media_type, photo_size_width and photo_size_height to table $v");
+            $query = "ALTER TABLE " . quoteIdent($v) .
+                        " ADD COLUMN `url_is_media` tinyint(1) DEFAULT NULL," .
+                        " ADD COLUMN `media_type` varchar(32) DEFAULT NULL," .
+                        " ADD COLUMN `photo_size_width` int(11) DEFAULT NULL," .
+                        " ADD COLUMN `photo_size_height` int(11) DEFAULT NULL";
             $rec = $dbh->prepare($query);
             $rec->execute();
         }
     }
-
 
     // End of upgrades
 }
