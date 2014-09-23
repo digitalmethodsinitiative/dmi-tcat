@@ -1,8 +1,8 @@
 <?php
 
 // ----- only run from command line -----
-if (php_sapi_name() !== 'cli')
-    exit();
+if (php_sapi_name() !== 'cli' && php_sapi_name() !== 'cgi-fcgi')
+    die;
 
 include_once("../../config.php");
 include "../../common/functions.php";

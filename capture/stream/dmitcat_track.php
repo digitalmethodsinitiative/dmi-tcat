@@ -1,7 +1,7 @@
 <?php
 
 // ----- only run from command line -----
-if (php_sapi_name() !== 'cli')
+if (php_sapi_name() !== 'cli' && php_sapi_name() !== 'cgi-fcgi')
     die;
 
 // ----- params -----
