@@ -1047,6 +1047,7 @@ class TweetQueue {
         $statement .= " ) VALUES ";
         // add placeholder marks
         $count = count($this->binColumnsCache[$bin_name][$table_extension]);
+        if ($count == 0) return '';     // unknown table
         // for these tables, again discount the 'id' field
         if ($table_extension == 'mentions' || $table_extension == 'hashtags' || $table_extension == 'urls' || $table_extension == 'withheld') $count--;
         $statement .= rtrim(str_repeat("( " . rtrim(str_repeat("?,", $count), ',') . " ),", $rowcount), ',');
