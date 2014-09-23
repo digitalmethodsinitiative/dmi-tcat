@@ -15,7 +15,6 @@ require BASE_FILE . 'capture/common/tmhOAuth/tmhOAuth.php';
 
 $cronjob = false;      // set to true, if running from cron
 $bin_name = '';       // name of the bin
-//$keywords = 'พระมหากษัตริย์ไทย,เทวราชา,Adulyadej,Vajiralongkorn,Ataturk';
 $keywords = '';
 $type = 'search';     // specify 'search' if you want this to be a standalone bin, or 'track' if you want to be able to continue tracking these keywords later on via BASE_URL/capture/index.php
 
