@@ -136,10 +136,15 @@ function create_bin($bin_name, $dbh = false) {
                     `withheld_scope` varchar(32),
                     PRIMARY KEY (`id`),
                     KEY `created_at` (`created_at`),
+                    KEY `from_user_created_at` (`from_user_created_at`),
+                    KEY `from_user_withheld_scope` (`from_user_withheld_scope`),
                     KEY `from_user_name` (`from_user_name`),
                     KEY `from_user_lang` (`from_user_lang`),
                     KEY `retweet_id` (`retweet_id`),
                     KEY `in_reply_to_status_id` (`in_reply_to_status_id`),
+                    KEY `possibly_sensitive` (`possibly_sensitive`),
+                    KEY `withheld_copyright` (`withheld_copyright`),
+                    KEY `withheld_scope` (`withheld_scope`),
                     FULLTEXT KEY `from_user_description` (`from_user_description`),
                     FULLTEXT KEY `text` (`text`)
                     ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4";
@@ -166,6 +171,8 @@ function create_bin($bin_name, $dbh = false) {
                     KEY `tweet_id` (`tweet_id`),                
                     KEY `created_at` (`created_at`),
                     KEY `from_user_id` (`from_user_id`),
+                    KEY `url_is_media` (`url_is_media`),
+                    KEY `media_type` (`media_type`),
                     FULLTEXT KEY `url_followed` (`url_followed`),
                     KEY `url_expanded` (`url_expanded`)
             ) ENGINE=MyISAM  DEFAULT CHARSET=utf8mb4";

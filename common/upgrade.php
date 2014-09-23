@@ -116,6 +116,12 @@ function upgrades() {
                 if (!$first) { $query .= ", "; } else { $first = FALSE; }
                 $query .= " ADD COLUMN $subpart";
             }
+            // and add indexes
+            $query .= ", ADD KEY `from_user_created_at` (`from_user_created_at`)" .
+                      ", ADD KEY `from_user_withheld_scope` (`from_user_withheld_scope`)" .
+                      ", ADD KEY `possibly_sensitive` (`possibly_sensitive`)" .
+                      ", ADD KEY `withheld_copyright` (`withheld_copyright`)" .
+                      ", ADD KEY `withheld_scope` (`withheld_scope`)";
             $rec = $dbh->prepare($query);
             $rec->execute();
         }
@@ -192,7 +198,9 @@ function upgrades() {
                         " ADD COLUMN `url_is_media` tinyint(1) DEFAULT NULL," .
                         " ADD COLUMN `media_type` varchar(32) DEFAULT NULL," .
                         " ADD COLUMN `photo_size_width` int(11) DEFAULT NULL," .
-                        " ADD COLUMN `photo_size_height` int(11) DEFAULT NULL";
+                        " ADD COLUMN `photo_size_height` int(11) DEFAULT NULL," .
+                        " ADD KEY `url_is_media` (`url_is_media`)," .
+                        " ADD KEY `media_type` (`media_type`)";
             $rec = $dbh->prepare($query);
             $rec->execute();
         }
