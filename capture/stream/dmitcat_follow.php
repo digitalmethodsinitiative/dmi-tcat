@@ -23,6 +23,11 @@ if (!is_resource($thislockfp)) {
     die;          // avoid double execution of script
 }
 
+if (dbserver_has_utf8mb4_support() == false) {
+    logit(CAPTURE . ".error.log", "DMI-TCAT requires at least MySQL version 5.5.3 - please upgrade your server");
+    exit();
+}
+
 // ----- connection -----
 dbconnect();      // connect to database @todo, rewrite mysql calls with pdo
 
