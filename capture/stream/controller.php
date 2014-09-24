@@ -147,6 +147,8 @@ foreach ($roles as $role) {
 
                 if (script_lock($role, true) === true) {
                     // restart script
+                    flock($thislockfp, LOCK_UN);
+                    fclose($thislockfp);
                     passthru(PHP_CLI . " " . BASE_FILE . "capture/stream/dmitcat_$role.php > /dev/null 2>&1 &");
                 }
             }
@@ -162,6 +164,8 @@ foreach ($roles as $role) {
                 gap_record($role, $last, time());
             }
 
+            flock($thislockfp, LOCK_UN);
+            fclose($thislockfp);
             passthru(PHP_CLI . " " . BASE_FILE . "capture/stream/dmitcat_$role.php > /dev/null 2>&1 &");
         }
     }
