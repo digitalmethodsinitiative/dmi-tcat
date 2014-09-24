@@ -1242,7 +1242,7 @@ class TweetQueue {
                 }
             }
 
-            if (database_activity()) {
+            if (database_activity($dbh)) {
                 $pid = getmypid();
                 file_put_contents(BASE_FILE . "proc/" . CAPTURE . ".procinfo", $pid . "|" . time());
             }
@@ -1655,7 +1655,7 @@ function safe_feof($fp, &$start = NULL) {
     return feof($fp);
 }
 
-function database_activity() {
+function database_activity($dbh) {
     global $last_insert_id;
     if (defined('USE_INSERT_DELAYED') && USE_INSERT_DELAYED) {
         // when using DELAYED INSERT, the LAST_INSERT_ID() function is unreliable
@@ -1667,12 +1667,9 @@ function database_activity() {
         $query = "SELECT LAST_INSERT_ID()";
     }
 
-    $results = mysql_query($query);
-    if (!$results) {
-        return FALSE;
-    }
-    $row = mysql_fetch_row($results);
-    $lid = $row[0];
+    $sth = $dbh->prepare($query);
+    $sth->execute();
+    $lid = $sth->fetchColumn();
     if ($lid === FALSE || $lid === 0) {
         return FALSE;
     }
