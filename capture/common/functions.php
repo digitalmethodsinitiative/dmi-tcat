@@ -379,7 +379,7 @@ function script_lock($script, $test = false) {
 
 function logit($file, $message) {
     $file = BASE_FILE . "logs/" . $file;
-    if (php_sapi_name() == "cli") {
+    if ($file == "cli") {
         $message = date("Y-m-d H:i:s") . " " . $message;
         error_log($message);
     } else {
