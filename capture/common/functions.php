@@ -1652,9 +1652,17 @@ function safe_feof($fp, &$start = NULL) {
 
 function database_activity() {
     global $last_insert_id;
-    // we explicitely use the MySQL function last_insert_id
-    // we don't want any PHP caching of insert id's()
-    $results = mysql_query("SELECT LAST_INSERT_ID()");
+    if (defined('USE_INSERT_DELAYED') && USE_INSERT_DELAYED) {
+        // when using DELAYED INSERT, the LAST_INSERT_ID() function is unreliable
+        // we make use of the delayed_writes status variable instead
+        $query = "select VARIABLE_VALUE from information_schema.GLOBAL_STATUS where VARIABLE_NAME = 'delayed_writes'";
+    } else {
+        // we explicitely use the MySQL function last_insert_id
+        // we don't want any PHP caching of insert id's()
+        $query = "SELECT LAST_INSERT_ID()";
+    }
+
+    $results = mysql_query($query);
     if (!$results) {
         return FALSE;
     }
