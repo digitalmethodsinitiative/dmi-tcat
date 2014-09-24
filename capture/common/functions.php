@@ -1710,6 +1710,13 @@ function processtweets($capturebucket) {
         // we run through every bin to check whether the received tweets fit
         foreach ($querybins as $binname => $queries) {
 
+            $geobin = (getBinType($binname) == 'geotrack');
+
+            if ($geobin && (!array_key_exists('geo_enabled', $data['user']) || $data['user']['geo_enabled'] !== true)) {
+                // in geobins, process only geo tweets
+                continue;
+            }
+
             $found = false;
 
             if (CAPTURE == "track") {
