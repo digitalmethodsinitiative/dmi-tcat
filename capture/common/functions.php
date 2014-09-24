@@ -1242,6 +1242,11 @@ class TweetQueue {
                 }
             }
 
+            if (database_activity()) {
+                $pid = getmypid();
+                file_put_contents(BASE_FILE . "proc/" . CAPTURE . ".procinfo", $pid . "|" . time());
+            }
+
         }
 
         $dbh = null;
