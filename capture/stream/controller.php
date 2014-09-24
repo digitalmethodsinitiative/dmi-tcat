@@ -1,16 +1,22 @@
 <?php
 
 // ----- only run from command line -----
-if (php_sapi_name() !== 'cli')
-    exit();
+if (php_sapi_name() !== 'cli' && php_sapi_name() !== 'cgi-fcgi')
+    die;
 
 include_once("../../config.php");
 include "../../common/functions.php";
 include "../common/functions.php";
 
-// check whether controller script is already running
-if (!noduplicates('controller.php', TRUE)) {
+// make sure only one controller script is running
+$thislockfp = script_lock('controller');
+if (!is_resource($thislockfp)) {
     logit("controller.log", "controller.php already running, skipping this check");
+    exit();
+}
+
+if (dbserver_has_utf8mb4_support() == false) {
+    logit("controller.log", "DMI-TCAT requires at least MySQL version 5.5.3 - please upgrade your server");
     exit();
 }
 
@@ -74,7 +80,7 @@ foreach ($roles as $role) {
         $pid = $tmp[0];
         $last = $tmp[1];
 
-        $running = check_running_role($role);
+        $running = (script_lock($role, true) !== true);
         
         if($running)
             logit("controller.log", "script $role is running with pid [" . $pid . "] and has been idle for " . (time() - $last) . " seconds");
@@ -119,12 +125,16 @@ foreach ($roles as $role) {
                         // we need some time to allow graceful exit
                         sleep($sleep);
                         $i++;
-                        if ($i == 10) {
+                        if ($i == 3) {
                             $failmsg = "unable to kill script $role with pid $pid after " . ($sleep * $i) . " seconds";
                             logit("controller.log", $failmsg);
-                            exit();
+                            $failmsg = "hard kill of pid $pid";
+                            logit("controller.log", $failmsg);
+                            posix_kill($pid, SIGKILL);
+                            break;
                         }
                     }
+
                 } else {
 
                     logit("controller.log", "using system kill on pid $pid");
@@ -132,19 +142,23 @@ foreach ($roles as $role) {
                 }
 
                 // notify user via email when we restart an idle script
-                if ($idled && isset($mail_to) && trim($mail_to) != "")
+                if (!$reload && $idled && isset($mail_to) && trim($mail_to) != "")
                     mail($mail_to, "DMI-TCAT controller killed a process", $restartmsg);
 
-                if (noduplicates("dmitcat_$role.php")) {
+                if (script_lock($role, true) === true) {
                     // restart script
+
+                    // a forked process may inherit our lock, but we prevent this.
+                    flock($thislockfp, LOCK_UN); fclose($thislockfp);
                     passthru(PHP_CLI . " " . BASE_FILE . "capture/stream/dmitcat_$role.php > /dev/null 2>&1 &");
+                    $thislockfp = script_lock('controller');
                 }
             }
         }
     }
     if (!$running) {
 
-        if (noduplicates("dmitcat_$role.php")) {
+        if (script_lock($role, true) === true) {
             logit("controller.log", "script $role was not running - starting");
 
             // record confirmed gap if we could measure it
@@ -152,41 +166,12 @@ foreach ($roles as $role) {
                 gap_record($role, $last, time());
             }
 
+            // a forked process may inherit our lock, but we prevent this.
+            flock($thislockfp, LOCK_UN); fclose($thislockfp);
             passthru(PHP_CLI . " " . BASE_FILE . "capture/stream/dmitcat_$role.php > /dev/null 2>&1 &");
+            $thislockfp = script_lock('controller');
         }
     }
-}
-
-/*
- * Check for existing invocations of a particular script to avoid duplicate executions
- * If boolean parameter single is set, one execution of script is allowed (useful for a self-check)
- * Returns FALSE if something is running, otherwise TRUE
- */
-
-function noduplicates($script, $single_allowed = FALSE) {
-
-    $cmd = "ps ax | grep -v grep | grep -v Ss | grep '$script'";
-    $found = FALSE;
-
-    // check whether script is already running
-    $out = exec($cmd, $output);
-
-    foreach ($output as $line) {
-
-        $line = preg_replace("/^[\t ]*/", "", $line);
-        $pid = preg_replace("/[\t ].*$/", "", $line);
-
-        if (is_numeric($pid) && $pid > 0) {
-            
-            if ($found || $single_allowed == FALSE) {
-                return FALSE;
-            }
-
-            $found = TRUE;
-        }
-    }
-
-    return TRUE;
 }
 
 ?>

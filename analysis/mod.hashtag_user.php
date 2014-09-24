@@ -30,7 +30,7 @@ require_once './common/Gexf.class.php';
         $coword->countWordOncePerDocument = FALSE;
 
         // get hashtag-user relations
-        $sql = "SELECT LOWER(A.text) AS h1, LOWER(A.from_user_name) AS user, LOWER(t.from_user_lang) AS language, LOWER(t.location) AS location ";
+        $sql = "SELECT LOWER(A.text) AS h1, LOWER(A.from_user_name) AS user, LOWER(t.from_user_lang) AS language, LOWER(t.location) AS location, t.from_user_timezone AS timezone, t.from_user_utcoffset AS utcoffset ";
         $sql .= "FROM " . $esc['mysql']['dataset'] . "_hashtags A, " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset() . " AND ";
         $sql .= "LENGTH(A.text)>1 AND ";
@@ -50,6 +50,8 @@ require_once './common/Gexf.class.php';
             $hashtagCount[$res['h1']]++;
             $languages[$res['user']] = $res['language'];
             $locations[$res['user']] = $res['location'];
+            $from_user_timezone[$res['user']] = $res['timezone'];
+            $from_user_utcoffset[$res['user']] = $res['utcoffset'];
         }
 
         $gexf = new Gexf();
@@ -65,6 +67,8 @@ require_once './common/Gexf.class.php';
                 $node1->addNodeAttribute("hashtagFrequency", 0, $type = "int");
                 $node1->addNodeAttribute("language", $languages[$user], $type = "string");
                 $node1->addNodeAttribute("location", $locations[$user], $type = "string");
+                $node1->addNodeAttribute("from_user_utcoffset", $from_user_utcoffset[$user], $type = "string");
+                $node1->addNodeAttribute("from_user_timezone", $from_user_timezone[$user], $type = "string");
                 $gexf->addNode($node1);
                 $node2 = new GexfNode($hashtag);
                 $node2->addNodeAttribute("type", 'hashtag', $type = "string");

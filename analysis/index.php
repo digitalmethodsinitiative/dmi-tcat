@@ -285,6 +285,11 @@ if (defined('ANALYSIS_URL'))
             $curdate = strtotime($esc['datetime']['startdate']);
 
             $period = $graph_resolution;
+            if (!isset($_GET['graph_resolution']) || $_GET['graph_resolution'] == '') {
+                if ($curdate >= strtotime($esc['datetime']['enddate']) - 2 * 86400)
+                    $period = "hour";
+            }
+
 
             // initialize with empty dates
             while ($curdate <= strtotime($esc['datetime']['enddate'])) {
