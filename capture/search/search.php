@@ -11,6 +11,13 @@ include_once BASE_FILE . '/capture/common/functions.php';
 
 require BASE_FILE . 'capture/common/tmhOAuth/tmhOAuth.php';
 
+// make sure only one search script is running
+$thislockfp = script_lock('search');
+if (!is_resource($thislockfp)) {
+    logit("cli", "search.php is already running (maybe through cron?). exiting now.");
+    exit();
+}
+
 // DEFINE SEARCH PARAMETERS HERE
 
 $cronjob = false;      // set to true, if running from cron
