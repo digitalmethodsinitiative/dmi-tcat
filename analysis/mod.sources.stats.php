@@ -7,7 +7,7 @@ require_once './common/functions.php';
 
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
-        <title>Twitter Analytics :: User stats</title>
+        <title>Twitter Analytics :: Source stats</title>
 
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
@@ -23,7 +23,7 @@ require_once './common/functions.php';
 
     <body>
 
-        <h1>Twitter Analytics :: User Stats</h1>
+        <h1>Twitter Analytics :: Source Stats</h1>
 
         <?php
         validate_all_variables();
@@ -32,7 +32,7 @@ require_once './common/functions.php';
         $filename_locations = get_filename_for_export("locations");
         $filename_languages = get_filename_for_export("languages");
 
-        // tweets per user
+        // tweets per source 
         $sql = "SELECT COUNT(*) AS count, source, ";
         $sql .= sqlInterval();
         $sql .= " FROM " . $esc['mysql']['dataset'] . "_tweets t ";
