@@ -5,8 +5,8 @@ if (defined("ADMIN_USER") && ADMIN_USER != "" && (!isset($_SERVER['PHP_AUTH_USER
     die("Go away, you evil hacker!");
 
 include_once("query_manager.php");
-include_once("../common/functions.php");
-include_once("../capture/common/functions.php");
+include_once BASE_FILE . '/common/functions.php';
+include_once BASE_FILE . '/capture/common/functions.php';
 
 create_admin();
 create_error_logs();
@@ -62,6 +62,7 @@ $lastRateLimitHit = getLastRateLimitHit();
 
 
         </style>
+        <link rel="stylesheet" href="http://code.jquery.com/ui/1.11.1/themes/smoothness/jquery-ui.css">
 
     </head>
 
@@ -69,6 +70,9 @@ $lastRateLimitHit = getLastRateLimitHit();
 
         <h1>DMI-TCAT query manager</h1>
         <?php
+        if (!dbserver_has_utf8mb4_support()) {
+            print "<br /><font color='red'>Your MySQL version is too old, please upgrade to at least MySQL 5.5.3 to use DMI-TCAT.</font><br>";
+        }
         print "You currently have " . count($querybins) . " query bins and are tracking ";
         if (array_search("track", $captureroles) !== false)
             print $activePhrases . " out of 400 possible phrases";
@@ -83,9 +87,6 @@ $lastRateLimitHit = getLastRateLimitHit();
         print ".<br/>";
         if ($lastRateLimitHit) {
             print "<br /><font color='red'>Your latest rate limit hit was on $lastRateLimitHit</font><br>";
-        }
-        if (!dbserver_has_utf8mb4_support()) {
-            print "<br /><font color='red'>Your MySQL version is too old, please upgrade to at least MySQL 5.5.3 to use DMI-TCAT.</font><br>";
         }
         ?>
         <h3>New query bin</h3>
@@ -220,7 +221,7 @@ $lastRateLimitHit = getLastRateLimitHit();
             if (array_search($bin->type, $captureroles) !== false)
                 echo '<a href="" onclick="sendPause(\'' . $bin->id . '\',\'' . $action . '\',\'' . $bin->type . '\'); return false;">' . $action . '</a>';
             echo '</td>';
-            echo '<td><a href="" onclick="sendDelete(\'' . $bin->id . '\',\'' . $bin->active . '\',\'' . $bin->type . '\'); return false;">delete</a></td>';
+            echo '<td valign="top"><a href="" onclick="sendDelete(\'' . $bin->id . '\',\'' . $bin->active . '\',\'' . $bin->type . '\'); return false;">delete</a></td>';
             echo '</tr>';
         }
         echo '</tbody>';
@@ -228,8 +229,16 @@ $lastRateLimitHit = getLastRateLimitHit();
         ?>
 
     </table>
+    <div id="dialog-confirm" title="Hold on ...">
+        <p><span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 20px 0;"></span><span class="msg">These items will be permanently deleted and cannot be recovered. Are you sure?</span></p>
+    </div>
+    <div id="dialog-modify" title="Specify active keywords">
+        <p>Separate queries by a comma</p>
+        <p><span><textarea type='textarea' name='phrases' rows='15' cols='43'></textarea></span></p>
+    </div>
 
     <script type='text/javascript' src='../analysis/scripts/jquery-1.7.1.min.js'></script>
+    <script src="http://code.jquery.com/ui/1.11.1/jquery-ui.js"></script>
     <script type="text/javascript" src="../analysis/scripts/tablesorter/jquery.tablesorter.min.js"></script>
     <script type="text/javascript">
 
@@ -271,87 +280,113 @@ foreach ($bins as $id => $bin)
     
     var nrOfActivePhrases = <?php echo $activePhrases; ?>;
     var nrOfActiveUsers = <?php echo $activeUsers; ?>;
-
-    function sendPause(_bin,_todo,_type) {
-        if(!validateBin(_bin))
-            return false;
-                
-        if(_todo == "start") {
-            if(_type == "track")
-                var _check = window.confirm("Are you sure that you want to " + _todo + " capturing the '" + bins[_bin] + "' bin with the last set of active phrases?");
-            else if(_type == "follow")
-                var _check = window.confirm("Are you sure that you want to " + _todo + " capturing the '" + bins[_bin] + "' bin with the last set of active users?");
-            else if(_type == "onepercent")
-                var _check = window.confirm("Are you sure that you want to " + _todo + " capturing the '" + bins[_bin] + "' bin?");
-        } else
-            var _check = window.confirm("Are you sure that you want to " + _todo + " capturing the '" + bins[_bin] + "' bin?");
-
-        if(_check == true) {
-
-            var _params = {action:"pausebin",todo:_todo,bin:_bin,type:_type};
-                    
-            $.ajax({
-                dataType: "json",
-                url: "query_manager.php",
-                type: 'POST',
-                data: _params
-            }).done(function(_data) {
-                alert(_data["msg"]);
-                location.reload();
-            });
+    var params = undefined;
+    
+    $( "#dialog-confirm" ).dialog({
+        autoOpen: false,
+        resizable: true,
+        height:'auto',
+        modal: true,
+        width:'auto',
+        buttons: {
+            'Yes': function(){
+                $(this).dialog('close');
+                callbackDialog(true);
+            },
+            'No': function(){
+                $(this).dialog('close');
+                return false;
+            }
         }
-        return false;
+    });
+    function dialogConfirm(msg) {
+        $("#dialog-confirm .msg").html(msg);
+        $("#dialog-confirm").dialog('open');
     }
-
-    function sendModify(_bin,_phrases,_active,_type) {
-        if(!validateBin(_bin))
-            return false;
-                
-        if(_type == "track") {
-            var _newphrases = window.prompt("Specify active keywords:",_phrases);
-            if(_newphrases == null || _newphrases == _phrases) { return; }
-        
-            if(!validateQuery(_newphrases,_type))
-                return false;
-            var _nrOfPhrases = validateNumberOfPhrases(_phrases.split(",").length,_newphrases.split(",").length);
-            if(!_nrOfPhrases) {
-                alert("With this query you will exceed the number of allowed queries (400) to the Twitter API. Please reduce the number of phrases.");
-                return false;
-            }
-        } else if(_type == "follow") {
-            var _newphrases = window.prompt("Specify active users:",_phrases);
-            if(_newphrases == null || _newphrases == _phrases) { return; }
-        
-            if(!validateQuery(_newphrases,_type))
-                return false;
-            var _nrOfUsers = validateNumberOfUsers(_phrases.split(",").length,_newphrases.split(",").length);
-            if(!_nrOfUsers) {
-                alert("With this query you will exceed the number of allowed user ids (5000) to the Twitter API. Please reduce the number of user ids.");
-                return false;
-            }
-        }
-
-        if(_active == 1)
-            var _check = window.confirm("Are you sure that you want to change from\n\n" + _phrases + "\n\nto\n\n" + _newphrases + "\n\nfor this query bin?");
-        else
-            var _check = window.confirm("Are you sure that you want to change from\n\n" + _phrases + "\n\nto\n\n" + _newphrases + "\n\nfor this query bin, and then start the bin?");
-        
-        if(_check == true) {
-
-            var _params = {action:"modifybin",bin:_bin,type:_type,oldphrases:_phrases,newphrases:_newphrases,active:_active};
-
+    function callbackDialog(confirmed) {
+        if(confirmed) {
             $.ajax({
                 dataType: "json",
                 url: "query_manager.php",
                 type: 'POST',
-                data: _params
+                data: params
             }).done(function(_data) {
                 alert(_data["msg"]);
                 location.reload();
             });   
         }
+    }
+    function sendPause(_bin,_todo,_type) {
+        if(!validateBin(_bin))
+            return false;
+        params = {action:"pausebin",todo:_todo,bin:_bin,type:_type};
+        if(_todo == "start") {
+            if(_type == "track")
+                dialogConfirm("Are you sure that you want to " + _todo + " capturing the '" + bins[_bin] + "' bin with the last set of active phrases?");
+            else if(_type == "follow")
+                dialogConfirm("Are you sure that you want to " + _todo + " capturing the '" + bins[_bin] + "' bin with the last set of active users?");
+            else if(_type == "onepercent")
+                dialogConfirm("Are you sure that you want to " + _todo + " capturing the '" + bins[_bin] + "' bin?");
+        } else
+            dialogConfirm("Are you sure that you want to " + _todo + " capturing the '" + bins[_bin] + "' bin?");
+    }
+
+    
+    function sendModify(_bin,_phrases,_active,_type) {
+        if(!validateBin(_bin))
+            return false;
+        
+        params = {action:"modifybin",bin:_bin,type:_type,oldphrases:_phrases,active:_active};
+        
+        $('#dialog-modify textarea').val(_phrases);
+        $('#dialog-modify').dialog('open');
+        
         return false;
     }
+    $( "#dialog-modify" ).dialog({
+        autoOpen: false,
+        resizable: true,
+        height:'auto',
+        modal: true,
+        width:'auto',
+        buttons: {
+            'Submit': function(){
+                var _newphrases = $('#dialog-modify textarea').val();
+                if(_newphrases == null || _newphrases == params['oldphrases']) { 
+                    $(this).dialog('close'); 
+                    return false; 
+                }
+        
+                if(!validateQuery(_newphrases,params['type'])) {
+                    return false;
+                }
+                if(params['type']=='track') {
+                    var _nrOfPhrases = validateNumberOfPhrases(params['oldphrases'].split(",").length,_newphrases.split(",").length);
+                    if(!_nrOfPhrases) {
+                        alert("With this query you will exceed the number of allowed queries (400) to the Twitter API. Please reduce the number of phrases.");
+                        return false;
+                    }
+                } else if(params['type']=='follow') {
+                    var _nrOfUsers = validateNumberOfUsers(params['oldphrases'].split(",").length,_newphrases.split(",").length);
+                    if(!_nrOfUsers) {
+                        alert("With this query you will exceed the number of allowed user ids (5000) to the Twitter API. Please reduce the number of user ids.");
+                        return false;
+                    }
+                }
+                params['newphrases'] = _newphrases;
+                if(params['active'] == 1)
+                    dialogConfirm("Please confirm that you want to change these queries:<br><br>" + params['oldphrases'] + "<br><br>into these queries:<br><br>" + _newphrases );
+                else
+                    dialogConfirm("Please confirm that you want to start the existing bin with the new following new queries:<br><br>" + _newphrases);
+                $(this).dialog('close');
+                return false;
+            },
+            'Cancel': function(){
+                $(this).dialog('close');
+                return false;
+            }
+        }
+    });
     
     function sendDelete(_bin,_active,_type) {
         
