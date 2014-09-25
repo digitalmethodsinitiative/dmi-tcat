@@ -66,7 +66,7 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
         }
 
         unset($coword->words); // as we are adding words manually the frequency would be messed up
-        if ($esc['shell']['minf'] > 0 && !($esc['shell']['topu'] > 0)) {
+        if ($esc['shell']['minf'] > 1 && !($esc['shell']['topu'] > 0)) {
             $coword->applyMinFreq($esc['shell']['minf']);
             //$coword->applyMinDegree($esc['shell']['minf']);	// Berno: method no longer in use, remains unharmed
             $filename = get_filename_for_export("hashtagCooc", (isset($_GET['probabilityOfAssociation']) ? "_normalizedAssociationWeight" : "") . "_minFreqOf" . $esc['shell']['minf'], "gexf");
@@ -77,8 +77,40 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
             $filename = get_filename_for_export("hashtagCooc", (isset($_GET['probabilityOfAssociation']) ? "_normalizedAssociationWeight" : ""), "gexf");
         }
 
+		//print_r($coword);
 
-        file_put_contents($filename, $coword->getCowordsAsGexf($filename));
+		$lookup = array();
+
+		$fp = fopen($filename, 'w');
+
+			fwrite($fp, "nodedef> name VARCHAR,label VARCHAR,wordFrequency INT,distinctUsersForWord INT,userDiversity FLOAT,wordFrequencyDividedByUniqueUsers FLOAT,wordFrequencyMultipliedByUniqueUsers INT\n");
+
+			$counter = 0;
+			foreach($coword->wordFrequency as $word => $freq) {
+				fwrite($fp, $counter ."," . $word ."," . $freq ."," . $coword->distinctUsersForWord[$word] ."," . $coword->userDiversity[$word] ."," . $coword->wordFrequencyDividedByUniqueUsers[$word] ."," . $coword->wordFrequencyMultipliedByUniqueUsers[$word] . "\n");
+				$lookup[$word] = $counter;
+				$counter++;
+			}
+
+			unset($coword->wordFrequency);
+			unset($coword->distinctUsersForWord);
+			unset($coword->userDiversity);
+			unset($coword->wordFrequencyDividedByUniqueUsers);
+			unset($coword->wordFrequencyMultipliedByUniqueUsers);
+
+			fwrite($fp, "edgedef> node1,node2,weight INT\n");
+
+			$counter = 0;
+			foreach($coword->cowords as $word => $cowords) {
+				foreach($cowords as $coword => $freq) {
+					fwrite($fp, $lookup[$word] ."," . $lookup[$coword] . "," . $freq . "\n");
+				}
+				$lookup[$word] = $counter;
+			}
+
+		fclose($fp);
+
+        //file_put_contents($filename, $coword->getCowordsAsGexf($filename));
 
         echo '<fieldset class="if_parameters">';
 
