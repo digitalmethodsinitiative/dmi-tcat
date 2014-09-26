@@ -231,7 +231,14 @@ function remove_bin($params) {
     $delete_table = $dbh->prepare($sql);
     $delete_table->execute();
 
+    $sql = "DROP TABLE " . $bin_name . "_withheld";
+    $delete_table = $dbh->prepare($sql);
+    $delete_table->execute();
 
+    $sql = "DROP TABLE " . $bin_name . "_places";
+    $delete_table = $dbh->prepare($sql);
+    $delete_table->execute();
+    
     echo '{"msg":"Query bin [' . $bin_name . ']has been deleted"}';
 
     $dbh = false;
