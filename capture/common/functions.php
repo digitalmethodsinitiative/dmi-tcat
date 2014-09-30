@@ -1028,6 +1028,17 @@ class TweetQueue {
         return isset($this->binColumnsCache[$bin]);
     }
 
+    // Log a PDOException using logit
+    function reportPDOError($e, $table) {
+        $errorMessage = $e->getCode() . ': ' . $e->getMessage();
+        $printMessage = "insert into table $table failed with '$errorMessage'";
+        if (defined('CAPTURE')) {
+            logit(CAPTURE . ".error.log", $printMessage);
+        } else {
+            logit("cli", $printMessage);
+        }
+    }
+
     function __construct() {
         $this->queue = array();
         $this->option_replace = true;
@@ -1197,52 +1208,46 @@ class TweetQueue {
                 try {
                     $tweetq->execute(); 
                 } catch( PDOException $e) {
-                    $errorMessage = $e->getCode() . ': ' . $e->getMessage();
-                    logit(CAPTURE . ".error.log", "insert into $bin_name" . "_tweets failed with '$errorMessage'");
+                    $this->reportPDOError($e, $bin_name . '_tweets');
                 }
             }
             if ($statement['hashtags'] !== '') {
                 try {
                 $hashtagsq->execute();
                 } catch( PDOException $e) {
-                    $errorMessage = $e->getCode() . ': ' . $e->getMessage();
-                    logit(CAPTURE . ".error.log", "insert into $bin_name" . "_hashtags failed with '$errorMessage'");
+                    $this->reportPDOError($e, $bin_name . '_hashtags');
                 }
             }
             if ($statement['urls'] !== '') {
                 try {
                 $urlsq->execute();
                 } catch( PDOException $e) {
-                    $errorMessage = $e->getCode() . ': ' . $e->getMessage();
-                    logit(CAPTURE . ".error.log", "insert into $bin_name" . "_urls failed with '$errorMessage'");
+                    $this->reportPDOError($e, $bin_name . '_urls');
                 }
             }
             if ($statement['mentions'] !== '') {
                 try {
                 $mentionsq->execute();
                 } catch( PDOException $e) {
-                    $errorMessage = $e->getCode() . ': ' . $e->getMessage();
-                    logit(CAPTURE . ".error.log", "insert into $bin_name" . "_mentions failed with '$errorMessage'");
+                    $this->reportPDOError($e, $bin_name . '_mentions');
                 }
             }
             if ($statement['withheld'] !== '') {
                 try {
                 $withheldq->execute();
                 } catch( PDOException $e) {
-                    $errorMessage = $e->getCode() . ': ' . $e->getMessage();
-                    logit(CAPTURE . ".error.log", "insert into $bin_name" . "_withheld failed with '$errorMessage'");
+                    $this->reportPDOError($e, $bin_name . '_withheld');
                 }
             }
             if ($statement['places'] !== '') {
                 try {
                 $placesq->execute();
                 } catch( PDOException $e) {
-                    $errorMessage = $e->getCode() . ': ' . $e->getMessage();
-                    logit(CAPTURE . ".error.log", "insert into $bin_name" . "_places failed with '$errorMessage'");
+                    $this->reportPDOError($e, $bin_name . '_places');
                 }
             }
 
-            if (database_activity($dbh)) {
+            if (defined('CAPTURE') && database_activity($dbh)) {
                 $pid = getmypid();
                 file_put_contents(BASE_FILE . "proc/" . CAPTURE . ".procinfo", $pid . "|" . time());
             }
