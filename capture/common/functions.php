@@ -386,6 +386,7 @@ function logit($file, $message) {
         error_log($message);
     } else {
         $message = date("Y-m-d H:i:s") . " " . $message . "\n";
+        print_r($file);
         file_put_contents($file, $message, FILE_APPEND);
     }
 }

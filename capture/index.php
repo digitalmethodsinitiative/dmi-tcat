@@ -100,6 +100,7 @@ $lastRateLimitHit = getLastRateLimitHit();
                                 <select name="capture_type" id="capture_type" onchange="changeInterface();">
                                     <?php if (array_search('track', $captureroles) !== false) { ?>
                                         <option value="track">keyword track</option>
+                                        <option value="geotrack">geo track</option>
                                     <?php } if (array_search('follow', $captureroles) !== false) { ?>
                                         <option value="follow">user sample</option>
                                     <?php } if (array_search('onepercent', $captureroles) !== false) { ?>
@@ -116,23 +117,11 @@ $lastRateLimitHit = getLastRateLimitHit();
                         </div>
                         <?php if (array_search('track', $captureroles) !== false) { ?>
                             <div id="if_row_phrases" class="if_row">
-                                <div class='if_row_header' style='height:200px;'>Phrases to track:</div>
-                                <div class='if_row_content'>
-                                    <input id="newbin_phrases" name="newbin_phrases" type="text"/><br>
-                                    Here you can specify a list of <a href='https://dev.twitter.com/docs/streaming-apis/parameters#track' target='_blank'>tracking criteria</a> consisting of single or multiple keyword queries, hashtags, and specific phrases. Each query should be separated by a comma. If you want to track a literal phrase, encapsulate it in single quotes (').<br>
-                                    <br/>
-                                    DMI-TCAT allows for three types of 'track' queries:
-                                    <ol style='margin-top:0px; list-style-position: inside; list'>
-                                        <li> a single word/hashtag. Consider that Twitter does not do partial matching on words, i.e. [twitter] will get tweets with [twitter], [#twitter] but not [twitteraddiction]
-                                        <li> two or more words: works like an AND operator, i.e. [global warming] will find tweets that have both [global] and [warming] in any position in the tweet, e.g. "life is global but not warming"</li>
-                                        <li> exact phrases: ['global warming'] will get only tweets with the exact phrase. Beware, however that due to how the streaming API works, tweets are captured in the same way as in 2, but tweets that do not match the exact phrase are thrown away. This means that you will request many more tweets from the Twitter API than you will see in your query bin - thus increasing the possibility that you will hit a <a href='https://dev.twitter.com/docs/faq#6861' target='_blank'>rate limit</a>. E.g. if you specify a query like ['are we'] all tweets matching both [are] and [we] are retrieved, while DMI-TCAT only retains those with the exact phrase ['are we'].</li>
-                                    </ol>
-
-                                    You can track a maximum of 400 queries at the same time (for all query bins combined) and the total volume should never exceed 1% of global Twitter volume, at any specific moment in time.
-                                    <br/><br/>
-                                    Example bin: globalwarming,global warming,'climate change'
-
-                                </div>
+                                <script>
+                                window.onload=function() {
+                                    document.getElementById("if_row_phrases").innerHTML=getContent('common/form.trackphrases.php'); 
+                                }
+                                </script>
                             </div>
                         <?php } if (array_search('follow', $captureroles) !== false) { ?>
                             <div id="if_row_users" class="if_row">
@@ -175,7 +164,7 @@ $lastRateLimitHit = getLastRateLimitHit();
             $phrasePeriodsList = array();
             $activePhraselist = array();
 
-            if (strstr($bin->type, "track") !== false || $bin->type == 'search' || $bin->type == 'import ytk') {
+            if (strstr($bin->type, "track") !== false || strstr($bin->type, "geotrack") !== false || $bin->type == 'search' || $bin->type == 'import ytk') {
                 foreach ($bin->phrases as $phrase) {
                     $phrasePeriodsList[$phrase->id] = array_unique($phrase->periods);
                     $phraseList[$phrase->id] = $phrase->phrase;
@@ -214,8 +203,19 @@ $lastRateLimitHit = getLastRateLimitHit();
             echo '<td valign="top" align="right">' . number_format($bin->nrOfTweets, 0, ",", ".") . '</td>'; // does not sort well
             echo '<td valign="top">' . implode("<br />", $bin->periods) . '</td>';
             echo '<td valign="top">';
-            if ($bin->type != "onepercent" && array_search($bin->type, $captureroles) !== false)
-                echo '<a href="" onclick="sendModify(\'' . $bin->id . '\',\'' . addslashes(implode(",", $activePhraselist)) . '\',\'' . $bin->active . '\',\'' . $bin->type . '\'); return false;">modify ' . ($bin->type == 'follow' ? 'users' : 'phrases') . '</a>';
+            if ($bin->type != "onepercent" &&
+                array_search($bin->type, $captureroles) !== false ||
+                array_search('track', $captureroles) !== false && $bin->type = "geotrack") {
+                echo '<a href="" onclick="sendModify(\'' . $bin->id . '\',\'' . addslashes(implode(",", $activePhraselist)) . '\',\'' . $bin->active . '\',\'' . $bin->type . '\'); return false;">modify ';
+                if ($bin->type == 'follow') {
+                    echo 'users';
+                } elseif ($bin->type == 'track') {
+                    echo 'phrases';
+                } elseif ($bin->type == 'geotrack') {
+                    echo 'geoboxes';
+                }
+                echo '</a>';
+            }
             echo '</td>';
             echo '<td valign="top">';
             if (array_search($bin->type, $captureroles) !== false)
@@ -434,6 +434,15 @@ foreach ($bins as $id => $bin)
                 alert("With this query you will exceed the number of allowed queries (400) to the Twitter API. Please reduce the number of phrases.");
                 return false;
             }
+        } else if (_type == "geotrack") {
+            var _phrases = $("#newbin_geoboxes").val();
+            if(!validateQuery(_phrases,_type))
+                return false;
+            var _nrOfPhrases = validateNumberOfPhrases(0,_phrases.split(",").length);
+            if(!_nrOfPhrases) {
+                alert("With this query you will exceed the number of allowed queries (400) to the Twitter API. Please reduce the number of phrases.");
+                return false;
+            }
         } else if(_type == "follow") {
             var _users = $("#newbin_users").val();
             if(!validateQuery(_users,_type))
@@ -448,6 +457,8 @@ foreach ($bins as $id => $bin)
         var _check = window.confirm("You are about to create a new query bin. Are you sure?");
         if(_check == true) {
             if(_type == "track")    
+                var _params = {action:"newbin",type:_type,newbin_phrases:_phrases,newbin_name:_bin,active:$("#make_active").val()};
+            if(_type == "geotrack")    
                 var _params = {action:"newbin",type:_type,newbin_phrases:_phrases,newbin_name:_bin,active:$("#make_active").val()};
             if(_type == "follow")    
                 var _params = {action:"newbin",type:_type,newbin_users:_users,newbin_name:_bin,active:$("#make_active").val()};
@@ -482,6 +493,8 @@ foreach ($bins as $id => $bin)
             
     function validateType(type) {
         if(type=="track")
+            return true;
+        if(type=="geotrack")
             return true;
         if(type=="follow")
             return true;
@@ -534,6 +547,32 @@ foreach ($bins as $id => $bin)
                 });
                 return cont;
             }
+        } else if (type == 'geotrack') {
+            query = query.replace(/\s/g, "");
+            var re = new RegExp("[^-,\.0-9]");
+            var results = re.exec(query);
+            if (results && results.length > 0) {
+                alert("You must only use coordinates and comma's in your geo string.");
+                return false;
+            }
+            var boxes = query.split(',');
+            if (boxes.length == 0 || boxes.length % 4 !== 0) {
+                alert("Specify geoboxes in sets of four coordinates.");
+                return false;
+            }
+            for (var i = 0; i < boxes.length; i++) {
+                var count = boxes[i].split("\.",-1).length-1;
+                if (count > 1) {
+                    alert("Only one period in a coordinate (" + boxes[i] + ") please.");
+                    return false;
+                }
+                var count = boxes[i].split("-",-1).length-1;
+                if (count > 1 || count == 1 && boxes[i].charAt(0) !== '-') {
+                    alert("Illegal coordinate (" + boxes[i] + ")");
+                    return false;
+                } 
+            }
+            return true;
         } else if(type == 'follow') {
             // only integers
             var arr = query.split(",");
@@ -560,6 +599,12 @@ foreach ($bins as $id => $bin)
             case "track":
                 $("#if_row_users").hide();
                 $("#if_row_phrases").show();
+                document.getElementById("if_row_phrases").innerHTML=getContent('common/form.trackphrases.php'); 
+                break;
+            case "geotrack":
+                $("#if_row_users").hide();
+                $("#if_row_phrases").show();
+                document.getElementById("if_row_phrases").innerHTML=getContent('common/form.trackgeophrases.php'); 
                 break;
             case "follow":
                 $("#if_row_users").show();
@@ -571,6 +616,17 @@ foreach ($bins as $id => $bin)
                 break;
         }
     }
+
+    function getContent(url) {
+        var request = new XMLHttpRequest();
+        request.open('GET', url, false);
+        request.send(); // because of "false" above, will block until the request is done 
+        if (request.status === 200) {
+                return request.responseText;
+        }
+        return '';
+
+}
 
     </script>
 </body>
