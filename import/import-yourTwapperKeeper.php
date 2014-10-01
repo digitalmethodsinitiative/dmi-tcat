@@ -27,10 +27,10 @@ $queries = array();
 if (dbserver_has_utf8mb4_support() == false) {
     die("DMI-TCAT requires at least MySQL version 5.5.3 - please upgrade your server\n");
 }
-$archive_dbh = new PDO("mysql:host=$dbhost_from;dbname=" . $dbdatabase_from, $dbuser_from, $dbpass_from);
+$archive_dbh = new PDO("mysql:host=$dbhost_from;dbname=" . $dbdatabase_from, $dbuser_from, $dbpass_from, array(PDO::MYSQL_ATTR_INIT_COMMAND => "set sql_mode='ALLOW_INVALID_DATES'"));
 $archive_dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-$dbh = new PDO("mysql:host=$dbhost_to;dbname=" . $dbdatabase_to, $dbuser_to, $dbpass_to);
+$dbh = new PDO("mysql:host=$dbhost_to;dbname=" . $dbdatabase_to, $dbuser_to, $dbpass_to, array(PDO::MYSQL_ATTR_INIT_COMMAND => "set sql_mode='ALLOW_INVALID_DATES'"));
 $dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 if (empty($bin_name))

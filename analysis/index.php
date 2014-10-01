@@ -56,12 +56,12 @@ if (defined('ANALYSIS_URL'))
             "&graph_resolution=" + $("input[name=graph_resolution]:checked").val();
 
         document.location.href = _url;
-    } 
+    }
     function saveSvg(id){
         $("svg").attr({ version: '1.1' , xmlns:"http://www.w3.org/2000/svg"});
         var e = document.getElementById(id);
         var svg = e.getElementsByTagName('svg')[0].parentNode.innerHTML;
-        var b64 = window.btoa(unescape(encodeURIComponent(svg)));	 
+        var b64 = window.btoa(unescape(encodeURIComponent(svg)));
         // Works in Firefox 3.6 and Webkit and possibly any browser which supports the data-uri
         $("#download_"+id).html($('<a style="width:25px;height:25px;" href-lang="image/svg+xml" href="data:image/svg+xml;base64,\n'+b64+'" title="file.svg">Download SVG</a>'));
     }
@@ -435,7 +435,7 @@ if (defined('ANALYSIS_URL'))
                 <div id="if_panel_linegraph"></div>
                 <div class='svglink'>
                     <div class='generate_svglink' onclick="saveSvg('if_panel_linegraph')">Generate SVG</div>
-                    <div class='download_svglink' id="download_if_panel_linegraph"></div> 
+                    <div class='download_svglink' id="download_if_panel_linegraph"></div>
                 </div>
                 <br />
 
@@ -504,7 +504,7 @@ foreach ($linedata as $key => $value) {
                     </script>
                     <div class='svglink'>
                         <div class='generate_svglink' onclick="saveSvg('if_panel_linegraph_norm')">Generate SVG</div>
-                        <div class='download_svglink' id="download_if_panel_linegraph_norm"></div> 
+                        <div class='download_svglink' id="download_if_panel_linegraph_norm"></div>
                     </div>
                     <br />
                 <?php } ?>
@@ -609,6 +609,12 @@ foreach ($linedata as $key => $value) {
                     <div class="txt_desc">Lists usernames with both tweet and mention counts.</div>
                     <div class="txt_desc">Use: see wether the users mentioned are also those who tweet a lot.</div>
                     <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('user-mention'+getInterval()); sendUrl('index.php');return false;">launch</a></div>
+
+					<hr />
+
+                    <h3>Source frequency</h3>
+                    <div class="txt_desc">List the frequency of tweet software sources per interval.</div>
+                    <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('sources'+getInterval());sendUrl('mod.sources.stats.php');return false;">launch</a></div>
 
                     <?php if ($show_url_export) { ?>
                         <hr />
