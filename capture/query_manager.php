@@ -510,13 +510,22 @@ function get_phrases_from_geoquery($query) {
     return $phrases;
 }
 
+function quote_table_name($table) {
+    return preg_replace("/[`;,'\"]/", "", $table);
+}
+
 function table_exists($binname) {
     $dbh = pdo_connect();
 
-    $sql = "SHOW TABLES LIKE '" . trim($binname) . "%'"; // @todo escape binname
+    $sql ="SELECT 1 FROM `" . quote_table_name($binname . '_tweets') . "` LIMIT 1";
     $query = $dbh->prepare($sql);
-    $query->execute();
-    $rc = $query->rowCount();
+    $rc = 0;
+    try {
+        $query->execute();
+        $rc = $query->rowCount();
+    } catch (PDOException $e) {
+        // good thing. table does not exist
+    }
     $dbh = false;
     return $rc;
 }
