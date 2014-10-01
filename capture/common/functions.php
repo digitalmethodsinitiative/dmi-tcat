@@ -14,6 +14,31 @@ function pdo_connect() {
     return $dbh;
 }
 
+function geophp_sane() {
+    $sane = true;
+    if (!geoPHP::geosInstalled()) {
+        $msg = "geoPHP needs the PHP geos extension (please download it at: https://github.com/phayes/geoPHP/wiki/GEOS or through your Operating System repository)";
+        $sane = false;
+    } else {
+        // Is the Digital Methods lab in Amsterdam? 
+        $point_lng = 4.893346; $point_lat = 52.369042;
+        $sw_lng = 4.768520; $sw_lat = 52.321629;
+        $ne_lng = 5.017270; $ne_lat = 52.425129;
+        $sane = coordinatesInsideBoundingBox($point_lng, $point_lat, $sw_lng, $sw_lat, $ne_lng, $ne_lat);
+        if (!$sane) {
+            $msg = "geoPHP library seems broken. searching on area will not work";
+        }
+    }
+    if (!$sane) {
+        if (defined('CAPTURE')) {
+            logit(CAPTURE . ".error.log", $msg);
+        } else {
+            logit("cli", $msg);
+        }
+    }
+    return $sane;
+}
+
 function create_error_logs() {
     $dbh = pdo_connect();
 
@@ -386,7 +411,6 @@ function logit($file, $message) {
         error_log($message);
     } else {
         $message = date("Y-m-d H:i:s") . " " . $message . "\n";
-        print_r($file);
         file_put_contents($file, $message, FILE_APPEND);
     }
 }
@@ -1532,6 +1556,14 @@ function tracker_run() {
         logit(CAPTURE . ".error.log", "your php installation does not support signal handlers. graceful reload will not work");
     }
 
+    // sanity check for geo bins functions
+    if (!geophp_sane()) {
+        logit(CAPTURE . ".error.log", "refusing to track until geobins are stopped or geo is functional");
+        exit(1);
+    } else {
+        logit(CAPTURE . ".error.log", "geoPHP library is fully functional");
+    }
+
     global $ratelimit, $exceeding, $ex_start, $last_insert_id;
 
     $ratelimit = 0;     // rate limit counter since start of script
@@ -1695,6 +1727,9 @@ function processtweets($capturebucket) {
 
     global $tweetQueue;
 
+    // debug
+    logit(CAPTURE . ".error.log", "processing " . count($capturebucket) . " data objects");
+
     $querybins = getActiveBins();
 
     // running through every single tweet
@@ -1719,6 +1754,8 @@ function processtweets($capturebucket) {
             $geobin = (getBinType($binname) == 'geotrack');
 
             if ($geobin && (!array_key_exists('geo_enabled', $data['user']) || $data['user']['geo_enabled'] !== true)) {
+                // debug
+                logit(CAPTURE . ".error.log", "skipping non-geo tweets");
                 // in geobins, process only geo tweets
                 continue;
             }
@@ -1732,6 +1769,9 @@ function processtweets($capturebucket) {
                 foreach ($queries as $query => $track) {
 
                     if ($geobin) {
+
+                        // debug
+                        logit(CAPTURE . ".error.log", "checking the tweet against geo-thingy $track");
 
                         // look for geolocation matches
 
@@ -1768,11 +1808,11 @@ function processtweets($capturebucket) {
 
                                     foreach ($boxes as $box) {
                                         if (coordinatesInsideBoundingBox($tweet_lng, $tweet_lat, $box['sw_lng'], $box['sw_lat'], $box['ne_lng'], $box['ne_lat'])) {
-                                            # logit(CAPTURE . ".error.log", "(debug) tweet with lng $tweet_lng and lat $tweet_lat versus (sw: " . $box['sw_lng'] . "," . $box['sw_lat'] . " ne: " . $box['ne_lng'] . "," . $box['ne_lat'] . ") matched to be inside the area");
+                                            logit(CAPTURE . ".error.log", "(debug) tweet with lng $tweet_lng and lat $tweet_lat versus (sw: " . $box['sw_lng'] . "," . $box['sw_lat'] . " ne: " . $box['ne_lng'] . "," . $box['ne_lat'] . ") matched to be inside the area");
                                             $found = true;
                                             break;
                                         } else {
-                                            # logit(CAPTURE . ".error.log", "(debug) tweet with lng $tweet_lng and lat $tweet_lat versus (sw: " . $box['sw_lng'] . "," . $box['sw_lat'] . " ne: " . $box['ne_lng'] . "," . $box['ne_lat'] . ") falls outside the area");
+                                            logit(CAPTURE . ".error.log", "(debug) tweet with lng $tweet_lng and lat $tweet_lat versus (sw: " . $box['sw_lng'] . "," . $box['sw_lat'] . " ne: " . $box['ne_lng'] . "," . $box['ne_lat'] . ") falls outside the area");
                                         }
                                     }
                                 }
@@ -1833,7 +1873,7 @@ function processtweets($capturebucket) {
                                         $boxcontains = $versus->contains($place);
                                         $overlaps = $place->overlaps($versus);
                                         if (!$contains && ($boxcontains || $overlaps)) {
-                                            // logit(CAPTURE . ".error.log", "place polygon $wkt allies with geobox $boxwkt");
+                                            logit(CAPTURE . ".error.log", "place polygon $wkt allies with geobox $boxwkt");
                                             $found = true;
                                             break;
                                         }
