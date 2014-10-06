@@ -15,7 +15,7 @@ $captureroles = unserialize(CAPTUREROLES);
 
 $querybins = getBins();
 $activePhrases = getNrOfActivePhrases();
-$activeGeoboxes = getNrOfActiveGeobins();
+$activeGeoboxes = getNrOfActiveGeoboxes();
 $activeUsers = getNrOfActiveUsers();
 $lastRateLimitHit = getLastRateLimitHit();
 ?>
