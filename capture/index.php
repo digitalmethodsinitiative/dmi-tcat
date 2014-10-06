@@ -15,6 +15,7 @@ $captureroles = unserialize(CAPTUREROLES);
 
 $querybins = getBins();
 $activePhrases = getNrOfActivePhrases();
+$activeGeobins = getNrOfActiveGeobins();
 $activeUsers = getNrOfActiveUsers();
 $lastRateLimitHit = getLastRateLimitHit();
 ?>
@@ -74,16 +75,17 @@ $lastRateLimitHit = getLastRateLimitHit();
             print "<br /><font color='red'>Your MySQL version is too old, please upgrade to at least MySQL 5.5.3 to use DMI-TCAT.</font><br>";
         }
         print "You currently have " . count($querybins) . " query bins and are tracking ";
-        if (array_search("track", $captureroles) !== false)
-            print $activePhrases . " out of 400 possible phrases";
-        if (array_search("track", $captureroles) !== false && array_search("follow", $captureroles) !== false)
-            print ", and ";
-        if (array_search("follow", $captureroles) !== false)
-            print $activeUsers . " out of 5000 possible user ids";
-        if ((array_search("track", $captureroles) !== false || array_search("follow", $captureroles) !== false) && array_search("onepercent", $captureroles) !== false)
-            print ", and ";
-        if (array_search("onepercent", $captureroles) !== false)
-            print "a one percent sample";
+        $trackWhat = array();
+        if (array_search("track", $captureroles) !== false && $activePhrases) $trackWhat[] = $activePhrases . " out of 400 possible phrases";
+        if (array_search("track", $captureroles) !== false && $activeGeobins) $trackWhat[] = $activeGeobins . " out of 25 possible geolgeolocationss";
+        if (array_search("follow", $captureroles) !== false) $trackWhat[] = $activeUsers . " out of 5000 possible user ids";
+        if (array_search("onepercent", $captureroles) !== false) $trackWhat[] = "a one percent sample";
+        if (empty($trackWhat)) { $trackWhat[] = 'nothing'; }
+        $and = false;
+        foreach ($trackWhat as $what) {
+            if ($and) { print ", and "; } else { $and = true; }
+            print $what;
+        }
         print ".<br/>";
         if ($lastRateLimitHit) {
             print "<br /><font color='red'>Your latest rate limit hit was on $lastRateLimitHit</font><br>";
@@ -218,8 +220,14 @@ $lastRateLimitHit = getLastRateLimitHit();
             }
             echo '</td>';
             echo '<td valign="top">';
-            if (array_search($bin->type, $captureroles) !== false)
-                echo '<a href="" onclick="sendPause(\'' . $bin->id . '\',\'' . $action . '\',\'' . $bin->type . '\'); return false;">' . $action . '</a>';
+            if (array_search($bin->type, $captureroles) !== false ||
+                array_search('track', $captureroles) !== false && $bin->type = "geotrack") {
+                if ($bin->type == "geotrack") {
+                    echo '<a href="" onclick="sendPause(\'' . $bin->id . '\',\'' . $action . '\',\'' . 'track\',1' . '); return false;">' . $action . '</a>';
+                } else {
+                    echo '<a href="" onclick="sendPause(\'' . $bin->id . '\',\'' . $action . '\',\'' . $bin->type . '\'); return false;">' . $action . '</a>';
+                }
+            }
             echo '</td>';
             echo '<td valign="top"><a href="" onclick="sendDelete(\'' . $bin->id . '\',\'' . $bin->active . '\',\'' . $bin->type . '\'); return false;">delete</a></td>';
             echo '</tr>';
@@ -316,13 +324,16 @@ foreach ($bins as $id => $bin)
             });   
         }
     }
-    function sendPause(_bin,_todo,_type) {
+    function sendPause(_bin,_todo,_type,_geo) {
+        if (typeof _geo === 'undefined') { _geo = 0; }
         if(!validateBin(_bin))
             return false;
         params = {action:"pausebin",todo:_todo,bin:_bin,type:_type};
         if(_todo == "start") {
-            if(_type == "track")
+            if(_type == "track" && _geo == 0)
                 dialogConfirm("Are you sure that you want to " + _todo + " capturing the '" + bins[_bin] + "' bin with the last set of active phrases?");
+            if(_type == "track" && _geo == 1)
+                dialogConfirm("Are you sure that you want to " + _todo + " capturing the '" + bins[_bin] + "' bin with the last set of active geoboxes?");
             else if(_type == "follow")
                 dialogConfirm("Are you sure that you want to " + _todo + " capturing the '" + bins[_bin] + "' bin with the last set of active users?");
             else if(_type == "onepercent")

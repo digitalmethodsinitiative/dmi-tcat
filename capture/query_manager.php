@@ -553,7 +553,22 @@ function table_id_exists($id) {
 function getNrOfActivePhrases() {
     $dbh = pdo_connect();
 
-    $sql = "SELECT count(distinct(p.phrase)) AS count FROM tcat_query_phrases p, tcat_query_bins_phrases bp WHERE p.id = bp.phrase_id AND bp.endtime = '0000-00-00 00:00:00'";
+    $sql = "SELECT count(distinct(p.phrase)) AS count FROM tcat_query_phrases p, tcat_query_bins_phrases bp, tcat_query_bins b WHERE b.id = bp.querybin_id AND b.type = 'track' AND  p.id = bp.phrase_id AND bp.endtime = '0000-00-00 00:00:00'";
+    $res = $dbh->prepare($sql);
+    $res->execute();
+    if ($res->rowCount() > 0) {
+        $result = $res->fetch();
+        return $result['count'];
+    }
+    $dbh = false;
+    return 0;
+}
+
+function getNrOfActiveGeobins() {
+    $dbh = pdo_connect();
+
+    $sql = "SELECT count(distinct(p.phrase)) AS count FROM tcat_query_phrases p, tcat_query_bins_phrases bp, tcat_query_bins b WHERE b.id = bp.querybin_id AND b.type = 'geotrack' AND  p.id = bp.phrase_id AND bp.endtime = '0000-00-00 00:00:00'";
+//SELECT COUNT(*) AS cnt FROM tcat_query_bins WHERE `type` = 'geotrack' and active = 1
     $res = $dbh->prepare($sql);
     $res->execute();
     if ($res->rowCount() > 0) {

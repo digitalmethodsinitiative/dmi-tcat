@@ -21,7 +21,7 @@ if (defined("ADMIN_USER") && ADMIN_USER != "" && (!isset($_SERVER['PHP_AUTH_USER
                                         <li>Twitter does not just return the Tweets with explicit GEO coordinates. If a user has set 'use my location' in his or her preferences, Twitter may also decide to use IP addresses or other measures to determine the location. The third option is for a user to attached his own Tweet to a specific place. If such a place is within our search area, it will be captured.
                                     </ol>
 
-                                    You can track a specific (but undocumented?) ammount of locations irrespective of the number of text queries, but the total volume of all queries should never exceed 1% of global Twitter volume, at any specific moment in time.
+                                    You can track a maximum of 25 geoboxes at the same time (for all query bins combined) and the total volume of all your queries should never exceed 1% of global Twitter volume, at any specific moment in time.
                                     <br/><br/>
                                     Example bounding box for San Francisco: -122.75,36.8,-121.75,37.8
 
