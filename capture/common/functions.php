@@ -1727,9 +1727,6 @@ function processtweets($capturebucket) {
 
     global $tweetQueue;
 
-    // debug
-    logit(CAPTURE . ".error.log", "processing " . count($capturebucket) . " data objects");
-
     $querybins = getActiveBins();
 
     // running through every single tweet
@@ -1754,8 +1751,6 @@ function processtweets($capturebucket) {
             $geobin = (getBinType($binname) == 'geotrack');
 
             if ($geobin && (!array_key_exists('geo_enabled', $data['user']) || $data['user']['geo_enabled'] !== true)) {
-                // debug
-                logit(CAPTURE . ".error.log", "skipping non-geo tweets");
                 // in geobins, process only geo tweets
                 continue;
             }
@@ -1769,9 +1764,6 @@ function processtweets($capturebucket) {
                 foreach ($queries as $query => $track) {
 
                     if ($geobin) {
-
-                        // debug
-                        logit(CAPTURE . ".error.log", "checking the tweet against geo-thingy $track");
 
                         // look for geolocation matches
 
@@ -1808,11 +1800,11 @@ function processtweets($capturebucket) {
 
                                     foreach ($boxes as $box) {
                                         if (coordinatesInsideBoundingBox($tweet_lng, $tweet_lat, $box['sw_lng'], $box['sw_lat'], $box['ne_lng'], $box['ne_lat'])) {
-                                            logit(CAPTURE . ".error.log", "(debug) tweet with lng $tweet_lng and lat $tweet_lat versus (sw: " . $box['sw_lng'] . "," . $box['sw_lat'] . " ne: " . $box['ne_lng'] . "," . $box['ne_lat'] . ") matched to be inside the area");
+                                            // logit(CAPTURE . ".error.log", "(debug) tweet with lng $tweet_lng and lat $tweet_lat versus (sw: " . $box['sw_lng'] . "," . $box['sw_lat'] . " ne: " . $box['ne_lng'] . "," . $box['ne_lat'] . ") matched to be inside the area");
                                             $found = true;
                                             break;
                                         } else {
-                                            logit(CAPTURE . ".error.log", "(debug) tweet with lng $tweet_lng and lat $tweet_lat versus (sw: " . $box['sw_lng'] . "," . $box['sw_lat'] . " ne: " . $box['ne_lng'] . "," . $box['ne_lat'] . ") falls outside the area");
+                                            // logit(CAPTURE . ".error.log", "(debug) tweet with lng $tweet_lng and lat $tweet_lat versus (sw: " . $box['sw_lng'] . "," . $box['sw_lat'] . " ne: " . $box['ne_lng'] . "," . $box['ne_lat'] . ") falls outside the area");
                                         }
                                     }
                                 }
