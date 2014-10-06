@@ -564,7 +564,7 @@ function getNrOfActivePhrases() {
     return 0;
 }
 
-function getNrOfActiveGeobins() {
+function getNrOfActiveGeoboxes() {
     $dbh = pdo_connect();
 
     $sql = "SELECT count(distinct(p.phrase)) AS count FROM tcat_query_phrases p, tcat_query_bins_phrases bp, tcat_query_bins b WHERE b.id = bp.querybin_id AND b.type = 'geotrack' AND  p.id = bp.phrase_id AND bp.endtime = '0000-00-00 00:00:00'";
