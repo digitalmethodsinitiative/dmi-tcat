@@ -15,7 +15,7 @@ $captureroles = unserialize(CAPTUREROLES);
 
 $querybins = getBins();
 $activePhrases = getNrOfActivePhrases();
-$activeGeobins = getNrOfActiveGeobins();
+$activeGeoboxes = getNrOfActiveGeobins();
 $activeUsers = getNrOfActiveUsers();
 $lastRateLimitHit = getLastRateLimitHit();
 ?>
@@ -77,7 +77,7 @@ $lastRateLimitHit = getLastRateLimitHit();
         print "You currently have " . count($querybins) . " query bins and are tracking ";
         $trackWhat = array();
         if (array_search("track", $captureroles) !== false && $activePhrases) $trackWhat[] = $activePhrases . " out of 400 possible phrases";
-        if (array_search("track", $captureroles) !== false && $activeGeobins) $trackWhat[] = $activeGeobins . " out of 25 possible geolgeolocationss";
+        if (array_search("track", $captureroles) !== false && $activeGeoboxes) $trackWhat[] = $activeGeoboxes . " out of 25 possible geolocations";
         if (array_search("follow", $captureroles) !== false) $trackWhat[] = $activeUsers . " out of 5000 possible user ids";
         if (array_search("onepercent", $captureroles) !== false) $trackWhat[] = "a one percent sample";
         if (empty($trackWhat)) { $trackWhat[] = 'nothing'; }
@@ -287,6 +287,7 @@ foreach ($bins as $id => $bin)
 ?>
     
     var nrOfActivePhrases = <?php echo $activePhrases; ?>;
+    var nrOfActiveGeoboxes = <?php echo $activeGeoboxes; ?>;
     var nrOfActiveUsers = <?php echo $activeUsers; ?>;
     var params = undefined;
     
@@ -377,6 +378,12 @@ foreach ($bins as $id => $bin)
                         alert("With this query you will exceed the number of allowed queries (400) to the Twitter API. Please reduce the number of phrases.");
                         return false;
                     }
+                } else if(params['type']=='geotrack') {
+                    var _nrOfUsers = validateNumberOfGeoboxes(params['oldphrases'].split(",").length,_newphrases.split(",").length);
+                    if(!_nrOfUsers) {
+                        alert("With this query you will exceed the number of allowed location queries (25) to the Twitter API. Please reduce the number of geoboxes.");
+                        return false;
+                    }
                 } else if(params['type']=='follow') {
                     var _nrOfUsers = validateNumberOfUsers(params['oldphrases'].split(",").length,_newphrases.split(",").length);
                     if(!_nrOfUsers) {
@@ -449,9 +456,9 @@ foreach ($bins as $id => $bin)
             var _phrases = $("#newbin_geoboxes").val();
             if(!validateQuery(_phrases,_type))
                 return false;
-            var _nrOfPhrases = validateNumberOfPhrases(0,_phrases.split(",").length);
+            var _nrOfPhrases = validateNumberOfGeoboxes(0,_phrases.split(",").length);
             if(!_nrOfPhrases) {
-                alert("With this query you will exceed the number of allowed queries (400) to the Twitter API. Please reduce the number of phrases.");
+                alert("With this query you will exceed the number of allowed location queries (25) to the Twitter API. Please reduce the number of geoboxes.");
                 return false;
             }
         } else if(_type == "follow") {
@@ -492,6 +499,16 @@ foreach ($bins as $id => $bin)
     // currently there is no check for duplicated phrases
     function validateNumberOfPhrases(oldphrases,newphrases) {
         if(nrOfActivePhrases - (oldphrases-newphrases) >= 400)
+            return false;
+        return true;
+    }
+    // currently there is no check for duplicated phrases
+    function validateNumberOfGeoboxes(oldphrases,newphrases) {
+        // DEBUG
+        console.log("active = " + nrOfActiveGeoboxes);
+        var after = (oldphrases/4-newphrases/4);
+        console.log("after modify = " + after);
+        if(nrOfActiveGeoboxes - (oldphrases/4-newphrases/4) >= 25)
             return false;
         return true;
     }
