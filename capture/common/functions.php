@@ -1558,7 +1558,7 @@ function tracker_run() {
     }
 
     // sanity check for geo bins functions
-    if (!geophp_sane()) {
+    if (geobinsActive() && !geophp_sane()) {
         logit(CAPTURE . ".error.log", "refusing to track until geobins are stopped or geo is functional");
         exit(1);
     } else {
