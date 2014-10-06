@@ -209,7 +209,7 @@ if (defined('ANALYSIS_URL'))
                         </tr>
                         <?php if (dbserver_has_geo_functions()) { ?>
                             <tr>
-                                <td class="tbl_head">GEO bounding polygon: </td><td><input type="text" id="ipt_geo_query" size="60" name="geo_query"  value="<?php echo $geo_query; ?>" /> POLYGON in <a href='http://en.wikipedia.org/wiki/Well-known_text'>WKT</a> format.</td>
+                                <td class="tbl_head">GEO bounding polygon: </td><td><input type="text" id="ipt_geo_query" size="60" name="geo_query"  value="<?php echo $geo_query; ?>" /> (POLYGON in <a href='http://en.wikipedia.org/wiki/Well-known_text'>WKT</a> format.)</td>
                             </tr>
                         <?php } ?>
                         <tr>
