@@ -108,7 +108,7 @@ require_once './common/functions.php';
                         (isset($data['from_user_created_at']) ? $data['from_user_created_at'] : "");
                 if (array_search("urls", $exportSettings) !== false) {
                     $urls = $expanded = $followed = $domain = "";
-                    $sql2 = "SELECT url, url_expanded, url_followed, domain, error_code, url_is_media_upload FROM " . $esc['mysql']['dataset'] . "_urls WHERE tweet_id = " . $data['id'];
+                    $sql2 = "SELECT * FROM " . $esc['mysql']['dataset'] . "_urls WHERE tweet_id = " . $data['id'];
                     $rec2 = mysql_query($sql2);
                     $urls = $expanded = $followed = $domain = $error = $media = array();
                     if (mysql_num_rows($rec2) > 0) {
@@ -118,7 +118,8 @@ require_once './common/functions.php';
                             $followed[] = $res2['url_followed'];
                             $domain[] = $res2['domain'];
                             $error[] = $res2['error_code'];
-                            $media[] = $res2['url_is_media_upload'];
+                            if (isset($res2['url_is_media_upload']))
+                                $media[] = $res2['url_is_media_upload'];
                         }
                     }
                     $out .= "," . implode("; ", $urls) . "," . implode("; ", $expanded) . "," . implode("; ", $followed) . "," . implode("; ", $domain) . "," . implode("; ", $error) . "," . implode("; ", $media);
