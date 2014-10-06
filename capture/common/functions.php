@@ -1730,6 +1730,10 @@ function processtweets($capturebucket) {
 
     $querybins = getActiveBins();
 
+    // cache bin types
+    $bintypes = array();
+    foreach ($querybins as $binname => $queries) $bintypes[$binname] = getBinType($binname);
+
     // running through every single tweet
     foreach ($capturebucket as $data) {
 
@@ -1749,7 +1753,7 @@ function processtweets($capturebucket) {
         // we run through every bin to check whether the received tweets fit
         foreach ($querybins as $binname => $queries) {
 
-            $geobin = (getBinType($binname) == 'geotrack');
+            $geobin = (isset($bintypes[$binname]) && $bintypes[$binname] == 'geotrack');
 
             if ($geobin && (!array_key_exists('geo_enabled', $data['user']) || $data['user']['geo_enabled'] !== true)) {
                 // in geobins, process only geo tweets
@@ -1788,7 +1792,7 @@ function processtweets($capturebucket) {
                          * 1) These tweets will be put in the bin if the coordinate pair (longitude, latitude) fits in any one of the defined geoboxes in the bin.
                          * 2) These tweets will be put in the bin if the geobox is _not_ completely subsumed by the place (example: the place is France and the geobox is Paris), but the geobox does overlap the place polygon or the geobox subsumes the place polygon.
                          *
-                          ` */
+                         */
 
                         if ($data["geo"] != null) {
                             $tweet_lat = $data["geo"]["coordinates"][0];
@@ -1866,7 +1870,7 @@ function processtweets($capturebucket) {
                                         $boxcontains = $versus->contains($place);
                                         $overlaps = $place->overlaps($versus);
                                         if (!$contains && ($boxcontains || $overlaps)) {
-                                            logit(CAPTURE . ".error.log", "place polygon $wkt allies with geobox $boxwkt");
+                                            // logit(CAPTURE . ".error.log", "place polygon $wkt allies with geobox $boxwkt");
                                             $found = true;
                                             break;
                                         }
