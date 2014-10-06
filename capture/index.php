@@ -122,7 +122,7 @@ $lastRateLimitHit = getLastRateLimitHit();
                                 <script>
                                 window.onload=function() {
                                     $.ajax({
-                                        url: 'common/form.trackphrases.php'
+                                        url: 'public/form.trackphrases.php'
                                     }).done(function (content) {
                                         $("#if_row_phrases").html(content);
                                     });
@@ -628,7 +628,7 @@ foreach ($bins as $id => $bin)
                 $("#if_row_users").hide();
                 $("#if_row_phrases").show();
                 $.ajax({
-                    url: 'common/form.trackphrases.php'
+                    url: 'public/form.trackphrases.php'
                 }).done(function (content) {
                     $("#if_row_phrases").html(content);
                 });
@@ -637,7 +637,7 @@ foreach ($bins as $id => $bin)
                 $("#if_row_users").hide();
                 $("#if_row_phrases").show();
                 $.ajax({
-                    url: 'common/form.trackgeophrases.php'
+                    url: 'public/form.trackgeophrases.php'
                 }).done(function (content) {
                     $("#if_row_phrases").html(content);
                 });
