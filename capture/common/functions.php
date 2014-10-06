@@ -1821,8 +1821,8 @@ function processtweets($capturebucket) {
 
                                 // this is a gps tracking query, but the tweet has no gps geo data
                                 // Twitter may have matched this tweet based on the user-defined location data
-
-                                if (array_key_exists('place', $data) && array_key_exists('bounding_box', $data['place'])) {
+                               
+                                if (array_key_exists('place', $data) && is_array($data['place']) && array_key_exists('bounding_box', $data['place'])) {
 
                                     // Make a geoPHP object of the polygon(s) defining the place, by using a WKT (well-known text) string
                                     $wkt = 'POLYGON(';
