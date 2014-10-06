@@ -17,7 +17,7 @@ function pdo_connect() {
 function geophp_sane() {
     $sane = true;
     if (!geoPHP::geosInstalled()) {
-        $msg = "geoPHP needs the PHP geos extension (please download it at: https://github.com/phayes/geoPHP/wiki/GEOS or through your Operating System repository)";
+        $msg = "geoPHP needs the GEOS and its PHP extension (please download it at: http://trac.osgeo.org/geos/)";
         $sane = false;
     } else {
         // Is the Digital Methods lab in Amsterdam? 
@@ -26,7 +26,7 @@ function geophp_sane() {
         $ne_lng = 5.017270; $ne_lat = 52.425129;
         $sane = coordinatesInsideBoundingBox($point_lng, $point_lat, $sw_lng, $sw_lat, $ne_lng, $ne_lat);
         if (!$sane) {
-            $msg = "geoPHP library seems broken. searching on area will not work";
+            $msg = "geoPHP/GEOS library seems broken. searching on area will not work";
         }
     }
     if (!$sane) {
