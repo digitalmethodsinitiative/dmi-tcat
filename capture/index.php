@@ -121,7 +121,11 @@ $lastRateLimitHit = getLastRateLimitHit();
                             <div id="if_row_phrases" class="if_row">
                                 <script>
                                 window.onload=function() {
-                                    document.getElementById("if_row_phrases").innerHTML=getContent('common/form.trackphrases.php'); 
+                                    $.ajax({
+                                        url: 'common/form.trackphrases.php'
+                                    }).done(function (content) {
+                                        $("#if_row_phrases").html(content);
+                                    });
                                 }
                                 </script>
                             </div>
@@ -623,12 +627,20 @@ foreach ($bins as $id => $bin)
             case "track":
                 $("#if_row_users").hide();
                 $("#if_row_phrases").show();
-                document.getElementById("if_row_phrases").innerHTML=getContent('common/form.trackphrases.php'); 
+                $.ajax({
+                    url: 'common/form.trackphrases.php'
+                }).done(function (content) {
+                    $("#if_row_phrases").html(content);
+                });
                 break;
             case "geotrack":
                 $("#if_row_users").hide();
                 $("#if_row_phrases").show();
-                document.getElementById("if_row_phrases").innerHTML=getContent('common/form.trackgeophrases.php'); 
+                $.ajax({
+                    url: 'common/form.trackgeophrases.php'
+                }).done(function (content) {
+                    $("#if_row_phrases").html(content);
+                });
                 break;
             case "follow":
                 $("#if_row_users").show();
@@ -640,17 +652,6 @@ foreach ($bins as $id => $bin)
                 break;
         }
     }
-
-    function getContent(url) {
-        var request = new XMLHttpRequest();
-        request.open('GET', url, false);
-        request.send(); // because of "false" above, will block until the request is done 
-        if (request.status === 200) {
-                return request.responseText;
-        }
-        return '';
-
-}
 
     </script>
 </body>
