@@ -11,8 +11,16 @@ include_once BASE_FILE . '/capture/common/functions.php';
 
 require BASE_FILE . 'capture/common/tmhOAuth/tmhOAuth.php';
 
+// make sure only one search script is running
+$thislockfp = script_lock('search');
+if (!is_resource($thislockfp)) {
+    logit("cli", "search.php is already running (maybe through cron?). exiting now.");
+    exit();
+}
+
 // DEFINE SEARCH PARAMETERS HERE
 
+$cronjob = false;      // set to true, if running from cron
 $bin_name = '';       // name of the bin
 $keywords = '';       // separate keywords by 'OR', limit your search to 10 keywords and operators - https://dev.twitter.com/docs/using-search
 $type = 'search';     // specify 'search' if you want this to be a standalone bin, or 'track' if you want to be able to continue tracking these keywords later on via BASE_URL/capture/index.php
@@ -22,10 +30,16 @@ if (empty($bin_name))
 if (empty($keywords))
     die("keywords not set\n");
 
-$querybin_id = queryManagerBinExists($bin_name);
+if (dbserver_has_utf8mb4_support() == false) {
+    die("DMI-TCAT requires at least MySQL version 5.5.3 - please upgrade your server");
+}
+
+$querybin_id = queryManagerBinExists($bin_name, $cronjob);
 
 $current_key = $looped = $tweets_success = $tweets_failed = $tweets_processed = 0;
 $all_users = $all_tweet_ids = array();
+
+$tweetQueue = new TweetQueue();
 
 // ----- connection -----
 $dbh = pdo_connect();
@@ -34,11 +48,14 @@ create_bin($bin_name, $dbh);
 $ratefree = 0;
 
 search($keywords);
+if ($tweetQueue->length() > 0) {
+    $tweetQueue->insertDB();
+}
 
 queryManagerCreateBinFromExistingTables($bin_name, $querybin_id, $type, explode("OR", $keywords));
 
 function search($keywords, $max_id = null) {
-    global $twitter_keys, $current_key, $ratefree, $all_users, $all_tweet_ids, $bin_name, $tweets_success, $tweets_failed, $tweets_processed, $dbh;
+    global $twitter_keys, $current_key, $ratefree, $all_users, $all_tweet_ids, $bin_name, $tweets_success, $tweets_failed, $tweets_processed, $dbh, $tweetQueue;
 
     $ratefree--;
     if ($ratefree < 1 || $ratefree % 10 == 0) {
@@ -72,15 +89,20 @@ function search($keywords, $max_id = null) {
         $tweet_ids = array();
         foreach ($tweets as $tweet) {
 
-            $t = Tweet::fromJSON(json_encode($tweet)); // @todo: dubbelop
+            $t = new Tweet();
+            $t->fromJSON($tweet);
+            if (!$t->isInBin($bin_name)) {
+                $all_users[] = $t->from_user_id;
+                $all_tweet_ids[] = $t->id;
+                $tweet_ids[] = $t->id;
 
-            $all_users[] = $t->user->id;
-            $all_tweet_ids[] = $t->id;
-            $tweet_ids[] = $t->id;
+                $tweetQueue->push($t, $bin_name);
+                if ($tweetQueue->length() > 100) {
+                    $tweetQueue->insertDB();
+                }
 
-            $saved = $t->save($dbh, $bin_name);
-
-            print ".";
+                print ".";
+            }
         }
 
         if (!empty($tweet_ids)) {

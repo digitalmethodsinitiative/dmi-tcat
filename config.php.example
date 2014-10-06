@@ -112,12 +112,6 @@ define('RATELIMIT_SILENCE', 300);
 define('RATELIMIT_MAIL_HOURS', 24);
 
 /*
- * Use mysql INSERT DELAYED statements to insert data into the MySQL database.
- * Recommended only for high-load sites.
- */
-define('USE_INSERT_DELAYED', false);
- 
-/*
  * Time zone
  */
 date_default_timezone_set("Europe/London");
@@ -130,7 +124,7 @@ error_reporting(E_ALL);
 /*
  * How long the script is allowed to run
  */
-ini_set("max_execution_time", "50000");
+ini_set("max_execution_time", 3600);
 
 /*
  * How much memory the script is allowed to take
@@ -148,4 +142,18 @@ mb_internal_encoding("UTF-8");
  */
 define("PHP_CLI", "/usr/bin/php");
 
+/*
+ * Use mysql INSERT DELAYED statements to insert data into the MySQL database.
+ * Recommended only for high-load sites, who may have nightly that lock database tables.
+ * Make sure to adjust the MySQL server variables delayed_queue_size, max_delayed_threads to an appropriate sizes.
+ */
+define('USE_INSERT_DELAYED', false);
+
+/* Set to true, if you want all insert statements to fail on errors. Even though such errors are caught and reported,
+ * setting this option on a production site is not recommended, since we are using multi-insert statements and all tweets
+ * in such an insert will be lost on errors.
+ * Developers only.
+ */
+define('DISABLE_INSERT_IGNORE', false);
+ 
 ?>
