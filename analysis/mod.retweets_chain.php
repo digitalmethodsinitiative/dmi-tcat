@@ -29,106 +29,139 @@ require_once './common/functions.php';
         validate_all_variables();
         $min_nr_of_nodes = (isset($_GET['minf']) && is_numeric($_GET['minf'])) ? $min_nr_of_nodes = $_GET['minf'] : 4;
 
+        // make filename and open file for write
+        $module = "retweets_chain";
+        $exportSettings = array();
+        if (isset($_GET['exportSettings']) && $_GET['exportSettings'] != "")
+            $exportSettings = explode(",", $_GET['exportSettings']);
+        $exportSettings[] = $min_nr_of_nodes;
+        $filename = get_filename_for_export($module, implode("_", $exportSettings));
+        $file = fopen($filename, "w");
+        fputs($file, chr(239) . chr(187) . chr(191));
+
+        // write header
+        $header = "id,time,created_at,from_user_name,text,filter_level,possibly_sensitive,withheld_copyright,withheld_scope,truncated,favorite_count,lang,to_user_name,in_reply_to_status_id,source,location,lat,lng,from_user_id,from_user_realname,from_user_verified,from_user_description,from_user_url,from_user_profile_image_url,from_user_utcoffset,from_user_timezone,from_user_lang,from_user_follower_count,from_user_friend_count,from_user_favourites_count,from_user_listed,from_user_withheld_scope,from_user_created_at";
+        if (array_search("urls", $exportSettings) !== false)
+            $header .= ",urls,urls_expanded,urls_followed,domains,HTTP status code, url_is_media_upload";
+        if (array_search("mentions", $exportSettings) !== false)
+            $header .= ",mentions";
+        if (array_search("hashtags", $exportSettings) !== false)
+            $header .= ",hashtags";
+        $header .= "\n";
+        fputs($file, $header);
+
         // get identical tweets
         $sql = "SELECT text, COUNT(text) AS count FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
         $sql .= "GROUP BY text HAVING count >= " . $min_nr_of_nodes . " ORDER BY count DESC";
-        //print $sql . "<br>";
-        //flush();
         $rec = mysql_query($sql);
+        
         print mysql_num_rows($rec) . " retweet chains found with more than " . $min_nr_of_nodes . " tweets<br>";
         flush();
-
-        $header = "id,time,created_at,from_user_name,from_user_lang,text,source,location,lat,lng,from_user_follower_count,from_user_friend_count,from_user_realname,to_user_name,in_reply_to_status_id,from_user_listed,from_user_utcoffset,from_user_timezone,from_user_description,from_user_url,from_user_verified,filter_level\n";
-
-        $filename = get_filename_for_export("retweets_chain", $min_nr_of_nodes);
-        $file = fopen($filename, "w");
-        fputs($file, chr(239) . chr(187) . chr(191));
-        fputs($file, $header);
 
         while ($res = mysql_fetch_assoc($rec)) {
 
             $text = $res['text'];
 
-            /*
-              // find first occurence
-              $text_clean = preg_replace("/.*RT @.+?: /", "", $text);
-              $sql2 = "SELECT * FROM " . $esc['mysql']['dataset'] . "_tweets WHERE text = '" . mysql_real_escape_string($text_clean) . "' ORDER BY created_at ASC LIMIT 1";
-              //print $sql2 . "<br>";
-              $rec2 = mysql_query($sql2);
-              if (mysql_num_rows($rec2) > 0) {
-              $data = mysql_fetch_assoc($rec2);
-              $out .= $data['id'] . "," .
-              strtotime($data["created_at"]) . "," .
-              $data["created_at"] . "," .
-              $data["from_user_name"] . "," .
-              $data['from_user_lang'] . "," .
-              validate($data["text"], "tweet") . "," .
-              "\"" . strip_tags(html_entity_decode($data["source"])) . "\"," .
-              "\"" . preg_replace("/[\r\t\n,]/", " ", trim(strip_tags(html_entity_decode($data["location"])))) . "\"," .
-              $data['geo_lat'] . "," .
-              $data['geo_lng'] . "," .
-              (isset($data['from_user_follower_count']) ? $data['from_user_follower_count'] : "") . "," .
-              (isset($data['from_user_friend_count']) ? $data['from_user_friend_count'] : "") . "," .
-              (isset($data['from_user_realname']) ? $data['from_user_realname'] : "") . "," .
-              (isset($data['to_user_name']) ? $data['to_user_name'] : "") . "," .
-              (isset($data['in_reply_to_status_id']) ? $data['in_reply_to_status_id'] : "") . "," .
-              (isset($data['from_user_listed']) ? $data['from_user_listed'] : "") . "," .
-              (isset($data['from_user_utcoffset']) ? $data['from_user_utcoffset'] : "") . "," .
-              (isset($data['from_user_timezone']) ? $data['from_user_timezone'] : "") . "," .
-              "\"" . preg_replace("/[\r\t\n,]/", " ", trim(strip_tags(html_entity_decode($data['from_user_description'])))) . "\"," .
-              "\"" . preg_replace("/[\r\t\n,]/", " ", trim($data['from_user_url'])) . "\"," .
-              $data['from_user_verified'] . "," .
-              $data['filter_level'] . "\n";
-              } else {
-              print "could not find first tweet for $text<br> failed query: $sql2<bR>";
-              flush();
-              }
-             */
-
             // list other occurences
-            $sql2 = "SELECT * FROM " . $esc['mysql']['dataset'] . "_tweets WHERE text = '" . mysql_real_escape_string($text) . "' ORDER BY created_at ASC";
-            //print $sql2 . "<br>";
-            flush();
+            $sql3 = "SELECT * FROM " . $esc['mysql']['dataset'] . "_tweets WHERE text = '" . mysql_real_escape_string($text) . "' ORDER BY created_at ASC";
 
-            $rec2 = mysql_query($sql2);
-            if ($rec2) {
-                while ($data = mysql_fetch_assoc($rec2)) {
-                    fputs($file, $data['id'] . "," .
+            $rec3 = mysql_query($sql3);
+            if ($rec3) {
+                while ($data = mysql_fetch_assoc($rec3)) {
+                    $out = "";
+                    if (preg_match("/_urls/", $sql))
+                        $id = $data['tweet_id'];
+                    else
+                        $id = $data['id'];
+                    $out .= $id . "," .
                             strtotime($data["created_at"]) . "," .
                             $data["created_at"] . "," .
-                            $data["from_user_name"] . "," .
-                            $data['from_user_lang'] . "," .
-                            validate($data["text"], "tweet") . "," .
-                            "\"" . strip_tags(html_entity_decode($data["source"])) . "\"," .
-                            "\"" . preg_replace("/[\r\t\n,]/", " ", trim(strip_tags(html_entity_decode($data["location"])))) . "\"," .
+                            "\"" . cleanText($data["from_user_name"]) . "\"," .
+                            "\"" . validate($data["text"], "tweet") . "\"," .
+                            $data['filter_level'] . "," .
+                            (isset($data['possibly_sensitive']) ? $data['possibly_sensitive'] : "") . "," .
+                            (isset($data['withheld_copyright']) ? $data['withheld_copyright'] : "") . "," .
+                            (isset($data['withheld_scope']) ? $data['withheld_scope'] : "") . "," .
+                            (isset($data['truncated']) ? $data['truncated'] : "") . "," .
+                            (isset($data['favorite_count']) ? $data['favorite_count'] : "") . "," .
+                            (isset($data['lang']) ? "\"" . cleanText($data['lang']) . "\"" : "") . "," .
+                            (isset($data['to_user_name']) ? "\"" . cleanText($data['to_user_name']) . "\"" : "") . "," .
+                            (isset($data['in_reply_to_status_id']) ? $data['in_reply_to_status_id'] : "") . "," .
+                            "\"" . cleanText($data["source"]) . "\"," .
+                            "\"" . cleanText($data["location"]) . "\"," .
                             $data['geo_lat'] . "," .
                             $data['geo_lng'] . "," .
-                            (isset($data['from_user_follower_count']) ? $data['from_user_follower_count'] : "") . "," .
-                            (isset($data['from_user_friend_count']) ? $data['from_user_friend_count'] : "") . "," .
-                            (isset($data['from_user_realname']) ? $data['from_user_realname'] : "") . "," .
-                            (isset($data['to_user_name']) ? $data['to_user_name'] : "") . "," .
-                            (isset($data['in_reply_to_status_id']) ? $data['in_reply_to_status_id'] : "") . "," .
-                            (isset($data['from_user_listed']) ? $data['from_user_listed'] : "") . "," .
+                            $data['from_user_id'] . "," .
+                            (isset($data['from_user_realname']) ? "\"" . cleanText($data['from_user_realname']) . "\"" : "") . "," .
+                            $data['from_user_verified'] . "," .
+                            "\"" . cleanText($data['from_user_description']) . "\"," .
+                            "\"" . cleanText($data['from_user_url']) . "\"," .
+                            "\"" . cleanText($data['from_user_profile_image_url']) . "\"," .
                             (isset($data['from_user_utcoffset']) ? $data['from_user_utcoffset'] : "") . "," .
                             (isset($data['from_user_timezone']) ? $data['from_user_timezone'] : "") . "," .
-                            "\"" . preg_replace("/[\r\t\n,]/", " ", trim(strip_tags(html_entity_decode($data['from_user_description'])))) . "\"," .
-                            "\"" . preg_replace("/[\r\t\n,]/", " ", trim($data['from_user_url'])) . "\"," .
-                            $data['from_user_verified'] . "," .
-                            $data['filter_level'] . "\n");
+                            "\"" . $data['from_user_lang'] . "\"," .
+                            (isset($data['from_user_follower_count']) ? $data['from_user_follower_count'] : "") . "," .
+                            (isset($data['from_user_friend_count']) ? $data['from_user_friend_count'] : "") . "," .
+                            (isset($data['from_user_favourites_count']) ? $data['from_user_favourites_count'] : "") . "," .
+                            (isset($data['from_user_listed']) ? $data['from_user_listed'] : "") . "," .
+                            (isset($data['from_user_withheld_scope']) ? $data['from_user_withheld_scope'] : "") . "," .
+                            (isset($data['from_user_created_at']) ? $data['from_user_created_at'] : "");
+                    if (array_search("urls", $exportSettings) !== false) {
+                        $urls = $expanded = $followed = $domain = "";
+                        $sql2 = "SELECT url, url_expanded, url_followed, domain, error_code, url_is_media_upload FROM " . $esc['mysql']['dataset'] . "_urls WHERE tweet_id = " . $data['id'];
+                        $rec2 = mysql_query($sql2);
+                        $urls = $expanded = $followed = $domain = $error = $media = array();
+                        if (mysql_num_rows($rec2) > 0) {
+                            while ($res2 = mysql_fetch_assoc($rec2)) {
+                                $urls[] = $res2['url'];
+                                $expanded[] = $res2['url_expanded'];
+                                $followed[] = $res2['url_followed'];
+                                $domain[] = $res2['domain'];
+                                $error[] = $res2['error_code'];
+                                $media[] = $res2['url_is_media_upload'];
+                            }
+                        }
+                        $out .= "," . implode("; ", $urls) . "," . implode("; ", $expanded) . "," . implode("; ", $followed) . "," . implode("; ", $domain) . "," . implode("; ", $error) . "," . implode("; ", $media);
+                    }
+                    if (array_search("mentions", $exportSettings) !== false) {
+                        $sql2 = "SELECT * FROM " . $esc['mysql']['dataset'] . "_mentions WHERE tweet_id = " . $id;
+                        $rec2 = mysql_query($sql2);
+                        $mentions = array();
+                        if (mysql_num_rows($rec2) > 0) {
+                            while ($res2 = mysql_fetch_assoc($rec2)) {
+                                $mentions[] = $res2['to_user'];
+                            }
+                        }
+                        $out .= "," . implode("; ", $mentions);
+                    }
+                    if (array_search("hashtags", $exportSettings) !== false) {
+                        $sql2 = "SELECT * FROM " . $esc['mysql']['dataset'] . "_hashtags WHERE tweet_id = " . $id;
+                        $rec2 = mysql_query($sql2);
+                        $hashtags = array();
+                        if (mysql_num_rows($rec2) > 0) {
+                            while ($res2 = mysql_fetch_assoc($rec2)) {
+                                $hashtags[] = $res2['text'];
+                            }
+                        }
+                        $out .= "," . implode("; ", $hashtags);
+                    }
+                    $out .= "\n";
+                    fputs($file, $out);
                 }
             }
         }
-        echo '<fieldset class="if_parameters">';
-
-        echo '<legend>Your File</legend>';
-
         fclose($file);
+        
+                function cleanText($text) {
+            return preg_replace("/[\r\t\n,]/", " ", addslashes(trim(strip_tags(html_entity_decode($text)))));
+        }
 
+        echo '<fieldset class="if_parameters">';
+        echo '<legend>Your File</legend>';
         echo '<p><a href="' . filename_to_url($filename) . '">' . $filename . '</a></p>';
-
         echo '</fieldset>';
-        //print strftime("%T", date('U')) . "<br>";
+        
         ?>
 
     </body>

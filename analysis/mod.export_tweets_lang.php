@@ -15,8 +15,6 @@ require_once './common/functions.php';
 
         <script type="text/javascript" language="javascript">
 	
-	
-	
         </script>
 
     </head>
@@ -27,7 +25,7 @@ require_once './common/functions.php';
 
         <?php
         validate_all_variables();
-
+        /* @todo, use same export possibilities as mod.export_tweets.php */
 
         $header = "id,time,created_at,from_user_name,from_user_lang,text,source,location,lat,lng,from_user_follower_count,from_user_friend_count,from_user_realname,to_user_name,in_reply_to_status_id,from_user_listed,from_user_utcoffset,from_user_timezone,from_user_description,from_user_url,from_user_verified,filter_leveli,cld_name,cld_code,cld_reliable,cld_bytes,cld_percent";
         if (isset($_GET['includeUrls']) && $_GET['includeUrls'] == 1)
