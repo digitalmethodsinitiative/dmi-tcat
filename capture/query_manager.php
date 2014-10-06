@@ -184,7 +184,7 @@ function remove_bin($params) {
     $delete_querybin_periods->execute();
 
 
-    if ($type == "track") { // delete phrases
+    if ($type == "track" || $type == "geotrack") { // delete phrases
         $sql = "SELECT phrase_id FROM tcat_query_bins_phrases WHERE querybin_id = :id";
         $select_query_bins_phrases = $dbh->prepare($sql);
         $select_query_bins_phrases->bindParam(":id", $bin_id, PDO::PARAM_INT);
@@ -302,7 +302,7 @@ function pause_bin($params) {
     // manage the phrase and user periods
     if ($params["todo"] == "start") {
         // get latest active queries or users
-        if ($type == "track")
+        if ($type == "track" || $type == "geotrack")
             $sql = "SELECT min(endtime) as min, max(endtime) AS max FROM tcat_query_bins_phrases WHERE querybin_id = :querybin_id";
         elseif ($type == "follow")
             $sql = "SELECT min(endtime) as min, max(endtime) AS max FROM tcat_query_bins_users WHERE querybin_id = :querybin_id";
