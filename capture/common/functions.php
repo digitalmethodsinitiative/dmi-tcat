@@ -1770,6 +1770,8 @@ function processtweets($capturebucket) {
 
                     if ($geobin) {
 
+                        $boxes = getGeoBoxes($track);
+
                         // look for geolocation matches
 
                         /*
@@ -1797,83 +1799,74 @@ function processtweets($capturebucket) {
                         if ($data["geo"] != null) {
                             $tweet_lat = $data["geo"]["coordinates"][0];
                             $tweet_lng = $data["geo"]["coordinates"][1];
-                            if (!preg_match("/[^\-0-9,\.]/", $track)) {
-                                $boxes = getGeoBoxes($track);
-                                if (!empty($boxes)) {
 
-                                    // does the tweet geo data fit in on of the boxes?
+                            // does the tweet geo data fit in on of the boxes?
 
-                                    foreach ($boxes as $box) {
-                                        if (coordinatesInsideBoundingBox($tweet_lng, $tweet_lat, $box['sw_lng'], $box['sw_lat'], $box['ne_lng'], $box['ne_lat'])) {
-                                            // logit(CAPTURE . ".error.log", "(debug) tweet with lng $tweet_lng and lat $tweet_lat versus (sw: " . $box['sw_lng'] . "," . $box['sw_lat'] . " ne: " . $box['ne_lng'] . "," . $box['ne_lat'] . ") matched to be inside the area");
-                                            $found = true;
-                                            break;
-                                        } else {
-                                            // logit(CAPTURE . ".error.log", "(debug) tweet with lng $tweet_lng and lat $tweet_lat versus (sw: " . $box['sw_lng'] . "," . $box['sw_lat'] . " ne: " . $box['ne_lng'] . "," . $box['ne_lat'] . ") falls outside the area");
-                                        }
-                                    }
+                            foreach ($boxes as $box) {
+                                if (coordinatesInsideBoundingBox($tweet_lng, $tweet_lat, $box['sw_lng'], $box['sw_lat'], $box['ne_lng'], $box['ne_lat'])) {
+                                    // logit(CAPTURE . ".error.log", "(debug) tweet with lng $tweet_lng and lat $tweet_lat versus (sw: " . $box['sw_lng'] . "," . $box['sw_lat'] . " ne: " . $box['ne_lng'] . "," . $box['ne_lat'] . ") matched to be inside the area");
+                                    $found = true;
+                                    break;
+                                } else {
+                                    // logit(CAPTURE . ".error.log", "(debug) tweet with lng $tweet_lng and lat $tweet_lat versus (sw: " . $box['sw_lng'] . "," . $box['sw_lat'] . " ne: " . $box['ne_lng'] . "," . $box['ne_lat'] . ") falls outside the area");
                                 }
                             }
-                        } else if (!preg_match("/[^\-0-9,\.]/", $track)) {
+                        } else { 
 
-                            $boxes = getGeoBoxes($track);
-                            if (!empty($boxes)) {
+                            // this is a gps tracking query, but the tweet has no gps geo data
+                            // Twitter may have matched this tweet based on the user-defined location data
+                           
+                            if (array_key_exists('place', $data) && is_array($data['place']) && array_key_exists('bounding_box', $data['place'])) {
 
-                                // this is a gps tracking query, but the tweet has no gps geo data
-                                // Twitter may have matched this tweet based on the user-defined location data
-                               
-                                if (array_key_exists('place', $data) && is_array($data['place']) && array_key_exists('bounding_box', $data['place'])) {
-
-                                    // Make a geoPHP object of the polygon(s) defining the place, by using a WKT (well-known text) string
-                                    $wkt = 'POLYGON(';
-                                    $polfirst = true;
-                                    foreach ($data['place']['bounding_box']['coordinates'] as $p => $pol) {
-                                        if ($polfirst) {
-                                            $polfirst = false;
+                                // Make a geoPHP object of the polygon(s) defining the place, by using a WKT (well-known text) string
+                                $wkt = 'POLYGON(';
+                                $polfirst = true;
+                                foreach ($data['place']['bounding_box']['coordinates'] as $p => $pol) {
+                                    if ($polfirst) {
+                                        $polfirst = false;
+                                    } else {
+                                        $wkt .= ', ';
+                                    }
+                                    $wkt .= '(';
+                                    $first = true;
+                                    $first_lng = 0;
+                                    $first_lat = 0;
+                                    foreach ($data['place']['bounding_box']['coordinates'][$p] as $i => $coords) {
+                                        $point_lng = $coords[0];
+                                        $point_lat = $coords[1];
+                                        if ($first) {
+                                            $first = false;
+                                            $first_lng = $point_lng;
+                                            $first_lat = $point_lat;
                                         } else {
                                             $wkt .= ', ';
                                         }
-                                        $wkt .= '(';
-                                        $first = true;
-                                        $first_lng = 0;
-                                        $first_lat = 0;
-                                        foreach ($data['place']['bounding_box']['coordinates'][$p] as $i => $coords) {
-                                            $point_lng = $coords[0];
-                                            $point_lat = $coords[1];
-                                            if ($first) {
-                                                $first = false;
-                                                $first_lng = $point_lng;
-                                                $first_lat = $point_lat;
-                                            } else {
-                                                $wkt .= ', ';
-                                            }
-                                            $wkt .= $point_lng . ' ' . $point_lat;
-                                        }
-                                        // end where we started
-                                        $wkt .= ', ' . $first_lng . ' ' . $first_lat;
-                                        $wkt .= ')';
+                                        $wkt .= $point_lng . ' ' . $point_lat;
                                     }
+                                    // end where we started
+                                    $wkt .= ', ' . $first_lng . ' ' . $first_lat;
                                     $wkt .= ')';
-                                    $place = geoPHP::load($wkt, 'wkt');
+                                }
+                                $wkt .= ')';
+                                $place = geoPHP::load($wkt, 'wkt');
 
-                                    // iterate over geoboxes in our track
-                                    // place should not spatially contain our box, but it should overlap with it
-                                    foreach ($boxes as $box) {
-                                        // 'POLYGON((x1 y1, x1 y2, x2 y2, x2 y1, x1 y1))'
-                                        $boxwkt = 'POLYGON((' . $box['sw_lng'] . ' ' . $box['sw_lat'] . ', '
-                                                . $box['sw_lng'] . ' ' . $box['ne_lat'] . ', '
-                                                . $box['ne_lng'] . ' ' . $box['ne_lat'] . ', '
-                                                . $box['ne_lng'] . ' ' . $box['sw_lat'] . ', '
-                                                . $box['sw_lng'] . ' ' . $box['sw_lat'] . '))';
-                                        $versus = geoPHP::load($boxwkt, 'wkt');
-                                        $contains = $place->contains($versus);
-                                        $boxcontains = $versus->contains($place);
-                                        $overlaps = $place->overlaps($versus);
-                                        if (!$contains && ($boxcontains || $overlaps)) {
-                                            // logit(CAPTURE . ".error.log", "place polygon $wkt allies with geobox $boxwkt");
-                                            $found = true;
-                                            break;
-                                        }
+                                // iterate over geoboxes in our track
+                                // place should not spatially contain our box, but it should overlap with it
+                                foreach ($boxes as $box) {
+                                    // 'POLYGON((x1 y1, x1 y2, x2 y2, x2 y1, x1 y1))'
+                                    $boxwkt = 'POLYGON((' . $box['sw_lng'] . ' ' . $box['sw_lat'] . ', '
+                                            . $box['sw_lng'] . ' ' . $box['ne_lat'] . ', '
+                                            . $box['ne_lng'] . ' ' . $box['ne_lat'] . ', '
+                                            . $box['ne_lng'] . ' ' . $box['sw_lat'] . ', '
+                                            . $box['sw_lng'] . ' ' . $box['sw_lat'] . '))';
+                                    $versus = geoPHP::load($boxwkt, 'wkt');
+                                    $contains = $place->contains($versus);
+                                    $boxcontains = $versus->contains($place);
+                                    $overlaps = $place->overlaps($versus);
+                                    if (!$contains && ($boxcontains || $overlaps)) {
+                                        // logit(CAPTURE . ".error.log", "place polygon $wkt allies with geobox $boxwkt");
+                                        $found = true;
+                                        break;
                                     }
                                 }
                             }
