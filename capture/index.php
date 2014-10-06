@@ -498,23 +498,19 @@ foreach ($bins as $id => $bin)
     
     // currently there is no check for duplicated phrases
     function validateNumberOfPhrases(oldphrases,newphrases) {
-        if(nrOfActivePhrases - (oldphrases-newphrases) >= 400)
+        if(nrOfActivePhrases - (oldphrases-newphrases) > 400)
             return false;
         return true;
     }
     // currently there is no check for duplicated phrases
     function validateNumberOfGeoboxes(oldphrases,newphrases) {
-        // DEBUG
-        console.log("active = " + nrOfActiveGeoboxes);
-        var after = (oldphrases/4-newphrases/4);
-        console.log("after modify = " + after);
-        if(nrOfActiveGeoboxes - (oldphrases/4-newphrases/4) >= 25)
+        if(nrOfActiveGeoboxes - (oldphrases/4-newphrases/4) > 25)
             return false;
         return true;
     }
     // currently there is no check for duplicated phrases
     function validateNumberOfUsers(oldusers,newusers) {
-        if(nrOfActiveUsers - (oldusers-newusers) >= 5000)
+        if(nrOfActiveUsers - (oldusers-newusers) > 5000)
             return false;
         return true;
     }
