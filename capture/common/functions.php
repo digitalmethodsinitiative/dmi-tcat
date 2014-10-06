@@ -830,6 +830,7 @@ class Tweet {
         } else {
             $this->filter_level = 'none';
         }
+        $this->lang = $data["lang"];
         if (isset($data['possibly_sensitive'])) {
             $this->possibly_sensitive = $data["possibly_sensitive"];
         } else {
