@@ -92,6 +92,7 @@ function create_new_bin($params) {
 
         // populate the phrases and connector tables
         foreach ($phrases as $phrase) {
+            $phrase = str_replace("\"", "'", $phrase);
             $sql = "SELECT distinct(id) FROM tcat_query_phrases WHERE phrase = :phrase";
             $check_phrase = $dbh->prepare($sql);
             $check_phrase->bindParam(":phrase", $phrase, PDO::PARAM_STR);
@@ -243,7 +244,7 @@ function remove_bin($params) {
     $sql = "DROP TABLE " . $bin_name . "_places";
     $delete_table = $dbh->prepare($sql);
     $delete_table->execute();
-    
+
     echo '{"msg":"Query bin [' . $bin_name . ']has been deleted"}';
 
     $dbh = false;
@@ -394,7 +395,7 @@ function modify_bin($params) {
 
     // set endtime to now for each phrase or user going out
     if (!empty($outs)) {
-        if ($type == "track" || $type =="geotrack")
+        if ($type == "track" || $type == "geotrack")
             $sql = "SELECT distinct(bp.id) FROM tcat_query_bins_phrases bp, tcat_query_phrases p WHERE bp.phrase_id = p.id AND bp.querybin_id = ? AND p.phrase IN (" . implode(',', array_fill(0, count($outs), '?')) . ") AND bp.endtime = '0000-00-00 00:00:00'";
         elseif ($type == "follow")
             $sql = "SELECT distinct(bu.id) FROM tcat_query_bins_users bu, tcat_query_users u WHERE bu.user_id = u.id AND bu.querybin_id = ? AND u.id IN (" . implode(',', array_fill(0, count($outs), '?')) . ") AND bu.endtime = '0000-00-00 00:00:00'";
@@ -427,6 +428,7 @@ function modify_bin($params) {
             $check_phrase->execute();
             if (!$check_phrase->rowCount()) {
                 if ($type == "track" || $type == "geotrack") {
+                    $in = str_replace("\"", "'", $in);
                     $sql = "INSERT INTO tcat_query_phrases(phrase) VALUES(:phrase)";
                     $insert_phrase = $dbh->prepare($sql);
                     $insert_phrase->bindParam(":phrase", $in, PDO::PARAM_STR);
@@ -498,13 +500,20 @@ function get_phrases_from_geoquery($query) {
     // make segments of four
     $phrases = array();
     $raw = explode(",", $query);
-    $phrase = ''; $i = -1; $comma = false;
+    $phrase = '';
+    $i = -1;
+    $comma = false;
     while (isset($raw[++$i])) {
-        if ($comma) { $phrase .= ','; } else { $comma = true; }
+        if ($comma) {
+            $phrase .= ',';
+        } else {
+            $comma = true;
+        }
         $phrase .= $raw[$i];
-        if (($i+1) % 4 == 0) {
+        if (($i + 1) % 4 == 0) {
             $phrases[] = $phrase;
-            $phrase = ''; $comma = false;
+            $phrase = '';
+            $comma = false;
         }
     }
     return $phrases;
@@ -517,7 +526,7 @@ function quote_table_name($table) {
 function table_exists($binname) {
     $dbh = pdo_connect();
 
-    $sql ="SELECT 1 FROM `" . quote_table_name($binname . '_tweets') . "` LIMIT 1";
+    $sql = "SELECT 1 FROM `" . quote_table_name($binname . '_tweets') . "` LIMIT 1";
     $query = $dbh->prepare($sql);
     $rc = 0;
     try {
@@ -618,6 +627,7 @@ function getBins() {
     // select users
 
     $sql = "SELECT b.id, b.querybin, b.type, b.active, period.starttime AS bin_starttime, period.endtime AS bin_endtime FROM tcat_query_bins b, tcat_query_bins_periods period WHERE b.id = period.querybin_id GROUP BY b.id";
+
     $rec = $dbh->prepare($sql);
     $rec->execute();
     $bin_results = $rec->fetchAll();
@@ -639,6 +649,7 @@ function getBins() {
 
         if ($bin->type == "track" || $bin->type == "geotrack") {
             $sql = "SELECT p.id AS phrase_id, p.phrase, bp.starttime AS phrase_starttime, bp.endtime AS phrase_endtime FROM tcat_query_phrases p, tcat_query_bins_phrases bp WHERE p.id = bp.phrase_id AND bp.querybin_id = " . $bin->id;
+
             $rec = $dbh->prepare($sql);
             $rec->execute();
             $phrase_results = $rec->fetchAll();

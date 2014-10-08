@@ -76,14 +76,24 @@ $lastRateLimitHit = getLastRateLimitHit();
         }
         print "You currently have " . count($querybins) . " query bins and are tracking ";
         $trackWhat = array();
-        if (array_search("track", $captureroles) !== false && $activePhrases) $trackWhat[] = $activePhrases . " out of 400 possible phrases";
-        if (array_search("track", $captureroles) !== false && $activeGeoboxes) $trackWhat[] = $activeGeoboxes . " out of 25 possible geolocations";
-        if (array_search("follow", $captureroles) !== false) $trackWhat[] = $activeUsers . " out of 5000 possible user ids";
-        if (array_search("onepercent", $captureroles) !== false) $trackWhat[] = "a one percent sample";
-        if (empty($trackWhat)) { $trackWhat[] = 'nothing'; }
+        if (array_search("track", $captureroles) !== false && $activePhrases)
+            $trackWhat[] = $activePhrases . " out of 400 possible phrases";
+        if (array_search("track", $captureroles) !== false && $activeGeoboxes)
+            $trackWhat[] = $activeGeoboxes . " out of 25 possible geolocations";
+        if (array_search("follow", $captureroles) !== false)
+            $trackWhat[] = $activeUsers . " out of 5000 possible user ids";
+        if (array_search("onepercent", $captureroles) !== false)
+            $trackWhat[] = "a one percent sample";
+        if (empty($trackWhat)) {
+            $trackWhat[] = 'nothing';
+        }
         $and = false;
         foreach ($trackWhat as $what) {
-            if ($and) { print ", and "; } else { $and = true; }
+            if ($and) {
+                print ", and ";
+            } else {
+                $and = true;
+            }
             print $what;
         }
         print ".<br/>";
@@ -100,14 +110,14 @@ $lastRateLimitHit = getLastRateLimitHit();
                             <div class='if_row_header'>Bin type:</div>
                             <div class='if_row_content'>
                                 <select name="capture_type" id="capture_type" onchange="changeInterface();">
-                                    <?php if (array_search('track', $captureroles) !== false) { ?>
+<?php if (array_search('track', $captureroles) !== false) { ?>
                                         <option value="track">keyword track</option>
                                         <option value="geotrack">geo track</option>
-                                    <?php } if (array_search('follow', $captureroles) !== false) { ?>
+<?php } if (array_search('follow', $captureroles) !== false) { ?>
                                         <option value="follow">user sample</option>
-                                    <?php } if (array_search('onepercent', $captureroles) !== false) { ?>
+<?php } if (array_search('onepercent', $captureroles) !== false) { ?>
                                         <option value="onepercent">one percent sample</option>
-                                    <?php } ?>
+                        <?php } ?>
                                 </select>
                             </div>
                         </div>
@@ -117,16 +127,16 @@ $lastRateLimitHit = getLastRateLimitHit();
                                 <input id="newbin_name" name="newbin_name" type="text"/> (cannot be changed later on)
                             </div>
                         </div>
-                        <?php if (array_search('track', $captureroles) !== false) { ?>
+<?php if (array_search('track', $captureroles) !== false) { ?>
                             <div id="if_row_phrases" class="if_row">
                                 <script>
-                                window.onload=function() {
-                                    $.ajax({
-                                        url: 'public/form.trackphrases.php'
-                                    }).done(function (content) {
-                                        $("#if_row_phrases").html(content);
-                                    });
-                                }
+                                    window.onload=function() {
+                                        $.ajax({
+                                            url: 'public/form.trackphrases.php'
+                                        }).done(function (content) {
+                                            $("#if_row_phrases").html(content);
+                                        });
+                                    }
                                 </script>
                             </div>
                         <?php } if (array_search('follow', $captureroles) !== false) { ?>
@@ -139,7 +149,7 @@ $lastRateLimitHit = getLastRateLimitHit();
                                     Example bin: 1304933132,1286333395,856010760,381660841,381453862,224572743
                                 </div>
                             </div>
-                        <?php } ?>
+        <?php } ?>
                         <div class="if_row">
                             <input value="add query bin" type="submit" />
                         </div>
@@ -173,9 +183,9 @@ $lastRateLimitHit = getLastRateLimitHit();
             if (strstr($bin->type, "track") !== false || strstr($bin->type, "geotrack") !== false || $bin->type == 'search' || $bin->type == 'import ytk') {
                 foreach ($bin->phrases as $phrase) {
                     $phrasePeriodsList[$phrase->id] = array_unique($phrase->periods);
-                    $phraseList[$phrase->id] = $phrase->phrase;
+                    $phraseList[$phrase->id] = str_replace("\"", "'", $phrase->phrase);
                     if ($phrase->active) {
-                        $activePhraselist[$phrase->id] = $phrase->phrase;
+                        $activePhraselist[$phrase->id] = str_replace("\"", "'", $phrase->phrase);
                     }
                 }
             } elseif (strstr($bin->type, "follow") !== false || strstr($bin->type, "timeline") !== false) {
@@ -210,8 +220,8 @@ $lastRateLimitHit = getLastRateLimitHit();
             echo '<td valign="top">' . implode("<br />", $bin->periods) . '</td>';
             echo '<td valign="top">';
             if ($bin->type != "onepercent" &&
-                array_search($bin->type, $captureroles) !== false ||
-                array_search('track', $captureroles) !== false && $bin->type = "geotrack") {
+                    array_search($bin->type, $captureroles) !== false ||
+                    array_search('track', $captureroles) !== false && $bin->type = "geotrack") {
                 echo '<a href="" onclick="sendModify(\'' . $bin->id . '\',\'' . addslashes(implode(",", $activePhraselist)) . '\',\'' . $bin->active . '\',\'' . $bin->type . '\'); return false;">modify ';
                 if ($bin->type == 'follow') {
                     echo 'users';
@@ -225,7 +235,7 @@ $lastRateLimitHit = getLastRateLimitHit();
             echo '</td>';
             echo '<td valign="top">';
             if (array_search($bin->type, $captureroles) !== false ||
-                array_search('track', $captureroles) !== false && $bin->type = "geotrack") {
+                    array_search('track', $captureroles) !== false && $bin->type = "geotrack") {
                 if ($bin->type == "geotrack") {
                     echo '<a href="" onclick="sendPause(\'' . $bin->id . '\',\'' . $action . '\',\'' . 'track\',1' . '); return false;">' . $action . '</a>';
                 } else {
@@ -301,6 +311,9 @@ foreach ($bins as $id => $bin)
         height:'auto',
         modal: true,
         width:'auto',
+        create: function(event,ui) {
+            $(this).css("maxWidth", ($(window).width() - 40) + "px");  
+        },
         buttons: {
             'Yes': function(){
                 $(this).dialog('close');
@@ -365,6 +378,9 @@ foreach ($bins as $id => $bin)
         height:'auto',
         modal: true,
         width:'auto',
+        create: function(event,ui) {
+            $(this).css("maxWidth", ($(window).width()-40) + "px");  
+        },
         buttons: {
             'Submit': function(){
                 var _newphrases = $('#dialog-modify textarea').val();
