@@ -69,10 +69,10 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
         if ($esc['shell']['minf'] > 1 && !($esc['shell']['topu'] > 0)) {
             $coword->applyMinFreq($esc['shell']['minf']);
             //$coword->applyMinDegree($esc['shell']['minf']);	// Berno: method no longer in use, remains unharmed
-            $filename = get_filename_for_export("hashtagCooc", (isset($_GET['probabilityOfAssociation']) ? "_normalizedAssociationWeight" : "") . "_minFreqOf" . $esc['shell']['minf'], "gexf");
+            $filename = get_filename_for_export("hashtagCooc", (isset($_GET['probabilityOfAssociation']) ? "_normalizedAssociationWeight" : "") . "_minFreqOf" . $esc['shell']['minf'], "gdf");
         } elseif ($esc['shell']['topu'] > 0) {
             $coword->applyTopUnits($esc['shell']['topu']);
-            $filename = get_filename_for_export("hashtagCooc", (isset($_GET['probabilityOfAssociation']) ? "_normalizedAssociationWeight" : "") . "_Top" . $esc['shell']['topu'], "gexf");
+            $filename = get_filename_for_export("hashtagCooc", (isset($_GET['probabilityOfAssociation']) ? "_normalizedAssociationWeight" : "") . "_Top" . $esc['shell']['topu'], "gdf");
         } else {
             $filename = get_filename_for_export("hashtagCooc", (isset($_GET['probabilityOfAssociation']) ? "_normalizedAssociationWeight" : ""), "gexf");
         }
