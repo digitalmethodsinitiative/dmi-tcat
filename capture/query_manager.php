@@ -40,7 +40,7 @@ function create_new_bin($params) {
         return;
     }
     $type = $params['type'];
-    if (array_search($type, $captureroles) === false) {
+    if (array_search($type, $captureroles) === false && ($type !== 'geotrack' || array_search('track', $captureroles) === false)) {
         echo '{"msg":"This capturing type is not defined in the config file"}';
         return;
     }
@@ -81,12 +81,18 @@ function create_new_bin($params) {
         return;
     }
 
-    if ($type == "track") {
-        $phrases = explode(",", $params["newbin_phrases"]);
-        $phrases = array_trim_and_unique($phrases);
+    if ($type == "track" || $type == "geotrack") {
+
+        if ($type == "track") {
+            $phrases = explode(",", $params["newbin_phrases"]);
+            $phrases = array_trim_and_unique($phrases);
+        } elseif ($type == "geotrack") {
+            $phrases = get_phrases_from_geoquery($params["newbin_phrases"]);
+        }
 
         // populate the phrases and connector tables
         foreach ($phrases as $phrase) {
+            $phrase = str_replace("\"", "'", $phrase);
             $sql = "SELECT distinct(id) FROM tcat_query_phrases WHERE phrase = :phrase";
             $check_phrase = $dbh->prepare($sql);
             $check_phrase->bindParam(":phrase", $phrase, PDO::PARAM_STR);
@@ -179,7 +185,7 @@ function remove_bin($params) {
     $delete_querybin_periods->execute();
 
 
-    if ($type == "track") { // delete phrases
+    if ($type == "track" || $type == "geotrack") { // delete phrases
         $sql = "SELECT phrase_id FROM tcat_query_bins_phrases WHERE querybin_id = :id";
         $select_query_bins_phrases = $dbh->prepare($sql);
         $select_query_bins_phrases->bindParam(":id", $bin_id, PDO::PARAM_INT);
@@ -238,7 +244,7 @@ function remove_bin($params) {
     $sql = "DROP TABLE " . $bin_name . "_places";
     $delete_table = $dbh->prepare($sql);
     $delete_table->execute();
-    
+
     echo '{"msg":"Query bin [' . $bin_name . ']has been deleted"}';
 
     $dbh = false;
@@ -254,7 +260,7 @@ function pause_bin($params) {
         return false;
     }
     $type = $params['type'];
-    if (array_search($type, $captureroles) === false) {
+    if (array_search($type, $captureroles) === false && ($type !== 'geotrack' || array_search('track', $captureroles) === false)) {
         echo '{"msg":"This capturing type is not defined in the config file"}';
         return;
     }
@@ -297,7 +303,7 @@ function pause_bin($params) {
     // manage the phrase and user periods
     if ($params["todo"] == "start") {
         // get latest active queries or users
-        if ($type == "track")
+        if ($type == "track" || $type == "geotrack")
             $sql = "SELECT min(endtime) as min, max(endtime) AS max FROM tcat_query_bins_phrases WHERE querybin_id = :querybin_id";
         elseif ($type == "follow")
             $sql = "SELECT min(endtime) as min, max(endtime) AS max FROM tcat_query_bins_users WHERE querybin_id = :querybin_id";
@@ -368,22 +374,28 @@ function modify_bin($params) {
     $querybin_id = trim($params['bin']);
 
     $type = $params['type'];
-    if (array_search($type, $captureroles) === false) {
+    if (array_search($type, $captureroles) === false && ($type !== 'geotrack' || array_search('track', $captureroles) === false)) {
         echo '{"msg":"This capturing type is not defined in the config file"}';
         return;
     }
 
     $dbh = pdo_connect();
 
-    $oldphrases = array_trim_and_unique(explode(",", $params["oldphrases"]));
-    $newphrases = array_trim_and_unique(explode(",", $params["newphrases"]));
+    if ($type == "geotrack") {
+        // @todo: what about explicit order in in geobin queries?
+        $oldphrases = get_phrases_from_geoquery($params["oldphrases"]);
+        $newphrases = get_phrases_from_geoquery($params["newphrases"]);
+    } else {
+        $oldphrases = array_trim_and_unique(explode(",", $params["oldphrases"]));
+        $newphrases = array_trim_and_unique(explode(",", $params["newphrases"]));
+    }
 
     $outs = array_diff($oldphrases, $newphrases);
     $ins = array_diff($newphrases, $oldphrases);
 
     // set endtime to now for each phrase or user going out
     if (!empty($outs)) {
-        if ($type == "track")
+        if ($type == "track" || $type == "geotrack")
             $sql = "SELECT distinct(bp.id) FROM tcat_query_bins_phrases bp, tcat_query_phrases p WHERE bp.phrase_id = p.id AND bp.querybin_id = ? AND p.phrase IN (" . implode(',', array_fill(0, count($outs), '?')) . ") AND bp.endtime = '0000-00-00 00:00:00'";
         elseif ($type == "follow")
             $sql = "SELECT distinct(bu.id) FROM tcat_query_bins_users bu, tcat_query_users u WHERE bu.user_id = u.id AND bu.querybin_id = ? AND u.id IN (" . implode(',', array_fill(0, count($outs), '?')) . ") AND bu.endtime = '0000-00-00 00:00:00'";
@@ -391,7 +403,7 @@ function modify_bin($params) {
         array_unshift($outs, $querybin_id);
         if ($rec->execute($outs) && $rec->rowCount()) {
             $ids = $rec->fetchAll(PDO::FETCH_COLUMN);
-            if ($type == "track")
+            if ($type == "track" || $type == "geotrack")
                 $sql = "UPDATE tcat_query_bins_phrases SET endtime = '$now' WHERE querybin_id = :querybin_id AND id IN (" . implode(",", $ids) . ")";
             elseif ($type == "follow")
                 $sql = "UPDATE tcat_query_bins_users SET endtime = '$now' WHERE querybin_id = :querybin_id AND id IN (" . implode(",", $ids) . ")";
@@ -404,7 +416,7 @@ function modify_bin($params) {
     // for each phrase or user coming in, check if it already exists, if not create, set new bin-phrase connection
     if (!empty($ins)) {
         foreach ($ins as $in) {
-            if ($type == "track") {
+            if ($type == "track" || $type == "geotrack") {
                 $sql = "SELECT id FROM tcat_query_phrases WHERE phrase = :phrase";
                 $check_phrase = $dbh->prepare($sql);
                 $check_phrase->bindParam(":phrase", $in, PDO::PARAM_STR);
@@ -415,7 +427,8 @@ function modify_bin($params) {
             }
             $check_phrase->execute();
             if (!$check_phrase->rowCount()) {
-                if ($type == "track") {
+                if ($type == "track" || $type == "geotrack") {
+                    $in = str_replace("\"", "'", $in);
                     $sql = "INSERT INTO tcat_query_phrases(phrase) VALUES(:phrase)";
                     $insert_phrase = $dbh->prepare($sql);
                     $insert_phrase->bindParam(":phrase", $in, PDO::PARAM_STR);
@@ -431,7 +444,7 @@ function modify_bin($params) {
                 $inid = $results[0]["id"];
             }
             // double check whether phrase or user is already running
-            if ($type == "track")
+            if ($type == "track" || $type == "geotrack")
                 $sql = "SELECT min(endtime) AS min FROM tcat_query_bins_phrases WHERE querybin_id = :querybin_id AND phrase_id = $inid";
             elseif ($type == "follow")
                 $sql = "SELECT min(endtime) AS min FROM tcat_query_bins_users WHERE querybin_id = :querybin_id AND user_id = $inid";
@@ -446,7 +459,7 @@ function modify_bin($params) {
             }
             // insert new period
             if ($insertit) {
-                if ($type == "track")
+                if ($type == "track" || $type == "geotrack")
                     $sql = "INSERT INTO tcat_query_bins_phrases(phrase_id, querybin_id, starttime, endtime) VALUES($inid, :querybin_id,  '$now', '0000-00-00 00:00:00')";
                 elseif ($type == "follow")
                     $sql = "INSERT INTO tcat_query_bins_users(user_id, querybin_id, starttime, endtime) VALUES($inid, :querybin_id,  '$now', '0000-00-00 00:00:00')";
@@ -483,13 +496,45 @@ function array_trim_and_unique($array) {
     return $array;
 }
 
+function get_phrases_from_geoquery($query) {
+    // make segments of four
+    $phrases = array();
+    $raw = explode(",", $query);
+    $phrase = '';
+    $i = -1;
+    $comma = false;
+    while (isset($raw[++$i])) {
+        if ($comma) {
+            $phrase .= ',';
+        } else {
+            $comma = true;
+        }
+        $phrase .= $raw[$i];
+        if (($i + 1) % 4 == 0) {
+            $phrases[] = $phrase;
+            $phrase = '';
+            $comma = false;
+        }
+    }
+    return $phrases;
+}
+
+function quote_table_name($table) {
+    return preg_replace("/[`;,'\"]/", "", $table);
+}
+
 function table_exists($binname) {
     $dbh = pdo_connect();
 
-    $sql = "SHOW TABLES LIKE '" . trim($binname) . "%'"; // @todo escape binname
+    $sql = "SELECT 1 FROM `" . quote_table_name($binname . '_tweets') . "` LIMIT 1";
     $query = $dbh->prepare($sql);
-    $query->execute();
-    $rc = $query->rowCount();
+    $rc = 0;
+    try {
+        $query->execute();
+        $rc = $query->rowCount();
+    } catch (PDOException $e) {
+        // good thing. table does not exist
+    }
     $dbh = false;
     return $rc;
 }
@@ -517,7 +562,22 @@ function table_id_exists($id) {
 function getNrOfActivePhrases() {
     $dbh = pdo_connect();
 
-    $sql = "SELECT count(distinct(p.phrase)) AS count FROM tcat_query_phrases p, tcat_query_bins_phrases bp WHERE p.id = bp.phrase_id AND bp.endtime = '0000-00-00 00:00:00'";
+    $sql = "SELECT count(distinct(p.phrase)) AS count FROM tcat_query_phrases p, tcat_query_bins_phrases bp, tcat_query_bins b WHERE b.id = bp.querybin_id AND b.type = 'track' AND  p.id = bp.phrase_id AND bp.endtime = '0000-00-00 00:00:00'";
+    $res = $dbh->prepare($sql);
+    $res->execute();
+    if ($res->rowCount() > 0) {
+        $result = $res->fetch();
+        return $result['count'];
+    }
+    $dbh = false;
+    return 0;
+}
+
+function getNrOfActiveGeoboxes() {
+    $dbh = pdo_connect();
+
+    $sql = "SELECT count(distinct(p.phrase)) AS count FROM tcat_query_phrases p, tcat_query_bins_phrases bp, tcat_query_bins b WHERE b.id = bp.querybin_id AND b.type = 'geotrack' AND  p.id = bp.phrase_id AND bp.endtime = '0000-00-00 00:00:00'";
+//SELECT COUNT(*) AS cnt FROM tcat_query_bins WHERE `type` = 'geotrack' and active = 1
     $res = $dbh->prepare($sql);
     $res->execute();
     if ($res->rowCount() > 0) {
@@ -567,6 +627,7 @@ function getBins() {
     // select users
 
     $sql = "SELECT b.id, b.querybin, b.type, b.active, period.starttime AS bin_starttime, period.endtime AS bin_endtime FROM tcat_query_bins b, tcat_query_bins_periods period WHERE b.id = period.querybin_id GROUP BY b.id";
+
     $rec = $dbh->prepare($sql);
     $rec->execute();
     $bin_results = $rec->fetchAll();
@@ -586,8 +647,9 @@ function getBins() {
         }
         $bin->periods[] = $data['bin_starttime'] . " - " . str_replace("0000-00-00 00:00:00", "now", $data['bin_endtime']);
 
-        if ($bin->type == "track") {
+        if ($bin->type == "track" || $bin->type == "geotrack") {
             $sql = "SELECT p.id AS phrase_id, p.phrase, bp.starttime AS phrase_starttime, bp.endtime AS phrase_endtime FROM tcat_query_phrases p, tcat_query_bins_phrases bp WHERE p.id = bp.phrase_id AND bp.querybin_id = " . $bin->id;
+
             $rec = $dbh->prepare($sql);
             $rec->execute();
             $phrase_results = $rec->fetchAll();

@@ -15,6 +15,7 @@ $captureroles = unserialize(CAPTUREROLES);
 
 $querybins = getBins();
 $activePhrases = getNrOfActivePhrases();
+$activeGeoboxes = getNrOfActiveGeoboxes();
 $activeUsers = getNrOfActiveUsers();
 $lastRateLimitHit = getLastRateLimitHit();
 ?>
@@ -74,16 +75,27 @@ $lastRateLimitHit = getLastRateLimitHit();
             print "<br /><font color='red'>Your MySQL version is too old, please upgrade to at least MySQL 5.5.3 to use DMI-TCAT.</font><br>";
         }
         print "You currently have " . count($querybins) . " query bins and are tracking ";
-        if (array_search("track", $captureroles) !== false)
-            print $activePhrases . " out of 400 possible phrases";
-        if (array_search("track", $captureroles) !== false && array_search("follow", $captureroles) !== false)
-            print ", and ";
+        $trackWhat = array();
+        if (array_search("track", $captureroles) !== false && $activePhrases)
+            $trackWhat[] = $activePhrases . " out of 400 possible phrases";
+        if (array_search("track", $captureroles) !== false && $activeGeoboxes)
+            $trackWhat[] = $activeGeoboxes . " out of 25 possible geolocations";
         if (array_search("follow", $captureroles) !== false)
-            print $activeUsers . " out of 5000 possible user ids";
-        if ((array_search("track", $captureroles) !== false || array_search("follow", $captureroles) !== false) && array_search("onepercent", $captureroles) !== false)
-            print ", and ";
+            $trackWhat[] = $activeUsers . " out of 5000 possible user ids";
         if (array_search("onepercent", $captureroles) !== false)
-            print "a one percent sample";
+            $trackWhat[] = "a one percent sample";
+        if (empty($trackWhat)) {
+            $trackWhat[] = 'nothing';
+        }
+        $and = false;
+        foreach ($trackWhat as $what) {
+            if ($and) {
+                print ", and ";
+            } else {
+                $and = true;
+            }
+            print $what;
+        }
         print ".<br/>";
         if ($lastRateLimitHit) {
             print "<br /><font color='red'>Your latest rate limit hit was on $lastRateLimitHit</font><br>";
@@ -98,13 +110,14 @@ $lastRateLimitHit = getLastRateLimitHit();
                             <div class='if_row_header'>Bin type:</div>
                             <div class='if_row_content'>
                                 <select name="capture_type" id="capture_type" onchange="changeInterface();">
-                                    <?php if (array_search('track', $captureroles) !== false) { ?>
+<?php if (array_search('track', $captureroles) !== false) { ?>
                                         <option value="track">keyword track</option>
-                                    <?php } if (array_search('follow', $captureroles) !== false) { ?>
+                                        <option value="geotrack">geo track</option>
+<?php } if (array_search('follow', $captureroles) !== false) { ?>
                                         <option value="follow">user sample</option>
-                                    <?php } if (array_search('onepercent', $captureroles) !== false) { ?>
+<?php } if (array_search('onepercent', $captureroles) !== false) { ?>
                                         <option value="onepercent">one percent sample</option>
-                                    <?php } ?>
+                        <?php } ?>
                                 </select>
                             </div>
                         </div>
@@ -114,25 +127,17 @@ $lastRateLimitHit = getLastRateLimitHit();
                                 <input id="newbin_name" name="newbin_name" type="text"/> (cannot be changed later on)
                             </div>
                         </div>
-                        <?php if (array_search('track', $captureroles) !== false) { ?>
+<?php if (array_search('track', $captureroles) !== false) { ?>
                             <div id="if_row_phrases" class="if_row">
-                                <div class='if_row_header' style='height:200px;'>Phrases to track:</div>
-                                <div class='if_row_content'>
-                                    <input id="newbin_phrases" name="newbin_phrases" type="text"/><br>
-                                    Here you can specify a list of <a href='https://dev.twitter.com/docs/streaming-apis/parameters#track' target='_blank'>tracking criteria</a> consisting of single or multiple keyword queries, hashtags, and specific phrases. Each query should be separated by a comma. If you want to track a literal phrase, encapsulate it in single quotes (').<br>
-                                    <br/>
-                                    DMI-TCAT allows for three types of 'track' queries:
-                                    <ol style='margin-top:0px; list-style-position: inside; list'>
-                                        <li> a single word/hashtag. Consider that Twitter does not do partial matching on words, i.e. [twitter] will get tweets with [twitter], [#twitter] but not [twitteraddiction]
-                                        <li> two or more words: works like an AND operator, i.e. [global warming] will find tweets that have both [global] and [warming] in any position in the tweet, e.g. "life is global but not warming"</li>
-                                        <li> exact phrases: ['global warming'] will get only tweets with the exact phrase. Beware, however that due to how the streaming API works, tweets are captured in the same way as in 2, but tweets that do not match the exact phrase are thrown away. This means that you will request many more tweets from the Twitter API than you will see in your query bin - thus increasing the possibility that you will hit a <a href='https://dev.twitter.com/docs/faq#6861' target='_blank'>rate limit</a>. E.g. if you specify a query like ['are we'] all tweets matching both [are] and [we] are retrieved, while DMI-TCAT only retains those with the exact phrase ['are we'].</li>
-                                    </ol>
-
-                                    You can track a maximum of 400 queries at the same time (for all query bins combined) and the total volume should never exceed 1% of global Twitter volume, at any specific moment in time.
-                                    <br/><br/>
-                                    Example bin: globalwarming,global warming,'climate change'
-
-                                </div>
+                                <script>
+                                    window.onload=function() {
+                                        $.ajax({
+                                            url: 'public/form.trackphrases.php'
+                                        }).done(function (content) {
+                                            $("#if_row_phrases").html(content);
+                                        });
+                                    }
+                                </script>
                             </div>
                         <?php } if (array_search('follow', $captureroles) !== false) { ?>
                             <div id="if_row_users" class="if_row">
@@ -144,7 +149,7 @@ $lastRateLimitHit = getLastRateLimitHit();
                                     Example bin: 1304933132,1286333395,856010760,381660841,381453862,224572743
                                 </div>
                             </div>
-                        <?php } ?>
+        <?php } ?>
                         <div class="if_row">
                             <input value="add query bin" type="submit" />
                         </div>
@@ -175,12 +180,12 @@ $lastRateLimitHit = getLastRateLimitHit();
             $phrasePeriodsList = array();
             $activePhraselist = array();
 
-            if (strstr($bin->type, "track") !== false || $bin->type == 'search' || $bin->type == 'import ytk') {
+            if (strstr($bin->type, "track") !== false || strstr($bin->type, "geotrack") !== false || $bin->type == 'search' || $bin->type == 'import ytk') {
                 foreach ($bin->phrases as $phrase) {
                     $phrasePeriodsList[$phrase->id] = array_unique($phrase->periods);
-                    $phraseList[$phrase->id] = $phrase->phrase;
+                    $phraseList[$phrase->id] = str_replace("\"", "'", $phrase->phrase);
                     if ($phrase->active) {
-                        $activePhraselist[$phrase->id] = $phrase->phrase;
+                        $activePhraselist[$phrase->id] = str_replace("\"", "'", $phrase->phrase);
                     }
                 }
             } elseif (strstr($bin->type, "follow") !== false || strstr($bin->type, "timeline") !== false) {
@@ -214,12 +219,29 @@ $lastRateLimitHit = getLastRateLimitHit();
             echo '<td valign="top" align="right">' . number_format($bin->nrOfTweets, 0, ",", ".") . '</td>'; // does not sort well
             echo '<td valign="top">' . implode("<br />", $bin->periods) . '</td>';
             echo '<td valign="top">';
-            if ($bin->type != "onepercent" && array_search($bin->type, $captureroles) !== false)
-                echo '<a href="" onclick="sendModify(\'' . $bin->id . '\',\'' . addslashes(implode(",", $activePhraselist)) . '\',\'' . $bin->active . '\',\'' . $bin->type . '\'); return false;">modify ' . ($bin->type == 'follow' ? 'users' : 'phrases') . '</a>';
+            if ($bin->type != "onepercent" &&
+                    array_search($bin->type, $captureroles) !== false ||
+                    array_search('track', $captureroles) !== false && $bin->type = "geotrack") {
+                echo '<a href="" onclick="sendModify(\'' . $bin->id . '\',\'' . addslashes(implode(",", $activePhraselist)) . '\',\'' . $bin->active . '\',\'' . $bin->type . '\'); return false;">modify ';
+                if ($bin->type == 'follow') {
+                    echo 'users';
+                } elseif ($bin->type == 'track') {
+                    echo 'phrases';
+                } elseif ($bin->type == 'geotrack') {
+                    echo 'geoboxes';
+                }
+                echo '</a>';
+            }
             echo '</td>';
             echo '<td valign="top">';
-            if (array_search($bin->type, $captureroles) !== false)
-                echo '<a href="" onclick="sendPause(\'' . $bin->id . '\',\'' . $action . '\',\'' . $bin->type . '\'); return false;">' . $action . '</a>';
+            if (array_search($bin->type, $captureroles) !== false ||
+                    array_search('track', $captureroles) !== false && $bin->type = "geotrack") {
+                if ($bin->type == "geotrack") {
+                    echo '<a href="" onclick="sendPause(\'' . $bin->id . '\',\'' . $action . '\',\'' . 'track\',1' . '); return false;">' . $action . '</a>';
+                } else {
+                    echo '<a href="" onclick="sendPause(\'' . $bin->id . '\',\'' . $action . '\',\'' . $bin->type . '\'); return false;">' . $action . '</a>';
+                }
+            }
             echo '</td>';
             echo '<td valign="top"><a href="" onclick="sendDelete(\'' . $bin->id . '\',\'' . $bin->active . '\',\'' . $bin->type . '\'); return false;">delete</a></td>';
             echo '</tr>';
@@ -279,6 +301,7 @@ foreach ($bins as $id => $bin)
 ?>
     
     var nrOfActivePhrases = <?php echo $activePhrases; ?>;
+    var nrOfActiveGeoboxes = <?php echo $activeGeoboxes; ?>;
     var nrOfActiveUsers = <?php echo $activeUsers; ?>;
     var params = undefined;
     
@@ -288,6 +311,9 @@ foreach ($bins as $id => $bin)
         height:'auto',
         modal: true,
         width:'auto',
+        create: function(event,ui) {
+            $(this).css("maxWidth", ($(window).width() - 40) + "px");  
+        },
         buttons: {
             'Yes': function(){
                 $(this).dialog('close');
@@ -316,13 +342,16 @@ foreach ($bins as $id => $bin)
             });   
         }
     }
-    function sendPause(_bin,_todo,_type) {
+    function sendPause(_bin,_todo,_type,_geo) {
+        if (typeof _geo === 'undefined') { _geo = 0; }
         if(!validateBin(_bin))
             return false;
         params = {action:"pausebin",todo:_todo,bin:_bin,type:_type};
         if(_todo == "start") {
-            if(_type == "track")
+            if(_type == "track" && _geo == 0)
                 dialogConfirm("Are you sure that you want to " + _todo + " capturing the '" + bins[_bin] + "' bin with the last set of active phrases?");
+            if(_type == "track" && _geo == 1)
+                dialogConfirm("Are you sure that you want to " + _todo + " capturing the '" + bins[_bin] + "' bin with the last set of active geoboxes?");
             else if(_type == "follow")
                 dialogConfirm("Are you sure that you want to " + _todo + " capturing the '" + bins[_bin] + "' bin with the last set of active users?");
             else if(_type == "onepercent")
@@ -349,6 +378,9 @@ foreach ($bins as $id => $bin)
         height:'auto',
         modal: true,
         width:'auto',
+        create: function(event,ui) {
+            $(this).css("maxWidth", ($(window).width()-40) + "px");  
+        },
         buttons: {
             'Submit': function(){
                 var _newphrases = $('#dialog-modify textarea').val();
@@ -364,6 +396,12 @@ foreach ($bins as $id => $bin)
                     var _nrOfPhrases = validateNumberOfPhrases(params['oldphrases'].split(",").length,_newphrases.split(",").length);
                     if(!_nrOfPhrases) {
                         alert("With this query you will exceed the number of allowed queries (400) to the Twitter API. Please reduce the number of phrases.");
+                        return false;
+                    }
+                } else if(params['type']=='geotrack') {
+                    var _nrOfUsers = validateNumberOfGeoboxes(params['oldphrases'].split(",").length,_newphrases.split(",").length);
+                    if(!_nrOfUsers) {
+                        alert("With this query you will exceed the number of allowed location queries (25) to the Twitter API. Please reduce the number of geoboxes.");
                         return false;
                     }
                 } else if(params['type']=='follow') {
@@ -434,6 +472,15 @@ foreach ($bins as $id => $bin)
                 alert("With this query you will exceed the number of allowed queries (400) to the Twitter API. Please reduce the number of phrases.");
                 return false;
             }
+        } else if (_type == "geotrack") {
+            var _phrases = $("#newbin_geoboxes").val();
+            if(!validateQuery(_phrases,_type))
+                return false;
+            var _nrOfPhrases = validateNumberOfGeoboxes(0,_phrases.split(",").length);
+            if(!_nrOfPhrases) {
+                alert("With this query you will exceed the number of allowed location queries (25) to the Twitter API. Please reduce the number of geoboxes.");
+                return false;
+            }
         } else if(_type == "follow") {
             var _users = $("#newbin_users").val();
             if(!validateQuery(_users,_type))
@@ -448,6 +495,8 @@ foreach ($bins as $id => $bin)
         var _check = window.confirm("You are about to create a new query bin. Are you sure?");
         if(_check == true) {
             if(_type == "track")    
+                var _params = {action:"newbin",type:_type,newbin_phrases:_phrases,newbin_name:_bin,active:$("#make_active").val()};
+            if(_type == "geotrack")    
                 var _params = {action:"newbin",type:_type,newbin_phrases:_phrases,newbin_name:_bin,active:$("#make_active").val()};
             if(_type == "follow")    
                 var _params = {action:"newbin",type:_type,newbin_users:_users,newbin_name:_bin,active:$("#make_active").val()};
@@ -469,19 +518,27 @@ foreach ($bins as $id => $bin)
     
     // currently there is no check for duplicated phrases
     function validateNumberOfPhrases(oldphrases,newphrases) {
-        if(nrOfActivePhrases - (oldphrases-newphrases) >= 400)
+        if(nrOfActivePhrases - (oldphrases-newphrases) > 400)
+            return false;
+        return true;
+    }
+    // currently there is no check for duplicated phrases
+    function validateNumberOfGeoboxes(oldphrases,newphrases) {
+        if(nrOfActiveGeoboxes - (oldphrases/4-newphrases/4) > 25)
             return false;
         return true;
     }
     // currently there is no check for duplicated phrases
     function validateNumberOfUsers(oldusers,newusers) {
-        if(nrOfActiveUsers - (oldusers-newusers) >= 5000)
+        if(nrOfActiveUsers - (oldusers-newusers) > 5000)
             return false;
         return true;
     }
             
     function validateType(type) {
         if(type=="track")
+            return true;
+        if(type=="geotrack")
             return true;
         if(type=="follow")
             return true;
@@ -534,6 +591,32 @@ foreach ($bins as $id => $bin)
                 });
                 return cont;
             }
+        } else if (type == 'geotrack') {
+            query = query.replace(/\s/g, "");
+            var re = new RegExp("[^-,\.0-9]");
+            var results = re.exec(query);
+            if (results && results.length > 0) {
+                alert("You must only use coordinates and comma's in your geo string.");
+                return false;
+            }
+            var boxes = query.split(',');
+            if (boxes.length == 0 || boxes.length % 4 !== 0) {
+                alert("Specify geoboxes in sets of four coordinates.");
+                return false;
+            }
+            for (var i = 0; i < boxes.length; i++) {
+                var count = boxes[i].split("\.",-1).length-1;
+                if (count > 1) {
+                    alert("Only one period in a coordinate (" + boxes[i] + ") please.");
+                    return false;
+                }
+                var count = boxes[i].split("-",-1).length-1;
+                if (count > 1 || count == 1 && boxes[i].charAt(0) !== '-') {
+                    alert("Illegal coordinate (" + boxes[i] + ")");
+                    return false;
+                } 
+            }
+            return true;
         } else if(type == 'follow') {
             // only integers
             var arr = query.split(",");
@@ -560,6 +643,20 @@ foreach ($bins as $id => $bin)
             case "track":
                 $("#if_row_users").hide();
                 $("#if_row_phrases").show();
+                $.ajax({
+                    url: 'public/form.trackphrases.php'
+                }).done(function (content) {
+                    $("#if_row_phrases").html(content);
+                });
+                break;
+            case "geotrack":
+                $("#if_row_users").hide();
+                $("#if_row_phrases").show();
+                $.ajax({
+                    url: 'public/form.trackgeophrases.php'
+                }).done(function (content) {
+                    $("#if_row_phrases").html(content);
+                });
                 break;
             case "follow":
                 $("#if_row_users").show();

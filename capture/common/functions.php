@@ -1,5 +1,7 @@
 <?php
 
+require_once("geoPHP/geoPHP.inc"); // geoPHP library
+
 error_reporting(E_ALL);
 ini_set("max_execution_time", 0);       // capture script want unlimited execution time
 
@@ -10,6 +12,31 @@ function pdo_connect() {
     $dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
     return $dbh;
+}
+
+function geophp_sane() {
+    $sane = true;
+    if (!geoPHP::geosInstalled()) {
+        $msg = "geoPHP needs the GEOS and its PHP extension (please download it at: http://trac.osgeo.org/geos/)";
+        $sane = false;
+    } else {
+        // Is the Digital Methods lab in Amsterdam? 
+        $point_lng = 4.893346; $point_lat = 52.369042;
+        $sw_lng = 4.768520; $sw_lat = 52.321629;
+        $ne_lng = 5.017270; $ne_lat = 52.425129;
+        $sane = coordinatesInsideBoundingBox($point_lng, $point_lat, $sw_lng, $sw_lat, $ne_lng, $ne_lat);
+        if (!$sane) {
+            $msg = "geoPHP/GEOS library seems broken. searching on area will not work";
+        }
+    }
+    if (!$sane) {
+        if (defined('CAPTURE')) {
+            logit(CAPTURE . ".error.log", $msg);
+        } else {
+            logit("cli", $msg);
+        }
+    }
+    return $sane;
 }
 
 function create_error_logs() {
@@ -352,15 +379,16 @@ function web_reload_config_role($role) {
  * If test is true, only test if the lock could be gained, but do not hold on to it (this is how we test if a script is running)
  * Returns true on a lock success (in test), false on failure and a lock filepointer if really locking
  */
+
 function script_lock($script, $test = false) {
     $lockfile = BASE_FILE . "proc/$script.lock";
 
     if (!file_exists($lockfile)) {
         touch($lockfile);
-    } 
+    }
     $lockfp = fopen($lockfile, "r+");
 
-    if (flock($lockfp, LOCK_EX|LOCK_NB)) {  // acquire an exclusive lock
+    if (flock($lockfp, LOCK_EX | LOCK_NB)) {  // acquire an exclusive lock
         ftruncate($lockfp, 0);      // truncate file
         fwrite($lockfp, "Locked task '$script' on: " . date("D M d, Y G:i") . "\n");
         fflush($lockfp);            // flush output
@@ -378,19 +406,18 @@ function script_lock($script, $test = false) {
 }
 
 function logit($file, $message) {
-    $file = BASE_FILE . "logs/" . $file;
-    if ($file == "cli") {
-        $message = date("Y-m-d H:i:s") . " " . $message;
-        error_log($message);
-    } else {
-        $message = date("Y-m-d H:i:s") . " " . $message . "\n";
-        file_put_contents($file, $message, FILE_APPEND);
-    }
+    $message = date("Y-m-d H:i:s") . "\t" . $message . "\n";
+    if ($file == "cli")
+        print $message;
+    else
+        file_put_contents(BASE_FILE . "logs/" . $file, $message, FILE_APPEND);
 }
 
 function getActivePhrases() {
     $dbh = pdo_connect();
-    $sql = "SELECT DISTINCT(p.phrase) FROM tcat_query_phrases p, tcat_query_bins_phrases bp WHERE bp.endtime = '0000-00-00 00:00:00' AND p.id = bp.phrase_id";
+    $sql = "SELECT DISTINCT(p.phrase) FROM tcat_query_phrases p, tcat_query_bins_phrases bp, tcat_query_bins b
+                                      WHERE bp.endtime = '0000-00-00 00:00:00' AND p.id = bp.phrase_id
+                                            AND bp.querybin_id = b.id AND b.type != 'geotrack' AND b.active = 1";
     $rec = $dbh->prepare($sql);
     $rec->execute();
     $results = $rec->fetchAll(PDO::FETCH_COLUMN);
@@ -399,6 +426,118 @@ function getActivePhrases() {
     $results = array_unique($results);
     $dbh = false;
     return $results;
+}
+
+/*
+ * What type is a bin (track, geotrack, follow, onepercent)
+ */
+
+function getBinType($binname) {
+    $dbh = pdo_connect();
+    $sql = "SELECT `type` FROM tcat_query_bins WHERE querybin = :querybin";
+    $rec = $dbh->prepare($sql);
+    $rec->bindParam(':querybin', $binname);
+    $rec->execute();
+    $results = $rec->fetchAll(PDO::FETCH_COLUMN);
+    foreach ($results as $k => $v) {
+        return $v;
+    }
+    $dbh = false;
+    return false;
+}
+
+/*
+ * How many, if any, geobins are active?
+ */
+
+function geobinsActive() {
+    $dbh = pdo_connect();
+    $sql = "SELECT COUNT(*) AS cnt FROM tcat_query_bins WHERE `type` = 'geotrack' and active = 1";
+    $rec = $dbh->prepare($sql);
+    $rec->execute();
+    $results = $rec->fetchAll(PDO::FETCH_COLUMN);
+    foreach ($results as $k => $v) {
+        if ($k == 'cnt' && $v > 0) {
+            return true;
+        }
+    }
+    $dbh = false;
+    return false;
+}
+
+/*
+ * Does a longitude, latitude coordinate pair fit into a geobox (defined in the order southwest, northeast)?
+ */
+
+function coordinatesInsideBoundingBox($point_lng, $point_lat, $sw_lng, $sw_lat, $ne_lng, $ne_lat) {
+    $boxwkt = 'POLYGON((' . $sw_lng . ' ' . $sw_lat . ', '
+            . $sw_lng . ' ' . $ne_lat . ', '
+            . $ne_lng . ' ' . $ne_lat . ', '
+            . $ne_lng . ' ' . $sw_lat . ', '
+            . $sw_lng . ' ' . $sw_lat . '))';
+    $pointwkt = 'POINT(' . $point_lng . ' ' . $point_lat . ')';
+    $geobox = geoPHP::load($boxwkt, 'wkt');
+    $geopoint = geoPHP::load($pointwkt, 'wkt');
+    return $geobox->contains($geopoint);
+}
+
+/*
+ * Create a full location query string from multiple coordinate 'phrases' (geobox phrases)
+ */
+
+function getActiveLocationsImploded() {
+    $dbh = pdo_connect();
+    $sql = "SELECT phrase FROM tcat_query_phrases p, tcat_query_bins_phrases bp, tcat_query_bins b
+                                      WHERE bp.endtime = '0000-00-00 00:00:00' AND p.id = bp.phrase_id
+                                            AND bp.querybin_id = b.id AND b.type = 'geotrack' AND b.active = 1";
+    $rec = $dbh->prepare($sql);
+    $rec->execute();
+    $results = $rec->fetchAll(PDO::FETCH_COLUMN);
+    $locations = '';
+    foreach ($results as $k => $v) {
+        $locations .= $v . ",";
+    }
+    $locations = substr($locations, 0, -1);
+    $dbh = false;
+    return $locations;
+}
+
+/*
+ * Explode a geo location query string to an associative array of arrays
+ * 
+ * (0) => array ( sw_lng => ..
+ *                sw_lat => ..
+ *                ne_lng => ..
+ *                ne_lat => .. )
+ * (1) => ..etc
+ */
+
+function getGeoBoxes($track) {
+    $boxes = array();
+    $exp = explode(",", $track);
+    $latitude_expected = false;
+    $sw = true;
+    $box = array();
+    foreach ($exp as $e) {
+        if ($latitude_expected) {
+            $lat = $e;
+            if ($sw) {
+                $box['sw_lng'] = $lng;
+                $box['sw_lat'] = $lat;
+                $sw = false;
+            } else {
+                $box['ne_lng'] = $lng;
+                $box['ne_lat'] = $lat;
+                $boxes[] = $box;
+                $box = array();
+                $sw = true;
+            }
+        } else {
+            $lng = $e;
+        }
+        $latitude_expected = !$latitude_expected;
+    }
+    return $boxes;
 }
 
 function getActiveUsers() {
@@ -678,7 +817,6 @@ class Tweet {
     public $from_user_withheld_in_countries;    // not used as tweet database field
     public $withheld_copyright;
     public $withheld_scope;
-
     public $contributors;
     public $retweeted;
     public $retweeted_status;
@@ -688,7 +826,6 @@ class Tweet {
     public $place;
     public $geo;
     public $in_reply_to_user_id;
-
     public $user_mentions = array();
     public $hashtags = array();
     public $urls = array();
@@ -712,7 +849,7 @@ class Tweet {
         $t->created_at = $object->postedTime;
         $t->text = $object->body;
         if (isset($object->actor->location))
-             $t->location = $object->actor->location->displayName;
+            $t->location = $object->actor->location->displayName;
 
         $t->from_user_name = $object->actor->preferredUsername;
         $t->from_user_id = str_replace("id:twitter.com:", "", $object->actor->id);
@@ -759,7 +896,7 @@ class Tweet {
 
         // @todo: support for setting places in Gnip import
         $t->place_ids = array();
-        $t->places= array();
+        $t->places = array();
         // @todo: support extended media entities in Gnip import, and setting photo_size_xy, and media_typ
         $t->urls = $object->twitter_entities->urls;
         $t->user_mentions = $object->twitter_entities->user_mentions;
@@ -830,6 +967,7 @@ class Tweet {
         } else {
             $this->filter_level = 'none';
         }
+        $this->lang = $data["lang"];
         if (isset($data['possibly_sensitive'])) {
             $this->possibly_sensitive = $data["possibly_sensitive"];
         } else {
@@ -837,7 +975,7 @@ class Tweet {
         }
         $this->truncated = $data["truncated"];
         $this->place_ids = array();
-        $this->places= array();
+        $this->places = array();
         if (isset($data["place"]) && isset($data["place"]["id"])) {
             // at this point in time a tweet seems to be limited to a single place
             $this->place_ids[] = $data["place"]["id"];
@@ -855,7 +993,6 @@ class Tweet {
         }
 
         // tweet data (arrays) to object conversion
-        
         // a tweet text can contain multiple URLs, and multiple media URLs can be packed into a single link inside the tweet
         // all unpacked media link data is available under extended_entities->urls
         // all other link data is available under entities->urls
@@ -873,7 +1010,7 @@ class Tweet {
         }
         $extended = array();
         if (array_key_exists('extended_entities', $data) &&
-            array_key_exists('media', $data["extended_entities"])) {
+                array_key_exists('media', $data["extended_entities"])) {
             foreach ($data["extended_entities"]["media"] as $media) {
                 $u = array();
                 $u["url"] = $media["url"];
@@ -906,7 +1043,6 @@ class Tweet {
         }
 
         $this->fromComplete();
-
     }
 
     // maps the users, mentions and hashtags data in the object to their database table fields
@@ -974,9 +1110,8 @@ class Tweet {
             }
             $this->places = $list;                      // this array will populate the _places table
         }
-
     }
-    
+
     // checks whether this Tweet is in a particular bin in the database
     function isInBin($bin_name) {
         $dbh = pdo_connect();
@@ -994,26 +1129,31 @@ class TweetQueue {
 
     public $binColumnsCache;       // contains table structure of all active bins */
     public $queue;
-
     public $option_replace;
     public $option_delayed;
     public $option_ignore;
 
     function setoption($option, $value) {
-        if ($option == 'replace') { $this->option_replace = $value; }
-        if ($option == 'delayed') { $this->option_delayed = $value; }
-        if ($option == 'ignore') { $this->option_ignore = $value; }
+        if ($option == 'replace') {
+            $this->option_replace = $value;
+        }
+        if ($option == 'delayed') {
+            $this->option_delayed = $value;
+        }
+        if ($option == 'ignore') {
+            $this->option_ignore = $value;
+        }
     }
 
     function cacheBin($bin) {
         $dbh = pdo_connect();
-        $tables = array( 'tweets', 'mentions', 'urls', 'hashtags', 'withheld', 'places' );
+        $tables = array('tweets', 'mentions', 'urls', 'hashtags', 'withheld', 'places');
         foreach ($tables as $table) {
             $sql = "show columns from $bin" . "_$table";
             $rec = $dbh->prepare($sql);
             try {
                 $rec->execute();
-            } catch( PDOException $e) {
+            } catch (PDOException $e) {
                 // table does not exist, make an empty cache struct
                 $this->binColumnsCache[$bin][$table] = array();
                 continue;
@@ -1055,8 +1195,8 @@ class TweetQueue {
     }
 
     function push($tweet, $bin_name) {
-        $obj = array ( 'bin_name' => $bin_name,
-                       'tweet' => $tweet );
+        $obj = array('bin_name' => $bin_name,
+            'tweet' => $tweet);
         $this->queue[] = $obj;
     }
 
@@ -1065,7 +1205,8 @@ class TweetQueue {
     }
 
     function headMultiInsert($bin_name, $table_extension, $rowcount) {
-        if ($rowcount == 0) return '';
+        if ($rowcount == 0)
+            return '';
         $statement = ($this->option_replace) ? 'REPLACE ' : 'INSERT ';
         $statement .= ($this->option_delayed) ? 'DELAYED ' : '';
         $statement .= ($this->option_ignore && !$this->option_replace) ? 'IGNORE ' : '';        // never combine REPLACE INTO with IGNORE
@@ -1074,16 +1215,25 @@ class TweetQueue {
         $first = true;
         foreach ($fields as $f) {
             // for these tables the 'id' field is ignored, because it is not explicitely inserted, but is an auto_increment
-            if ($f == 'id' && ($table_extension == 'mentions' || $table_extension == 'hashtags' || $table_extension == 'urls' || $table_extension == 'withheld')) continue;
-            if (!$first) { $statement .= ","; } else { $first = false; }
+            if ($f == 'id' && ($table_extension == 'mentions' || $table_extension == 'hashtags' || $table_extension == 'urls' || $table_extension == 'withheld'))
+                continue;
+            if (!$first) {
+                $statement .= ",";
+            } else {
+                $first = false;
+            }
             $statement .= $f;
         }
         $statement .= " ) VALUES ";
         // add placeholder marks
         $count = count($this->binColumnsCache[$bin_name][$table_extension]);
-        if ($count == 0) return '';     // unknown table
-        // for these tables, again discount the 'id' field
-        if ($table_extension == 'mentions' || $table_extension == 'hashtags' || $table_extension == 'urls' || $table_extension == 'withheld') $count--;
+        if ($count == 0)
+            return '';     // unknown table
+
+            
+// for these tables, again discount the 'id' field
+        if ($table_extension == 'mentions' || $table_extension == 'hashtags' || $table_extension == 'urls' || $table_extension == 'withheld')
+            $count--;
         $statement .= rtrim(str_repeat("( " . rtrim(str_repeat("?,", $count), ',') . " ),", $rowcount), ',');
         return $statement;
     }
@@ -1106,14 +1256,15 @@ class TweetQueue {
                 $binlist[$bin_name]['places'] += count($obj['tweet']->places);
                 continue;
             }
-            if (!$this->hasCached($bin_name)) $this->cacheBin($bin_name);
-            $binlist[$bin_name] = array( 'tweets' => 1,
-                                         'hashtags' => count($obj['tweet']->hashtags),
-                                         'urls' => count($obj['tweet']->urls),
-                                         'mentions' => count($obj['tweet']->user_mentions),
-                                         'withheld' => count($obj['tweet']->withheld_in_countries),
-                                         'places' => count($obj['tweet']->places)
-                                       );
+            if (!$this->hasCached($bin_name))
+                $this->cacheBin($bin_name);
+            $binlist[$bin_name] = array('tweets' => 1,
+                'hashtags' => count($obj['tweet']->hashtags),
+                'urls' => count($obj['tweet']->urls),
+                'mentions' => count($obj['tweet']->user_mentions),
+                'withheld' => count($obj['tweet']->withheld_in_countries),
+                'places' => count($obj['tweet']->places)
+            );
         }
 
         // process the queue bin by bin
@@ -1121,20 +1272,28 @@ class TweetQueue {
         foreach ($binlist as $bin_name => $counts) {
 
             // first prepare the multiple insert statements for tweets, mentions, hashtags, urls, withheld, places
-            $statement = array(); $extensions = array( 'tweets', 'mentions', 'hashtags', 'urls', 'withheld', 'places' );
+            $statement = array();
+            $extensions = array('tweets', 'mentions', 'hashtags', 'urls', 'withheld', 'places');
             foreach ($extensions as $ext) {
                 $statement[$ext] = $this->headMultiInsert($bin_name, $ext, $counts[$ext]);
             }
-            $tweeti = 1; $tweetq = $dbh->prepare($statement['tweets']);
-            $hashtagsi = 1; $hashtagsq = $dbh->prepare($statement['hashtags']);
-            $urlsi = 1; $urlsq = $dbh->prepare($statement['urls']);
-            $mentionsi = 1; $mentionsq = $dbh->prepare($statement['mentions']);
-            $withheldi = 1; $withheldq = $dbh->prepare($statement['withheld']);
-            $placesi = 1; $placesq = $dbh->prepare($statement['places']);
+            $tweeti = 1;
+            $tweetq = $dbh->prepare($statement['tweets']);
+            $hashtagsi = 1;
+            $hashtagsq = $dbh->prepare($statement['hashtags']);
+            $urlsi = 1;
+            $urlsq = $dbh->prepare($statement['urls']);
+            $mentionsi = 1;
+            $mentionsq = $dbh->prepare($statement['mentions']);
+            $withheldi = 1;
+            $withheldq = $dbh->prepare($statement['withheld']);
+            $placesi = 1;
+            $placesq = $dbh->prepare($statement['places']);
 
             // go now and iterate the queue item by item
             foreach ($this->queue as $obj) {
-                if ($obj['bin_name'] !== $bin_name) continue;
+                if ($obj['bin_name'] !== $bin_name)
+                    continue;
 
                 $t = $obj['tweet'];
                 // read the tweets table structure from cache
@@ -1149,7 +1308,8 @@ class TweetQueue {
                     $fields = $this->binColumnsCache[$bin_name]['hashtags'];
                     foreach ($t->hashtags as $hashtag) {
                         foreach ($fields as $f) {
-                            if ($f == 'id') continue;
+                            if ($f == 'id')
+                                continue;
                             $hashtagsq->bindParam($hashtagsi++, $hashtag->$f);
                         }
                     }
@@ -1159,7 +1319,8 @@ class TweetQueue {
                     $fields = $this->binColumnsCache[$bin_name]['mentions'];
                     foreach ($t->user_mentions as $mention) {
                         foreach ($fields as $f) {
-                            if ($f == 'id') continue;
+                            if ($f == 'id')
+                                continue;
                             $mentionsq->bindParam($mentionsi++, $mention->$f);
                         }
                     }
@@ -1169,22 +1330,24 @@ class TweetQueue {
                     $fields = $this->binColumnsCache[$bin_name]['urls'];
                     foreach ($t->urls as $url) {
                         foreach ($fields as $f) {
-                            if ($f == 'id') continue;
+                            if ($f == 'id')
+                                continue;
                             $urlsq->bindParam($urlsi++, $url->$f);
                         }
                     }
                 }
 
                 if ($statement['withheld'] !== '') {
-                        if ($t->withheld_in_countries && !empty($t->withheld_in_countries) && !empty($this->binColumnsCache[$bin_name]['withheld'])) {
-                            $fields = $this->binColumnsCache[$bin_name]['withheld'];
-                            foreach ($t->withheld_in_countries as $withheld) {
-                                foreach ($fields as $f) {
-                                    if ($f == 'id') continue;
-                                    $withheldq->bindParam($withheldi++, $withheld->$f);
-                                }
+                    if ($t->withheld_in_countries && !empty($t->withheld_in_countries) && !empty($this->binColumnsCache[$bin_name]['withheld'])) {
+                        $fields = $this->binColumnsCache[$bin_name]['withheld'];
+                        foreach ($t->withheld_in_countries as $withheld) {
+                            foreach ($fields as $f) {
+                                if ($f == 'id')
+                                    continue;
+                                $withheldq->bindParam($withheldi++, $withheld->$f);
                             }
                         }
+                    }
                 }
                 if ($statement['places'] !== '') {
 
@@ -1196,53 +1359,49 @@ class TweetQueue {
                             }
                         }
                     }
-
                 }
-
-
-
             }
 
             // finaly insert the tweets and other data
             if ($statement['tweets'] !== '') {
                 try {
-                    $tweetq->execute(); 
-                } catch( PDOException $e) {
+                    $tweetq->execute();
+                } catch (PDOException $e) {
                     $this->reportPDOError($e, $bin_name . '_tweets');
                 }
             }
             if ($statement['hashtags'] !== '') {
                 try {
-                $hashtagsq->execute();
-                } catch( PDOException $e) {
+                    $hashtagsq->execute();
+                } catch (PDOException $e) {
                     $this->reportPDOError($e, $bin_name . '_hashtags');
                 }
             }
             if ($statement['urls'] !== '') {
                 try {
-                $urlsq->execute();
-                } catch( PDOException $e) {
+                    $urlsq->execute();
+                } catch (PDOException $e) {
                     $this->reportPDOError($e, $bin_name . '_urls');
                 }
             }
             if ($statement['mentions'] !== '') {
                 try {
-                $mentionsq->execute();
-                } catch( PDOException $e) {
+                    $mentionsq->execute();
+                } catch (PDOException $e) {
                     $this->reportPDOError($e, $bin_name . '_mentions');
                 }
             }
             if ($statement['withheld'] !== '') {
                 try {
-                $withheldq->execute();
-                } catch( PDOException $e) {
+                    $withheldq->execute();
+                } catch (PDOException $e) {
                     $this->reportPDOError($e, $bin_name . '_withheld');
                 }
             }
             if ($statement['places'] !== '') {
                 try {
-                $placesq->execute();
-                } catch( PDOException $e) {
+                    $placesq->execute();
+                } catch (PDOException $e) {
                     $this->reportPDOError($e, $bin_name . '_places');
                 }
             }
@@ -1251,7 +1410,6 @@ class TweetQueue {
                 $pid = getmypid();
                 file_put_contents(BASE_FILE . "proc/" . CAPTURE . ".procinfo", $pid . "|" . time());
             }
-
         }
 
         $dbh = null;
@@ -1415,6 +1573,14 @@ function tracker_run() {
         logit(CAPTURE . ".error.log", "your php installation does not support signal handlers. graceful reload will not work");
     }
 
+    // sanity check for geo bins functions
+    if (geobinsActive() && !geophp_sane()) {
+        logit(CAPTURE . ".error.log", "refusing to track until geobins are stopped or geo is functional");
+        exit(1);
+    } else {
+        logit(CAPTURE . ".error.log", "geoPHP library is fully functional");
+    }
+
     global $ratelimit, $exceeding, $ex_start, $last_insert_id;
 
     $ratelimit = 0;     // rate limit counter since start of script
@@ -1438,13 +1604,25 @@ function tracker_run() {
 
     // prepare queries
     if (CAPTURE == "track") {
+
+        // check for geolocation bins
+        $locations = geobinsActive() ? getActiveLocationsImploded() : false;
+
+        // assemble query
         $querylist = getActivePhrases();
-        if (empty($querylist)) {
+        if (empty($querylist) && !geobinsActive()) {
             logit(CAPTURE . ".error.log", "empty query list, aborting!");
             return;
         }
         $method = $networkpath . '1.1/statuses/filter.json';
-        $params = array("track" => implode(",", $querylist));
+        $track = implode(",", $querylist);
+        $params = array();
+        if (geobinsActive()) {
+            $params['locations'] = $locations;
+        }
+        if (!empty($querylist)) {
+            $params['track'] = $track;
+        }
     } elseif (CAPTURE == "follow") {
         $querylist = getActiveUsers();
         if (empty($querylist)) {
@@ -1547,7 +1725,8 @@ function tracker_streamCallback($data, $length, $metrics) {
             unset($data['limit']);
         }
 
-        if (empty($data)) return;   // sometimes we only get rate limit info
+        if (empty($data))
+            return;   // sometimes we only get rate limit info
 
         $capturebucket[] = $data;
         if (count($capturebucket) == 100 || $now > $lastinsert + 5) {
@@ -1568,11 +1747,15 @@ function processtweets($capturebucket) {
 
     $querybins = getActiveBins();
 
+    // cache bin types
+    $bintypes = array();
+    foreach ($querybins as $binname => $queries) $bintypes[$binname] = getBinType($binname);
+
     // running through every single tweet
     foreach ($capturebucket as $data) {
 
         if (!array_key_exists('entities', $data)) {
-           
+
             // unexpected/irregular tweet data
             if (array_key_exists('delete', $data)) {
                 // a tweet has been deleted. @todo: process
@@ -1587,6 +1770,13 @@ function processtweets($capturebucket) {
         // we run through every bin to check whether the received tweets fit
         foreach ($querybins as $binname => $queries) {
 
+            $geobin = (isset($bintypes[$binname]) && $bintypes[$binname] == 'geotrack');
+
+            if ($geobin && (!array_key_exists('geo_enabled', $data['user']) || $data['user']['geo_enabled'] !== true)) {
+                // in geobins, process only geo tweets
+                continue;
+            }
+
             $found = false;
 
             if (CAPTURE == "track") {
@@ -1595,39 +1785,151 @@ function processtweets($capturebucket) {
 
                 foreach ($queries as $query => $track) {
 
-                    $pass = false;
+                    if ($geobin) {
 
-                    // check for queries with more than one word, but go around quoted queries
-                    if (preg_match("/ /", $query) && !preg_match("/'/", $query)) {
-                        $tmplist = explode(" ", $query);
+                        $boxes = getGeoBoxes($track);
 
-                        $all = true;
+                        // look for geolocation matches
 
-                        foreach ($tmplist as $tmp) {
-                            if (!preg_match("/" . $tmp . "/i", $data["text"])) {
-                                $all = false;
-                                break;
+                        /*
+                         * Some notes on geolocation tracking
+                         *
+                         * Geolocation tracking is done inside the capture role: track
+                         * Geolocation query bins have a special type: geotrack
+                         * Geolocation phrases have a specific format: 
+                         *             = these phrases are a chain of geoboxes defined as 4 comma separated values (sw long, sw lat, ne long, ne lat)
+                         *             = multiple world areas can thus be defined per bin
+                         *
+                         * Fetching (from Twitter)
+                         *
+                         * 1) Twitter will give us all the tweets which have excplicit GPS coordinates inside one of our queried areas.
+                         * 2) Additionaly Twitter give us those tweets with a user 'place' definition. A place (i.e. Paris) is itself a (set of) gps polygons
+                         *    Twitter returns the tweets if one of these place polygons coverts the same area as our geo boxes.  
+                         *
+                         * And matching (by us)
+                         *
+                         * 1) These tweets will be put in the bin if the coordinate pair (longitude, latitude) fits in any one of the defined geoboxes in the bin.
+                         * 2) These tweets will be put in the bin if the geobox is _not_ completely subsumed by the place (example: the place is France and the geobox is Paris), but the geobox does overlap the place polygon or the geobox subsumes the place polygon.
+                         *
+                         */
+
+                        if ($data["geo"] != null) {
+                            $tweet_lat = $data["geo"]["coordinates"][0];
+                            $tweet_lng = $data["geo"]["coordinates"][1];
+
+                            // does the tweet geo data fit in on of the boxes?
+
+                            foreach ($boxes as $box) {
+                                if (coordinatesInsideBoundingBox($tweet_lng, $tweet_lat, $box['sw_lng'], $box['sw_lat'], $box['ne_lng'], $box['ne_lat'])) {
+                                    // logit(CAPTURE . ".error.log", "(debug) tweet with lng $tweet_lng and lat $tweet_lat versus (sw: " . $box['sw_lng'] . "," . $box['sw_lat'] . " ne: " . $box['ne_lng'] . "," . $box['ne_lat'] . ") matched to be inside the area");
+                                    $found = true;
+                                    break;
+                                } else {
+                                    // logit(CAPTURE . ".error.log", "(debug) tweet with lng $tweet_lng and lat $tweet_lat versus (sw: " . $box['sw_lng'] . "," . $box['sw_lat'] . " ne: " . $box['ne_lng'] . "," . $box['ne_lat'] . ") falls outside the area");
+                                }
+                            }
+                        } else { 
+
+                            // this is a gps tracking query, but the tweet has no gps geo data
+                            // Twitter may have matched this tweet based on the user-defined location data
+                           
+                            if (array_key_exists('place', $data) && is_array($data['place']) && array_key_exists('bounding_box', $data['place'])) {
+
+                                // Make a geoPHP object of the polygon(s) defining the place, by using a WKT (well-known text) string
+                                $wkt = 'POLYGON(';
+                                $polfirst = true;
+                                foreach ($data['place']['bounding_box']['coordinates'] as $p => $pol) {
+                                    if ($polfirst) {
+                                        $polfirst = false;
+                                    } else {
+                                        $wkt .= ', ';
+                                    }
+                                    $wkt .= '(';
+                                    $first = true;
+                                    $first_lng = 0;
+                                    $first_lat = 0;
+                                    foreach ($data['place']['bounding_box']['coordinates'][$p] as $i => $coords) {
+                                        $point_lng = $coords[0];
+                                        $point_lat = $coords[1];
+                                        if ($first) {
+                                            $first = false;
+                                            $first_lng = $point_lng;
+                                            $first_lat = $point_lat;
+                                        } else {
+                                            $wkt .= ', ';
+                                        }
+                                        $wkt .= $point_lng . ' ' . $point_lat;
+                                    }
+                                    // end where we started
+                                    $wkt .= ', ' . $first_lng . ' ' . $first_lat;
+                                    $wkt .= ')';
+                                }
+                                $wkt .= ')';
+                                $place = geoPHP::load($wkt, 'wkt');
+
+                                // iterate over geoboxes in our track
+                                // place should not spatially contain our box, but it should overlap with it
+                                foreach ($boxes as $box) {
+                                    // 'POLYGON((x1 y1, x1 y2, x2 y2, x2 y1, x1 y1))'
+                                    $boxwkt = 'POLYGON((' . $box['sw_lng'] . ' ' . $box['sw_lat'] . ', '
+                                            . $box['sw_lng'] . ' ' . $box['ne_lat'] . ', '
+                                            . $box['ne_lng'] . ' ' . $box['ne_lat'] . ', '
+                                            . $box['ne_lng'] . ' ' . $box['sw_lat'] . ', '
+                                            . $box['sw_lng'] . ' ' . $box['sw_lat'] . '))';
+                                    $versus = geoPHP::load($boxwkt, 'wkt');
+                                    $contains = $place->contains($versus);
+                                    $boxcontains = $versus->contains($place);
+                                    $overlaps = $place->overlaps($versus);
+                                    if (!$contains && ($boxcontains || $overlaps)) {
+                                        // logit(CAPTURE . ".error.log", "place polygon $wkt allies with geobox $boxwkt");
+                                        $found = true;
+                                        break;
+                                    }
+                                }
                             }
                         }
 
-                        // only if all words are found
-                        if ($all == true) {
-                            $pass = true;
+                        if ($found) {
+                            break;
                         }
                     } else {
 
-                        // treat quoted queries as single words
-                        $query = preg_replace("/'/", "", $query);
+                        // look for keyword matches
 
-                        if (preg_match("/" . $query . "/i", $data["text"])) {
-                            $pass = true;
+                        $pass = false;
+
+                        // check for queries with more than one word, but go around quoted queries
+                        if (preg_match("/ /", $query) && !preg_match("/'/", $query)) {
+                            $tmplist = explode(" ", $query);
+
+                            $all = true;
+
+                            foreach ($tmplist as $tmp) {
+                                if (!preg_match("/" . $tmp . "/i", $data["text"])) {
+                                    $all = false;
+                                    break;
+                                }
+                            }
+
+                            // only if all words are found
+                            if ($all == true) {
+                                $pass = true;
+                            }
+                        } else {
+
+                            // treat quoted queries as single words
+                            $query = preg_replace("/'/", "", $query);
+
+                            if (preg_match("/" . $query . "/i", $data["text"])) {
+                                $pass = true;
+                            }
                         }
-                    }
 
-                    // at the first fitting query, we break
-                    if ($pass == true) {
-                        $found = true;
-                        break;
+                        // at the first fitting query, we break
+                        if ($pass == true) {
+                            $found = true;
+                            break;
+                        }
                     }
                 }
             } elseif (CAPTURE == "follow") {
@@ -1648,7 +1950,6 @@ function processtweets($capturebucket) {
             $tweet = new Tweet();
             $tweet->fromJSON($data);
             $tweetQueue->push($tweet, $binname);
-
         }
     }
     $tweetQueue->insertDB();
@@ -1694,8 +1995,10 @@ function getRESTKey($current_key, $resource = 'statuses', $query = 'lookup') {
 
     $start_key = $current_key;
     $remaining = getRemainingForKey($current_key, $resource, $query);
-    if ($remaining)
+    if ($remaining) {
+        logit("cli", "key: " . $current_key . "\t" . "remaining requests:" . $remaining);
         return array('key' => $current_key, 'remaining' => $remaining);
+    }
     do {
         $current_key++;
         if ($current_key >= count($twitter_keys)) {
@@ -1706,6 +2009,7 @@ function getRESTKey($current_key, $resource = 'statuses', $query = 'lookup') {
         $remaining = getRemainingForKey($current_key, $resource, $query);
     } while ($remaining == 0);
 
+    logit("cli", "key: " . $current_key . "\t" . "requests remaining:" . $remaining);
     return array('key' => $current_key, 'remaining' => $remaining);
 }
 
@@ -1713,7 +2017,6 @@ function getRemainingForKey($current_key, $resource = 'statuses', $query = 'look
     global $twitter_keys;
 
     // rate limit test
-
     $tmhOAuth = new tmhOAuth(array(
                 'consumer_key' => $twitter_keys[$current_key]['twitter_consumer_key'],
                 'consumer_secret' => $twitter_keys[$current_key]['twitter_consumer_secret'],
@@ -1734,7 +2037,8 @@ function getRemainingForKey($current_key, $resource = 'statuses', $query = 'look
         $data = json_decode($tmhOAuth->response['response'], true);
         return $data['resources'][$resource]["/$resource/$query"]['remaining'];
     } else {
-        echo "Warning: API key $current_key seems invalid (cannot receive rate limit status)\n";
+        if ($tmhOAuth->response['code'] != 429) // 419 is too many requests
+            logit("cli", "Warning: API key $current_key got response code " . $tmhOAuth->response['code']);
         return 0;
     }
 }

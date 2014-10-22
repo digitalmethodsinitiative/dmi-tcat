@@ -55,7 +55,6 @@ if (defined('ANALYSIS_URL'))
             "&whattodo=" + $("#whattodo").val() +
             "&graph_resolution=" + $("input[name=graph_resolution]:checked").val();
 
-
         document.location.href = _url;
     }
     function saveSvg(id){
@@ -101,6 +100,15 @@ if (defined('ANALYSIS_URL'))
             selectedValue = selected.val();
         var inter = "&interval="+selectedValue+"&customInterval="+$('[name="customInterval"]').val();
         return inter;
+    }
+    function getExportSettings() {
+        var exportSettings = "&exportSettings=";
+        $('input:checkbox').each(function () {
+            if(this.checked) 
+                exportSettings += $(this).val() + ",";
+        });
+        return exportSettings;
+        
     }
     $(document).ready(function(){
         $('#form').submit(function(){
@@ -210,7 +218,7 @@ if (defined('ANALYSIS_URL'))
                         </tr>
                         <?php if (dbserver_has_geo_functions()) { ?>
                             <tr>
-                                <td class="tbl_head">GEO bounding polygon: </td><td><input type="text" id="ipt_geo_query" size="60" name="geo_query"  value="<?php echo $geo_query; ?>" /> POLYGON in <a href='http://en.wikipedia.org/wiki/Well-known_text'>WKT</a> format.</td>
+                                <td class="tbl_head">GEO bounding polygon: </td><td><input type="text" id="ipt_geo_query" size="60" name="geo_query"  value="<?php echo $geo_query; ?>" /> (POLYGON in <a href='http://en.wikipedia.org/wiki/Well-known_text'>WKT</a> format.)</td>
                             </tr>
                         <?php } ?>
                         <tr>
@@ -239,7 +247,6 @@ if (defined('ANALYSIS_URL'))
             $data = mysql_fetch_assoc($sqlresults);
             $numtweets = $data["count"];
 
-            //echo $sql;
             // count tweets containing links
             $sql = "SELECT count(distinct(t.id)) AS count FROM " . $esc['mysql']['dataset'] . "_urls u, " . $esc['mysql']['dataset'] . "_tweets t ";
             $where = "u.tweet_id = t.id AND ";
@@ -612,7 +619,7 @@ foreach ($linedata as $key => $value) {
                     <div class="txt_desc">Use: see wether the users mentioned are also those who tweet a lot.</div>
                     <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('user-mention'+getInterval()); sendUrl('index.php');return false;">launch</a></div>
 
-					<hr />
+                    <hr />
 
                     <h3>Source frequency</h3>
                     <div class="txt_desc">List the frequency of tweet software sources per interval.</div>
@@ -656,21 +663,31 @@ foreach ($linedata as $key => $value) {
                 <div class="if_export_block">
 
                     <div class="txt_desc">All tweet exports come as a .csv file which you can open in Excel or similar.</div>
+                    <div class='txt_desc' style='background-color: #eee; padding: 5px;'>Here you can select additional columns for the tweet exports (more = slower):
+                        <form style='display:inline;'>
+                            <?php
+                            $exportSettings = array();
+                            if (isset($_GET['exportSettings']))
+                                $exportSettings = $_GET['exportSettings'];
+                            ?>
+                            <?php if ($show_url_export) { ?>
+                                <input type='checkbox' name="exportSettings" value="urls" <?php if (array_search("urls", $exportSettings) !== false) print "CHECKED"; ?>>URLs and media</input>
+                            <?php } ?>
+                            <input type='checkbox' name="exportSettings" value="mentions" <?php if (array_search("mentions", $exportSettings) !== false) print "CHECKED"; ?>>mentions</input>
+                            <input type='checkbox' name="exportSettings" value="hashtags" <?php if (array_search("hashtags", $exportSettings) !== false) print "CHECKED"; ?>>hashtags</input>
+                        </form>
+                    </div>
 
                     <h3>Random set of tweets from selection</h3>
                     <div class="txt_desc">Contains 1000 randomly selected tweets and information about them (user, date created, ...).</div>
                     <div class="txt_desc">Use: a random subset of tweets is a representative sample that can be manually classified and coded much more easily than the full set.</div>
-                    <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('random_tweets');sendUrl('mod.random_tweets.php');return false;">launch</a></div>
-
+                    <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('export_tweets&random=1'+getExportSettings());sendUrl('mod.export_tweets.php');return false;">launch</a></div>
                     <hr />
 
                     <h3>Export all tweets from selection</h3>
                     <div class="txt_desc">Contains all tweets and information about them (user, date created, ...).</div>
                     <div class="txt_desc">Use: spend time with your data.</div>
-                    <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('export_tweets');sendUrl('mod.export_tweets.php');return false;">export</a></div>
-                    <?php if ($show_url_export) { ?>
-                        <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('export_tweets&includeUrls=1');sendUrl('mod.export_tweets.php');return false;">export with URLs</a> (much slower)</div>
-                    <?php } ?>
+                    <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('export_tweets'+getExportSettings());sendUrl('mod.export_tweets.php');return false;">export</a></div>
                     <hr />
 
                     <?php if ($show_lang_export) { ?>
@@ -684,19 +701,18 @@ foreach ($linedata as $key => $value) {
                         <hr />
                     <?php } ?>
 
-
                     <h3>List each individual retweet</h3>
                     <div class="txt_desc">Lists all retweets (and all the tweets metadata like follower_count) chronologically.</div>
                     <div class="txt_desc">Use: reconstruct retweet chains.</div>
                     <div class="txt_desc"><b>Warning:</b> This script is slow. Small datasets only!</div>
-                    <div class="txt_link"> &raquo; <a href="" onclick="var minf = askRetweetFrequency(); $('#whattodo').val('retweets_chain&minf='+minf);sendUrl('mod.retweets_chain.php');return false;">launch</a></div>
+                    <div class="txt_link"> &raquo; <a href="" onclick="var minf = askRetweetFrequency(); $('#whattodo').val('retweets_chain&minf='+minf+getExportSettings());sendUrl('mod.retweets_chain.php');return false;">launch</a></div>
 
                     <hr />
 
                     <h3>Only tweets with lat/lon</h3>
                     <div class="txt_desc">Contains only geo-located tweets.</div>
                     <div class="txt_desc"></div>
-                    <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('location');sendUrl('mod.location.php');return false;">launch</a></div>
+                    <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('export_tweets&location=1'+getExportSettings());sendUrl('mod.export_tweets.php');return false;">launch</a></div>
 
                     <hr />
 

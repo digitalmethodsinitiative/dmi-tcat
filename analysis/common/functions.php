@@ -269,6 +269,7 @@ function sqlSubset($where = NULL) {
             $sql .= ") AND ";
         }
     }
+
     if (!empty($esc['mysql']['geo_query']) && dbserver_has_geo_functions()) {
 
         $polygon = "POLYGON((" . $esc['mysql']['geo_query'] . "))";
@@ -319,6 +320,7 @@ function sqlSubset($where = NULL) {
     }
     $sql .= " t.created_at >= '" . $esc['datetime']['startdate'] . "' AND t.created_at <= '" . $esc['datetime']['enddate'] . "' ";
     //print $sql."<br>"; die;
+
     return $sql;
 }
 

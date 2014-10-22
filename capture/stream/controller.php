@@ -29,10 +29,16 @@ $commands = array();
 foreach ($roles as $role) {
     $commands[$role] = array();
 }
+if (array_key_exists('track', $commands) && geobinsActive() && geophp_sane()) {
+    $geoActive = true;
+} else {
+    $geoActive = false;
+}
 $rec = $dbh->prepare("SHOW TABLES LIKE 'tcat_controller_tasklist'");
 if ($rec->execute() && $rec->rowCount() > 0) {
     $sql = "select task, instruction from tcat_controller_tasklist order by id asc lock in share mode";
     foreach ($dbh->query($sql) as $row) {
+        if ($geoActive && $row['task'] = 'geotrack') $row['task'] = 'track';
         if (!array_key_exists($row['task'], $commands)) {
             continue;
         }
