@@ -197,7 +197,7 @@ require_once './common/Gexf.class.php';
 	        }
 
 			// voting for keeping the SQL output, nice way to trace results for expert users
-	        echo "sql query: " . $sql . " ";
+	        echo "sql query: " . $sql . "<br />";
 
 
 	        $sqlresults = mysql_query($sql);
