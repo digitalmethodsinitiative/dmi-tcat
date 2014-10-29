@@ -80,17 +80,15 @@ foreach ($roles as $role) {
     $running = false;
     if (file_exists(BASE_FILE . "proc/$role.procinfo")) {
 
-        $procfile = file_get_contents(BASE_FILE . "proc/$role.procinfo");
-
-        $tmp = explode("|", $procfile);
-        $pid = $tmp[0];
-        $last = $tmp[1];
+        $procfile = read_procfile(BASE_FILE . "proc/$role.procinfo");
+        $pid = $procfile['pid'];
+        $last = $procfile['last'];
+	    if ($pid == -1) exit();
 
         $running = (script_lock($role, true) !== true);
         
         if($running)
             logit("controller.log", "script $role is running with pid [" . $pid . "] and has been idle for " . (time() - $last) . " seconds");
-
 
         // check whether the process has been idle for too long
         $idled = ($last < (time() - $idletime)) ? true : false;
@@ -178,6 +176,27 @@ foreach ($roles as $role) {
             $thislockfp = script_lock('controller');
         }
     }
+}
+
+function read_procfile($filename) {
+    $procfile = array(); $n = 0;
+    for ( ;; ) {
+        $contents = file_get_contents($filename);
+    	if (isset($contents) && strlen($contents) > 0) {
+          	$tmp = explode("|", $contents);
+         	$procfile['pid'] = $tmp[0];
+		    $procfile['last'] = $tmp[1];
+		    break;
+	    }
+	    if (++$n == 4) {
+		    logit("controller.log", "cannot read pid|time from $filename");
+		    $procfile['pid'] = -1;
+		    $procfile['last'] = -1;
+		    break;
+	    }
+	    usleep(330000);
+    }
+    return $procfile;
 }
 
 ?>
