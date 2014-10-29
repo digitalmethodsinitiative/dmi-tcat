@@ -211,7 +211,7 @@ $lastRateLimitHit = getLastRateLimitHit();
             echo '<td valign="top">';
             if ($bin->type != "onepercent" &&
                 array_search($bin->type, $captureroles) !== false ||
-                array_search('track', $captureroles) !== false && $bin->type = "geotrack") {
+                array_search('track', $captureroles) !== false && $bin->type == "geotrack") {
                 echo '<a href="" onclick="sendModify(\'' . $bin->id . '\',\'' . addslashes(implode(",", $activePhraselist)) . '\',\'' . $bin->active . '\',\'' . $bin->type . '\'); return false;">modify ';
                 if ($bin->type == 'follow') {
                     echo 'users';
@@ -219,13 +219,13 @@ $lastRateLimitHit = getLastRateLimitHit();
                     echo 'phrases';
                 } elseif ($bin->type == 'geotrack') {
                     echo 'geoboxes';
-                }
+                } else
                 echo '</a>';
             }
             echo '</td>';
             echo '<td valign="top">';
             if (array_search($bin->type, $captureroles) !== false ||
-                array_search('track', $captureroles) !== false && $bin->type = "geotrack") {
+                array_search('track', $captureroles) !== false && $bin->type == "geotrack") {
                 if ($bin->type == "geotrack") {
                     echo '<a href="" onclick="sendPause(\'' . $bin->id . '\',\'' . $action . '\',\'' . 'track\',1' . '); return false;">' . $action . '</a>';
                 } else {
