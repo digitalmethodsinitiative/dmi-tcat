@@ -784,6 +784,13 @@ foreach ($linedata as $key => $value) {
 
                     <?php if ($show_url_export) { ?>
                         <hr />
+                        <h3>Bipartite URL-user graph</h3>
+                        <div class="txt_desc">Produces a <a href="http://en.wikipedia.org/wiki/Bipartite_graph">bipartite graph</a> based on co-occurence of URLS and users. If a user wrote a tweet with a certain URL, there will be a link between that user and the URL.
+                            The more often they appear together, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>").</div>
+                        <div class="txt_desc">Use: explore the relations between users and URLs, find and analyze which users group around which URLs.</div>
+                        <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('url_user');sendUrl('mod.url_user.php');return false;">launch</a></div>
+
+                        <hr />
 
                         <h3>Bipartite hashtag-URL graph</h3>
                         <div class="txt_desc">Creates a .csv file that contains URLs and the number of times they have co-occured with a particular hashtag.</div>
