@@ -416,7 +416,7 @@ function generate($what, $filename) {
                     $group = strftime("%Y-%m-%d %Hh", strtotime($time));
                     break;
                 case "weekly":
-                    $group = strftime("%Y-%m-%d %u", strtotime($time));
+                    $group = strftime("%Y %u", strtotime($time));
                     break;
                 case "monthly":
                     $group = strftime("%Y-%m", strtotime($time));
