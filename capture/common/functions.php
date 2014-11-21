@@ -948,8 +948,8 @@ class Tweet {
         $this->from_user_favourites_count = $data["user"]["favourites_count"];
         $this->source = $data["source"];
         $this->location = $data["user"]["location"];
-        $this->geo_lat = 0;
-        $this->geo_lng = 0;
+        $this->geo_lat = null;
+        $this->geo_lng = null;
         if ($data["geo"] != null) {
             $this->geo_lat = $data["geo"]["coordinates"][0];
             $this->geo_lng = $data["geo"]["coordinates"][1];
