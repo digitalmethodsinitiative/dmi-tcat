@@ -959,6 +959,8 @@ class Tweet {
         if (isset($data["retweeted_status"])) {
             $this->retweet_id = $data["retweeted_status"]["id_str"];
         }
+        $this->retweet_count = $data["retweet_count"];
+        $this->favorite_count = $data["favorite_count"];
         $this->to_user_id = $data["in_reply_to_user_id_str"];
         $this->to_user_name = $data["in_reply_to_screen_name"];
         $this->in_reply_to_status_id = $data["in_reply_to_status_id_str"];
