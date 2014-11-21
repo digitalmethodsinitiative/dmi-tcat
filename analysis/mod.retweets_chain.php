@@ -40,7 +40,7 @@ require_once './common/functions.php';
         fputs($file, chr(239) . chr(187) . chr(191));
 
         // write header
-        $header = "id,time,created_at,from_user_name,text,filter_level,possibly_sensitive,withheld_copyright,withheld_scope,truncated,favorite_count,lang,to_user_name,in_reply_to_status_id,source,location,lat,lng,from_user_id,from_user_realname,from_user_verified,from_user_description,from_user_url,from_user_profile_image_url,from_user_utcoffset,from_user_timezone,from_user_lang,from_user_follower_count,from_user_friend_count,from_user_favourites_count,from_user_listed,from_user_withheld_scope,from_user_created_at";
+        $header = "id,time,created_at,from_user_name,text,filter_level,possibly_sensitive,withheld_copyright,withheld_scope,truncated,favorite_count,lang,to_user_name,in_reply_to_status_id,source,location,lat,lng,from_user_id,from_user_realname,from_user_verified,from_user_description,from_user_url,from_user_profile_image_url,from_user_utcoffset,from_user_timezone,from_user_lang,from_user_followercount,from_user_friendcount,from_user_favourites_count,from_user_listed,from_user_withheld_scope,from_user_created_at";
         if (array_search("urls", $exportSettings) !== false)
             $header .= ",urls,urls_expanded,urls_followed,domains,HTTP status code, url_is_media_upload";
         if (array_search("mentions", $exportSettings) !== false)
@@ -101,8 +101,8 @@ require_once './common/functions.php';
                             (isset($data['from_user_utcoffset']) ? $data['from_user_utcoffset'] : "") . "," .
                             (isset($data['from_user_timezone']) ? $data['from_user_timezone'] : "") . "," .
                             "\"" . $data['from_user_lang'] . "\"," .
-                            (isset($data['from_user_follower_count']) ? $data['from_user_follower_count'] : "") . "," .
-                            (isset($data['from_user_friend_count']) ? $data['from_user_friend_count'] : "") . "," .
+                            (isset($data['from_user_followercount']) ? $data['from_user_followercount'] : "") . "," .
+                            (isset($data['from_user_friendcount']) ? $data['from_user_friendcount'] : "") . "," .
                             (isset($data['from_user_favourites_count']) ? $data['from_user_favourites_count'] : "") . "," .
                             (isset($data['from_user_listed']) ? $data['from_user_listed'] : "") . "," .
                             (isset($data['from_user_withheld_scope']) ? $data['from_user_withheld_scope'] : "") . "," .
