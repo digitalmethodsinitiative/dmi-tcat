@@ -154,6 +154,8 @@ if (defined('ANALYSIS_URL'))
                     foreach ($datasets as $key => $set) {
                         if ($set['type'] == "track") {
                             $ordered_datasets["keyword captures"][$key] = $set;
+                        } elseif ($set['type'] == "geotrack") {
+                            $ordered_datasets["geo captures"][$key] = $set;
                         } elseif ($set['type'] == "follow") {
                             $ordered_datasets["user captures"][$key] = $set;
                         } elseif ($set['type'] == "onepercent") {
