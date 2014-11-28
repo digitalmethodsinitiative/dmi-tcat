@@ -623,7 +623,7 @@ foreach ($linedata as $key => $value) {
 
                     <hr />
 
-                    <h3>Source frequency</h3>
+                    <h3>Twitter client frequency</h3>
                     <div class="txt_desc">List the frequency of tweet software sources per interval.</div>
                     <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('sources'+getInterval());sendUrl('mod.sources.stats.php');return false;">launch</a></div>
 
