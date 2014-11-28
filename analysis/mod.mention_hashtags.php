@@ -58,11 +58,13 @@ require_once './common/Gexf.class.php';
         foreach ($userHashtags as $user => $hashtags) {
             foreach ($hashtags as $hashtag => $frequency) {
                 $node1 = new GexfNode($user);
+		        $node1->id = md5('n-user_'.$user);
                 $node1->addNodeAttribute("type", 'user', $type = "string");
                 $node1->addNodeAttribute("userFrequency", $userCount[$user], $type = "int");
                 $node1->addNodeAttribute("hashtagFrequency", 0, $type = "int");
                 $gexf->addNode($node1);
                 $node2 = new GexfNode($hashtag);
+		        $node2->id = md5('n-hashtag_'.$hashtag);
                 $node2->addNodeAttribute("type", 'hashtag', $type = "string");
                 $node2->addNodeAttribute("userFrequency", 0, $type = "int");
                 $node2->addNodeAttribute("hashtagFrequency", $hashtagCount[$hashtag], $type = "int");
