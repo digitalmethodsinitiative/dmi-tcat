@@ -213,7 +213,7 @@ if (defined('ANALYSIS_URL'))
                             <td class="tbl_head">From user: </td><td><input type="text" id="ipt_from_user" size="60" name="from_user_name"  value="<?php echo $from_user_name; ?>" /> (empty: from any user*)</td>
                         </tr>
                         <tr>
-                            <td class="tbl_head">From twitter client: </td><td><input type="text" id="ipt_from_source" size="60" name="from_source"  value="<?php echo $from_source; ?>" /> (empty: from any user*)</td>
+                            <td class="tbl_head">From twitter client: </td><td><input type="text" id="ipt_from_source" size="60" name="from_source"  value="<?php echo $from_source; ?>" /> (empty: from any client*)</td>
                         </tr>
                         <tr>
                             <td class="tbl_head">(Part of) URL: </td><td><input type="text" id="ipt_url_query" size="60" name="url_query"  value="<?php echo $url_query; ?>" /> (empty: any or all URLs*)</td>
