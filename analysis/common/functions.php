@@ -3,15 +3,17 @@
 $connection = false;
 
 db_connect($hostname, $dbuser, $dbpass, $database);
-$datasets = get_all_datasets();
 
 // catch parameters
 if (isset($_GET['dataset']) && !empty($_GET['dataset']))
     $dataset = urldecode($_GET['dataset']);
 else {
-    reset($datasets);
-    $dataset = key($datasets);
+    $sql = "SELECT querybin FROM tcat_query_bins ORDER BY id LIMIT 1";
+    $rec = mysql_query($sql);
+    if ($res = mysql_fetch_assoc($rec))
+        $dataset = $res['querybin'];
 }
+$datasets = get_all_datasets();
 if (isset($_GET['query']) && !empty($_GET['query']))
     $query = urldecode($_GET['query']);
 else
@@ -724,6 +726,7 @@ function get_hash_tags($msg) {
 
 // get listing of all datasets
 function get_all_datasets() {
+    global $dataset;
     $dbh = pdo_connect();
     $rec = $dbh->prepare("SELECT id, querybin, type, active FROM tcat_query_bins WHERE visible = TRUE ORDER BY LOWER(querybin)");
     $datasets = array();
@@ -741,15 +744,17 @@ function get_all_datasets() {
                 $row['maxtime'] = $res2['max'];
             }
             $row['keywords'] = "";
-            $rec2 = $dbh->prepare("SELECT distinct(p.phrase) FROM tcat_query_bins_phrases bp, tcat_query_phrases p WHERE bp.querybin_id = " . $res['id'] . " AND bp.phrase_id = p.id ORDER BY LOWER(p.phrase)");
-            if ($rec2->execute() && $rec2->rowCount() > 0) {
-                $res2 = $rec2->fetchAll(PDO::FETCH_COLUMN);
-                $row['keywords'] = implode(", ", $res2);
-            } else {
-                $rec2 = $dbh->prepare("SELECT distinct(t.from_user_name) FROM tcat_query_bins_users bu, " . $res['querybin'] . "_tweets t WHERE bu.querybin_id = " . $res['id'] . " AND bu.user_id = t.from_user_id ORDER BY LOWER(t.from_user_name)");
+            if ($dataset == $row['bin']) {
+                $rec2 = $dbh->prepare("SELECT distinct(p.phrase) FROM tcat_query_bins_phrases bp, tcat_query_phrases p WHERE bp.querybin_id = " . $res['id'] . " AND bp.phrase_id = p.id ORDER BY LOWER(p.phrase)");
                 if ($rec2->execute() && $rec2->rowCount() > 0) {
                     $res2 = $rec2->fetchAll(PDO::FETCH_COLUMN);
                     $row['keywords'] = implode(", ", $res2);
+                } elseif (in_array($row['type'], array("follow", "timeline"))) {
+                    $rec2 = $dbh->prepare("SELECT distinct(t.from_user_name) FROM tcat_query_bins_users bu, " . $res['querybin'] . "_tweets t WHERE bu.querybin_id = " . $res['id'] . " AND bu.user_id = t.from_user_id ORDER BY LOWER(t.from_user_name)");
+                    if ($rec2->execute() && $rec2->rowCount() > 0) {
+                        $res2 = $rec2->fetchAll(PDO::FETCH_COLUMN);
+                        $row['keywords'] = implode(", ", $res2);
+                    }
                 }
             }
             $datasets[$row['bin']] = $row;
@@ -794,7 +799,9 @@ function dbserver_has_geo_functions() {
     // the analysis frontend currently uses the mysql_* functions
     $version = mysql_get_server_info();
     if (preg_match("/([0-9]*)\.([0-9]*)\.([0-9]*)/", $version, $matches)) {
-        $maj = $matches[1]; $min = $matches[2]; $upd = $matches[3];
+        $maj = $matches[1];
+        $min = $matches[2];
+        $upd = $matches[3];
         if ($maj >= 5 && $min >= 6 && $upd >= 1) {
             return true;
         }
