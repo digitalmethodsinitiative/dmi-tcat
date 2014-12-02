@@ -736,12 +736,16 @@ function get_all_datasets() {
             $row['bin'] = $res['querybin'];
             $row['type'] = $res['type'];
             $row['active'] = $res['active'];
-            $rec2 = $dbh->prepare("SELECT count(t.id) AS notweets,MIN(t.created_at) AS min,MAX(t.created_at) AS max  FROM " . $res['querybin'] . "_tweets t ");
+            $rec2 = $dbh->prepare("SELECT count(t.id) AS notweets, MAX(t.created_at) AS max  FROM " . $res['querybin'] . "_tweets t ");
             if ($rec2->execute() && $rec2->rowCount() > 0) {
                 $res2 = $rec2->fetch();
                 $row['notweets'] = $res2['notweets'];
-                $row['mintime'] = $res2['min'];
                 $row['maxtime'] = $res2['max'];
+            }
+            $rec3 = $dbh->prepare("SELECT starttime AS min FROM tcat_query_bins b, tcat_query_bins_periods bp WHERE b.querybin = '" . $res['querybin'] . "' AND b.id = bp.querybin_id");
+            if ($rec3->execute() && $rec3->rowCount() > 0) {
+                $res3 = $rec3->fetch();
+                $row['mintime'] = $res3['min'];
             }
             $row['keywords'] = "";
             if ($dataset == $row['bin']) {
