@@ -190,6 +190,7 @@ function frequencyTable($table, $toget) {
                 $date = groupByInterval($res['datepart']);
             else
                 $date = $res['datepart'];
+            if ($table == 'urls') $res['toget'] = validate($res['toget'], 'url');
             $results[$date][$res['toget']] = $res['count'];
         }
     }
@@ -617,6 +618,9 @@ function validate($what, $how) {
             break;
         case "frequency":
             $what = preg_replace("/[^\d]/", "", $what);
+            break;
+        case "url":
+            $what = '"' . str_replace('"', '%22', $what) . '"';
             break;
         default:
             break;
