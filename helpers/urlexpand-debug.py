@@ -51,7 +51,8 @@ on_busy_wait = 20
 finished = 0
 working = {}
 sleepers = {}
-pool = Pool(50)
+# For debugging, we have a pool of only 5 threads
+pool = Pool(5)
 updates = []
 
 request_headers = {'User-agent': 'Mozilla/5.0 (Windows NT 5.1; rv:31.0) Gecko/20100101 Firefox/31.0'}
@@ -64,11 +65,7 @@ whitelist = [ 'j.mp',
               'bit.ly',
               'goo.gl',
               'dld.bz',
-              'tinyurl.com',
-              'fp.me',
-              'wp.me',
-              'is.gd',
-              'twitter.com'
+              'tinyurl.com'
             ]
 
 def get_twitter_tables(table = None):
@@ -104,6 +101,8 @@ def job(url, table):
     if initialhost.startswith('www.'):
         initialhost = initialhost[4:]
 
+    print "child thread handling " + url
+
     try:
         if sleepers.has_key(initialhost):
             # All dictionary access here is in try/catch because keys may be removed by another thread, causing exceptions
@@ -128,6 +127,7 @@ def job(url, table):
             hostname = hostname[4:]
 
         if status_code == 429:
+            print "got status code 429 for hostname " + hostname + " and now putting this hostname in the sleepers[] dictionary"
             sleepers[hostname] = int(time.time())
         
         record = (url_followed, hostname, status_code, url)
@@ -179,7 +179,7 @@ def main(argv = None):
             if working.has_key(host):
                 time.sleep(0.25)
                 # Useful debug line:
-                # print "sleeping with thread count " + str(50 - pool.free_count())
+                print "sleeping with thread count " + str(5 - pool.free_count())
                 urls.append(u)
                 continue
 
