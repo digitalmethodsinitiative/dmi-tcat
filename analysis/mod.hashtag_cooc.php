@@ -10,7 +10,7 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
 
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
-        <title>Twitter Analytics co-hashtags</title>
+        <title>TCAT :: Co-hashtags</title>
 
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
@@ -20,7 +20,7 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
 
     <body>
 
-        <h1>Twitter Analytics co-hashtags</h1>
+        <h1>TCAT :: Co-hashtags</h1>
 
         <?php
         validate_all_variables();

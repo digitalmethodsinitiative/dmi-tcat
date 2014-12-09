@@ -11,7 +11,7 @@ $minf = isset($_GET['minf']) ? $minf = $_GET['minf'] : 1;
 
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
-        <title>Twitter Tool</title>
+        <title>TCAT :: Word frequency</title>
 
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
@@ -27,7 +27,7 @@ $minf = isset($_GET['minf']) ? $minf = $_GET['minf'] : 1;
 
     <body>
 
-        <h1>Twitter Analytics - Word frequency</h1>
+        <h1>TCAT :: Word frequency</h1>
 
         <?php
         validate_all_variables();

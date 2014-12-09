@@ -8,7 +8,7 @@ require_once './common/Gexf.class.php';
 
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
-        <title>Twitter Analytics - Source / hashtag co-occurence</title>
+        <title>TCAT :: Source / hashtag co-occurence</title>
 
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
@@ -24,7 +24,7 @@ require_once './common/Gexf.class.php';
 
     <body>
 
-        <h1>Twitter Analytics - Source / hashtag co-occurence</h1>
+        <h1>TCAT :: Source / hashtag co-occurence</h1>
 
         <?php
 

@@ -7,7 +7,7 @@ require_once './common/functions.php';
 
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
-        <title>Twitter Analytics :: User list</title>
+        <title>TCAT :: User list</title>
 
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
@@ -23,7 +23,7 @@ require_once './common/functions.php';
 
     <body>
 
-        <h1>Twitter Analytics :: User Stats</h1>
+        <h1>TCAT :: User list</h1>
 
         <?php
 

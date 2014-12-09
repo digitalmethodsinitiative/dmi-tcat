@@ -9,7 +9,7 @@ validate_all_variables();
 
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
-        <title>Twitter Analytics :: Associational profiles</title>
+        <title>TCAT :: Associational profiles</title>
 
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
@@ -82,7 +82,7 @@ validate_all_variables();
 
     <body>
 
-        <h1>Twitter Analytics :: Associational profiles</h1>
+        <h1>TCAT :: Associational profiles</h1>
 
 
         <fieldset class="if_parameters">
