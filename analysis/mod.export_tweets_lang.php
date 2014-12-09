@@ -52,24 +52,24 @@ require_once './common/functions.php';
                 $out .= $id . "," .
                         strtotime($data["created_at"]) . "," .
                         $data["created_at"] . "," .
-                        "\"" . cleanText($data["from_user_name"]) . "\"," .
+                        "\"" . textToCSV($data["from_user_name"]) . "\"," .
                         "\"" . $data['from_user_lang'] . "\"," .
-                        "\"" . validate($data["text"], "tweet") . "\"," .
-                        "\"" . cleanText($data["source"]) . "\"," .
+                        "\"" . textToCSV($data["text"]) . "\"," .
+                        "\"" . textToCSV($data["source"]) . "\"," .
                         "\"" . cleanTExt($data["location"]) . "\"," .
                         $data['geo_lat'] . "," .
                         $data['geo_lng'] . "," .
                         (isset($data['from_user_tweetcount']) ? $data['from_user_tweetcount'] : "") . "," .
                         (isset($data['from_user_followercount']) ? $data['from_user_followercount'] : "") . "," .
                         (isset($data['from_user_friendcount']) ? $data['from_user_friendcount'] : "") . "," .
-                        (isset($data['from_user_realname']) ? "\"" . cleanText($data['from_user_realname']) . "\"" : "") . "," .
-                        (isset($data['to_user_name']) ? "\"" . cleanText($data['to_user_name']) . "\"" : "") . "," .
+                        (isset($data['from_user_realname']) ? "\"" . textToCSV($data['from_user_realname']) . "\"" : "") . "," .
+                        (isset($data['to_user_name']) ? "\"" . textToCSV($data['to_user_name']) . "\"" : "") . "," .
                         (isset($data['in_reply_to_status_id']) ? $data['in_reply_to_status_id'] : "") . "," .
                         (isset($data['from_user_listed']) ? $data['from_user_listed'] : "") . "," .
                         (isset($data['from_user_utcoffset']) ? $data['from_user_utcoffset'] : "") . "," .
                         (isset($data['from_user_timezone']) ? $data['from_user_timezone'] : "") . "," .
-                        "\"" . cleanText($data['from_user_description']) . "\"," .
-                        "\"" . cleanText($data['from_user_url']) . "\"," .
+                        "\"" . textToCSV($data['from_user_description']) . "\"," .
+                        "\"" . textToCSV($data['from_user_url']) . "\"," .
                         $data['from_user_verified'] . "," .
                         $data['filter_level'];
                 $out .= ",\"" . $data['name'] . "\"," .
@@ -99,10 +99,6 @@ require_once './common/functions.php';
                 $out .= "\n";
                 fputs($file, $out);
             }
-        }
-
-        function cleanText($text) {
-            return preg_replace("/[\r\t\n,]/", " ", addslashes(trim(strip_tags(html_entity_decode($text)))));
         }
 
         fclose($file);

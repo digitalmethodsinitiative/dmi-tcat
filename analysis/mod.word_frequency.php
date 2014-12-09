@@ -44,7 +44,7 @@ $minf = isset($_GET['minf']) ? $minf = $_GET['minf'] : 1;
         $debug = '';
         if ($sqlresults) {
             while ($data = mysql_fetch_assoc($sqlresults)) {
-                $text = validate($data["text"], "tweet");
+                $text = textToCSV($data["text"]);
                 $datepart = str_replace(' ', '_', $data["datepart"]);
                 preg_match_all('/(https?:\/\/[^\s]+)|([@#\p{L}][\p{L}]+)/u', $text, $matches, PREG_PATTERN_ORDER);
                 foreach ($matches[0] as $word) {
@@ -53,10 +53,6 @@ $minf = isset($_GET['minf']) ? $minf = $_GET['minf'] : 1;
                     fputs($tempfile, "\"$datepart\" \"$word\"\n");
                 }
             }
-        }
-
-        function cleanText($text) {
-            return preg_replace("/[\r\t\n,]/", " ", addslashes(trim(strip_tags(html_entity_decode($text)))));
         }
 
         if (function_exists('eio_fsync')) { eio_fsync($tempfile); }

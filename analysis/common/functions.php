@@ -555,7 +555,7 @@ function generate($what, $filename) {
                 if ($count < $esc['shell']['minf'])
                     continue;
                 if ($what == "retweet")
-                    $thing = validate($thing, "tweet");
+                    $thing = '"' . textToCSV($thing) . '"';
                 $file .= "$group,$count,$thing\n";
             }
         }
@@ -613,11 +613,8 @@ function validate($what, $how) {
             $what = preg_replace("/[\[\]]/", "", $what);
             $what = mysql_real_escape_string($what);
             break;
-        case "tweet":
-            $what = str_replace('"', '""', stripslashes(html_entity_decode(preg_replace("/[\n\t\r\s,]+/msi", " ", $what)))); // @todo, escape of double quotes
-            break;
         case "frequency":
-            $what = preg_replace("/[^\d]/", "", $what);
+            $what = '"' . str_replace('"', '""', preg_replace("/[^\d]/", "", $what)) . '"';
             break;
         case "url":
             $what = '"' . str_replace('"', '%22', $what) . '"';
@@ -626,6 +623,10 @@ function validate($what, $how) {
             break;
     }
     return $what;
+}
+
+function textToCSV($text) {
+    return str_replace('"','""',preg_replace("/[\r\t\n]/", " ", html_entity_decode($text)));
 }
 
 // validate and escape all user input
