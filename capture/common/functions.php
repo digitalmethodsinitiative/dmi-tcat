@@ -1576,11 +1576,13 @@ function tracker_run() {
     }
 
     // sanity check for geo bins functions
-    if (geobinsActive() && !geophp_sane()) {
+    if (geophp_sane()) {
+        logit(CAPTURE . ".error.log", "geoPHP library is fully functional");
+    } elseif (geobinsActive()) {
         logit(CAPTURE . ".error.log", "refusing to track until geobins are stopped or geo is functional");
         exit(1);
     } else {
-        logit(CAPTURE . ".error.log", "geoPHP library is fully functional");
+        logit(CAPTURE . ".error.log", "geoPHP functions are not yet available, see documentation for instructions");
     }
 
     global $ratelimit, $exceeding, $ex_start, $last_insert_id;
