@@ -122,7 +122,7 @@ require_once './common/functions.php';
                                 $media[] = $res2['url_is_media_upload'];
                             }
                         }
-                        $out .= "," . implode("; ", $urls) . "," . implode("; ", $expanded) . "," . implode("; ", $followed) . "," . implode("; ", $domain) . "," . implode("; ", $error) . "," . implode("; ", $media);
+                        $out .= ",\"" . textToCSV(implode("; ", $urls)) . "\",\"" . textToCSV(implode("; ", $expanded)) . "\",\"" . textToCSV(implode("; ", $followed)) . "\",\"" . textToCSV(implode("; ", $domain)) . "\",\"" . textToCSV(implode("; ", $error)) . "\",\"" . textToCSV(implode("; ", $media)) . "\"";
                     }
                     if (array_search("mentions", $exportSettings) !== false) {
                         $sql2 = "SELECT * FROM " . $esc['mysql']['dataset'] . "_mentions WHERE tweet_id = " . $id;
