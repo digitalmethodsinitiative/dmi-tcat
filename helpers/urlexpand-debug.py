@@ -110,16 +110,17 @@ def job(url, table):
 
     try:
         if sleepers.has_key(initialhost):
+            print "tld " + initialhost + " found in sleepers list"
             # All dictionary access here is in try/catch because keys may be removed by another thread, causing exceptions
             try:
                 timediff = int(time.time()) - sleepers[initialhost]
                 if (timediff < on_busy_wait):
                     sleepnow = on_busy_wait - timediff
                     time.sleep(sleepnow)
-                try:
-                    del sleepers[initialhost]
-                except:
-                    pass
+            except:
+                pass
+            try:
+                del sleepers[initialhost]
             except:
                 pass
 
