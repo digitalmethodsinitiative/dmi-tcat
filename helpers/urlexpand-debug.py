@@ -65,7 +65,12 @@ whitelist = [ 'j.mp',
               'bit.ly',
               'goo.gl',
               'dld.bz',
-              'tinyurl.com'
+              'tinyurl.com',
+              'fp.me',
+              'wp.me',
+              'is.gd',
+              'twitter.com',
+              'tmblr.co'
             ]
 
 def get_twitter_tables(table = None):
