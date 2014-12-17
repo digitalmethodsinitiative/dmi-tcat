@@ -50,7 +50,6 @@ on_busy_wait = 20
 
 finished = 0
 working = {}
-sleepers = {}
 # For debugging, we have a pool of only 5 threads
 pool = Pool(5)
 updates = []
@@ -101,29 +100,10 @@ def get_urls_from_db(table):
 
 def job(url, table):
     global finished
-    # Use the domainname from url_expanded to rate limit requests to certain hostnames (with timings stored in sleepers dict)
-    initialhost = urlparse.urlparse(url).hostname
-    if initialhost.startswith('www.'):
-        initialhost = initialhost[4:]
 
     print "child thread handling " + url
 
     try:
-        if sleepers.has_key(initialhost):
-            print "tld " + initialhost + " found in sleepers list"
-            # All dictionary access here is in try/catch because keys may be removed by another thread, causing exceptions
-            try:
-                timediff = int(time.time()) - sleepers[initialhost]
-                if (timediff < on_busy_wait):
-                    sleepnow = on_busy_wait - timediff
-                    time.sleep(sleepnow)
-            except:
-                pass
-            try:
-                del sleepers[initialhost]
-            except:
-                pass
-
         resp = requests.get(url, headers=request_headers, timeout=socket_timeout, verify=False)
         url_followed = resp.url
         status_code = resp.status_code
@@ -131,11 +111,7 @@ def job(url, table):
         hostname = urlparse.urlparse(url_followed).hostname
         if hostname.startswith('www.'):
             hostname = hostname[4:]
-
-        if status_code == 429:
-            print "got status code 429 for hostname " + hostname + " and now putting this hostname in the sleepers[] dictionary"
-            sleepers[hostname] = int(time.time())
-        
+       
         record = (url_followed, hostname, status_code, url)
         update_row(record, table)
 
@@ -144,8 +120,6 @@ def job(url, table):
         update_row(record, table)
 
     finally:
-        if initialhost not in whitelist:
-            del working[initialhost]
         finished += 1
 
 
