@@ -167,6 +167,8 @@ def main(argv = None):
                 working[host] = True
             pool.spawn(job, u, _table)
 
+            print '' + str(total - finished) + ' urls left in queue'
+
         pool.join()
         
         # Flush left over updates in the queue to the db
