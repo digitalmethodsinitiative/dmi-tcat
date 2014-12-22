@@ -100,6 +100,10 @@ def get_urls_from_db(table):
 
 def job(url, table):
     global finished
+    # Use the domainname from url_expanded to rate limit requests to certain hostnames
+    initialhost = urlparse.urlparse(url).hostname
+    if initialhost.startswith('www.'):
+        initialhost = initialhost[4:]
 
     print "child thread handling " + url
 
