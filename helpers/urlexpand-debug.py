@@ -120,6 +120,8 @@ def job(url, table):
         update_row(record, table)
 
     finally:
+        if initialhost not in whitelist:
+            del working[initialhost]
         finished += 1
 
 
