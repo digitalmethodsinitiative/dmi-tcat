@@ -60,7 +60,7 @@ function upgrades() {
         $columns = $rec->fetchAll(PDO::FETCH_COLUMN);
         $update = TRUE;
         foreach ($columns as $i => $c) {
-            if ($c == 'possibly_sensitive') {
+            if ($c == 'from_user_withheld_scope') {
                 $update = FALSE;
                 break;
             }
