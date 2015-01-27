@@ -74,7 +74,7 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
             $coword->applyTopUnits($esc['shell']['topu']);
             $filename = get_filename_for_export("hashtagCooc", (isset($_GET['probabilityOfAssociation']) ? "_normalizedAssociationWeight" : "") . "_Top" . $esc['shell']['topu'], "gdf");
         } else {
-            $filename = get_filename_for_export("hashtagCooc", (isset($_GET['probabilityOfAssociation']) ? "_normalizedAssociationWeight" : ""), "gexf");
+            $filename = get_filename_for_export("hashtagCooc", (isset($_GET['probabilityOfAssociation']) ? "_normalizedAssociationWeight" : ""), "gdf");
         }
 
 		//print_r($coword);
