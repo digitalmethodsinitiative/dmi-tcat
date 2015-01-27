@@ -74,7 +74,7 @@ if (defined('ANALYSIS_URL'))
     function saveSvg(id){
         $("svg").attr({ version: '1.1' , xmlns:"http://www.w3.org/2000/svg"});
         var e = document.getElementById(id);
-        var svg = e.getElementsByTagName('svg')[0].parentNode.innerHTML.replace(/[\r\n]/g,"").replace(/<div.*/m,"");;
+        var svg = e.getElementsByTagName('svg')[0].parentNode.innerHTML.replace(/[\r\n]/g,"").replace(/<div.*/m,"");
         var b64 = window.btoa(unescape(encodeURIComponent(svg)));
         // Works in Firefox 3.6 and Webkit and possibly any browser which supports the data-uri
         $("#download_"+id).html($('<a style="width:25px;height:25px;" href-lang="image/svg+xml" href="data:image/svg+xml;base64,\n'+b64+'" title="file.svg">Download SVG</a>'));
@@ -772,8 +772,8 @@ foreach ($linedata as $key => $value) {
                     <div class="txt_desc">Produces an <a href="http://en.wikipedia.org/wiki/Graph_%28mathematics%29#Undirected_graph">undirected graph</a> based on co-word analysis of hashtags. If two hashtags appear in the same tweet, they are linked.
                         The more often they appear together, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>").</div>
                     <div class="txt_desc">Use: explore the relations between hashtags, find and analyze sub-issues, distinguish between different types of hashtags (event related, qualifiers, etc.).</div>
-                    <div class="txt_link"> &raquo; <a href="" onclick="var minf = askFrequency(); if(minf != false) { $('#whattodo').val('hashtag_cooc&minf='+minf);sendUrl('mod.hashtag_cooc.php'); } return false;">launch</a> (set minimum frequency)</div><!-- with absolute weighting of cooccurrences</a></div>-->
-                    <div class="txt_link"> &raquo; <a href="" onclick="var topu = askTopht(); if(topu != false) { $('#whattodo').val('hashtag_cooc&topu='+topu);sendUrl('mod.hashtag_cooc.php'); } return false;">launch</a> (get top hashtags)</div>
+                    <div class="txt_link"> &raquo; <a href="" onclick="var minf = askFrequency(); if(minf !== false) { $('#whattodo').val('hashtag_cooc&minf='+minf);sendUrl('mod.hashtag_cooc.php'); } return false;">launch</a> (set minimum frequency)</div><!-- with absolute weighting of cooccurrences</a></div>-->
+                    <div class="txt_link"> &raquo; <a href="" onclick="var topu = askTopht(); if(topu !== false) { $('#whattodo').val('hashtag_cooc&topu='+topu);sendUrl('mod.hashtag_cooc.php'); } return false;">launch</a> (get top hashtags)</div>
 
                     <hr />
 

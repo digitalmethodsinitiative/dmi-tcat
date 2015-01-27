@@ -24,7 +24,7 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
 
         <?php
         validate_all_variables();
-        if (empty($esc['shell']['minf']))
+        if (empty($esc['shell']['minf']) && $esc['shell']['minf'] != 0)
             $esc['shell']['minf'] = 4;
 
         include_once('common/Coword.class.php');
