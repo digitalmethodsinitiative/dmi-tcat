@@ -10,7 +10,7 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
 
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
-        <title>TCAT :: Co-hashtags</title>
+        <title>Twitter Analytics co-hashtags</title>
 
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
@@ -20,7 +20,7 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
 
     <body>
 
-        <h1>TCAT :: Co-hashtags</h1>
+        <h1>Twitter Analytics co-hashtags</h1>
 
         <?php
         validate_all_variables();
@@ -74,7 +74,7 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
             $coword->applyTopUnits($esc['shell']['topu']);
             $filename = get_filename_for_export("hashtagCooc", (isset($_GET['probabilityOfAssociation']) ? "_normalizedAssociationWeight" : "") . "_Top" . $esc['shell']['topu'], "gdf");
         } else {
-            $filename = get_filename_for_export("hashtagCooc", (isset($_GET['probabilityOfAssociation']) ? "_normalizedAssociationWeight" : ""), "gdf");
+            $filename = get_filename_for_export("hashtagCooc", (isset($_GET['probabilityOfAssociation']) ? "_normalizedAssociationWeight" : ""), "gexf");
         }
 
 		//print_r($coword);
