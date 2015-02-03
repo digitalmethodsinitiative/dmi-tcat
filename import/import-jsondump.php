@@ -39,6 +39,7 @@ $c = $count;
 
 for ($i = 0; $i < $count; ++$i) {
     $filepath = $all_files[$i];
+    print "processing $filepath\n";
     process_json_file_timeline($filepath, $dbh);
     print $c-- . "\n";
 }
@@ -59,19 +60,19 @@ function process_json_file_timeline($filepath, $dbh) {
     $handle = @fopen($filepath, "r");
     if ($handle) {
         while (($buffer = fgets($handle, 40960)) !== false) {
-            $tweet = json_decode($buffer);
+            $tweet = json_decode($buffer, true);
             //var_export($tweet); print "\n\n";
             $buffer = "";
 
             $t = new Tweet();
             $t->fromJSON($tweet);
             if (!$t->isInBin($bin_name)) {
-                $tweetQueue->push($tweet, $bin_name);
+                $tweetQueue->push($t, $bin_name);
                 if ($tweetQueue->length() > 100) {
                     $tweetQueue->insertDB();
                 }
 
-                $all_users[] = $t->user->id;
+                $all_users[] = $t->from_user_id;
                 $all_tweet_ids[] = $t->id;
 
                 $tweets_processed++;
