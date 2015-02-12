@@ -1808,7 +1808,7 @@ function processtweets($capturebucket) {
                          *
                          * 1) Twitter will give us all the tweets which have excplicit GPS coordinates inside one of our queried areas.
                          * 2) Additionaly Twitter give us those tweets with a user 'place' definition. A place (i.e. Paris) is itself a (set of) gps polygons
-                         *    Twitter returns the tweets if one of these place polygons coverts the same area as our geo boxes.  
+                         *    Twitter returns the tweets if one of these place polygons covers the same area as our geo boxes.  
                          *
                          * And matching (by us)
                          *
