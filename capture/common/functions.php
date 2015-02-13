@@ -1011,9 +1011,23 @@ class Tweet {
             $plain[] = $u;
         }
         $extended = array();
+
+        // Extract image data
+
+        $search_image_array = null;
         if (array_key_exists('extended_entities', $data) &&
-                array_key_exists('media', $data["extended_entities"])) {
-            foreach ($data["extended_entities"]["media"] as $media) {
+            array_key_exists('media', $data["extended_entities"])) {
+            $search_image_array = $data['extended_entities']['media'];
+        } else if (!array_key_exists('extended_entities', $data) &&
+                   array_key_exists('entities', $data) &&
+                   array_key_exists('media', $data["entities"])) {
+            // Extract the photo data from the media[] array (which contains only a single item)
+            // At this moment only the Search API does not return extended_entities
+            $search_image_array = $data['entities']['media'];
+        }
+
+        if (is_array($search_image_array)) {
+            foreach ($search_image_array as $media) {
                 $u = array();
                 $u["url"] = $media["url"];
                 $u["url_expanded"] = $media["expanded_url"];
@@ -1029,6 +1043,7 @@ class Tweet {
                 $extended[] = $u;
             }
         }
+
         $urls = array_merge($plain, $extended);
         $this->urls = json_decode(json_encode($urls, FALSE));
         $this->user_mentions = json_decode(json_encode($data["entities"]["user_mentions"]), FALSE);
