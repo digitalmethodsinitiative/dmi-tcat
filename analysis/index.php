@@ -276,15 +276,13 @@ if (defined('ANALYSIS_URL'))
             $show_url_export = false;
             if ($numlinktweets) {
                 $sql = "SELECT count(u.id) as count FROM " . $esc['mysql']['dataset'] . "_urls u, " . $esc['mysql']['dataset'] . "_tweets t ";
-                $where = "u.tweet_id = t.id AND u.media_type = 'photo' AND ";
+                $where = "u.tweet_id = t.id AND u.error_code != '' AND ";
                 $sql .= sqlSubset($where);
                 $rec = mysql_query($sql);
-                echo $sql . "<br>";
                 if ($rec && mysql_num_rows($rec) > 0) {
                     $res = mysql_fetch_assoc($rec);
-                    if ($res['count'] > 0) {
+                    if (($res['count'] / $numlinktweets) > 0.5)
                         $show_url_export = true;
-                    } 
                 }
             }
             // see whether the lang table exists
