@@ -35,10 +35,10 @@ $minf = isset($_GET['minf']) ? $minf = $_GET['minf'] : 1;
         fputs($tempfile, chr(239) . chr(187) . chr(191));
 
         mysql_query("set names utf8");
-        $sql = "SELECT u.url_followed as url, " . sqlInterval() . " FROM " . $esc['mysql']['dataset'] . "_tweets t, " .
+        $sql = "SELECT u.url_expanded as url, " . sqlInterval() . " FROM " . $esc['mysql']['dataset'] . "_tweets t, " .
                 $esc['mysql']['dataset'] . "_urls u ";
         $sql .= sqlSubset();
-        $sql .= " AND u.tweet_id = t.id AND u.url_is_media_upload = 1 AND u.url_followed != '' ";
+        $sql .= " AND u.tweet_id = t.id AND u.url_is_media_upload = 1 ";
         $sql .= " ORDER BY datepart ASC";
         $sqlresults = mysql_query($sql);
         $debug = '';
