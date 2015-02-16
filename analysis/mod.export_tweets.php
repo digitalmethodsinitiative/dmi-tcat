@@ -45,7 +45,16 @@ require_once './common/functions.php';
         // write header
         $header = "id,time,created_at,from_user_name,text,filter_level,possibly_sensitive,withheld_copyright,withheld_scope,truncated,retweet_count,favorite_count,lang,to_user_name,in_reply_to_status_id,source,location,lat,lng,from_user_id,from_user_realname,from_user_verified,from_user_description,from_user_url,from_user_profile_image_url,from_user_utcoffset,from_user_timezone,from_user_lang,from_user_tweetcount,from_user_followercount,from_user_friendcount,from_user_favourites_count,from_user_listed,from_user_withheld_scope,from_user_created_at";
         if (array_search("urls", $exportSettings) !== false)
-            $header .= ",urls,urls_expanded,urls_followed,domains,HTTP status code,url_is_media_upload,photo_sizes_width,photo_sizes_height";
+            $header .= ",urls,urls_expanded,urls_followed,domains,HTTP status code";
+        if (array_search("media", $exportSettings) !== false) {
+            if (array_search("urls", $exportSettings) !== false) {
+                // full export of followed urls and media
+                $header .= ",url_is_media_upload,photo_sizes_width,photo_sizes_height";
+            } else {
+                // export non-followed media urls
+                $header .= ",urls,urls_expanded,url_is_media_upload,photo_sizes_width,photo_sizes_height";
+            }
+        }
         if (array_search("mentions", $exportSettings) !== false)
             $header .= ",mentions";
         if (array_search("hashtags", $exportSettings) !== false)
@@ -108,7 +117,8 @@ require_once './common/functions.php';
                         (isset($data['from_user_listed']) ? $data['from_user_listed'] : "") . "," .
                         (isset($data['from_user_withheld_scope']) ? $data['from_user_withheld_scope'] : "") . "," .
                         (isset($data['from_user_created_at']) ? $data['from_user_created_at'] : "");
-                if (array_search("urls", $exportSettings) !== false) {
+                if (array_search("urls", $exportSettings) !== false ||
+                    array_search("media", $exportSettings) !== false) {
                     $urls = $expanded = $followed = $domain = "";
                     $sql2 = "SELECT * FROM " . $esc['mysql']['dataset'] . "_urls WHERE tweet_id = " . $data['id'];
                     $rec2 = mysql_query($sql2);
@@ -127,7 +137,16 @@ require_once './common/functions.php';
                             }
                         }
                     }
-                    $out .= ",\"" . textToCSV(implode("; ", $urls)) . "\",\"" . textToCSV(implode("; ", $expanded)) . "\",\"" . textToCSV(implode("; ", $followed)) . "\",\"" . textToCSV(implode("; ", $domain)) . "\",\"" . textToCSV(implode("; ", $error)) . "\",\"" . textToCSV(implode("; ", $media)) . "\",\"" . textToCSV(implode("; ", $photo_width)) . "\",\"" . textToCSV(implode("; ", $photo_height)) . "\"";
+                    if (array_search("media", $exportSettings) !== false && array_search("urls", $exportSettings) !== false) {
+                        // full export of urls with media information
+                        $out .= ",\"" . textToCSV(implode("; ", $urls)) . "\",\"" . textToCSV(implode("; ", $expanded)) . "\",\"" . textToCSV(implode("; ", $followed)) . "\",\"" . textToCSV(implode("; ", $domain)) . "\",\"" . textToCSV(implode("; ", $error)) . "\",\"" . textToCSV(implode("; ", $media)) . "\",\"" . textToCSV(implode("; ", $photo_width)) . "\",\"" . textToCSV(implode("; ", $photo_height)) . "\"";
+                    } else if (array_search("urls", $exportSettings) !== false) {
+                        // export of urls only
+                        $out .= ",\"" . textToCSV(implode("; ", $urls)) . "\",\"" . textToCSV(implode("; ", $expanded)) . "\",\"" . textToCSV(implode("; ", $followed)) . "\",\"" . textToCSV(implode("; ", $domain)) . "\",\"" . textToCSV(implode("; ", $error)) . "\"";
+                    } else {
+                        // export of non-followed media urls
+                        $out .= ",\"" . textToCSV(implode("; ", $urls)) . "\",\"" . textToCSV(implode("; ", $expanded)) . "\",\"" . textToCSV(implode("; ", $media)) . "\",\"" . textToCSV(implode("; ", $photo_width)) . "\",\"" . textToCSV(implode("; ", $photo_height)) . "\"";
+                    }
                 }
                 if (array_search("mentions", $exportSettings) !== false) {
                     $sql2 = "SELECT * FROM " . $esc['mysql']['dataset'] . "_mentions WHERE tweet_id = " . $id;

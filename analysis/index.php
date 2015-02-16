@@ -657,6 +657,14 @@ foreach ($linedata as $key => $value) {
                     <div class="txt_desc">Use: get a grasp of the most used language.</div>
                     <div class="txt_link"> &raquo;  <a href="" onclick="var lowercase = askLowercase(); var minf = askFrequency(); $('#whattodo').val('word_frequency&lowercase='+lowercase+'&minf='+minf+getInterval());sendUrl('mod.word_frequency.php');return false;">launch</a></div>
 
+                    <?php if ($show_url_export) { ?>
+                        <h3>Media frequency</h3>
+                        <div class="txt_desc">Contains media URLs and the number of times they have been used.</div>
+                        <div class="txt_desc">Use: get a grasp of the most popular media.</div>
+                        <div class="txt_link"> &raquo;  <a href="" onclick="var lowercase = askLowercase(); var minf = askFrequency(); $('#whattodo').val('media_frequency&lowercase='+lowercase+'&minf='+minf+getInterval());sendUrl('mod.media_frequency.php');return false;">launch</a></div>
+                    <?php } ?>
+
+
                 </div>
 
 
@@ -673,10 +681,11 @@ foreach ($linedata as $key => $value) {
                                 $exportSettings = $_GET['exportSettings'];
                             ?>
                             <?php if ($show_url_export) { ?>
-                                <input type='checkbox' name="exportSettings" value="urls" <?php if (array_search("urls", $exportSettings) !== false) print "CHECKED"; ?>>URLs and media</input>
+                                <input type='checkbox' name="exportSettings" value="urls" <?php if (array_search("urls", $exportSettings) !== false) print "CHECKED"; ?>>URLs</input>
                             <?php } ?>
                             <input type='checkbox' name="exportSettings" value="mentions" <?php if (array_search("mentions", $exportSettings) !== false) print "CHECKED"; ?>>mentions</input>
                             <input type='checkbox' name="exportSettings" value="hashtags" <?php if (array_search("hashtags", $exportSettings) !== false) print "CHECKED"; ?>>hashtags</input>
+                            <input type='checkbox' name="exportSettings" value="media" <?php if (array_search("media", $exportSettings) !== false) print "CHECKED"; ?>>media</input>
                         </form>
                     </div>
 
