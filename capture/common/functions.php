@@ -189,9 +189,7 @@ function create_bin($bin_name, $dbh = false) {
             `url_expanded` varchar(2048),
             `url_followed` varchar(4096),
             `url_is_media_upload` tinyint(1),
-            `media_type` varchar(32),
-            `photo_size_width` int(11),
-            `photo_size_height` int(11),
+            `url_media_id` bigint(11),
             `domain` varchar(2048),
             `error_code` varchar(64),
             PRIMARY KEY (`id`),
@@ -199,13 +197,54 @@ function create_bin($bin_name, $dbh = false) {
                     KEY `created_at` (`created_at`),
                     KEY `from_user_id` (`from_user_id`),
                     KEY `url_is_media_upload` (`url_is_media_upload`),
-                    KEY `media_type` (`media_type`),
+                    KEY `url_media_id` (`url_media_id`),
                     FULLTEXT KEY `url_followed` (`url_followed`),
                     KEY `url_expanded` (`url_expanded`)
             ) ENGINE=MyISAM  DEFAULT CHARSET=utf8mb4";
 
         $create_urls = $dbh->prepare($sql);
         $create_urls->execute();
+
+        /*  (as copied from https://dev.twitter.com/overview/api/entities-in-twitter-objects on 17/02/2015
+
+            The media entity
+
+            An array of media attached to the Tweet with the Twitter Photo Upload feature. Each media entity comes with the following attributes:
+
+            id                  the media ID (int format)
+            id_str              the media ID (string format)
+            media_url           The URL of the media file (see the sizes attribute for available sizes)
+            media_url_https     The SSL URL of the media file (see the sizes attribute for available sizes)
+            url                 The media URL that was extracted
+            display_url         Not a URL but a string to display instead of the media URL
+            expanded_url        The fully resolved media URL
+            sizes               We support different sizes: thumb, small, medium and large. The media_url defaults to medium but you can retrieve the media in different sizes by appending a colon + the size key (for example: http://pbs.twimg.com/media/A7EiDWcCYAAZT1D.jpg:thumb). Each available size comes with three attributes that describe it:
+              - w               the width (in pixels) of the media in this particular size
+              - h               the height (in pixels) of the media in this particular size
+              - resize          how we resized the media to this particular size (can be crop or fit)
+            type                Only photo for now
+            indices             The character positions the media was extracted from
+
+         */
+
+        /* Media entities in DMI-TCAT are linked to urls using the media_id attribute. The media id attribute is always taken from id_str. */
+
+        $sql = "CREATE TABLE IF NOT EXISTS " . quoteIdent($bin_name . "_media") . " (
+            `id` bigint(20) NOT NULL,
+            `media_url_https` varchar(2048),
+            `media_type` varchar(32),
+            `photo_size_width` int(11),
+            `photo_size_height` int(11),
+            `photo_resize` varchar(32),
+            PRIMARY KEY (`id`),
+                    KEY `media_type` (`media_type`),
+                    KEY `photo_size_width` (`photo_size_width`),
+                    KEY `photo_size_height` (`photo_size_height`),
+                    KEY `photo_resize` (`photo_resize`)
+            ) ENGINE=MyISAM  DEFAULT CHARSET=utf8mb4";
+
+        $create_media = $dbh->prepare($sql);
+        $create_media->execute();
         $dbh = false;
 
         return TRUE;
@@ -829,7 +868,9 @@ class Tweet {
     public $user_mentions = array();
     public $hashtags = array();
     public $urls = array();
+    public $media = array();
 
+    // TODO: import media entities in fromGnip()
     public static function fromGnip($json) {
         // Parse JSON when fed JSON string
         if (is_string($json)) {
@@ -1005,12 +1046,10 @@ class Tweet {
             $u['url_expanded'] = $u["expanded_url"];
             unset($u["expanded_url"]);
             $u['url_is_media_upload'] = 0;
-            $u['media_type'] = null;
-            $u['photo_size_width'] = null;
-            $u['photo_size_height'] = null;
+            $u['url_media_id'] = null;
             $plain[] = $u;
         }
-        $extended = array();
+        $plain = array();
 
         // Extract image data
 
@@ -1026,26 +1065,47 @@ class Tweet {
             $search_image_array = $data['entities']['media'];
         }
 
+        $extended = $media = array();
+
+        // Store the image data in the _media table
+
         if (is_array($search_image_array)) {
-            foreach ($search_image_array as $media) {
-                $u = array();
-                $u["url"] = $media["url"];
-                $u["url_expanded"] = $media["expanded_url"];
-                $u['url_is_media_upload'] = 1;
-                $u['media_type'] = $media['type'];
-                if (isset($media['sizes']['large'])) {
-                    $u['photo_size_width'] = $media['sizes']['large']['w'];
-                    $u['photo_size_height'] = $media['sizes']['large']['h'];
+            foreach ($search_image_array as $e) {
+                // TODO: what are indices and do we need them?
+                $m = array();
+                $m["id"] = $e["id_str"];
+                $m["media_url_https"] = $e["media_url_https"];
+                $m['media_type'] = $e['type'];
+                if (isset($e['sizes']['large'])) {
+                    $m['photo_size_width'] = $e['sizes']['large']['w'];
+                    $m['photo_size_height'] = $e['sizes']['large']['h'];
+                    $m['photo_resize'] = $e['sizes']['large']['resize'];
                 } else {
-                    $u['photo_size_width'] = null;
-                    $u['photo_size_height'] = null;
+                    $m['photo_size_width'] = null;
+                    $m['photo_size_height'] = null;
+                    $m['photo_resize'] = null;
                 }
-                $extended[] = $u;
+                $media[] = $m;
             }
+        }
+
+        // But store the other url data (such as the link between an _url row and a _media row) in the _urls table
+        // NOTE - or should we link to the Tweet table instead?
+
+        if (is_array($search_image_array)) {
+            foreach ($search_image_array as $m) {
+                $u = array();
+                $u["url"] = $m["url"];
+                $u["url_expanded"] = $m["expanded_url"];
+                $u['url_is_media_upload'] = 1;
+                $u['url_media_id'] = $m['id_str'];
+                $extended[] = $u;
+            } 
         }
 
         $urls = array_merge($plain, $extended);
         $this->urls = json_decode(json_encode($urls, FALSE));
+        $this->media = json_decode(json_encode($media, FALSE));
         $this->user_mentions = json_decode(json_encode($data["entities"]["user_mentions"]), FALSE);
         $this->hashtags = json_decode(json_encode($data["entities"]["hashtags"]), FALSE);
         if (isset($data["withheld_in_countries"])) {
@@ -1164,7 +1224,7 @@ class TweetQueue {
 
     function cacheBin($bin) {
         $dbh = pdo_connect();
-        $tables = array('tweets', 'mentions', 'urls', 'hashtags', 'withheld', 'places');
+        $tables = array('tweets', 'mentions', 'urls', 'hashtags', 'withheld', 'places', 'media');
         foreach ($tables as $table) {
             $sql = "show columns from $bin" . "_$table";
             $rec = $dbh->prepare($sql);
@@ -1247,8 +1307,7 @@ class TweetQueue {
         if ($count == 0)
             return '';     // unknown table
 
-            
-// for these tables, again discount the 'id' field
+        // for these tables, again discount the 'id' field
         if ($table_extension == 'mentions' || $table_extension == 'hashtags' || $table_extension == 'urls' || $table_extension == 'withheld')
             $count--;
         $statement .= rtrim(str_repeat("( " . rtrim(str_repeat("?,", $count), ',') . " ),", $rowcount), ',');
@@ -1271,26 +1330,28 @@ class TweetQueue {
                 $binlist[$bin_name]['mentions'] += count($obj['tweet']->user_mentions);
                 $binlist[$bin_name]['withheld'] += count($obj['tweet']->withheld_in_countries);
                 $binlist[$bin_name]['places'] += count($obj['tweet']->places);
+                $binlist[$bin_name]['media'] += count($obj['tweet']->media);
                 continue;
             }
             if (!$this->hasCached($bin_name))
                 $this->cacheBin($bin_name);
+
             $binlist[$bin_name] = array('tweets' => 1,
-                'hashtags' => count($obj['tweet']->hashtags),
-                'urls' => count($obj['tweet']->urls),
-                'mentions' => count($obj['tweet']->user_mentions),
-                'withheld' => count($obj['tweet']->withheld_in_countries),
-                'places' => count($obj['tweet']->places)
-            );
+                        'hashtags' => count($obj['tweet']->hashtags),
+                        'urls' => count($obj['tweet']->urls),
+                        'mentions' => count($obj['tweet']->user_mentions),
+                        'withheld' => count($obj['tweet']->withheld_in_countries),
+                        'places' => count($obj['tweet']->places),
+                        'media' => count($obj['tweet']->media)
+                    );
         }
 
         // process the queue bin by bin
 
         foreach ($binlist as $bin_name => $counts) {
-
             // first prepare the multiple insert statements for tweets, mentions, hashtags, urls, withheld, places
             $statement = array();
-            $extensions = array('tweets', 'mentions', 'hashtags', 'urls', 'withheld', 'places');
+            $extensions = array('tweets', 'mentions', 'hashtags', 'urls', 'withheld', 'places', 'media');
             foreach ($extensions as $ext) {
                 $statement[$ext] = $this->headMultiInsert($bin_name, $ext, $counts[$ext]);
             }
@@ -1306,6 +1367,8 @@ class TweetQueue {
             $withheldq = $dbh->prepare($statement['withheld']);
             $placesi = 1;
             $placesq = $dbh->prepare($statement['places']);
+            $mediai = 1;
+            $mediaq = $dbh->prepare($statement['media']);
 
             // go now and iterate the queue item by item
             foreach ($this->queue as $obj) {
@@ -1367,7 +1430,6 @@ class TweetQueue {
                     }
                 }
                 if ($statement['places'] !== '') {
-
                     if ($t->places && !empty($t->places) && !empty($this->binColumnsCache[$bin_name]['places'])) {
                         $fields = $this->binColumnsCache[$bin_name]['places'];
                         foreach ($t->places as $place) {
@@ -1377,6 +1439,17 @@ class TweetQueue {
                         }
                     }
                 }
+                if ($statement['media'] !== '') {
+                    if ($t->media && !empty($t->media) && !empty($this->binColumnsCache[$bin_name]['media'])) {
+                        $fields = $this->binColumnsCache[$bin_name]['media'];
+                        foreach ($t->media as $media) {
+                            foreach ($fields as $f) {
+                                $mediaq->bindParam($mediai++, $media->$f);
+                            }
+                        }
+                    }
+                }
+
             }
 
             // finaly insert the tweets and other data
@@ -1420,6 +1493,13 @@ class TweetQueue {
                     $placesq->execute();
                 } catch (PDOException $e) {
                     $this->reportPDOError($e, $bin_name . '_places');
+                }
+            }
+            if ($statement['media'] !== '') {
+                try {
+                    $mediaq->execute();
+                } catch (PDOException $e) {
+                    $this->reportPDOError($e, $bin_name . '_media');
                 }
             }
 
