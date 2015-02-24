@@ -49,10 +49,10 @@ require_once './common/functions.php';
         if (array_search("media", $exportSettings) !== false) {
             if (array_search("urls", $exportSettings) !== false) {
                 // full export of followed urls and media
-                $header .= ",url_is_media_upload,photo_sizes_width,photo_sizes_height";
+                $header .= ",url_is_media_upload,media_type,media_indice_start,media_indice_end,photo_sizes_width,photo_sizes_height,photo_resize";
             } else {
                 // export non-followed media urls
-                $header .= ",urls,urls_expanded,url_is_media_upload,photo_sizes_width,photo_sizes_height";
+                $header .= ",urls,urls_expanded,url_is_media_upload,media_type,media_indice_start,media_indice_end,photo_sizes_width,photo_sizes_height,photo_resize";
             }
         }
         if (array_search("mentions", $exportSettings) !== false)
@@ -122,7 +122,8 @@ require_once './common/functions.php';
                     $urls = $expanded = $followed = $domain = "";
                     $sql2 = "SELECT * FROM " . $esc['mysql']['dataset'] . "_urls WHERE tweet_id = " . $data['id'];
                     $rec2 = mysql_query($sql2);
-                    $urls = $expanded = $followed = $domain = $error = $media = $photo_width = $photo_height = array();
+                    $urls = $expanded = $followed = $domain = $error = $media = $media_type = $photo_width = $photo_height = $photo_resize = $indice_start = $indice_end = array();
+                    $media_ids_for_tweet = array();
                     if (mysql_num_rows($rec2) > 0) {
                         while ($res2 = mysql_fetch_assoc($rec2)) {
                             $urls[] = $res2['url'];
@@ -131,21 +132,37 @@ require_once './common/functions.php';
                             $domain[] = $res2['domain'];
                             $error[] = $res2['error_code'];
                             if (isset($res2['url_is_media_upload'])) {
+                                $media_ids_for_tweet[] = $res2['url_media_id'];
                                 $media[] = $res2['url_is_media_upload'];
-                                $photo_width[] = $res2['photo_size_width'];
-                                $photo_height[] = $res2['photo_size_height'];
                             }
                         }
                     }
+
+                    // lookup media from media table
+                    if (array_search("media", $exportSettings) !== false && !empty($media_ids_for_tweet)) {
+                        $sql3 = "SELECT * FROM " . $esc['mysql']['dataset'] . "_media WHERE id in ( " . implode($media_ids_for_tweet, ',') . " )";
+                        $rec3 = mysql_query($sql3);
+                        if (mysql_num_rows($rec3) > 0) {
+                            while ($res3 = mysql_fetch_assoc($rec3)) {
+                                $media_type[] = $res3['media_type'];
+                                $photo_width[] = $res3['photo_size_width'];
+                                $photo_height[] = $res3['photo_size_height'];
+                                $photo_resize[] = $res3['photo_resize'];
+                                $indice_start[] = $res3['indice_start'];
+                                $indice_end[] = $res3['indice_end'];
+                            }
+                        }
+                    }
+
                     if (array_search("media", $exportSettings) !== false && array_search("urls", $exportSettings) !== false) {
                         // full export of urls with media information
-                        $out .= ",\"" . textToCSV(implode("; ", $urls)) . "\",\"" . textToCSV(implode("; ", $expanded)) . "\",\"" . textToCSV(implode("; ", $followed)) . "\",\"" . textToCSV(implode("; ", $domain)) . "\",\"" . textToCSV(implode("; ", $error)) . "\",\"" . textToCSV(implode("; ", $media)) . "\",\"" . textToCSV(implode("; ", $photo_width)) . "\",\"" . textToCSV(implode("; ", $photo_height)) . "\"";
+                        $out .= ",\"" . textToCSV(implode("; ", $urls)) . "\",\"" . textToCSV(implode("; ", $expanded)) . "\",\"" . textToCSV(implode("; ", $followed)) . "\",\"" . textToCSV(implode("; ", $domain)) . "\",\"" . textToCSV(implode("; ", $error)) . "\",\"" . textToCSV(implode("; ", $media)) . "\",\"" . textToCSV(implode("; ", $media_type)) . "\",\"" . textToCSV(implode("; ", $indice_start)) . "\",\"" . textToCSV(implode("; ", $indice_end)) . "\",\"" . textToCSV(implode("; ", $photo_width)) . "\",\"" . textToCSV(implode("; ", $photo_height)) . "\",\"" . textToCSV(implode("; ", $photo_resize)) . "\"";
                     } else if (array_search("urls", $exportSettings) !== false) {
                         // export of urls only
                         $out .= ",\"" . textToCSV(implode("; ", $urls)) . "\",\"" . textToCSV(implode("; ", $expanded)) . "\",\"" . textToCSV(implode("; ", $followed)) . "\",\"" . textToCSV(implode("; ", $domain)) . "\",\"" . textToCSV(implode("; ", $error)) . "\"";
                     } else {
                         // export of non-followed media urls
-                        $out .= ",\"" . textToCSV(implode("; ", $urls)) . "\",\"" . textToCSV(implode("; ", $expanded)) . "\",\"" . textToCSV(implode("; ", $media)) . "\",\"" . textToCSV(implode("; ", $photo_width)) . "\",\"" . textToCSV(implode("; ", $photo_height)) . "\"";
+                        $out .= ",\"" . textToCSV(implode("; ", $urls)) . "\",\"" . textToCSV(implode("; ", $expanded)) . "\",\"" . textToCSV(implode("; ", $media)) . "\",\"" . textToCSV(implode("; ", $media_type)) . "\",\"" . textToCSV(implode("; ", $indice_start)) . "\",\"" . textToCSV(implode("; ", $indice_end)) . "\",\"" . textToCSV(implode("; ", $photo_width)) . "\",\"" . textToCSV(implode("; ", $photo_height)) . "\",\"" . textToCSV(implode("; ", $photo_resize)) . "\"";
                     }
                 }
                 if (array_search("mentions", $exportSettings) !== false) {
