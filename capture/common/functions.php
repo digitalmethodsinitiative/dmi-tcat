@@ -236,6 +236,8 @@ function create_bin($bin_name, $dbh = false) {
             `photo_size_width` int(11),
             `photo_size_height` int(11),
             `photo_resize` varchar(32),
+            `indice_start` int(11),
+            `indice_end` int(11),
             PRIMARY KEY (`id`),
                     KEY `media_type` (`media_type`),
                     KEY `photo_size_width` (`photo_size_width`),
@@ -1084,6 +1086,13 @@ class Tweet {
                     $m['photo_size_width'] = null;
                     $m['photo_size_height'] = null;
                     $m['photo_resize'] = null;
+                }
+                if (isset($e['indices'])) {
+                    $m['indice_start'] = $e['indices'][0];
+                    $m['indice_end'] = $e['indices'][1];
+                } else {
+                    $m['indice_start'] = null;
+                    $m['indice_end'] = null;
                 }
                 $media[] = $m;
             }
