@@ -1090,6 +1090,8 @@ class Tweet {
                 $m = array();
                 $m["id"] = $e["id_str"];
                 $m["tweet_id"] = $this->id;      // link media object to Tweet
+                $m["url"] = $e["url"];
+                $m["url_expanded"] = $e["expanded_url"];
                 $m["media_url_https"] = $e["media_url_https"];
                 $m['media_type'] = $e['type'];
                 if (isset($e['sizes']['large'])) {
