@@ -142,6 +142,10 @@ function upgrades() {
     }
 
     // 23/09/2014 add url_is_media_upload, media_type, photo_size_width and photo_size_height fields to _urls table (and set default null)
+    /*
+     * Has been superseded
+     */
+    /*
     $query = "SHOW TABLES";
     $rec = $dbh->prepare($query);
     $rec->execute();
@@ -173,6 +177,7 @@ function upgrades() {
             $rec->execute();
         }
     }
+    */
 
     // 23/09/2014 Set global database collation to utf8mb4
 
