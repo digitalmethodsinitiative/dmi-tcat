@@ -213,8 +213,7 @@ function create_bin($bin_name, $dbh = false) {
             `photo_resize` varchar(32),
             `indice_start` int(11),
             `indice_end` int(11),
-            PRIMARY KEY (`id`),
-                    KEY `tweet_id` (`tweet_id`),
+            PRIMARY KEY (`id`, `tweet_id`),
                     KEY `media_url_https` (`media_url_https`),
                     KEY `media_type` (`media_type`),
                     KEY `photo_size_width` (`photo_size_width`),
@@ -1031,7 +1030,6 @@ class Tweet {
 
         // tweet data (arrays) to object conversion
         // a tweet text can contain multiple URLs, and multiple media URLs can be packed into a single link inside the tweet
-        // all unpacked media link data is available under extended_entities->urls
         // all other link data is available under entities->urls
         // by concatenating this information we do not get duplicates
         $urls = array();
