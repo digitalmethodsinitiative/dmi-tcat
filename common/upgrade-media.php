@@ -5,11 +5,11 @@ if ($argc < 1)
 // ----- params -----
 set_time_limit(0);
 error_reporting(E_ALL);
-include_once "../../config.php";
-include_once BASE_FILE . '/common/functions.php';
-include_once BASE_FILE . '/capture/common/functions.php';
 
-require BASE_FILE . 'capture/common/tmhOAuth/tmhOAuth.php';
+include_once("../config.php");
+include "functions.php";
+include "../capture/common/functions.php";
+include "../capture/common/tmhOAuth/tmhOAuth.php";
 
 if (dbserver_has_utf8mb4_support() == false) {
     die("DMI-TCAT requires at least MySQL version 5.5.3 - please upgrade your server\n");
@@ -29,17 +29,29 @@ $bins = getAllBins();
 foreach ($bins as $bin) {
     $table = '`' . $bin . '_urls`'; // bin != user input
     $idlist = array();
-    $sql = "select tweet_id from $table where url_is_media_upload = 1";
+    $sql = "show columns from $table";
+    $deprecated = 0;
     $rec = $dbh->prepare($sql);
     if ($rec->execute() && $rec->rowCount() > 0) {
         while ($res = $rec->fetch()) {
-            $idlist[] = $res['tweet_id'];
+            if ($res['Field'] == 'url_is_media_upload') {
+                $deprecated = 1; break;
+            }
         }
     }
-    if (!empty($idlist)) {
-        print count($idlist) . " media tweets in bin $bin\n";
-        $bin_name = $bin;
-        search($idlist);
+    if ($deprecated) {
+        $sql = "select tweet_id from $table where url_is_media_upload = 1";
+        $rec = $dbh->prepare($sql);
+        if ($rec->execute() && $rec->rowCount() > 0) {
+            while ($res = $rec->fetch()) {
+                $idlist[] = $res['tweet_id'];
+            }
+        }
+        if (!empty($idlist)) {
+            print count($idlist) . " (possibly) deprecated media objects in bin $bin\n";
+            $bin_name = $bin;
+            search($idlist);
+        }
     }
 }
 
