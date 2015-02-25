@@ -1040,7 +1040,6 @@ class Tweet {
             $u['url_is_media_upload'] = 0;          // deprecated attribute
             $urls[] = $u;
         }
-        $urls = array();
 
         // Extract image data
 
