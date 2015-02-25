@@ -48,7 +48,7 @@ foreach ($bins as $bin) {
             }
         }
         if (!empty($idlist)) {
-            print count($idlist) . " (possibly) deprecated media objects in bin $bin\n";
+            print count($idlist) . " (possibly) deprecated media objects found in bin $bin\n";
             $bin_name = $bin;
             search($idlist);
         }
