@@ -244,6 +244,9 @@ function upgrades() {
             $rec = $dbh->prepare($query);
             $rec->execute();
         }
+        if ($update_remove) {
+            logit("cli", "Please run the upgrade-media.php script to lookup media data for Tweets in your bins.");
+        }
     }
 
     // End of upgrades
