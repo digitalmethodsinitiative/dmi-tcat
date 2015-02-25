@@ -141,44 +141,6 @@ function upgrades() {
         }
     }
 
-    // 23/09/2014 add url_is_media_upload, media_type, photo_size_width and photo_size_height fields to _urls table (and set default null)
-    /*
-     * Has been superseded
-     */
-    /*
-    $query = "SHOW TABLES";
-    $rec = $dbh->prepare($query);
-    $rec->execute();
-    $results = $rec->fetchAll(PDO::FETCH_COLUMN);
-    foreach ($results as $k => $v) {
-        if (!preg_match("/_urls$/", $v)) continue; 
-        if ($single && $v !== $single . '_urls') { continue; }
-        $query = "SHOW COLUMNS FROM $v";
-        $rec = $dbh->prepare($query);
-        $rec->execute();
-        $columns = $rec->fetchAll(PDO::FETCH_COLUMN);
-        $update = TRUE;
-        foreach ($columns as $i => $c) {
-            if ($c == 'url_is_media_upload') {
-                $update = FALSE;
-                break;
-            }
-        }
-        if ($update) {
-            logit("cli", "Adding new columns url_is_media_upload, media_type, photo_size_width and photo_size_height to table $v");
-            $query = "ALTER TABLE " . quoteIdent($v) .
-                        " ADD COLUMN `url_is_media_upload` tinyint(1) DEFAULT NULL," .
-                        " ADD COLUMN `media_type` varchar(32) DEFAULT NULL," .
-                        " ADD COLUMN `photo_size_width` int(11) DEFAULT NULL," .
-                        " ADD COLUMN `photo_size_height` int(11) DEFAULT NULL," .
-                        " ADD KEY `url_is_media_upload` (`url_is_media_upload`)," .
-                        " ADD KEY `media_type` (`media_type`)";
-            $rec = $dbh->prepare($query);
-            $rec->execute();
-        }
-    }
-    */
-
     // 23/09/2014 Set global database collation to utf8mb4
 
     $query = "show variables like \"character_set_database\"";

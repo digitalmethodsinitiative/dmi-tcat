@@ -201,30 +201,6 @@ function create_bin($bin_name, $dbh = false) {
         $create_urls = $dbh->prepare($sql);
         $create_urls->execute();
 
-        /*  (as copied from https://dev.twitter.com/overview/api/entities-in-twitter-objects on 17/02/2015
-
-            The media entity
-
-            An array of media attached to the Tweet with the Twitter Photo Upload feature. Each media entity comes with the following attributes:
-
-            id                  the media ID (int format)
-            id_str              the media ID (string format)
-            media_url           The URL of the media file (see the sizes attribute for available sizes)
-            media_url_https     The SSL URL of the media file (see the sizes attribute for available sizes)
-            url                 The media URL that was extracted
-            display_url         Not a URL but a string to display instead of the media URL
-            expanded_url        The fully resolved media URL
-            sizes               We support different sizes: thumb, small, medium and large. The media_url defaults to medium but you can retrieve the media in different sizes by appending a colon + the size key (for example: http://pbs.twimg.com/media/A7EiDWcCYAAZT1D.jpg:thumb). Each available size comes with three attributes that describe it:
-              - w               the width (in pixels) of the media in this particular size
-              - h               the height (in pixels) of the media in this particular size
-              - resize          how we resized the media to this particular size (can be crop or fit)
-            type                Only photo for now
-            indices             The character positions the media was extracted from
-
-         */
-
-        /* Media entities in DMI-TCAT are linked to urls using the media_id attribute. The media id attribute is always taken from id_str. */
-
         $sql = "CREATE TABLE IF NOT EXISTS " . quoteIdent($bin_name . "_media") . " (
             `id` bigint(20) NOT NULL,
             `tweet_id` bigint(20) NOT NULL,
