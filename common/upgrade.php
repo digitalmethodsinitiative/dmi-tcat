@@ -222,7 +222,7 @@ function upgrades() {
 
     }
 
-    // 24/02/2015 remove media_type, photo_size_width and photo_size_height fields from _urls table, add url_media_id
+    // 24/02/2015 remove media_type, photo_size_width and photo_size_height fields from _urls table
     //            create media table
     $query = "SHOW TABLES";
     $rec = $dbh->prepare($query);
@@ -250,6 +250,7 @@ function upgrades() {
                         " DROP COLUMN `photo_size_height`";
             $rec = $dbh->prepare($query);
             $rec->execute();
+            // NOTE: column url_is_media_upload has been deprecated, but will not be removed because it signifies an older structure
         }
         $mediatable = preg_replace("/_urls$/", "_media", $v);
         if (!in_array($mediatable, array_values($results))) {
@@ -257,6 +258,8 @@ function upgrades() {
             $query = "CREATE TABLE IF NOT EXISTS " . quoteIdent($mediatable) . " (
                 `id` bigint(20) NOT NULL,
                 `tweet_id` bigint(20) NOT NULL,
+                `url` varchar(2048),
+                `url_expanded` varchar(2048),
                 `media_url_https` varchar(2048),
                 `media_type` varchar(32),
                 `photo_size_width` int(11),

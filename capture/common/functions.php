@@ -228,6 +228,8 @@ function create_bin($bin_name, $dbh = false) {
         $sql = "CREATE TABLE IF NOT EXISTS " . quoteIdent($bin_name . "_media") . " (
             `id` bigint(20) NOT NULL,
             `tweet_id` bigint(20) NOT NULL,
+            `url` varchar(2048),
+            `url_expanded` varchar(2048),
             `media_url_https` varchar(2048),
             `media_type` varchar(32),
             `photo_size_width` int(11),
@@ -1055,16 +1057,15 @@ class Tweet {
         // all unpacked media link data is available under extended_entities->urls
         // all other link data is available under entities->urls
         // by concatenating this information we do not get duplicates
-        $plain = array();
+        $urls = array();
         foreach ($data["entities"]["urls"] as $url) {
             $u = $url;
             $u['url_expanded'] = $u["expanded_url"];
             unset($u["expanded_url"]);
-            $u['url_is_media_upload'] = 0;
-            $u['url_media_id'] = null;
-            $plain[] = $u;
+            $u['url_is_media_upload'] = 0;          // deprecated attribute
+            $urls[] = $u;
         }
-        $plain = array();
+        $urls = array();
 
         // Extract image data
 
@@ -1080,15 +1081,15 @@ class Tweet {
             $search_image_array = $data['entities']['media'];
         }
 
-        $extended = $media = array();
+        $media = array();
 
         // Store the image data in the _media table
 
         if (is_array($search_image_array)) {
             foreach ($search_image_array as $e) {
-                // TODO: what are indices and do we need them?
                 $m = array();
                 $m["id"] = $e["id_str"];
+                $m["tweet_id" = $this->id;      // link media object to Tweet
                 $m["media_url_https"] = $e["media_url_https"];
                 $m['media_type'] = $e['type'];
                 if (isset($e['sizes']['large'])) {
@@ -1111,21 +1112,6 @@ class Tweet {
             }
         }
 
-        // But store the other url data (such as the link between an _url row and a _media row) in the _urls table
-        // NOTE - or should we link to the Tweet table instead?
-
-        if (is_array($search_image_array)) {
-            foreach ($search_image_array as $m) {
-                $u = array();
-                $u["url"] = $m["url"];
-                $u["url_expanded"] = $m["expanded_url"];
-                $u['url_is_media_upload'] = 1;
-                $u['url_media_id'] = $m['id_str'];
-                $extended[] = $u;
-            } 
-        }
-
-        $urls = array_merge($plain, $extended);
         $this->urls = json_decode(json_encode($urls, FALSE));
         $this->media = json_decode(json_encode($media, FALSE));
         $this->user_mentions = json_decode(json_encode($data["entities"]["user_mentions"]), FALSE);
