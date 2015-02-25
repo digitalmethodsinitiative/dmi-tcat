@@ -188,16 +188,12 @@ function create_bin($bin_name, $dbh = false) {
             `url` varchar(2048),
             `url_expanded` varchar(2048),
             `url_followed` varchar(4096),
-            `url_is_media_upload` tinyint(1),
-            `url_media_id` bigint(11),
             `domain` varchar(2048),
             `error_code` varchar(64),
             PRIMARY KEY (`id`),
                     KEY `tweet_id` (`tweet_id`),                
                     KEY `created_at` (`created_at`),
                     KEY `from_user_id` (`from_user_id`),
-                    KEY `url_is_media_upload` (`url_is_media_upload`),
-                    KEY `url_media_id` (`url_media_id`),
                     FULLTEXT KEY `url_followed` (`url_followed`),
                     KEY `url_expanded` (`url_expanded`)
             ) ENGINE=MyISAM  DEFAULT CHARSET=utf8mb4";
@@ -231,6 +227,7 @@ function create_bin($bin_name, $dbh = false) {
 
         $sql = "CREATE TABLE IF NOT EXISTS " . quoteIdent($bin_name . "_media") . " (
             `id` bigint(20) NOT NULL,
+            `tweet_id` bigint(20) NOT NULL,
             `media_url_https` varchar(2048),
             `media_type` varchar(32),
             `photo_size_width` int(11),
@@ -239,6 +236,7 @@ function create_bin($bin_name, $dbh = false) {
             `indice_start` int(11),
             `indice_end` int(11),
             PRIMARY KEY (`id`),
+                    KEY `tweet_id` (`tweet_id`),
                     KEY `media_type` (`media_type`),
                     KEY `photo_size_width` (`photo_size_width`),
                     KEY `photo_size_height` (`photo_size_height`),
@@ -652,6 +650,21 @@ function getActiveBins() {
     }
     return $querybins;
 }
+
+function getAllBins() {
+    $dbh = pdo_connect();
+    $sql = "select querybin from tcat_query_bins";
+    $rec = $dbh->prepare($sql);
+    $querybins = array();
+    if ($rec->execute() && $rec->rowCount() > 0) {
+        while ($res = $rec->fetch()) {
+            $querybins[] = $res['querybin'];
+        }
+    }
+    $dbh = false;
+    return $querybins;
+}
+
 
 function queryManagerBinExists($binname, $cronjob = false) {
     $dbh = pdo_connect();
@@ -1207,6 +1220,26 @@ class Tweet {
         $row = $test->fetch();
         $dbh = null;
         return $row[0];
+    }
+
+    // delete a Tweet from a bin
+    function deleteFromBin($bin_name) {
+        $dbh = pdo_connect();
+        $query = "DELETE FROM " . quoteIdent($bin_name . "_tweets") . " WHERE id = " . $this->id;
+        $run = $dbh->prepare($query);
+        $run->execute();
+        $exts = array ( 'hashtags', 'mentions', 'urls', 'places', 'withheld', 'media' );
+        foreach ($exts as $ext) {
+            $query = "SHOW TABLES LIKE '" . $bin_name . '_' . $ext . "'";
+            $run = $dbh->prepare($query);
+            $run->execute();
+            if ($run->rowCount() > 0) {
+                $query = "DELETE FROM " . quoteIdent($bin_name . '_' . $ext) . " WHERE tweet_id = " . $this->id;
+                $run = $dbh->prepare($query);
+                $run->execute();
+            }
+        }
+        $dbh = null;
     }
 
 }

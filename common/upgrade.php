@@ -256,6 +256,7 @@ function upgrades() {
             logit("cli", "Creating table $mediatable");
             $query = "CREATE TABLE IF NOT EXISTS " . quoteIdent($mediatable) . " (
                 `id` bigint(20) NOT NULL,
+                `tweet_id` bigint(20) NOT NULL,
                 `media_url_https` varchar(2048),
                 `media_type` varchar(32),
                 `photo_size_width` int(11),
@@ -264,6 +265,7 @@ function upgrades() {
                 `indice_start` int(11),
                 `indice_end` int(11),
                 PRIMARY KEY (`id`),
+                        KEY `tweet_id` (`tweet_id`),
                         KEY `media_type` (`media_type`),
                         KEY `photo_size_width` (`photo_size_width`),
                         KEY `photo_size_height` (`photo_size_height`),
