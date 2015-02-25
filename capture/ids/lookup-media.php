@@ -117,8 +117,6 @@ function search($idlist) {
                     $all_tweet_ids[] = $t->id;
                     $tweet_ids[] = $t->id;
                     $tweetQueue->push($t, $bin_name);
-                } else {
-                    print "Error (tweet id " . $t->id . " should be in database, bin $bin_name but is not)\n";
                 }
 
                 print ".";
