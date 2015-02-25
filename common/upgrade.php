@@ -141,39 +141,6 @@ function upgrades() {
         }
     }
 
-    // 23/09/2014 add url_is_media_upload, media_type, photo_size_width and photo_size_height fields to _urls table (and set default null)
-    $query = "SHOW TABLES";
-    $rec = $dbh->prepare($query);
-    $rec->execute();
-    $results = $rec->fetchAll(PDO::FETCH_COLUMN);
-    foreach ($results as $k => $v) {
-        if (!preg_match("/_urls$/", $v)) continue; 
-        if ($single && $v !== $single . '_urls') { continue; }
-        $query = "SHOW COLUMNS FROM $v";
-        $rec = $dbh->prepare($query);
-        $rec->execute();
-        $columns = $rec->fetchAll(PDO::FETCH_COLUMN);
-        $update = TRUE;
-        foreach ($columns as $i => $c) {
-            if ($c == 'url_is_media_upload') {
-                $update = FALSE;
-                break;
-            }
-        }
-        if ($update) {
-            logit("cli", "Adding new columns url_is_media_upload, media_type, photo_size_width and photo_size_height to table $v");
-            $query = "ALTER TABLE " . quoteIdent($v) .
-                        " ADD COLUMN `url_is_media_upload` tinyint(1) DEFAULT NULL," .
-                        " ADD COLUMN `media_type` varchar(32) DEFAULT NULL," .
-                        " ADD COLUMN `photo_size_width` int(11) DEFAULT NULL," .
-                        " ADD COLUMN `photo_size_height` int(11) DEFAULT NULL," .
-                        " ADD KEY `url_is_media_upload` (`url_is_media_upload`)," .
-                        " ADD KEY `media_type` (`media_type`)";
-            $rec = $dbh->prepare($query);
-            $rec->execute();
-        }
-    }
-
     // 23/09/2014 Set global database collation to utf8mb4
 
     $query = "show variables like \"character_set_database\"";
@@ -220,6 +187,66 @@ function upgrades() {
             $rec->execute();
         }
 
+    }
+
+    // 24/02/2015 remove media_type, photo_size_width and photo_size_height fields from _urls table
+    //            create media table
+    $query = "SHOW TABLES";
+    $rec = $dbh->prepare($query);
+    $rec->execute();
+    $results = $rec->fetchAll(PDO::FETCH_COLUMN);
+    foreach ($results as $k => $v) {
+        if (!preg_match("/_urls$/", $v)) continue; 
+        if ($single && $v !== $single . '_urls') { continue; }
+        $query = "SHOW COLUMNS FROM $v";
+        $rec = $dbh->prepare($query);
+        $rec->execute();
+        $columns = $rec->fetchAll(PDO::FETCH_COLUMN);
+        $update_remove = FALSE;
+        foreach ($columns as $i => $c) {
+            if ($c == 'photo_size_width') {
+                $update_remove = TRUE;
+                break;
+            }
+        }
+        if ($update_remove) {
+            logit("cli", "Removing columns media_type, photo_size_width and photo_size_height from table $v");
+            $query = "ALTER TABLE " . quoteIdent($v) .
+                        " DROP COLUMN `media_type`," .
+                        " DROP COLUMN `photo_size_width`," .
+                        " DROP COLUMN `photo_size_height`";
+            $rec = $dbh->prepare($query);
+            $rec->execute();
+            // NOTE: column url_is_media_upload has been deprecated, but will not be removed because it signifies an older structure
+        }
+        $mediatable = preg_replace("/_urls$/", "_media", $v);
+        if (!in_array($mediatable, array_values($results))) {
+            logit("cli", "Creating table $mediatable");
+            $query = "CREATE TABLE IF NOT EXISTS " . quoteIdent($mediatable) . " (
+                `id` bigint(20) NOT NULL,
+                `tweet_id` bigint(20) NOT NULL,
+                `url` varchar(2048),
+                `url_expanded` varchar(2048),
+                `media_url_https` varchar(2048),
+                `media_type` varchar(32),
+                `photo_size_width` int(11),
+                `photo_size_height` int(11),
+                `photo_resize` varchar(32),
+                `indice_start` int(11),
+                `indice_end` int(11),
+                PRIMARY KEY (`id`, `tweet_id`),
+                        KEY `media_url_https` (`media_url_https`),
+                        KEY `media_type` (`media_type`),
+                        KEY `photo_size_width` (`photo_size_width`),
+                        KEY `photo_size_height` (`photo_size_height`),
+                        KEY `photo_resize` (`photo_resize`)
+                ) ENGINE=MyISAM  DEFAULT CHARSET=utf8mb4";
+            $rec = $dbh->prepare($query);
+            $rec->execute();
+        }
+        if ($update_remove) {
+            logit("cli", "Please run the upgrade-media.php script to lookup media data for Tweets in your bins.");
+        }
     }
 
     // End of upgrades
