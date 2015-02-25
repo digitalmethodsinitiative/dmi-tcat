@@ -1089,7 +1089,7 @@ class Tweet {
             foreach ($search_image_array as $e) {
                 $m = array();
                 $m["id"] = $e["id_str"];
-                $m["tweet_id" = $this->id;      // link media object to Tweet
+                $m["tweet_id"] = $this->id;      // link media object to Tweet
                 $m["media_url_https"] = $e["media_url_https"];
                 $m['media_type'] = $e['type'];
                 if (isset($e['sizes']['large'])) {
