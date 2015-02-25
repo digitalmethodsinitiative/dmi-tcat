@@ -239,6 +239,7 @@ function create_bin($bin_name, $dbh = false) {
             `indice_end` int(11),
             PRIMARY KEY (`id`),
                     KEY `tweet_id` (`tweet_id`),
+                    KEY `media_url_https` (`media_url_https`),
                     KEY `media_type` (`media_type`),
                     KEY `photo_size_width` (`photo_size_width`),
                     KEY `photo_size_height` (`photo_size_height`),
