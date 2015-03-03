@@ -1,8 +1,11 @@
 <?php
 include_once("../../config.php");
+include_once("../../common/auth.php");
 
-if (defined("ADMIN_USER") && ADMIN_USER != "" && (!isset($_SERVER['PHP_AUTH_USER']) || $_SERVER['PHP_AUTH_USER'] != ADMIN_USER))
-    die("Go away, you evil hacker!");
+$auth = new TCATAuth();
+//if (!$auth->isAdmin())
+//    die("Go away, you evil hacker!");
+
 ?>
 
 <div class='if_row_header' style='height:200px;'>Phrases to track:</div>

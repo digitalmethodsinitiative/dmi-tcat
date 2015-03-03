@@ -307,7 +307,20 @@ function create_admin() {
     ) ENGINE = MyISAM DEFAULT CHARSET = utf8mb4";
     $create = $dbh->prepare($sql);
     $create->execute();
-    $dbh = false;
+
+    $sql = "CREATE TABLE IF NOT EXISTS tcat_acl_bins (
+    `id` INT NOT NULL AUTO_INCREMENT,
+    `username` VARCHAR(45) NOT NULL,
+    `querybin_id` INT NOT NULL,
+    `analyze` BOOLEAN NOT NULL,
+    `administrate` BOOLEAN NOT NULL,
+    PRIMARY KEY (`id`),
+    KEY `username` (`username`),
+    KEY `querybin_id` (`querybin_id`)
+    ) ENGINE = MyISAM DEFAULT CHARSET = utf8mb4";
+    $create = $dbh->prepare($sql);
+    $create->execute();
+
 }
 
 /*

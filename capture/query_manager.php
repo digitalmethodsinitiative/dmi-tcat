@@ -1,9 +1,12 @@
 <?php
 
 include_once("../config.php");
+include_once("../common/auth.php");
 
-if (defined(ADMIN_USER) && ADMIN_USER != "" && (!isset($_SERVER['PHP_AUTH_USER']) || $_SERVER['PHP_AUTH_USER'] != ADMIN_USER))
-    die("Go away, you evil hacker!");
+global $auth;
+$auth = new TCATAuth();
+// if (!$auth->isAdmin())
+//    die("Go away, you evil hacker!");
 
 include_once("../common/functions.php");
 include_once("../capture/common/functions.php");
@@ -623,6 +626,7 @@ function getBinIds() {
 }
 
 function getBins() {
+    global $auth;
 
     $dbh = pdo_connect();
 
@@ -637,6 +641,9 @@ function getBins() {
     $bin_results = $rec->fetchAll();
     $querybins = array();
     foreach ($bin_results as $data) {
+        if (!$auth->canAdministrate($data['querybin'])) {
+            continue;
+        }
         if (!isset($querybins[$data['id']])) {
             $bin = new stdClass();
             $bin->periods = array();
