@@ -10,7 +10,7 @@ $minf = isset($_GET['minf']) ? $minf = $_GET['minf'] : 1;
 
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
-        <title>Twitter Tool</title>
+        <title>TCAT :: Word list</title>
 
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
@@ -26,7 +26,7 @@ $minf = isset($_GET['minf']) ? $minf = $_GET['minf'] : 1;
 
     <body>
 
-        <h1>Twitter Analytics - Word frequency</h1>
+        <h1>TCAT :: Word list</h1>
 
         <?php
         validate_all_variables();
@@ -42,7 +42,7 @@ $minf = isset($_GET['minf']) ? $minf = $_GET['minf'] : 1;
         $debug = '';
         if ($sqlresults) {
             while ($data = mysql_fetch_assoc($sqlresults)) {
-                $text = validate($data["text"], "tweet");
+                $text = textToCSV($data["text"], "tweet");
                 preg_match_all('/(https?:\/\/[^\s]+)|([\p{L}][\p{L}]+)/u', $text, $matches, PREG_PATTERN_ORDER);
                 foreach ($matches[0] as $word) {
                     if (preg_match('/(https?:\/\/)/u', $word))

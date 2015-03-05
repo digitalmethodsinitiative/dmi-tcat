@@ -2,20 +2,6 @@
 require_once '../config.php';
 require_once 'common/config.php';
 require_once 'common/functions.php';
-// limit data sets to specific users
-if (isset($_SERVER['PHP_AUTH_USER']) && in_array($_SERVER['PHP_AUTH_USER'], array("zoe", "densitydesign_04"))) {
-    foreach ($datasets as $k => $set) {
-        if ($_SERVER['PHP_AUTH_USER'] == "zoe") {
-            if (!in_array($set['bin'], array('pistorius')))
-                unset($datasets[$k]);
-            $dataset = "pistorius";
-	} elseif ($_SERVER['PHP_AUTH_USER'] == "densitydesign_04") {
-            if (!in_array($set['bin'], array('netneutrality')))
-                unset($datasets[$k]);
-            $dataset = "netneutrality";
-	}
-    }
-}
 ?>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -671,6 +657,14 @@ foreach ($linedata as $key => $value) {
                     <div class="txt_desc">Use: get a grasp of the most used language.</div>
                     <div class="txt_link"> &raquo;  <a href="" onclick="var lowercase = askLowercase(); var minf = askFrequency(); $('#whattodo').val('word_frequency&lowercase='+lowercase+'&minf='+minf+getInterval());sendUrl('mod.word_frequency.php');return false;">launch</a></div>
 
+                    <hr/>
+
+                    <h3>Media frequency</h3>
+                    <div class="txt_desc">Contains media URLs and the number of times they have been used.</div>
+                    <div class="txt_desc">Use: get a grasp of the most popular media.</div>
+                    <div class="txt_link"> &raquo;  <a href="" onclick="var minf = askFrequency(); $('#whattodo').val('media_frequency&minf='+minf+getInterval());sendUrl('mod.media_frequency.php');return false;">launch</a></div>
+
+
                 </div>
 
 
@@ -687,10 +681,11 @@ foreach ($linedata as $key => $value) {
                                 $exportSettings = $_GET['exportSettings'];
                             ?>
                             <?php if ($show_url_export) { ?>
-                                <input type='checkbox' name="exportSettings" value="urls" <?php if (array_search("urls", $exportSettings) !== false) print "CHECKED"; ?>>URLs and media</input>
+                                <input type='checkbox' name="exportSettings" value="urls" <?php if (array_search("urls", $exportSettings) !== false) print "CHECKED"; ?>>URLs</input>
                             <?php } ?>
                             <input type='checkbox' name="exportSettings" value="mentions" <?php if (array_search("mentions", $exportSettings) !== false) print "CHECKED"; ?>>mentions</input>
                             <input type='checkbox' name="exportSettings" value="hashtags" <?php if (array_search("hashtags", $exportSettings) !== false) print "CHECKED"; ?>>hashtags</input>
+                            <input type='checkbox' name="exportSettings" value="media" <?php if (array_search("media", $exportSettings) !== false) print "CHECKED"; ?>>media</input>
                         </form>
                     </div>
 

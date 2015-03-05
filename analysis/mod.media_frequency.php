@@ -2,7 +2,6 @@
 require_once './common/config.php';
 require_once './common/functions.php';
 
-$lowercase = isset($_GET['lowercase']) ? $lowercase = $_GET['lowercase'] : 0;
 $minf = isset($_GET['minf']) ? $minf = $_GET['minf'] : 1;
 
 ?>
@@ -11,7 +10,7 @@ $minf = isset($_GET['minf']) ? $minf = $_GET['minf'] : 1;
 
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
-        <title>TCAT :: Word frequency</title>
+        <title>TCAT :: Media frequency</title>
 
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
@@ -27,7 +26,7 @@ $minf = isset($_GET['minf']) ? $minf = $_GET['minf'] : 1;
 
     <body>
 
-        <h1>TCAT :: Word frequency</h1>
+        <h1>TCAT :: Media frequency</h1>
 
         <?php
         validate_all_variables();
@@ -36,22 +35,18 @@ $minf = isset($_GET['minf']) ? $minf = $_GET['minf'] : 1;
         fputs($tempfile, chr(239) . chr(187) . chr(191));
 
         mysql_query("set names utf8");
-        $sql = "SELECT text, " . sqlInterval() . " FROM " . $esc['mysql']['dataset'] . "_tweets t ";
+        $sql = "SELECT m.media_url_https as url, " . sqlInterval() . " FROM " . $esc['mysql']['dataset'] . "_tweets t, " .
+                $esc['mysql']['dataset'] . "_media m ";
         $sql .= sqlSubset();
-        //$sql .= " GROUP BY datepart ORDER BY datepart ASC";
+        $sql .= " AND m.tweet_id = t.id ";
         $sql .= " ORDER BY datepart ASC";
         $sqlresults = mysql_query($sql);
         $debug = '';
         if ($sqlresults) {
             while ($data = mysql_fetch_assoc($sqlresults)) {
-                $text = textToCSV($data["text"]);
+                $url = textToCSV($data["url"]);
                 $datepart = str_replace(' ', '_', $data["datepart"]);
-                preg_match_all('/(https?:\/\/[^\s]+)|([@#\p{L}][\p{L}]+)/u', $text, $matches, PREG_PATTERN_ORDER);
-                foreach ($matches[0] as $word) {
-                    if (preg_match('/(https?:\/\/)/u', $word)) continue;
-                    if ($lowercase !== 0) $word = mb_strtolower($word);
-                    fputs($tempfile, "\"$datepart\" \"$word\"\n");
-                }
+                fputs($tempfile, "\"$datepart\" \"$url\"\n");
             }
         }
 
@@ -63,10 +58,10 @@ $minf = isset($_GET['minf']) ? $minf = $_GET['minf'] : 1;
 
         // write csv results
 
-        $filename = get_filename_for_export("wordFrequency");
+        $filename = get_filename_for_export("mediaFrequency");
         $csv = fopen($filename, "w");
         fputs($csv, chr(239) . chr(187) . chr(191));
-        fputs($csv, "interval,word,frequency\n");
+        fputs($csv, "data,media url,frequency\n");
         system("sort -S 8% $templocation | uniq -c | sort -S 8% -b -k 2,2 -k 1,1nr -k 3,3 | awk '{ if ($1 >= $minf) { print $2 \",\" $3 \",\" $1} }' | sed -e 's/_/ /' >> $filename");
  
         fclose($csv);

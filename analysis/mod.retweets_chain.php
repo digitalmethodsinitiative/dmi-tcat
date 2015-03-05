@@ -7,7 +7,7 @@ require_once './common/functions.php';
 
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
-        <title>Twitter Tool</title>
+        <title>TCAT :: Export retweet chain</title>
 
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
@@ -23,7 +23,7 @@ require_once './common/functions.php';
 
     <body>
 
-        <h1>Twitter Analytics - Export Tweets</h1>
+        <h1>TCAT :: Export retweet chain</h1>
 
         <?php
         validate_all_variables();
@@ -77,27 +77,27 @@ require_once './common/functions.php';
                     $out .= $id . "," .
                             strtotime($data["created_at"]) . "," .
                             $data["created_at"] . "," .
-                            "\"" . cleanText($data["from_user_name"]) . "\"," .
-                            "\"" . validate($data["text"], "tweet") . "\"," .
+                            "\"" . textToCSV($data["from_user_name"]) . "\"," .
+                            "\"" . textToCSV($data["text"]) . "\"," .
                             $data['filter_level'] . "," .
                             (isset($data['possibly_sensitive']) ? $data['possibly_sensitive'] : "") . "," .
                             (isset($data['withheld_copyright']) ? $data['withheld_copyright'] : "") . "," .
                             (isset($data['withheld_scope']) ? $data['withheld_scope'] : "") . "," .
                             (isset($data['truncated']) ? $data['truncated'] : "") . "," .
                             (isset($data['favorite_count']) ? $data['favorite_count'] : "") . "," .
-                            (isset($data['lang']) ? "\"" . cleanText($data['lang']) . "\"" : "") . "," .
-                            (isset($data['to_user_name']) ? "\"" . cleanText($data['to_user_name']) . "\"" : "") . "," .
+                            (isset($data['lang']) ? "\"" . textToCSV($data['lang']) . "\"" : "") . "," .
+                            (isset($data['to_user_name']) ? "\"" . textToCSV($data['to_user_name']) . "\"" : "") . "," .
                             (isset($data['in_reply_to_status_id']) ? $data['in_reply_to_status_id'] : "") . "," .
-                            "\"" . cleanText($data["source"]) . "\"," .
-                            "\"" . cleanText($data["location"]) . "\"," .
+                            "\"" . textToCSV($data["source"]) . "\"," .
+                            "\"" . textToCSV($data["location"]) . "\"," .
                             $data['geo_lat'] . "," .
                             $data['geo_lng'] . "," .
                             $data['from_user_id'] . "," .
-                            (isset($data['from_user_realname']) ? "\"" . cleanText($data['from_user_realname']) . "\"" : "") . "," .
+                            (isset($data['from_user_realname']) ? "\"" . textToCSV($data['from_user_realname']) . "\"" : "") . "," .
                             $data['from_user_verified'] . "," .
-                            "\"" . cleanText($data['from_user_description']) . "\"," .
-                            "\"" . cleanText($data['from_user_url']) . "\"," .
-                            "\"" . cleanText($data['from_user_profile_image_url']) . "\"," .
+                            "\"" . textToCSV($data['from_user_description']) . "\"," .
+                            "\"" . textToCSV($data['from_user_url']) . "\"," .
+                            "\"" . textToCSV($data['from_user_profile_image_url']) . "\"," .
                             (isset($data['from_user_utcoffset']) ? $data['from_user_utcoffset'] : "") . "," .
                             (isset($data['from_user_timezone']) ? $data['from_user_timezone'] : "") . "," .
                             "\"" . $data['from_user_lang'] . "\"," .
@@ -122,7 +122,7 @@ require_once './common/functions.php';
                                 $media[] = $res2['url_is_media_upload'];
                             }
                         }
-                        $out .= "," . implode("; ", $urls) . "," . implode("; ", $expanded) . "," . implode("; ", $followed) . "," . implode("; ", $domain) . "," . implode("; ", $error) . "," . implode("; ", $media);
+                        $out .= ",\"" . textToCSV(implode("; ", $urls)) . "\",\"" . textToCSV(implode("; ", $expanded)) . "\",\"" . textToCSV(implode("; ", $followed)) . "\",\"" . textToCSV(implode("; ", $domain)) . "\",\"" . textToCSV(implode("; ", $error)) . "\",\"" . textToCSV(implode("; ", $media)) . "\"";
                     }
                     if (array_search("mentions", $exportSettings) !== false) {
                         $sql2 = "SELECT * FROM " . $esc['mysql']['dataset'] . "_mentions WHERE tweet_id = " . $id;
@@ -153,10 +153,6 @@ require_once './common/functions.php';
         }
         fclose($file);
         
-                function cleanText($text) {
-            return preg_replace("/[\r\t\n,]/", " ", addslashes(trim(strip_tags(html_entity_decode($text)))));
-        }
-
         echo '<fieldset class="if_parameters">';
         echo '<legend>Your File</legend>';
         echo '<p><a href="' . filename_to_url($filename) . '">' . $filename . '</a></p>';

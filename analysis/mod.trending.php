@@ -13,7 +13,7 @@ validate_all_variables();
 
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
-        <title>Trending Keywords</title>
+        <title>TCAT :: Trending keywords</title>
 
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
@@ -30,7 +30,7 @@ validate_all_variables();
 
     <body>
 
-        <h1>Bursty keywords</h1>
+        <h1>TCAT :: Trending keywords</h1>
 
         <table>
 

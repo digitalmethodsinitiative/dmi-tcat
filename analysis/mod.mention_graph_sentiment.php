@@ -7,7 +7,7 @@ require_once './common/functions.php';
 
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
-        <title>Twitter Analytics</title>
+        <title>TCAT :: Mention sentiment graph</title>
 
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
@@ -23,7 +23,7 @@ require_once './common/functions.php';
 
     <body>
 
-        <h1>Twitter Analytics</h1>
+        <h1>TCAT :: Mention sentiment graph</h1>
 
         <?php
         validate_all_variables();

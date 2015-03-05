@@ -7,7 +7,7 @@ require_once './common/functions.php';
 
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
-        <title>Twitter Tool</title>
+        <title>TCAT :: Export Tweet IDs</title>
 
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
@@ -23,7 +23,7 @@ require_once './common/functions.php';
 
     <body>
 
-        <h1>Export Tweet IDs</h1>
+        <h1>TCAT :: Export Tweet IDs</h1>
 
         <?php
         validate_all_variables();

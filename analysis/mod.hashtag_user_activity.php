@@ -8,7 +8,7 @@ require_once './common/Gexf.class.php';
 
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
-        <title>Twitter Analytics hashtag - user activity</title>
+        <title>TCAT :: Hashtag user activity</title>
 
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
@@ -18,7 +18,7 @@ require_once './common/Gexf.class.php';
 
     <body>
 
-        <h1>Twitter Analytics hashtag - user activity</h1>
+        <h1>TCAT :: Hashtag user activity</h1>
 
         <?php
         validate_all_variables();

@@ -188,24 +188,41 @@ function create_bin($bin_name, $dbh = false) {
             `url` varchar(2048),
             `url_expanded` varchar(2048),
             `url_followed` varchar(4096),
-            `url_is_media_upload` tinyint(1),
-            `media_type` varchar(32),
-            `photo_size_width` int(11),
-            `photo_size_height` int(11),
             `domain` varchar(2048),
             `error_code` varchar(64),
             PRIMARY KEY (`id`),
                     KEY `tweet_id` (`tweet_id`),                
                     KEY `created_at` (`created_at`),
                     KEY `from_user_id` (`from_user_id`),
-                    KEY `url_is_media_upload` (`url_is_media_upload`),
-                    KEY `media_type` (`media_type`),
                     FULLTEXT KEY `url_followed` (`url_followed`),
                     KEY `url_expanded` (`url_expanded`)
             ) ENGINE=MyISAM  DEFAULT CHARSET=utf8mb4";
 
         $create_urls = $dbh->prepare($sql);
         $create_urls->execute();
+
+        $sql = "CREATE TABLE IF NOT EXISTS " . quoteIdent($bin_name . "_media") . " (
+            `id` bigint(20) NOT NULL,
+            `tweet_id` bigint(20) NOT NULL,
+            `url` varchar(2048),
+            `url_expanded` varchar(2048),
+            `media_url_https` varchar(2048),
+            `media_type` varchar(32),
+            `photo_size_width` int(11),
+            `photo_size_height` int(11),
+            `photo_resize` varchar(32),
+            `indice_start` int(11),
+            `indice_end` int(11),
+            PRIMARY KEY (`id`, `tweet_id`),
+                    KEY `media_url_https` (`media_url_https`),
+                    KEY `media_type` (`media_type`),
+                    KEY `photo_size_width` (`photo_size_width`),
+                    KEY `photo_size_height` (`photo_size_height`),
+                    KEY `photo_resize` (`photo_resize`)
+            ) ENGINE=MyISAM  DEFAULT CHARSET=utf8mb4";
+
+        $create_media = $dbh->prepare($sql);
+        $create_media->execute();
         $dbh = false;
 
         return TRUE;
@@ -612,6 +629,21 @@ function getActiveBins() {
     return $querybins;
 }
 
+function getAllBins() {
+    $dbh = pdo_connect();
+    $sql = "select querybin from tcat_query_bins";
+    $rec = $dbh->prepare($sql);
+    $querybins = array();
+    if ($rec->execute() && $rec->rowCount() > 0) {
+        while ($res = $rec->fetch()) {
+            $querybins[] = $res['querybin'];
+        }
+    }
+    $dbh = false;
+    return $querybins;
+}
+
+
 function queryManagerBinExists($binname, $cronjob = false) {
     $dbh = pdo_connect();
     $rec = $dbh->prepare("SELECT id FROM tcat_query_bins WHERE querybin = :binname");
@@ -829,7 +861,9 @@ class Tweet {
     public $user_mentions = array();
     public $hashtags = array();
     public $urls = array();
+    public $media = array();
 
+    // TODO: import media entities in fromGnip()
     public static function fromGnip($json) {
         // Parse JSON when fed JSON string
         if (is_string($json)) {
@@ -996,41 +1030,66 @@ class Tweet {
 
         // tweet data (arrays) to object conversion
         // a tweet text can contain multiple URLs, and multiple media URLs can be packed into a single link inside the tweet
-        // all unpacked media link data is available under extended_entities->urls
         // all other link data is available under entities->urls
         // by concatenating this information we do not get duplicates
-        $plain = array();
+        $urls = array();
         foreach ($data["entities"]["urls"] as $url) {
             $u = $url;
             $u['url_expanded'] = $u["expanded_url"];
             unset($u["expanded_url"]);
-            $u['url_is_media_upload'] = 0;
-            $u['media_type'] = null;
-            $u['photo_size_width'] = null;
-            $u['photo_size_height'] = null;
-            $plain[] = $u;
+            $u['url_is_media_upload'] = 0;          // deprecated attribute
+            $urls[] = $u;
         }
-        $extended = array();
+
+        // Extract image data
+
+        $search_image_array = null;
         if (array_key_exists('extended_entities', $data) &&
-                array_key_exists('media', $data["extended_entities"])) {
-            foreach ($data["extended_entities"]["media"] as $media) {
-                $u = array();
-                $u["url"] = $media["url"];
-                $u["url_expanded"] = $media["expanded_url"];
-                $u['url_is_media_upload'] = 1;
-                $u['media_type'] = $media['type'];
-                if (isset($media['sizes']['large'])) {
-                    $u['photo_size_width'] = $media['sizes']['large']['w'];
-                    $u['photo_size_height'] = $media['sizes']['large']['h'];
+            array_key_exists('media', $data["extended_entities"])) {
+            $search_image_array = $data['extended_entities']['media'];
+        } else if (!array_key_exists('extended_entities', $data) &&
+                   array_key_exists('entities', $data) &&
+                   array_key_exists('media', $data["entities"])) {
+            // Extract the photo data from the media[] array (which contains only a single item)
+            // At this moment only the Search API does not return extended_entities
+            $search_image_array = $data['entities']['media'];
+        }
+
+        $media = array();
+
+        // Store the image data in the _media table
+
+        if (is_array($search_image_array)) {
+            foreach ($search_image_array as $e) {
+                $m = array();
+                $m["id"] = $e["id_str"];
+                $m["tweet_id"] = $this->id;      // link media object to Tweet
+                $m["url"] = $e["url"];
+                $m["url_expanded"] = $e["expanded_url"];
+                $m["media_url_https"] = $e["media_url_https"];
+                $m['media_type'] = $e['type'];
+                if (isset($e['sizes']['large'])) {
+                    $m['photo_size_width'] = $e['sizes']['large']['w'];
+                    $m['photo_size_height'] = $e['sizes']['large']['h'];
+                    $m['photo_resize'] = $e['sizes']['large']['resize'];
                 } else {
-                    $u['photo_size_width'] = null;
-                    $u['photo_size_height'] = null;
+                    $m['photo_size_width'] = null;
+                    $m['photo_size_height'] = null;
+                    $m['photo_resize'] = null;
                 }
-                $extended[] = $u;
+                if (isset($e['indices'])) {
+                    $m['indice_start'] = $e['indices'][0];
+                    $m['indice_end'] = $e['indices'][1];
+                } else {
+                    $m['indice_start'] = null;
+                    $m['indice_end'] = null;
+                }
+                $media[] = $m;
             }
         }
-        $urls = array_merge($plain, $extended);
+
         $this->urls = json_decode(json_encode($urls, FALSE));
+        $this->media = json_decode(json_encode($media, FALSE));
         $this->user_mentions = json_decode(json_encode($data["entities"]["user_mentions"]), FALSE);
         $this->hashtags = json_decode(json_encode($data["entities"]["hashtags"]), FALSE);
         if (isset($data["withheld_in_countries"])) {
@@ -1125,6 +1184,26 @@ class Tweet {
         return $row[0];
     }
 
+    // delete a Tweet from a bin
+    function deleteFromBin($bin_name) {
+        $dbh = pdo_connect();
+        $query = "DELETE FROM " . quoteIdent($bin_name . "_tweets") . " WHERE id = " . $this->id;
+        $run = $dbh->prepare($query);
+        $run->execute();
+        $exts = array ( 'hashtags', 'mentions', 'urls', 'places', 'withheld', 'media' );
+        foreach ($exts as $ext) {
+            $query = "SHOW TABLES LIKE '" . $bin_name . '_' . $ext . "'";
+            $run = $dbh->prepare($query);
+            $run->execute();
+            if ($run->rowCount() > 0) {
+                $query = "DELETE FROM " . quoteIdent($bin_name . '_' . $ext) . " WHERE tweet_id = " . $this->id;
+                $run = $dbh->prepare($query);
+                $run->execute();
+            }
+        }
+        $dbh = null;
+    }
+
 }
 
 class TweetQueue {
@@ -1149,7 +1228,7 @@ class TweetQueue {
 
     function cacheBin($bin) {
         $dbh = pdo_connect();
-        $tables = array('tweets', 'mentions', 'urls', 'hashtags', 'withheld', 'places');
+        $tables = array('tweets', 'mentions', 'urls', 'hashtags', 'withheld', 'places', 'media');
         foreach ($tables as $table) {
             $sql = "show columns from $bin" . "_$table";
             $rec = $dbh->prepare($sql);
@@ -1232,8 +1311,7 @@ class TweetQueue {
         if ($count == 0)
             return '';     // unknown table
 
-            
-// for these tables, again discount the 'id' field
+        // for these tables, again discount the 'id' field
         if ($table_extension == 'mentions' || $table_extension == 'hashtags' || $table_extension == 'urls' || $table_extension == 'withheld')
             $count--;
         $statement .= rtrim(str_repeat("( " . rtrim(str_repeat("?,", $count), ',') . " ),", $rowcount), ',');
@@ -1256,26 +1334,28 @@ class TweetQueue {
                 $binlist[$bin_name]['mentions'] += count($obj['tweet']->user_mentions);
                 $binlist[$bin_name]['withheld'] += count($obj['tweet']->withheld_in_countries);
                 $binlist[$bin_name]['places'] += count($obj['tweet']->places);
+                $binlist[$bin_name]['media'] += count($obj['tweet']->media);
                 continue;
             }
             if (!$this->hasCached($bin_name))
                 $this->cacheBin($bin_name);
+
             $binlist[$bin_name] = array('tweets' => 1,
-                'hashtags' => count($obj['tweet']->hashtags),
-                'urls' => count($obj['tweet']->urls),
-                'mentions' => count($obj['tweet']->user_mentions),
-                'withheld' => count($obj['tweet']->withheld_in_countries),
-                'places' => count($obj['tweet']->places)
-            );
+                        'hashtags' => count($obj['tweet']->hashtags),
+                        'urls' => count($obj['tweet']->urls),
+                        'mentions' => count($obj['tweet']->user_mentions),
+                        'withheld' => count($obj['tweet']->withheld_in_countries),
+                        'places' => count($obj['tweet']->places),
+                        'media' => count($obj['tweet']->media)
+                    );
         }
 
         // process the queue bin by bin
 
         foreach ($binlist as $bin_name => $counts) {
-
             // first prepare the multiple insert statements for tweets, mentions, hashtags, urls, withheld, places
             $statement = array();
-            $extensions = array('tweets', 'mentions', 'hashtags', 'urls', 'withheld', 'places');
+            $extensions = array('tweets', 'mentions', 'hashtags', 'urls', 'withheld', 'places', 'media');
             foreach ($extensions as $ext) {
                 $statement[$ext] = $this->headMultiInsert($bin_name, $ext, $counts[$ext]);
             }
@@ -1291,6 +1371,8 @@ class TweetQueue {
             $withheldq = $dbh->prepare($statement['withheld']);
             $placesi = 1;
             $placesq = $dbh->prepare($statement['places']);
+            $mediai = 1;
+            $mediaq = $dbh->prepare($statement['media']);
 
             // go now and iterate the queue item by item
             foreach ($this->queue as $obj) {
@@ -1352,7 +1434,6 @@ class TweetQueue {
                     }
                 }
                 if ($statement['places'] !== '') {
-
                     if ($t->places && !empty($t->places) && !empty($this->binColumnsCache[$bin_name]['places'])) {
                         $fields = $this->binColumnsCache[$bin_name]['places'];
                         foreach ($t->places as $place) {
@@ -1362,6 +1443,17 @@ class TweetQueue {
                         }
                     }
                 }
+                if ($statement['media'] !== '') {
+                    if ($t->media && !empty($t->media) && !empty($this->binColumnsCache[$bin_name]['media'])) {
+                        $fields = $this->binColumnsCache[$bin_name]['media'];
+                        foreach ($t->media as $media) {
+                            foreach ($fields as $f) {
+                                $mediaq->bindParam($mediai++, $media->$f);
+                            }
+                        }
+                    }
+                }
+
             }
 
             // finaly insert the tweets and other data
@@ -1405,6 +1497,13 @@ class TweetQueue {
                     $placesq->execute();
                 } catch (PDOException $e) {
                     $this->reportPDOError($e, $bin_name . '_places');
+                }
+            }
+            if ($statement['media'] !== '') {
+                try {
+                    $mediaq->execute();
+                } catch (PDOException $e) {
+                    $this->reportPDOError($e, $bin_name . '_media');
                 }
             }
 
@@ -1576,11 +1675,13 @@ function tracker_run() {
     }
 
     // sanity check for geo bins functions
-    if (geobinsActive() && !geophp_sane()) {
+    if (geophp_sane()) {
+        logit(CAPTURE . ".error.log", "geoPHP library is fully functional");
+    } elseif (geobinsActive()) {
         logit(CAPTURE . ".error.log", "refusing to track until geobins are stopped or geo is functional");
         exit(1);
     } else {
-        logit(CAPTURE . ".error.log", "geoPHP library is fully functional");
+        logit(CAPTURE . ".error.log", "geoPHP functions are not yet available, see documentation for instructions");
     }
 
     global $ratelimit, $exceeding, $ex_start, $last_insert_id;
@@ -1806,7 +1907,7 @@ function processtweets($capturebucket) {
                          *
                          * 1) Twitter will give us all the tweets which have excplicit GPS coordinates inside one of our queried areas.
                          * 2) Additionaly Twitter give us those tweets with a user 'place' definition. A place (i.e. Paris) is itself a (set of) gps polygons
-                         *    Twitter returns the tweets if one of these place polygons coverts the same area as our geo boxes.  
+                         *    Twitter returns the tweets if one of these place polygons covers the same area as our geo boxes.  
                          *
                          * And matching (by us)
                          *

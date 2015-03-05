@@ -7,7 +7,7 @@ require_once './common/functions.php';
 
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
-        <title>Twitter Tool</title>
+        <title>TCAT :: Export Tweets sentiment</title>
 
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
@@ -23,7 +23,7 @@ require_once './common/functions.php';
 
     <body>
 
-        <h1>Twitter Analytics - Export Tweets</h1>
+        <h1>TCAT :: Export Tweets sentiment</h1>
 
         <?php
         validate_all_variables();
@@ -56,7 +56,7 @@ require_once './common/functions.php';
                     $id = $data['tweet_id'];
                 else
                     $id = $data['id'];
-                $out.= $id.",".validate($data['text'],'tweet').",";
+                $out.= $id.",".textToCSV($data['text']).",";
                /* $out.= $id . "," .
                         strtotime($data["created_at"]) . "," .
                         $data["created_at"] . "," .
@@ -99,7 +99,7 @@ require_once './common/functions.php';
                     $out .= "," . $urls . "," . $expanded . "," . $followed . "," . $domain;
                 }*/
                 if (isset($sentiment[$id]))
-                    $out .= $id."," . validate($sentiment[$id]['desc'], 'tweet') . "," . $sentiment[$id]['pos'] . "," . $sentiment[$id]['neg'];
+                    $out .= $id."," . textToCSV($sentiment[$id]['desc']) . "," . $sentiment[$id]['pos'] . "," . $sentiment[$id]['neg'];
                 else
                     $out .= ",,,";
                 $out .= "\n";
