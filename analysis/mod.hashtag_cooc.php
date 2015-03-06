@@ -20,7 +20,7 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
 
     <body>
 
-        <h1>Twitter Analytics co-hashtags</h1>
+        <h1>TCAT :: co-hashtags</h1>
 
         <?php
         validate_all_variables();
@@ -77,38 +77,39 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
             $filename = get_filename_for_export("hashtagCooc", (isset($_GET['probabilityOfAssociation']) ? "_normalizedAssociationWeight" : ""), "gdf");
         }
 
-		//print_r($coword);
+        //print_r($coword);
 
-		$lookup = array();
+        $lookup = array();
 
-		$fp = fopen($filename, 'w');
+        $fp = fopen($filename, 'w');
 
-			fwrite($fp, "nodedef> name VARCHAR,label VARCHAR,wordFrequency INT,distinctUsersForWord INT,userDiversity FLOAT,wordFrequencyDividedByUniqueUsers FLOAT,wordFrequencyMultipliedByUniqueUsers INT\n");
+        fwrite($fp, chr(239) . chr(187) . chr(191));
+        fwrite($fp, "nodedef> name VARCHAR,label VARCHAR,wordFrequency INT,distinctUsersForWord INT,userDiversity FLOAT,wordFrequencyDividedByUniqueUsers FLOAT,wordFrequencyMultipliedByUniqueUsers INT\n");
 
-			$counter = 0;
-			foreach($coword->wordFrequency as $word => $freq) {
-				fwrite($fp, $counter ."," . $word ."," . $freq ."," . $coword->distinctUsersForWord[$word] ."," . $coword->userDiversity[$word] ."," . $coword->wordFrequencyDividedByUniqueUsers[$word] ."," . $coword->wordFrequencyMultipliedByUniqueUsers[$word] . "\n");
-				$lookup[$word] = $counter;
-				$counter++;
-			}
+        $counter = 0;
+        foreach ($coword->wordFrequency as $word => $freq) {
+            fwrite($fp, $counter . "," . $word . "," . $freq . "," . $coword->distinctUsersForWord[$word] . "," . $coword->userDiversity[$word] . "," . $coword->wordFrequencyDividedByUniqueUsers[$word] . "," . $coword->wordFrequencyMultipliedByUniqueUsers[$word] . "\n");
+            $lookup[$word] = $counter;
+            $counter++;
+        }
 
-			unset($coword->wordFrequency);
-			unset($coword->distinctUsersForWord);
-			unset($coword->userDiversity);
-			unset($coword->wordFrequencyDividedByUniqueUsers);
-			unset($coword->wordFrequencyMultipliedByUniqueUsers);
+        unset($coword->wordFrequency);
+        unset($coword->distinctUsersForWord);
+        unset($coword->userDiversity);
+        unset($coword->wordFrequencyDividedByUniqueUsers);
+        unset($coword->wordFrequencyMultipliedByUniqueUsers);
 
-			fwrite($fp, "edgedef> node1,node2,weight INT\n");
+        fwrite($fp, "edgedef> node1,node2,weight INT\n");
 
-			$counter = 0;
-			foreach($coword->cowords as $word => $cowords) {
-				foreach($cowords as $coword => $freq) {
-					fwrite($fp, $lookup[$word] ."," . $lookup[$coword] . "," . $freq . "\n");
-				}
-				$lookup[$word] = $counter;
-			}
+        $counter = 0;
+        foreach ($coword->cowords as $word => $cowords) {
+            foreach ($cowords as $coword => $freq) {
+                fwrite($fp, $lookup[$word] . "," . $lookup[$coword] . "," . $freq . "\n");
+            }
+            $lookup[$word] = $counter;
+        }
 
-		fclose($fp);
+        fclose($fp);
 
         //file_put_contents($filename, $coword->getCowordsAsGexf($filename));
 

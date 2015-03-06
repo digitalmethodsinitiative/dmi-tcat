@@ -689,8 +689,9 @@ function getBins() {
                 $phrase->periods[] = $result['phrase_starttime'] . " - " . str_replace("0000-00-00 00:00:00", "now", $result["phrase_endtime"]);
                 $bin->phrases[$result['phrase_id']] = $phrase;
             }
-        } elseif ($bin->type == "follow") {
+        } elseif ($bin->type == "follow" || $bin->type == "timeline") {
             $sql = "SELECT u.id AS user_id, bu.starttime AS user_starttime, bu.endtime AS user_endtime FROM tcat_query_users u, tcat_query_bins_users bu WHERE u.id = bu.user_id AND bu.querybin_id = " . $bin->id;
+            //$sql = "SELECT t.from_user_name AS user_name, u.id AS user_id, bu.starttime AS user_starttime, bu.endtime AS user_endtime FROM tcat_query_users u, tcat_query_bins_users bu, " . $bin->name . "_tweets t WHERE u.id = bu.user_id AND bu.querybin_id = " . $bin->id . " AND bu.user_id = t.from_user_id";
             $rec = $dbh->prepare($sql);
             $rec->execute();
             $user_results = $rec->fetchAll();

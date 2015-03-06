@@ -103,14 +103,17 @@ require_once './common/functions.php';
         <?php
         validate_all_variables();
 
-        $sql = "SELECT t.id, t.text, t.created_at FROM " . $esc['mysql']['dataset'] . "_tweets t ";
+        $sql = "SELECT t.id, t.text, t.created_at, t.from_user_name, t.source FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
         $sql .= " ORDER BY ID";
+        //print $sql; die;
         $rec = mysql_query($sql);
         while ($res = mysql_fetch_assoc($rec)) {
             $tweets[$res['id']] = $res['text'];
             $dates[$res['id']] = $res['created_at'];
             $tweets_short[$res['id']] = trim(preg_replace("/:\s*$/", "", preg_replace("/[\"'“]/", "", preg_replace("/\.\.\./", "", preg_replace("/[\[]*https?:[^\s]*[\]]*/", "", preg_replace("/@[^\s]*/", "", preg_replace("/RT @.*?:\s*/", "", $res['text'])))))));
+            $users[$res['id']] = $res['from_user_name'];
+            $sources[$res['id']] = preg_replace("/<a href=.*>(.+?)<.*/","\\1",$res['source']);
         }
 
         $tweets_short_count = array_count_values($tweets_short);
@@ -162,7 +165,7 @@ require_once './common/functions.php';
         $distinct_retweets = count($indentation);
         print "<table cellspacing='0' cellpadding='0'>";
         // header row
-        print "<tr><td>date</td><td class='seperator'>tweet</td>";
+        print "<tr><td>date</td><td>user</td><td>source</td><td class='seperator'>tweet</td>";
         foreach ($first_retweet_ids as $id)
             print "<td></td>";
         // content
@@ -179,6 +182,8 @@ require_once './common/functions.php';
 
             print "<tr>";
             print "<td style='padding-right: 5px;'>" . $dates[$id] . "</td>";
+            print "<td style='padding-right: 5px;'>" . $users[$id] . "</td>";
+            print "<td style='padding-right: 5px;'>" . $sources[$id] . "</td>";
 
             if (!array_key_exists($tweet, $retweets_short)) {
                 print "<td class='seperator' style='$bgcolor'>" . str_replace(" URL URL", " URL", preg_replace("/[\[]*https?:[^\s]*[\]]*/", "URL", $tweet)) . "</td>";
