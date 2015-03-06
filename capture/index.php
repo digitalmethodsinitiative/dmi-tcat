@@ -150,6 +150,15 @@ $lastRateLimitHit = getLastRateLimitHit();
                                 </div>
                             </div>
         <?php } ?>
+                        <br/><div class="if_row">
+                            <div class='if_row_header'>Optional notes:</div>
+                            <div class='if_row_content'>
+                                <textarea name="newbin_comments" style="height:4em; width=80em;" cols=80 rows=4 maxlength=2000></textarea><br/>
+                            </div>
+                        </div>
+
+                        <br/>
+
                         <div class="if_row">
                             <input value="add query bin" type="submit" />
                         </div>
@@ -167,6 +176,7 @@ $lastRateLimitHit = getLastRateLimitHit();
         echo '<th>active</th>';
         echo '<th>type</th>';
         echo '<th class="keywords">queries</th>';
+        echo '<th>comments</th>';
         echo '<th>no. tweets</th>';
         echo '<th>Periods in which the query bin was active</th>';
         echo '<th></th>';
@@ -216,6 +226,7 @@ $lastRateLimitHit = getLastRateLimitHit();
                 echo '</table>';
             }
             echo '</td>';
+            echo '<td valign="top">' . $bin->comments . ' (<a href="" onclick="sendEditComments(\'' . $bin->id . '\', \'' . addslashes($bin->comments) . '\'); return false;">modify</a>)</td>';
             echo '<td valign="top" align="right">' . number_format($bin->nrOfTweets, 0, ",", ".") . '</td>'; // does not sort well
             echo '<td valign="top">' . implode("<br />", $bin->periods) . '</td>';
             echo '<td valign="top">';
@@ -257,6 +268,9 @@ $lastRateLimitHit = getLastRateLimitHit();
     <div id="dialog-modify" title="Specify active keywords">
         <p>Separate queries by a comma</p>
         <p><span><textarea type='textarea' name='phrases' rows='15' cols='43'></textarea></span></p>
+    </div>
+    <div id="dialog-editcomments" title="Modify notes for bin">
+        <p><span><textarea type='textarea' name='comments' rows='15' cols='43'></textarea></span></p>
     </div>
 
     <script type='text/javascript' src='../analysis/scripts/jquery-1.7.1.min.js'></script>
@@ -425,6 +439,51 @@ foreach ($bins as $id => $bin)
             }
         }
     });
+
+    function sendEditComments(_bin, _comments) {
+
+        if(!validateBin(_bin))
+            return false;
+
+        params = {action:"modifybin",bin:_bin,comments:_comments};
+
+        _comments = _comments.replace(/\\'/g, "'");
+        
+        $('#dialog-editcomments textarea').val(_comments);
+        $('#dialog-editcomments').dialog('open');
+        
+        return false;
+    }
+    $( "#dialog-editcomments" ).dialog({
+        autoOpen: false,
+        resizable: true,
+        height:'auto',
+        modal: true,
+        width:'auto',
+        create: function(event,ui) {
+            $(this).css("maxWidth", ($(window).width()-40) + "px");  
+        },
+        buttons: {
+            'Submit': function(){
+                var _newcomments = $('#dialog-editcomments textarea').val();
+                if (!_newcomments) { _newcomments = ' '; }
+                if(_newcomments.length > 2000) { 
+                    alert("Your comments exceed 2000 characters.");
+                    $(this).dialog('close'); 
+                    return false; 
+                }
+                $(this).dialog('close');
+                params['comments'] = _newcomments;
+                dialogConfirm("Please confirm that you want to change these notes to:<br><br>" + _newcomments);
+                return false;
+            },
+            'Cancel': function(){
+                $(this).dialog('close');
+                return false;
+            }
+        }
+    });
+
     
     function sendDelete(_bin,_active,_type) {
         
@@ -463,6 +522,9 @@ foreach ($bins as $id => $bin)
         var _bin = $("#newbin_name").val();
         if(!validateBin(_bin))
             return false;
+        var _comments = $("textarea[name=newbin_comments]").val();
+        if (!validateComments(_comments))
+            return false;
         if(_type == "track") {
             var _phrases = $("#newbin_phrases").val();
             if(!validateQuery(_phrases,_type))
@@ -493,15 +555,17 @@ foreach ($bins as $id => $bin)
         }
             
         var _check = window.confirm("You are about to create a new query bin. Are you sure?");
+
         if(_check == true) {
             if(_type == "track")    
-                var _params = {action:"newbin",type:_type,newbin_phrases:_phrases,newbin_name:_bin,active:$("#make_active").val()};
+                var _params = {action:"newbin",type:_type,newbin_phrases:_phrases,newbin_name:_bin,newbin_comments:_comments,active:$("#make_active").val()};
             if(_type == "geotrack")    
-                var _params = {action:"newbin",type:_type,newbin_phrases:_phrases,newbin_name:_bin,active:$("#make_active").val()};
+                var _params = {action:"newbin",type:_type,newbin_phrases:_phrases,newbin_name:_bin,newbin_comments:_comments,active:$("#make_active").val()};
             if(_type == "follow")    
-                var _params = {action:"newbin",type:_type,newbin_users:_users,newbin_name:_bin,active:$("#make_active").val()};
+                var _params = {action:"newbin",type:_type,newbin_users:_users,newbin_name:_bin,newbin_comments:_comments,active:$("#make_active").val()};
             if(_type == "onepercent")    
-                var _params = {action:"newbin",type:_type,newbin_name:_bin,active:$("#make_active").val()};
+                var _params = {action:"newbin",type:_type,newbin_name:_bin,newbin_comments:_comments,active:$("#make_active").val()};
+
 
             $.ajax({
                 dataType: "json",
@@ -547,6 +611,15 @@ foreach ($bins as $id => $bin)
         alert(type + " type not recognized");
         return false;
     }
+
+    function validateComments(comments) {
+        if (comments.length > 2000) {
+            alert("Comments are too long (more than 2000 characters)");
+            return false;
+        }
+        return true;
+    }
+
             
     function validateBin(binname) {
         if(binname == null || binname.trim()=="") {

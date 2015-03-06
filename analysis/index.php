@@ -388,6 +388,10 @@ if (defined('ANALYSIS_URL'))
                             </tr>
 
                             <tr>
+                                <td class="tbl_head">Comments:</td><td><?php echo $datasets[$dataset]['comments']; ?></td>
+                            </tr>
+
+                            <tr>
                                 <td class="tbl_head">Exclude:</td><td><?php echo $esc['mysql']['exclude']; ?></td>
                             </tr>
 

@@ -240,6 +240,7 @@ function create_admin() {
     `type` VARCHAR(10) NOT NULL,
     `active` BOOLEAN NOT NULL,
     `visible` BOOLEAN DEFAULT TRUE,
+    `comments` VARCHAR(2048) DEFAULT NULL,
     PRIMARY KEY (`id`),
     KEY `querybin` (`querybin`),
     KEY `type` (`type`),
@@ -307,7 +308,28 @@ function create_admin() {
     ) ENGINE = MyISAM DEFAULT CHARSET = utf8mb4";
     $create = $dbh->prepare($sql);
     $create->execute();
+
+    // 03/03/2015 Add comments column [fast auto-upgrade - reminder to remove]
+    $query = "SHOW COLUMNS FROM tcat_query_bins";
+    $rec = $dbh->prepare($query);
+    $rec->execute();
+    $columns = $rec->fetchAll(PDO::FETCH_COLUMN);
+    $update = TRUE;
+    foreach ($columns as $i => $c) {
+        if ($c == 'comments') {
+            $update = FALSE;
+            break;
+        }
+    }
+    if ($update) {
+        // Adding new comments column to table tcat_query_bins
+        $query = "ALTER TABLE tcat_query_bins ADD COLUMN `comments` varchar(2048) DEFAULT NULL";
+        $rec = $dbh->prepare($query);
+        $rec->execute();
+    }
+
     $dbh = false;
+
 }
 
 /*
