@@ -26,6 +26,12 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
         validate_all_variables();
         if (empty($esc['shell']['minf']))
             $esc['shell']['minf'] = 4;
+        if (empty($esc['shell']['topu']))
+            $esc['shell']['topu'] = 0;
+        if (is_string($esc['shell']['minf']))
+            $esc['shell']['minf'] = preg_replace("/[^0-9]/", '', $esc['shell']['minf']);
+        if (is_string($esc['shell']['topu']))
+            $esc['shell']['topu'] = preg_replace("/[^0-9]/", '', $esc['shell']['topu']);
 
         include_once('common/Coword.class.php');
         $coword = new Coword;
@@ -66,6 +72,7 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
         }
 
         unset($coword->words); // as we are adding words manually the frequency would be messed up
+
         if ($esc['shell']['minf'] > 1 && !($esc['shell']['topu'] > 0)) {
             $coword->applyMinFreq($esc['shell']['minf']);
             //$coword->applyMinDegree($esc['shell']['minf']);	// Berno: method no longer in use, remains unharmed
