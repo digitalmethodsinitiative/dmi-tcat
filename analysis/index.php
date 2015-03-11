@@ -66,31 +66,31 @@ if (defined('ANALYSIS_URL'))
         $("#download_"+id).html($('<a style="width:25px;height:25px;" href-lang="image/svg+xml" href="data:image/svg+xml;base64,\n'+b64+'" title="file.svg">Download SVG</a>'));
     }
     function askFrequency() {
-        var minf = prompt("Specify the minimum frequency for data to be included in the export:","2");
+        var minf = parseInt(prompt("Specify the minimum frequency for data to be included in the export:","2"), 10);
         return minf;
     }
     function askRetweetFrequency() {
-        var minf = prompt("Specify the minimum times a tweet should be retweeted for it to be included in the export:","4");
+        var minf = parseInt(prompt("Specify the minimum times a tweet should be retweeted for it to be included in the export:","4"), 10);
         return minf;
     }
     function askInteractionFrequency() {
-        var minf = prompt("Specify the minimum frequency for data to be included in the export:","4");
+        var minf = parseInt(prompt("Specify the minimum frequency for data to be included in the export:","4"), 10);
         return minf;
     }
     function askCascadeFrequency() {
-        var minf = prompt("Specify the minimum number of tweets for the user to be included:","10");
+        var minf = parseInt(prompt("Specify the minimum number of tweets for the user to be included:","10"), 10);
         return minf;
     }
     function askTopht() {
-        var topu = prompt("Specify number of top hashtags to get. (by frequency of hashtag, enter 0 to get all)","500");
+        var topu = parseInt(prompt("Specify number of top hashtags to get. (by frequency of hashtag, enter 0 to get all)","500"), 10);
         return topu;
     }
     function askMentions() {
-        var topu = prompt("Specify number of top users you want to get. (by number of mentions, enter 0 to get all)","500");
+        var topu = parseInt(prompt("Specify number of top users you want to get. (by number of mentions, enter 0 to get all)","500"), 10);
         return topu;
     }
     function askLowercase() {
-        var lower = prompt("Do you want to convert all words to lowercase? (enter 0 [=no] or 1 [=yes])", "0");
+        var lower = parseInt(prompt("Do you want to convert all words to lowercase? (enter 0 [=no] or 1 [=yes])", "0"), 10);
         return lower;
     }
     function getInterval() {
