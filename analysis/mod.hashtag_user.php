@@ -29,8 +29,17 @@ require_once './common/Gexf.class.php';
         $coword = new Coword;
         $coword->countWordOncePerDocument = FALSE;
 
+        $collation = 'utf8_bin';
+        $is_utf8mb4 = false;
+        $sql = "SHOW FULL COLUMNS FROM " . $esc['mysql']['dataset'] . "_hashtags";
+        $sqlresults = mysql_query($sql);
+        while ($res = mysql_fetch_assoc($sqlresults)) {
+            if ($res['collation'] = 'utf8mb4_unicode_ci') { $is_utf8mb4 = true; break; }
+        }
+        if ($is_utf8mb4) $collation = 'utf8mb4_bin';
+
         // get hashtag-user relations
-        $sql = "SELECT LOWER(A.text) AS h1, LOWER(A.from_user_name) AS user, LOWER(t.from_user_lang) AS language, LOWER(t.location) AS location, t.from_user_timezone AS timezone, t.from_user_utcoffset AS utcoffset ";
+        $sql = "SELECT LOWER(A.text COLLATE $collation) AS h1, LOWER(A.from_user_name COLLATE $collation) AS user, LOWER(t.from_user_lang) AS language, LOWER(t.location COLLATE $collation) AS location, t.from_user_timezone AS timezone, t.from_user_utcoffset AS utcoffset ";
         $sql .= "FROM " . $esc['mysql']['dataset'] . "_hashtags A, " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset() . " AND ";
         $sql .= "LENGTH(A.text)>1 AND ";
