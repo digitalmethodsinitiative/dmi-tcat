@@ -174,15 +174,24 @@ validate_all_variables();
 
                                             if (!empty($keywordToTrack) || $cowordTimeSeries) {
 
+                                                $collation = 'utf8_bin';
+                                                $is_utf8mb4 = false;
+                                                $sql = "SHOW FULL COLUMNS FROM " . $esc['mysql']['dataset'] . "_hashtags";
+                                                $sqlresults = mysql_query($sql);
+                                                while ($res = mysql_fetch_assoc($sqlresults)) {
+                                                    if (array_key_exists('collation', $res) && $res['collation'] == 'utf8mb4_unicode_ci') { $is_utf8mb4 = true; break; }
+                                                }
+                                                if ($is_utf8mb4) $collation = 'utf8mb4_bin';
+
                                                 // get cowords from database
-                                                $sql = "SELECT LOWER(A.text) AS h1, LOWER(B.text) AS h2 ";
+                                                $sql = "SELECT LOWER(A.text COLLATE $collation) AS h1, LOWER(B.text COLLATE $collation) AS h2 ";
                                                 $sql .= ", " . sqlInterval();
                                                 $sql .= "FROM " . $esc['mysql']['dataset'] . "_hashtags A, " . $esc['mysql']['dataset'] . "_hashtags B, " . $esc['mysql']['dataset'] . "_tweets t ";
                                                 $sql .= sqlSubset() . " AND ";
                                                 $sql .= "LENGTH(A.text)>1 AND LENGTH(B.text)>1 AND ";
-                                                $sql .= "LOWER(A.text) < LOWER(B.text) AND A.tweet_id = t.id AND A.tweet_id = B.tweet_id ";
+                                                $sql .= "LOWER(A.text COLLATE $collation) < LOWER(B.text COLLATE $collation) AND A.tweet_id = t.id AND A.tweet_id = B.tweet_id ";
                                                 $sql .= "ORDER BY datepart,h1,h2 ASC";
-                                                //print $sql . "<br>";
+                                                print $sql . "<br>";
                                                 $sqlresults = mysql_query($sql);
 
                                                 $date = false;
@@ -233,7 +242,7 @@ validate_all_variables();
                                                 }
 
                                                 // get user diversity per hasthag
-                                                $sql = "SELECT LOWER(h.text) as h1, COUNT(t.from_user_id) as c, COUNT(DISTINCT(t.from_user_id)) AS d ";
+                                                $sql = "SELECT LOWER(h.text COLLATE $collation) as h1, COUNT(t.from_user_id) as c, COUNT(DISTINCT(t.from_user_id)) AS d ";
                                                 $sql .= ", " . sqlInterval();
                                                 $sql .= "FROM " . $esc['mysql']['dataset'] . "_hashtags h, " . $esc['mysql']['dataset'] . "_tweets t ";
                                                 $where = "h.tweet_id = t.id AND ";
@@ -264,7 +273,7 @@ validate_all_variables();
                                                 }
 
                                                 // get frequency (occurence) of hashtag in full selection
-                                                $sql = "SELECT LOWER(A.text) AS h1, COUNT(LOWER(A.text)) AS frequency";
+                                                $sql = "SELECT LOWER(A.text COLLATE $collation) AS h1, COUNT(LOWER(A.text COLLATE $collation)) AS frequency";
                                                 $sql .= ", " . sqlInterval();
                                                 $sql .= "FROM " . $esc['mysql']['dataset'] . "_hashtags A, " . $esc['mysql']['dataset'] . "_tweets t ";
                                                 $sql .= sqlSubset() . " AND ";
@@ -306,13 +315,13 @@ validate_all_variables();
 
                                                 if (isset($_REQUEST['normalizedCowordFrequency'])) {
                                                     // get number of tags co-occuring with focus word
-                                                    $sql = "SELECT LOWER(A.text) AS h1, LOWER(B.text) AS h2, COUNT(LOWER(A.text)) AS frequency";
+                                                    $sql = "SELECT LOWER(A.text COLLATE $collation) AS h1, LOWER(B.text COLLATE $collation) AS h2, COUNT(LOWER(A.text COLLATE $collation)) AS frequency";
                                                     $sql .=", " . sqlInterval();
                                                     $sql .= "FROM " . $esc['mysql']['dataset'] . "_hashtags A, " . $esc['mysql']['dataset'] . "_hashtags B, " . $esc['mysql']['dataset'] . "_tweets t ";
                                                     $sql .= sqlSubset() . " AND ";
-                                                    $sql .= "(A.text = '$keywordToTrack' OR B.text = '$keywordToTrack') AND ";
+                                                    $sql .= "(A.text COLLATE $collation = '$keywordToTrack' OR B.text COLLATE $collation  = '$keywordToTrack') AND ";
                                                     $sql .= "LENGTH(A.text)>1 AND LENGTH(B.text)>1 AND ";
-                                                    $sql .= "LOWER(A.text) < LOWER(B.text) AND A.tweet_id = t.id AND A.tweet_id = B.tweet_id ";
+                                                    $sql .= "LOWER(A.text COLLATE $collation) < LOWER(B.text COLLATE $collation) AND A.tweet_id = t.id AND A.tweet_id = B.tweet_id ";
                                                     $sql .= "GROUP BY datepart,h1,h2 ";
                                                     $sql .= "ORDER BY datepart,h1,h2 ASC";
                                                     //print $sql . "<br>";
@@ -491,8 +500,17 @@ validate_all_variables();
                                                             function printTopHashtags() {
                                                                 global $esc;
 
+                                                                $collation = 'utf8_bin';
+                                                                $is_utf8mb4 = false;
+                                                                $sql = "SHOW FULL COLUMNS FROM " . $esc['mysql']['dataset'] . "_hashtags";
+                                                                $sqlresults = mysql_query($sql);
+                                                                while ($res = mysql_fetch_assoc($sqlresults)) {
+                                                                    if (array_key_exists('collation', $res) && $res['collation'] == 'utf8mb4_unicode_ci') { $is_utf8mb4 = true; break; }
+                                                                }
+                                                                if ($is_utf8mb4) $collation = 'utf8mb4_bin';
+
                                                                 $results = array();
-                                                                $sql = "SELECT COUNT(hashtags.text) AS count, LOWER(hashtags.text) AS toget ";
+                                                                $sql = "SELECT COUNT(hashtags.text COLLATE $collation) AS count, LOWER(hashtags.text COLLATE $collation) AS toget ";
                                                                 $sql .= "FROM " . $esc['mysql']['dataset'] . "_hashtags hashtags, " . $esc['mysql']['dataset'] . "_tweets t ";
                                                                 $sql .= sqlSubset("t.id = hashtags.tweet_id AND ");
                                                                 $sql .= " GROUP BY toget ORDER BY count DESC limit 10";
