@@ -5,14 +5,6 @@ require_once './common/functions.php';
 $variability = false;       // @todo used as hack for experiment in first issue mapping workshop
 $uselocalresults = false;   // @todo used as hack for experiment in first issue mapping workshop
 
-function wordencode_safe($word) {
-    return $word;
-}
-
-function worddecode_safe($word) {
-    return $word;
-}
-
 ?>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -57,7 +49,7 @@ function worddecode_safe($word) {
         //print $sql . "<bR>";
         $sqlresults = mysql_query($sql);
         while ($res = mysql_fetch_assoc($sqlresults)) {
-            $word = wordencode_safe($res['h1']);
+            $word = $res['h1'];
             $coword->distinctUsersForWord[$word] = $res['d'];
             $coword->userDiversity[$word] = round(($res['d'] / $res['c']) * 100, 2);
             $coword->wordFrequency[$word] = $res['c'];
@@ -76,9 +68,9 @@ function worddecode_safe($word) {
 //print $sql."<br>";
         $sqlresults = mysql_query($sql);
         while ($res = mysql_fetch_assoc($sqlresults)) {
-            $coword->addWord(wordencode_safe($res['h1']));
-            $coword->addWord(wordencode_safe($res['h2']));
-            $coword->addCoword(wordencode_safe($res['h1']), wordencode_safe($res['h2']), 1);
+            $coword->addWord($res['h1']);
+            $coword->addWord($res['h2']);
+            $coword->addCoword($res['h1'], $res['h2'], 1);
         }
 
         unset($coword->words); // as we are adding words manually the frequency would be messed up
@@ -105,7 +97,7 @@ function worddecode_safe($word) {
 
         $counter = 0;
         foreach ($coword->wordFrequency as $word => $freq) {
-            fwrite($fp, $counter . "," . worddecode_safe($word) . "," . $freq . "," . $coword->distinctUsersForWord[$word] . "," . $coword->userDiversity[$word] . "," . $coword->wordFrequencyDividedByUniqueUsers[$word] . "," . $coword->wordFrequencyMultipliedByUniqueUsers[$word] . "\n");
+            fwrite($fp, $counter . "," . $word . "," . $freq . "," . $coword->distinctUsersForWord[$word] . "," . $coword->userDiversity[$word] . "," . $coword->wordFrequencyDividedByUniqueUsers[$word] . "," . $coword->wordFrequencyMultipliedByUniqueUsers[$word] . "\n");
             $lookup[$word] = $counter;
             $counter++;
         }
@@ -121,7 +113,7 @@ function worddecode_safe($word) {
         $counter = 0;
         foreach ($coword->cowords as $word => $cowords) {
             foreach ($cowords as $coword => $freq) {
-                fwrite($fp, worddecode_safe($lookup[$word]) . "," . worddecode_safe($lookup[$coword]) . "," . $freq . "\n");
+                fwrite($fp, $lookup[$word] . "," . $lookup[$coword] . "," . $freq . "\n");
             }
             $lookup[$word] = $counter;
         }
