@@ -102,8 +102,9 @@ require_once './common/functions.php';
 
         <?php
         validate_all_variables();
+        $collation = current_collation();
 
-        $sql = "SELECT t.id, t.text, t.created_at, t.from_user_name, t.source FROM " . $esc['mysql']['dataset'] . "_tweets t ";
+        $sql = "SELECT t.id, t.text COLLATE $collation as text, t.created_at, t.from_user_name COLLATE $collation as from_user_name, t.source COLLATE $collation as source FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
         $sql .= " ORDER BY ID";
         //print $sql; die;
