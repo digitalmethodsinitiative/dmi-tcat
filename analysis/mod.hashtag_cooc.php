@@ -4,6 +4,15 @@ require_once './common/functions.php';
 
 $variability = false;       // @todo used as hack for experiment in first issue mapping workshop
 $uselocalresults = false;   // @todo used as hack for experiment in first issue mapping workshop
+
+function wordencode_safe($word) {
+    return $word;
+}
+
+function worddecode_safe($word) {
+    return $word;
+}
+
 ?>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -37,17 +46,25 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
         $coword = new Coword;
         $coword->countWordOncePerDocument = FALSE;
 
+        $collation = 'utf8_bin';
+        $is_utf8mb4 = false;
+        $sql = "SHOW FULL COLUMNS FROM " . $esc['mysql']['dataset'] . "_hashtags";
+        $sqlresults = mysql_query($sql);
+        while ($res = mysql_fetch_assoc($sqlresults)) {
+            if ($res['collation'] = 'utf8mb4_unicode_ci') { $is_utf8mb4 = true; break; }
+        }
+        if ($is_utf8mb4) $collation = 'utf8mb4_bin';
 
         // get user diversity per hasthag
-        $sql = "SELECT LOWER(h.text) as h1, COUNT(t.from_user_id) as c, COUNT(DISTINCT(t.from_user_id)) AS d ";
+        $sql = "SELECT LOWER(h.text COLLATE $collation) as h1, COUNT(t.from_user_id) as c, COUNT(DISTINCT(t.from_user_id)) AS d ";
         $sql .= "FROM " . $esc['mysql']['dataset'] . "_hashtags h, " . $esc['mysql']['dataset'] . "_tweets t ";
         $where = "h.tweet_id = t.id AND ";
         $sql .= sqlSubset($where);
         $sql .= "GROUP BY h1";
-        //print $sql . "<bR>";
+        print $sql . "<bR>";
         $sqlresults = mysql_query($sql);
         while ($res = mysql_fetch_assoc($sqlresults)) {
-            $word = $res['h1'];
+            $word = wordencode_safe($res['h1']);
             $coword->distinctUsersForWord[$word] = $res['d'];
             $coword->userDiversity[$word] = round(($res['d'] / $res['c']) * 100, 2);
             $coword->wordFrequency[$word] = $res['c'];
@@ -57,18 +74,18 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
 
         // do the actual job
         // get cowords
-        $sql = "SELECT LOWER(A.text) AS h1, LOWER(B.text) AS h2 ";
+        $sql = "SELECT LOWER(A.text COLLATE $collation) AS h1, LOWER(B.text COLLATE $collation) AS h2 ";
         $sql .= "FROM " . $esc['mysql']['dataset'] . "_hashtags A, " . $esc['mysql']['dataset'] . "_hashtags B, " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset() . " AND ";
         $sql .= "LENGTH(A.text)>1 AND LENGTH(B.text)>1 AND ";
-        $sql .= "LOWER(A.text) < LOWER(B.text) AND A.tweet_id = t.id AND A.tweet_id = B.tweet_id ";
+        $sql .= "LOWER(A.text COLLATE $collation) < LOWER(B.text COLLATE $collation) AND A.tweet_id = t.id AND A.tweet_id = B.tweet_id ";
         $sql .= "ORDER BY h1,h2";
 //print $sql."<br>";
         $sqlresults = mysql_query($sql);
         while ($res = mysql_fetch_assoc($sqlresults)) {
-            $coword->addWord($res['h1']);
-            $coword->addWord($res['h2']);
-            $coword->addCoword($res['h1'], $res['h2'], 1);
+            $coword->addWord(wordencode_safe($res['h1']));
+            $coword->addWord(wordencode_safe($res['h2']));
+            $coword->addCoword(wordencode_safe($res['h1']), wordencode_safe($res['h2']), 1);
         }
 
         unset($coword->words); // as we are adding words manually the frequency would be messed up
@@ -95,7 +112,7 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
 
         $counter = 0;
         foreach ($coword->wordFrequency as $word => $freq) {
-            fwrite($fp, $counter . "," . $word . "," . $freq . "," . $coword->distinctUsersForWord[$word] . "," . $coword->userDiversity[$word] . "," . $coword->wordFrequencyDividedByUniqueUsers[$word] . "," . $coword->wordFrequencyMultipliedByUniqueUsers[$word] . "\n");
+            fwrite($fp, $counter . "," . worddecode_safe($word) . "," . $freq . "," . $coword->distinctUsersForWord[$word] . "," . $coword->userDiversity[$word] . "," . $coword->wordFrequencyDividedByUniqueUsers[$word] . "," . $coword->wordFrequencyMultipliedByUniqueUsers[$word] . "\n");
             $lookup[$word] = $counter;
             $counter++;
         }
@@ -111,7 +128,7 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
         $counter = 0;
         foreach ($coword->cowords as $word => $cowords) {
             foreach ($cowords as $coword => $freq) {
-                fwrite($fp, $lookup[$word] . "," . $lookup[$coword] . "," . $freq . "\n");
+                fwrite($fp, worddecode_safe($lookup[$word]) . "," . worddecode_safe($lookup[$coword]) . "," . $freq . "\n");
             }
             $lookup[$word] = $counter;
         }
