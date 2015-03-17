@@ -30,14 +30,15 @@ require_once './common/Gexf.class.php';
 
         validate_all_variables();
         $filename = get_filename_for_export("sourceHashtag");
+        $collation = current_collation();
 
 		//print_r($_GET);
 
-        $sql = "SELECT LOWER(t.source) AS source, LOWER(h.text) AS hashtag FROM ";
+        $sql = "SELECT LOWER(t.source COLLATE $collation) AS source, LOWER(h.text COLLATE $collation) AS hashtag FROM ";
         $sql .= $esc['mysql']['dataset'] . "_tweets t, " . $esc['mysql']['dataset'] . "_hashtags h ";
         $where = "t.id = h.tweet_id AND ";
         $sql .= sqlSubset($where);
-        
+
         $sqlresults = mysql_query($sql);
 
 		while ($res = mysql_fetch_assoc($sqlresults)) {
