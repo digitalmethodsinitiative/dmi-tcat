@@ -51,7 +51,7 @@ function worddecode_safe($word) {
         $sql = "SHOW FULL COLUMNS FROM " . $esc['mysql']['dataset'] . "_hashtags";
         $sqlresults = mysql_query($sql);
         while ($res = mysql_fetch_assoc($sqlresults)) {
-            if ($res['collation'] = 'utf8mb4_unicode_ci') { $is_utf8mb4 = true; break; }
+            if ($res['collation'] == 'utf8mb4_unicode_ci') { $is_utf8mb4 = true; break; }
         }
         if ($is_utf8mb4) $collation = 'utf8mb4_bin';
 
