@@ -678,7 +678,7 @@ function current_collation() {
     $sql = "SHOW FULL COLUMNS FROM " . $esc['mysql']['dataset'] . "_hashtags";
     $sqlresults = mysql_query($sql);
     while ($res = mysql_fetch_assoc($sqlresults)) {
-        if (array_key_exists('Collation', $res) && $res['Collation'] == ('utf8mb4_unicode_ci' || $res['Collation'] == 'utf8mb4_general_ci')) { $is_utf8mb4 = true; break; }
+        if (array_key_exists('Collation', $res) && ($res['Collation'] == 'utf8mb4_unicode_ci' || $res['Collation'] == 'utf8mb4_general_ci')) { $is_utf8mb4 = true; break; }
     }
     if ($is_utf8mb4) $collation = 'utf8mb4_bin';
     return $collation;
