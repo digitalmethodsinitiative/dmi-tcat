@@ -131,6 +131,8 @@ require_once './common/Gexf.class.php';
         <?php
 
         validate_all_variables();
+        global $collation;
+        $collation = current_collation();
 
 		// make sure that all columns are different
 		if ($_GET["col1_type"] == $_GET["col2_type"] || $_GET["col2_type"] == $_GET["col3_type"] || $_GET["col1_type"] == $_GET["col3_type"]) {
@@ -163,20 +165,20 @@ require_once './common/Gexf.class.php';
 
 		function getFlow($col1_type,$col1_cutoff,$col2_type,$col2_cutoff,$discard_other,$runcounter) {
 
-			global $esc,$network,$oldtoplists;
+			global $esc,$network,$oldtoplists,$collation;
 
 	        $sql = "SELECT LOWER(" . $col1_type . ") AS col1, LOWER(t." . $col2_type . ") AS col2 FROM ";
 	        $sql .= $esc['mysql']['dataset'] . "_tweets t ";
 	        $sql .= sqlSubset();
 
 	        if ($col1_type == "hashtag") {
-	            $sql = "SELECT LOWER(h.text) AS col1, LOWER(t." . $col2_type . ") AS col2 FROM ";
+	            $sql = "SELECT LOWER(h.text COLLATE $collation) AS col1, LOWER(t." . $col2_type . ") AS col2 FROM ";
 	            $sql .= $esc['mysql']['dataset'] . "_tweets t, " . $esc['mysql']['dataset'] . "_hashtags h ";
 	            $where = "t.id = h.tweet_id AND ";
 	            $sql .= sqlSubset($where);
 	        }
 	        if ($col2_type == "hashtag") {
-	            $sql = "SELECT LOWER(t." . $col1_type . ") AS col1,LOWER(h.text) AS col2 FROM ";
+	            $sql = "SELECT LOWER(t." . $col1_type . ") AS col1,LOWER(h.text COLLATE $collation) AS col2 FROM ";
 	            $sql .= $esc['mysql']['dataset'] . "_tweets t, " . $esc['mysql']['dataset'] . "_hashtags h ";
 	            $where = "t.id = h.tweet_id AND ";
 	            $sql .= sqlSubset($where);
