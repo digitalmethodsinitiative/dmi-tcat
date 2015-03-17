@@ -29,14 +29,7 @@ require_once './common/Gexf.class.php';
         $coword = new Coword;
         $coword->countWordOncePerDocument = FALSE;
 
-        $collation = 'utf8_bin';
-        $is_utf8mb4 = false;
-        $sql = "SHOW FULL COLUMNS FROM " . $esc['mysql']['dataset'] . "_hashtags";
-        $sqlresults = mysql_query($sql);
-        while ($res = mysql_fetch_assoc($sqlresults)) {
-            if (array_key_exists('Collation', $res) && $res['Collation'] == ('utf8mb4_unicode_ci' || $res['Collation'] == 'utf8mb4_general_ci')) { $is_utf8mb4 = true; break; }
-        }
-        if ($is_utf8mb4) $collation = 'utf8mb4_bin';
+        $collation = current_collation();
 
         // get hashtag-user relations
         $sql = "SELECT LOWER(A.text COLLATE $collation) AS h1, LOWER(A.from_user_name COLLATE $collation) AS user, LOWER(t.from_user_lang) AS language, LOWER(t.location COLLATE $collation) AS location, t.from_user_timezone AS timezone, t.from_user_utcoffset AS utcoffset ";

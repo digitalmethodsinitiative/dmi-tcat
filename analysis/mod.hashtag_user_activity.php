@@ -33,14 +33,7 @@ require_once './common/Gexf.class.php';
             die('no data in selection');
         $nrOfTweets = $res['count'];
 
-        $collation = 'utf8_bin';
-        $is_utf8mb4 = false;
-        $sql = "SHOW FULL COLUMNS FROM " . $esc['mysql']['dataset'] . "_hashtags";
-        $sqlresults = mysql_query($sql);
-        while ($res = mysql_fetch_assoc($sqlresults)) {
-            if (array_key_exists('Collation', $res) && $res['Collation'] == ('utf8mb4_unicode_ci' || $res['Collation'] == 'utf8mb4_general_ci')) { $is_utf8mb4 = true; break; }
-        }
-        if ($is_utf8mb4) $collation = 'utf8mb4_bin';
+        $collation = current_collation();
 
         // select nr of users in subset
         $sql = "SELECT count(distinct(from_user_name COLLATE $collation)) AS count FROM " . $esc['mysql']['dataset'] . "_tweets t ";

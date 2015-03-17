@@ -30,14 +30,7 @@ require_once './common/Gexf.class.php';
         validate_all_variables();
         $filename = get_filename_for_export("hostHashtag");
 
-        $collation = 'utf8_bin';
-        $is_utf8mb4 = false;
-        $sql = "SHOW FULL COLUMNS FROM " . $esc['mysql']['dataset'] . "_hashtags";
-        $sqlresults = mysql_query($sql);
-        while ($res = mysql_fetch_assoc($sqlresults)) {
-            if (array_key_exists('Collation', $res) && $res['Collation'] == ('utf8mb4_unicode_ci' || $res['Collation'] == 'utf8mb4_general_ci')) { $is_utf8mb4 = true; break; }
-        }
-        if ($is_utf8mb4) $collation = 'utf8mb4_bin';
+        $collation = current_collation();
 
         $sql = "SELECT COUNT(LOWER(h.text COLLATE $collation)) AS frequency, LOWER(h.text COLLATE $collation) AS hashtag, u.domain COLLATE $collation AS domain FROM ";
         $sql .= $esc['mysql']['dataset'] . "_tweets t, " . $esc['mysql']['dataset'] . "_hashtags h, " . $esc['mysql']['dataset'] . "_urls u ";

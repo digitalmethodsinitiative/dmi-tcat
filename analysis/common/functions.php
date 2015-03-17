@@ -670,6 +670,20 @@ function validate_all_variables() {
         $esc['datetime']['enddate'] = $esc['date']['enddate'];
 }
 
+// This function reads the current collation by using the hashtags table as a reference
+function current_collation() {
+    global $esc;
+    $collation = 'utf8_bin';
+    $is_utf8mb4 = false;
+    $sql = "SHOW FULL COLUMNS FROM " . $esc['mysql']['dataset'] . "_hashtags";
+    $sqlresults = mysql_query($sql);
+    while ($res = mysql_fetch_assoc($sqlresults)) {
+        if (array_key_exists('Collation', $res) && $res['Collation'] == ('utf8mb4_unicode_ci' || $res['Collation'] == 'utf8mb4_general_ci')) { $is_utf8mb4 = true; break; }
+    }
+    if ($is_utf8mb4) $collation = 'utf8mb4_bin';
+    return $collation;
+}
+
 // Output format: {dataset}-{startdate}-{enddate}-{query}-{exclude}-{from_user_name}-{from_user_lang}-{url_query}-{module_name}-{module_settings}-{hash}.{filetype}
 function get_filename_for_export($module, $settings = "", $filetype = "csv") {
     global $resultsdir, $esc;

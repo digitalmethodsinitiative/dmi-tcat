@@ -32,14 +32,7 @@ require_once './common/Gexf.class.php';
         $min_nr_of_nodes = $esc['shell']['minf'];
 
         global $collation;
-        $collation = 'utf8_bin';
-        $is_utf8mb4 = false;
-        $sql = "SHOW FULL COLUMNS FROM " . $esc['mysql']['dataset'] . "_hashtags";
-        $sqlresults = mysql_query($sql);
-        while ($res = mysql_fetch_assoc($sqlresults)) {
-            if (array_key_exists('Collation', $res) && $res['Collation'] == ('utf8mb4_unicode_ci' || $res['Collation'] == 'utf8mb4_general_ci')) { $is_utf8mb4 = true; break; }
-        }
-        if ($is_utf8mb4) $collation = 'utf8mb4_bin';
+        $collation = current_collation();
 
         // get all tweets which have in_reply_to_status_id set
         $sql = "SELECT id, created_at, from_user_name COLLATE $collation as from_user_name, text COLLATE $collation as text, in_reply_to_status_id, from_user_lang, from_user_tweetcount, from_user_followercount, from_user_friendcount, from_user_listed, source COLLATE $collation as source, geo_lng, geo_lat  FROM " . $esc['mysql']['dataset'] . "_tweets t ";
