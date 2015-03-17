@@ -302,7 +302,7 @@ $lastRateLimitHit = getLastRateLimitHit();
                 }, 
                 type: 'numeric' 
             }); 
-            $("#thetable").tablesorter({sortList: [[0,0]], headers: { 3: { sorter: false}, 4:{sorter:'nroftweets'}, 5:{sorter:'datelist'}, 6: {sorter: false}, 7: {sorter:false} } });
+            $("#thetable").tablesorter({sortList: [[0,0]], headers: { 3: { sorter: false},4: { sorter: false},  5:{sorter:'nroftweets'}, 6:{sorter:'datelist'}, 7: {sorter: false}, 8: {sorter:false} } });
             
             changeInterface();
         });
