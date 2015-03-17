@@ -28,9 +28,10 @@ require_once './common/functions.php';
         <?php
 
         validate_all_variables();
+        $collation = current_collation();
 
         // tweets per user
-        $sql = "SELECT t.from_user_id,t.from_user_name,t.from_user_lang,t.from_user_tweetcount,t.from_user_followercount,t.from_user_friendcount,t.from_user_listed,t.from_user_utcoffset,t.from_user_verified,count(distinct(t.id)) as tweetcount, ";
+        $sql = "SELECT t.from_user_id,t.from_user_name COLLATE $collation as from_user_name,t.from_user_lang,t.from_user_tweetcount,t.from_user_followercount,t.from_user_friendcount,t.from_user_listed,t.from_user_utcoffset,t.from_user_verified,count(distinct(t.id)) as tweetcount, ";
         $sql .= sqlInterval();
         $sql .= " FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
@@ -42,7 +43,7 @@ require_once './common/functions.php';
         }
 
         // retweets per user
-        $sql = "SELECT count(t.retweet_id) as count, t.from_user_name, ";
+        $sql = "SELECT count(t.retweet_id) as count, t.from_user_name COLLATE $collation as from_user_name, ";
         $sql .= sqlInterval();
         $sql .= " FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
@@ -55,7 +56,7 @@ require_once './common/functions.php';
         }
 
         // mentioning per user
-        $sql = "SELECT m.from_user_name, count(m.from_user_name) as count, ";
+        $sql = "SELECT m.from_user_name COLLATE $collation as from_user_name, count(m.from_user_name COLLATE $collation) as count, ";
         $sql .= sqlInterval();
         $sql .= " FROM " . $esc['mysql']['dataset'] . "_mentions m, " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
@@ -71,7 +72,7 @@ require_once './common/functions.php';
         }
 
         // mentioned per user
-        $sql = "SELECT m.to_user, count(m.to_user) as count, ";
+        $sql = "SELECT m.to_user COLLATE $collation as to_user, count(m.to_user COLLATE $collation) as count, ";
         $sql .= sqlInterval();
         $sql .= " FROM " . $esc['mysql']['dataset'] . "_mentions m, " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
@@ -86,7 +87,7 @@ require_once './common/functions.php';
         }
 
         // hashtags per user
-        $sql = "SELECT h.from_user_name, count(h.from_user_name) as count, ";
+        $sql = "SELECT h.from_user_name COLLATE $collation as from_user_name, count(h.from_user_name COLLATE $collation) as count, ";
         $sql .= sqlInterval();
         $sql .= " FROM " . $esc['mysql']['dataset'] . "_hashtags h, " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
@@ -101,7 +102,7 @@ require_once './common/functions.php';
         }
 
         // tweets with hashtags, per user
-        $sql = "SELECT h.from_user_name, count(distinct(h.tweet_id)) as count, ";
+        $sql = "SELECT h.from_user_name COLLATE $collation as from_user_name, count(distinct(h.tweet_id)) as count, ";
         $sql .= sqlInterval();
         $sql .= " FROM " . $esc['mysql']['dataset'] . "_hashtags h, " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
