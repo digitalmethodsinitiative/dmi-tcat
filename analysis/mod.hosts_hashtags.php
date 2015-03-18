@@ -36,7 +36,7 @@ require_once './common/Gexf.class.php';
         $sql .= $esc['mysql']['dataset'] . "_tweets t, " . $esc['mysql']['dataset'] . "_hashtags h, " . $esc['mysql']['dataset'] . "_urls u ";
         $where = "t.id = h.tweet_id AND h.tweet_id = u.tweet_id AND u.url_followed !='' AND ";
         $sql .= sqlSubset($where);
-        $sql .= " GROUP BY u.domain, LOWER(h.text COLLATE $collation) ORDER BY frequency DESC";
+        $sql .= " GROUP BY u.domain COLLATE $collation, LOWER(h.text COLLATE $collation) ORDER BY frequency DESC";
         //print $sql." - <br>";
 
         $sqlresults = mysql_query($sql);
