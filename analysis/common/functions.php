@@ -682,6 +682,11 @@ function current_collation() {
         if (array_key_exists('Collation', $res) && ($res['Collation'] == 'utf8mb4_unicode_ci' || $res['Collation'] == 'utf8mb4_general_ci')) { $is_utf8mb4 = true; break; }
     }
     if ($is_utf8mb4) $collation = 'utf8mb4_bin';
+    if ($is_utf8mb4 == false) {
+        // When the table has columns with collation of utf8 (as opposed to utf8mb4)
+        // fall back the current connection character set to utf8 as well, otherwise queries with 'COLLATE utf8_bin' will fail.
+        mysql_query("SET NAMES utf8");
+    }
     return $collation;
 }
 
