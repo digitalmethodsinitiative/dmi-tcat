@@ -249,6 +249,26 @@ function upgrades() {
         }
     }
 
+    // 03/03/2015 Add comments column
+    $query = "SHOW COLUMNS FROM tcat_query_bins";
+    $rec = $dbh->prepare($query);
+    $rec->execute();
+    $columns = $rec->fetchAll(PDO::FETCH_COLUMN);
+    $update = TRUE;
+    foreach ($columns as $i => $c) {
+        if ($c == 'comments') {
+            $update = FALSE;
+            break;
+        }
+    }
+    if ($update) {
+        logit("cli", "Adding new comments column to table tcat_query_bins");
+        $query = "ALTER TABLE tcat_query_bins ADD COLUMN `comments` varchar(2048) DEFAULT NULL";
+        $rec = $dbh->prepare($query);
+        $rec->execute();
+    }
+
+
     // End of upgrades
 }
 

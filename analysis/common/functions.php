@@ -670,6 +670,20 @@ function validate_all_variables() {
         $esc['datetime']['enddate'] = $esc['date']['enddate'];
 }
 
+// This function reads the current collation by using the hashtags table as a reference
+function current_collation() {
+    global $esc;
+    $collation = 'utf8_bin';
+    $is_utf8mb4 = false;
+    $sql = "SHOW FULL COLUMNS FROM " . $esc['mysql']['dataset'] . "_hashtags";
+    $sqlresults = mysql_query($sql);
+    while ($res = mysql_fetch_assoc($sqlresults)) {
+        if (array_key_exists('Collation', $res) && ($res['Collation'] == 'utf8mb4_unicode_ci' || $res['Collation'] == 'utf8mb4_general_ci')) { $is_utf8mb4 = true; break; }
+    }
+    if ($is_utf8mb4) $collation = 'utf8mb4_bin';
+    return $collation;
+}
+
 // Output format: {dataset}-{startdate}-{enddate}-{query}-{exclude}-{from_user_name}-{from_user_lang}-{url_query}-{module_name}-{module_settings}-{hash}.{filetype}
 function get_filename_for_export($module, $settings = "", $filetype = "csv") {
     global $resultsdir, $esc;
@@ -733,7 +747,7 @@ function get_hash_tags($msg) {
 function get_all_datasets() {
     global $dataset;
     $dbh = pdo_connect();
-    $rec = $dbh->prepare("SELECT id, querybin, type, active FROM tcat_query_bins WHERE visible = TRUE ORDER BY LOWER(querybin)");
+    $rec = $dbh->prepare("SELECT id, querybin, type, active, comments FROM tcat_query_bins WHERE visible = TRUE ORDER BY LOWER(querybin)");
     $datasets = array();
     if ($rec->execute() && $rec->rowCount() > 0) {
         while ($res = $rec->fetch()) {
@@ -741,6 +755,7 @@ function get_all_datasets() {
             $row['bin'] = $res['querybin'];
             $row['type'] = $res['type'];
             $row['active'] = $res['active'];
+            $row['comments'] = $res['comments'];
             $rec2 = $dbh->prepare("SELECT count(t.id) AS notweets, MAX(t.created_at) AS max  FROM " . $res['querybin'] . "_tweets t ");
             if ($rec2->execute() && $rec2->rowCount() > 0) {
                 $res2 = $rec2->fetch();

@@ -5,25 +5,49 @@ require_once './common/functions.php';
 
 validate_all_variables();
 
+$columns = array(); $columncollate = array();
+$collation = 'utf8_bin';
+$is_utf8mb4 = false;
+$sql = "SHOW FULL COLUMNS FROM " . $esc['mysql']['dataset'] . "_tweets";
+$sqlresults = mysql_query($sql);
+while ($res = mysql_fetch_assoc($sqlresults)) {
+    $columns[] = $res['Field'];
+    if (stripos($res['Type'], 'char') !== false) {
+        $columncollate[$res['Field']] = true;
+    }
+    if (array_key_exists('Collation', $res) && $res['Collation'] == ('utf8mb4_unicode_ci' || $res['Collation'] == 'utf8mb4_general_ci')) { $is_utf8mb4 = true; }
+}
+if ($is_utf8mb4) $collation = 'utf8mb4_bin';
+
 $exc = (empty($esc['shell']["exclude"])) ? "" : "-" . $esc['shell']["exclude"];
+
+$select = '';
+foreach ($columns as $c) {
+    if ($select !== '') { $select .= ','; }
+    $select .= "$c";
+    if (isset($columncollate[$c])) {
+        $select .= " COLLATE $collation as $c ";
+    }
+}
 
 if (isset($_GET['minf'])&&!empty($_GET['minf'])) {
     if(!preg_match("/^\d+$/",$_GET['minf'])) die('minf not a number');
     $minf = $_GET['minf'];
-    $sql = "SELECT count(id) as cnt, from_user_name FROM " . $esc['mysql']['dataset'] . "_tweets t ";
+    $sql = "SELECT count(id) as cnt, from_user_name COLLATE $collation as from_user_name FROM " . $esc['mysql']['dataset'] . "_tweets t ";
     $sql .= sqlSubset();
-    $sql .= " GROUP BY from_user_name"; 
+    $sql .= " GROUP BY from_user_name COLLATE $collation"; 
     $rec = mysql_query($sql);
     while ($res = mysql_fetch_assoc($rec)) {
         if ($res['cnt'] >= $minf)
             $users[] = $res['from_user_name'];
     }
 
-    $sql = "SELECT * FROM " . $esc['mysql']['dataset'] . "_tweets t ";
+    $sql = "SELECT $select FROM " . $esc['mysql']['dataset'] . "_tweets t ";
     $sql .= sqlSubset();
     $sql .= " AND from_user_name IN ('" . implode("','", $users) . "')";
 } else {
-    $sql = "SELECT * FROM " . $esc['mysql']['dataset'] . "_tweets t ";
+
+    $sql = "SELECT $select FROM " . $esc['mysql']['dataset'] . "_tweets t ";
     $sql .= sqlSubset();
 }
 

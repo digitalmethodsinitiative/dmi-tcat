@@ -32,7 +32,9 @@ require_once './common/Gexf.class.php';
 
         //print_r($_GET);
 
-        $sql = "SELECT LOWER(t.from_user_lang) AS language, LOWER(h.text) AS hashtag FROM ";
+        $collation = current_collation();
+
+        $sql = "SELECT LOWER(t.from_user_lang) AS language, LOWER(h.text COLLATE $collation) AS hashtag FROM ";
         $sql .= $esc['mysql']['dataset'] . "_tweets t, " . $esc['mysql']['dataset'] . "_hashtags h ";
         $where = "t.id = h.tweet_id AND ";
         $sql .= sqlSubset($where);

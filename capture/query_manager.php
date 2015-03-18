@@ -47,6 +47,7 @@ function create_new_bin($params) {
         echo '{"msg":"This capturing type is not defined in the config file"}';
         return;
     }
+    $comments = trim($params['newbin_comments']);
 
     // check whether the main query management tables are there, if not, create
     create_admin();
@@ -64,10 +65,11 @@ function create_new_bin($params) {
     }
 
     // populate tcat_query_bin table
-    $sql = "INSERT INTO tcat_query_bins (querybin,type,active) VALUES (:querybin, :type, '1');";
+    $sql = "INSERT INTO tcat_query_bins (querybin,type,active,comments) VALUES (:querybin, :type, '1', :comments);";
     $insert_querybin = $dbh->prepare($sql);
     $insert_querybin->bindParam(':querybin', $bin_name, PDO::PARAM_STR);
     $insert_querybin->bindParam(':type', $type, PDO::PARAM_STR);
+    $insert_querybin->bindParam(':comments', $comments, PDO::PARAM_STR);
     $insert_querybin->execute();
     $lastbinid = $dbh->lastInsertId();
 
@@ -371,6 +373,17 @@ function pause_bin($params) {
     $dbh = false;
 }
 
+function modify_bin_comments($querybin_id, $params) {
+    $dbh = pdo_connect();
+    $sql = "UPDATE tcat_query_bins SET comments = :comments WHERE id = :querybin_id";
+    $rec = $dbh->prepare($sql);
+    $rec->bindParam(":querybin_id", $querybin_id, PDO::PARAM_INT);
+    $rec->bindParam(":comments", $params['comments'], PDO::PARAM_STR);
+    $rec->execute();
+    $dbh = false;
+    echo '{"msg": "The comments have been modified"}';
+}
+
 function modify_bin($params) {
     global $captureroles, $now;
 
@@ -379,6 +392,8 @@ function modify_bin($params) {
         return;
     }
     $querybin_id = trim($params['bin']);
+
+    if (array_key_exists('comments', $params) && $params['comments'] !== '') return modify_bin_comments($querybin_id, $params);
 
     $type = $params['type'];
     if (array_search($type, $captureroles) === false && ($type !== 'geotrack' || array_search('track', $captureroles) === false)) {
@@ -634,7 +649,7 @@ function getBins() {
     // select phrases
     // select users
 
-    $sql = "SELECT b.id, b.querybin, b.type, b.active, period.starttime AS bin_starttime, period.endtime AS bin_endtime FROM tcat_query_bins b, tcat_query_bins_periods period WHERE b.id = period.querybin_id GROUP BY b.id";
+    $sql = "SELECT b.id, b.querybin, b.type, b.comments, b.active, period.starttime AS bin_starttime, period.endtime AS bin_endtime FROM tcat_query_bins b, tcat_query_bins_periods period WHERE b.id = period.querybin_id GROUP BY b.id";
 
     $rec = $dbh->prepare($sql);
     $rec->execute();
@@ -653,6 +668,7 @@ function getBins() {
             $bin->name = $data['querybin'];
             $bin->type = $data['type'];
             $bin->active = $data['active'];
+            $bin->comments = $data['comments'];
         } else {
             $bin = $querybins[$data['id']];
         }
@@ -680,8 +696,9 @@ function getBins() {
                 $phrase->periods[] = $result['phrase_starttime'] . " - " . str_replace("0000-00-00 00:00:00", "now", $result["phrase_endtime"]);
                 $bin->phrases[$result['phrase_id']] = $phrase;
             }
-        } elseif ($bin->type == "follow") {
+        } elseif ($bin->type == "follow" || $bin->type == "timeline") {
             $sql = "SELECT u.id AS user_id, bu.starttime AS user_starttime, bu.endtime AS user_endtime FROM tcat_query_users u, tcat_query_bins_users bu WHERE u.id = bu.user_id AND bu.querybin_id = " . $bin->id;
+            //$sql = "SELECT t.from_user_name AS user_name, u.id AS user_id, bu.starttime AS user_starttime, bu.endtime AS user_endtime FROM tcat_query_users u, tcat_query_bins_users bu, " . $bin->name . "_tweets t WHERE u.id = bu.user_id AND bu.querybin_id = " . $bin->id . " AND bu.user_id = t.from_user_id";
             $rec = $dbh->prepare($sql);
             $rec->execute();
             $user_results = $rec->fetchAll();

@@ -24,6 +24,7 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
 
         <?php
         validate_all_variables();
+        $collation = current_collation();
         if (empty($esc['shell']['minf']))
             $esc['shell']['minf'] = 4;
 
@@ -31,13 +32,13 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
         $coword = new Coword;
         $coword->countWordOncePerDocument = FALSE;
 
-
         // get user diversity per hasthag
-        $sql = "SELECT LOWER(h.text) as h1, COUNT(t.from_user_id) as c, COUNT(DISTINCT(t.from_user_id)) AS d ";
+        $sql = "SELECT LOWER(h.text COLLATE $collation) as h1, COUNT(t.from_user_id) as c, COUNT(DISTINCT(t.from_user_id)) AS d ";
         $sql .= "FROM " . $esc['mysql']['dataset'] . "_hashtags h, " . $esc['mysql']['dataset'] . "_tweets t ";
         $where = "h.tweet_id = t.id AND ";
         $sql .= sqlSubset($where);
         $sql .= "GROUP BY h1";
+
         //print $sql . "<bR>";
         $sqlresults = mysql_query($sql);
         while ($res = mysql_fetch_assoc($sqlresults)) {
@@ -51,7 +52,7 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
 
         // calculate sentiments per hashtag
         // min, max, avg
-        $sql = "SELECT s.positive, s.negative, h.text AS hashtag, h.tweet_id as tid FROM " . $esc['mysql']['dataset'] . "_sentiment s, " . $esc['mysql']['dataset'] . "_hashtags h WHERE h.tweet_id = s.tweet_id";
+        $sql = "SELECT s.positive, s.negative, h.text COLLATE $collation AS hashtag, h.tweet_id as tid FROM " . $esc['mysql']['dataset'] . "_sentiment s, " . $esc['mysql']['dataset'] . "_hashtags h WHERE h.tweet_id = s.tweet_id";
         $rec = mysql_query($sql);
         while ($res = mysql_fetch_assoc($rec)) {
             $word = $res['hashtag'];
@@ -83,13 +84,13 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
 
         // do the actual job
         // get cowords
-        $sql = "SELECT LOWER(A.text) AS h1, LOWER(B.text) AS h2 ";
+        $sql = "SELECT LOWER(A.text COLLATE $collation) AS h1, LOWER(B.text COLLATE $collation) AS h2 ";
         $sql .= "FROM " . $esc['mysql']['dataset'] . "_hashtags A, " . $esc['mysql']['dataset'] . "_hashtags B, " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset() . " AND ";
         $sql .= "LENGTH(A.text)>1 AND LENGTH(B.text)>1 AND ";
-        $sql .= "LOWER(A.text) < LOWER(B.text) AND A.tweet_id = t.id AND A.tweet_id = B.tweet_id ";
+        $sql .= "LOWER(A.text COLLATE $collation) < LOWER(B.text COLLATE $collation) AND A.tweet_id = t.id AND A.tweet_id = B.tweet_id ";
         $sql .= "ORDER BY h1,h2";
-//print $sql."<br>";
+        //print $sql."<br>";
         $sqlresults = mysql_query($sql);
         while ($res = mysql_fetch_assoc($sqlresults)) {
             $coword->addWord($res['h1']);

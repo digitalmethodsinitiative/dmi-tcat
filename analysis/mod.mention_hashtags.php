@@ -28,10 +28,11 @@ require_once './common/Gexf.class.php';
 
         <?php
         validate_all_variables();
+        $collation = current_collation();
 
         $filename = get_filename_for_export("mentionHashtags", "", "gexf");
 
-        $sql = "SELECT m.to_user AS user, LOWER(h.text) AS hashtag FROM ";
+        $sql = "SELECT m.to_user COLLATE $collation AS user, LOWER(h.text COLLATE $collation) AS hashtag FROM ";
         $sql .= $esc['mysql']['dataset'] . "_mentions m, " . $esc['mysql']['dataset'] . "_tweets t, " . $esc['mysql']['dataset'] . "_hashtags h ";
         $where = "t.id = m.tweet_id AND m.tweet_id = h.tweet_id AND LENGTH(h.text)>1 AND ";
         $sql .= sqlSubset($where);

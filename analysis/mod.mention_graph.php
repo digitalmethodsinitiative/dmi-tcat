@@ -27,6 +27,7 @@ require_once './common/functions.php';
 
         <?php
         validate_all_variables();
+        $collation = current_collation();
 
         $users = array();
         $usersinv = array();
@@ -39,7 +40,7 @@ require_once './common/functions.php';
 
         while ($numresults == 500000) {
 
-            $sql = "SELECT m.from_user_name,m.to_user FROM " . $esc['mysql']['dataset'] . "_mentions m, " . $esc['mysql']['dataset'] . "_tweets t ";
+            $sql = "SELECT m.from_user_name COLLATE $collation as from_user_name, m.to_user COLLATE $collation as to_user FROM " . $esc['mysql']['dataset'] . "_mentions m, " . $esc['mysql']['dataset'] . "_tweets t ";
             $where = "m.tweet_id = t.id AND ";
             $sql .= sqlSubset($where);
             $sql .= " LIMIT " . $cur . "," . $numresults;

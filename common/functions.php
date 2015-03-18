@@ -19,7 +19,7 @@ function dbserver_has_utf8mb4_support() {
     $version = $dbt->getAttribute(PDO::ATTR_SERVER_VERSION);
     if (preg_match("/([0-9]*)\.([0-9]*)\.([0-9]*)/", $version, $matches)) {
         $maj = $matches[1]; $min = $matches[2]; $upd = $matches[3];
-        if ($maj >= 5 && $min >= 5 && $upd >= 3) {
+        if ($maj > 5 || ($maj >= 5 && $min >= 5 && $upd >= 3)) {
             return true;
         }
     }

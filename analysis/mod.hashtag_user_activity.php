@@ -33,8 +33,10 @@ require_once './common/Gexf.class.php';
             die('no data in selection');
         $nrOfTweets = $res['count'];
 
+        $collation = current_collation();
+
         // select nr of users in subset
-        $sql = "SELECT count(distinct(from_user_name)) AS count FROM " . $esc['mysql']['dataset'] . "_tweets t ";
+        $sql = "SELECT count(distinct(from_user_name COLLATE $collation)) AS count FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
         $rec = mysql_query($sql);
         if (mysql_num_rows($rec) > 0)
@@ -44,7 +46,7 @@ require_once './common/Gexf.class.php';
         $nrOfUsers = $res['count'];
 
         // get hashtag-user relations
-        $sql = "SELECT LOWER(A.text) AS h1, LOWER(A.from_user_name) AS user ";
+        $sql = "SELECT LOWER(A.text COLLATE $collation) AS h1, LOWER(A.from_user_name COLLATE $collation) AS user ";
         $sql .= "FROM " . $esc['mysql']['dataset'] . "_hashtags A, " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset() . " AND ";
         $sql .= "LENGTH(A.text)>1 AND ";
@@ -65,7 +67,7 @@ require_once './common/Gexf.class.php';
             $hashtagDistinctUsers[$hashtag] = count($users);
 
         // get hashtag mention relations
-        $sql = "SELECT m.to_user AS u, h.text AS h1 FROM " . $esc['mysql']['dataset'] . "_hashtags h, " . $esc['mysql']['dataset'] . "_mentions m, " . $esc['mysql']['dataset'] . "_tweets t";
+        $sql = "SELECT m.to_user COLLATE $collation AS u, h.text COLLATE $collation AS h1 FROM " . $esc['mysql']['dataset'] . "_hashtags h, " . $esc['mysql']['dataset'] . "_mentions m, " . $esc['mysql']['dataset'] . "_tweets t";
         $sql .= sqlSubset() . " AND ";
         $sql .= "h.tweet_id = m.tweet_id AND h.tweet_id = t.id";
         $rec = mysql_query($sql);

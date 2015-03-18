@@ -28,8 +28,9 @@ require_once './common/Gexf.class.php';
 
         <?php
         validate_all_variables();
+        $collation = current_collation();
 
-        $sql = "SELECT COUNT(LOWER(t.from_user_name)) AS frequency, LOWER(t.from_user_name) AS username, u.url_followed AS url, u.domain AS domain, u.error_code AS status_code FROM ";
+        $sql = "SELECT COUNT(LOWER(t.from_user_name COLLATE $collation)) AS frequency, LOWER(t.from_user_name COLLATE $collation) AS username, u.url_followed AS url, u.domain AS domain, u.error_code AS status_code FROM ";
         $sql .= $esc['mysql']['dataset'] . "_tweets t, " . $esc['mysql']['dataset'] . "_urls u ";
         $where = "t.id = u.tweet_id AND u.url_followed !='' AND ";
         $sql .= sqlSubset($where);

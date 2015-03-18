@@ -4,6 +4,7 @@ require_once './common/functions.php';
 
 $variability = false;       // @todo used as hack for experiment in first issue mapping workshop
 $uselocalresults = false;   // @todo used as hack for experiment in first issue mapping workshop
+
 ?>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -20,20 +21,27 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
 
     <body>
 
-        <h1>Twitter Analytics co-hashtags</h1>
+        <h1>TCAT :: co-hashtags</h1>
 
         <?php
         validate_all_variables();
         if (empty($esc['shell']['minf']))
             $esc['shell']['minf'] = 4;
+        if (empty($esc['shell']['topu']))
+            $esc['shell']['topu'] = 0;
+        if (is_string($esc['shell']['minf']))
+            $esc['shell']['minf'] = preg_replace("/[^0-9]/", '', $esc['shell']['minf']);
+        if (is_string($esc['shell']['topu']))
+            $esc['shell']['topu'] = preg_replace("/[^0-9]/", '', $esc['shell']['topu']);
 
         include_once('common/Coword.class.php');
         $coword = new Coword;
         $coword->countWordOncePerDocument = FALSE;
 
+        $collation = current_collation();
 
         // get user diversity per hasthag
-        $sql = "SELECT LOWER(h.text) as h1, COUNT(t.from_user_id) as c, COUNT(DISTINCT(t.from_user_id)) AS d ";
+        $sql = "SELECT LOWER(h.text COLLATE $collation) as h1, COUNT(t.from_user_id) as c, COUNT(DISTINCT(t.from_user_id)) AS d ";
         $sql .= "FROM " . $esc['mysql']['dataset'] . "_hashtags h, " . $esc['mysql']['dataset'] . "_tweets t ";
         $where = "h.tweet_id = t.id AND ";
         $sql .= sqlSubset($where);
@@ -51,11 +59,11 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
 
         // do the actual job
         // get cowords
-        $sql = "SELECT LOWER(A.text) AS h1, LOWER(B.text) AS h2 ";
+        $sql = "SELECT LOWER(A.text COLLATE $collation) AS h1, LOWER(B.text COLLATE $collation) AS h2 ";
         $sql .= "FROM " . $esc['mysql']['dataset'] . "_hashtags A, " . $esc['mysql']['dataset'] . "_hashtags B, " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset() . " AND ";
         $sql .= "LENGTH(A.text)>1 AND LENGTH(B.text)>1 AND ";
-        $sql .= "LOWER(A.text) < LOWER(B.text) AND A.tweet_id = t.id AND A.tweet_id = B.tweet_id ";
+        $sql .= "LOWER(A.text COLLATE $collation) < LOWER(B.text COLLATE $collation) AND A.tweet_id = t.id AND A.tweet_id = B.tweet_id ";
         $sql .= "ORDER BY h1,h2";
 //print $sql."<br>";
         $sqlresults = mysql_query($sql);
@@ -66,6 +74,7 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
         }
 
         unset($coword->words); // as we are adding words manually the frequency would be messed up
+
         if ($esc['shell']['minf'] > 1 && !($esc['shell']['topu'] > 0)) {
             $coword->applyMinFreq($esc['shell']['minf']);
             //$coword->applyMinDegree($esc['shell']['minf']);	// Berno: method no longer in use, remains unharmed
@@ -77,38 +86,39 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
             $filename = get_filename_for_export("hashtagCooc", (isset($_GET['probabilityOfAssociation']) ? "_normalizedAssociationWeight" : ""), "gdf");
         }
 
-		//print_r($coword);
+        //print_r($coword);
 
-		$lookup = array();
+        $lookup = array();
 
-		$fp = fopen($filename, 'w');
+        $fp = fopen($filename, 'w');
 
-			fwrite($fp, "nodedef> name VARCHAR,label VARCHAR,wordFrequency INT,distinctUsersForWord INT,userDiversity FLOAT,wordFrequencyDividedByUniqueUsers FLOAT,wordFrequencyMultipliedByUniqueUsers INT\n");
+        fwrite($fp, chr(239) . chr(187) . chr(191));
+        fwrite($fp, "nodedef> name VARCHAR,label VARCHAR,wordFrequency INT,distinctUsersForWord INT,userDiversity FLOAT,wordFrequencyDividedByUniqueUsers FLOAT,wordFrequencyMultipliedByUniqueUsers INT\n");
 
-			$counter = 0;
-			foreach($coword->wordFrequency as $word => $freq) {
-				fwrite($fp, $counter ."," . $word ."," . $freq ."," . $coword->distinctUsersForWord[$word] ."," . $coword->userDiversity[$word] ."," . $coword->wordFrequencyDividedByUniqueUsers[$word] ."," . $coword->wordFrequencyMultipliedByUniqueUsers[$word] . "\n");
-				$lookup[$word] = $counter;
-				$counter++;
-			}
+        $counter = 0;
+        foreach ($coword->wordFrequency as $word => $freq) {
+            fwrite($fp, $counter . "," . $word . "," . $freq . "," . $coword->distinctUsersForWord[$word] . "," . $coword->userDiversity[$word] . "," . $coword->wordFrequencyDividedByUniqueUsers[$word] . "," . $coword->wordFrequencyMultipliedByUniqueUsers[$word] . "\n");
+            $lookup[$word] = $counter;
+            $counter++;
+        }
 
-			unset($coword->wordFrequency);
-			unset($coword->distinctUsersForWord);
-			unset($coword->userDiversity);
-			unset($coword->wordFrequencyDividedByUniqueUsers);
-			unset($coword->wordFrequencyMultipliedByUniqueUsers);
+        unset($coword->wordFrequency);
+        unset($coword->distinctUsersForWord);
+        unset($coword->userDiversity);
+        unset($coword->wordFrequencyDividedByUniqueUsers);
+        unset($coword->wordFrequencyMultipliedByUniqueUsers);
 
-			fwrite($fp, "edgedef> node1,node2,weight INT\n");
+        fwrite($fp, "edgedef> node1,node2,weight INT\n");
 
-			$counter = 0;
-			foreach($coword->cowords as $word => $cowords) {
-				foreach($cowords as $coword => $freq) {
-					fwrite($fp, $lookup[$word] ."," . $lookup[$coword] . "," . $freq . "\n");
-				}
-				$lookup[$word] = $counter;
-			}
+        $counter = 0;
+        foreach ($coword->cowords as $word => $cowords) {
+            foreach ($cowords as $coword => $freq) {
+                fwrite($fp, $lookup[$word] . "," . $lookup[$coword] . "," . $freq . "\n");
+            }
+            $lookup[$word] = $counter;
+        }
 
-		fclose($fp);
+        fclose($fp);
 
         //file_put_contents($filename, $coword->getCowordsAsGexf($filename));
 

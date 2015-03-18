@@ -27,6 +27,7 @@ require_once './common/functions.php';
 
         <?php
         validate_all_variables();
+        $collation = current_collation();
         $min_nr_of_nodes = (isset($_GET['minf']) && is_numeric($_GET['minf'])) ? $min_nr_of_nodes = $_GET['minf'] : 4;
 
         // make filename and open file for write
@@ -51,7 +52,7 @@ require_once './common/functions.php';
         fputs($file, $header);
 
         // get identical tweets
-        $sql = "SELECT text, COUNT(text) AS count FROM " . $esc['mysql']['dataset'] . "_tweets t ";
+        $sql = "SELECT text COLLATE $collation as text, COUNT(text COLLATE $collation) AS count FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
         $sql .= "GROUP BY text HAVING count >= " . $min_nr_of_nodes . " ORDER BY count DESC";
         $rec = mysql_query($sql);
@@ -64,7 +65,7 @@ require_once './common/functions.php';
             $text = $res['text'];
 
             // list other occurences
-            $sql3 = "SELECT * FROM " . $esc['mysql']['dataset'] . "_tweets WHERE text = '" . mysql_real_escape_string($text) . "' ORDER BY created_at ASC";
+            $sql3 = "SELECT * FROM " . $esc['mysql']['dataset'] . "_tweets WHERE text COLLATE $collation = '" . mysql_real_escape_string($text) . "' ORDER BY created_at ASC";
 
             $rec3 = mysql_query($sql3);
             if ($rec3) {

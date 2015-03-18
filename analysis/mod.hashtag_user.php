@@ -29,8 +29,10 @@ require_once './common/Gexf.class.php';
         $coword = new Coword;
         $coword->countWordOncePerDocument = FALSE;
 
+        $collation = current_collation();
+
         // get hashtag-user relations
-        $sql = "SELECT LOWER(A.text) AS h1, LOWER(A.from_user_name) AS user, LOWER(t.from_user_lang) AS language, LOWER(t.location) AS location, t.from_user_timezone AS timezone, t.from_user_utcoffset AS utcoffset ";
+        $sql = "SELECT LOWER(A.text COLLATE $collation) AS h1, LOWER(A.from_user_name COLLATE $collation) AS user, LOWER(t.from_user_lang) AS language, LOWER(t.location COLLATE $collation) AS location, t.from_user_timezone AS timezone, t.from_user_utcoffset AS utcoffset ";
         $sql .= "FROM " . $esc['mysql']['dataset'] . "_hashtags A, " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset() . " AND ";
         $sql .= "LENGTH(A.text)>1 AND ";
