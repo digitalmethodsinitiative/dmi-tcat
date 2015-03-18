@@ -4,31 +4,11 @@ require_once './common/config.php';
 require_once './common/functions.php';
 
 validate_all_variables();
-
-$columns = array(); $columncollate = array();
-$collation = 'utf8_bin';
-$is_utf8mb4 = false;
-$sql = "SHOW FULL COLUMNS FROM " . $esc['mysql']['dataset'] . "_tweets";
-$sqlresults = mysql_query($sql);
-while ($res = mysql_fetch_assoc($sqlresults)) {
-    $columns[] = $res['Field'];
-    if (stripos($res['Type'], 'char') !== false) {
-        $columncollate[$res['Field']] = true;
-    }
-    if (array_key_exists('Collation', $res) && $res['Collation'] == ('utf8mb4_unicode_ci' || $res['Collation'] == 'utf8mb4_general_ci')) { $is_utf8mb4 = true; }
-}
-if ($is_utf8mb4) $collation = 'utf8mb4_bin';
+$collation = current_collation();
 
 $exc = (empty($esc['shell']["exclude"])) ? "" : "-" . $esc['shell']["exclude"];
 
-$select = '';
-foreach ($columns as $c) {
-    if ($select !== '') { $select .= ','; }
-    $select .= "$c";
-    if (isset($columncollate[$c])) {
-        $select .= " COLLATE $collation as $c ";
-    }
-}
+$select = "id, from_user_name COLLATE $collation as from_user_name, text COLLATE $collation as text, created_at, retweet_id";
 
 if (isset($_GET['minf'])&&!empty($_GET['minf'])) {
     if(!preg_match("/^\d+$/",$_GET['minf'])) die('minf not a number');
