@@ -201,6 +201,7 @@ function frequencyTable($table, $toget) {
 function sqlSubset($where = NULL) {
     error_reporting(E_ALL);
     global $esc;
+    $collation = current_collation();
     $sql = "";
     if (!empty($esc['mysql']['url_query']) && strstr($where, "u.") == false)
         $sql .= ", " . $esc['mysql']['dataset'] . "_urls u";
@@ -211,34 +212,34 @@ function sqlSubset($where = NULL) {
         if (strstr($esc['mysql']['from_user_name'], "AND") !== false) {
             $subqueries = explode(" AND ", $esc['mysql']['from_user_name']);
             foreach ($subqueries as $subquery) {
-                $sql .= "LOWER(t.from_user_name) = LOWER('" . $subquery . "') AND ";
+                $sql .= "LOWER(t.from_user_name COLLATE $collation) = LOWER('" . $subquery . "' COLLATE $collation) AND ";
             }
         } elseif (strstr($esc['mysql']['from_user_name'], "OR") !== false) {
             $subqueries = explode(" OR ", $esc['mysql']['from_user_name']);
             $sql .= "(";
             foreach ($subqueries as $subquery) {
-                $sql .= "LOWER(t.from_user_name) = LOWER('" . $subquery . "') OR ";
+                $sql .= "LOWER(t.from_user_name COLLATE $collation) = LOWER('" . $subquery . "' COLLATE $collation) OR ";
             }
             $sql = substr($sql, 0, -3) . ") AND ";
         } else {
-            $sql .= "LOWER(t.from_user_name) = LOWER('" . $esc['mysql']['from_user_name'] . "') AND ";
+            $sql .= "LOWER(t.from_user_name COLLATE $collation) = LOWER('" . $esc['mysql']['from_user_name'] . "' COLLATE $collation) AND ";
         }
     }
     if (!empty($esc['mysql']['query'])) {
         if (strstr($esc['mysql']['query'], "AND") !== false) {
             $subqueries = explode(" AND ", $esc['mysql']['query']);
             foreach ($subqueries as $subquery) {
-                $sql .= "LOWER(t.text) LIKE '%" . $subquery . "%' AND ";
+                $sql .= "LOWER(t.text COLLATE $collation) LIKE '%" . $subquery . "%' COLLATE $collation AND ";
             }
         } elseif (strstr($esc['mysql']['query'], "OR") !== false) {
             $subqueries = explode(" OR ", $esc['mysql']['query']);
             $sql .= "(";
             foreach ($subqueries as $subquery) {
-                $sql .= "LOWER(t.text) LIKE '%" . $subquery . "%' OR ";
+                $sql .= "LOWER(t.text COLLATE $collation) LIKE '%" . $subquery . "%' COLLATE $collation OR ";
             }
             $sql = substr($sql, 0, -3) . ") AND ";
         } else {
-            $sql .= "LOWER(t.text) LIKE '%" . $esc['mysql']['query'] . "%' AND ";
+            $sql .= "LOWER(t.text COLLATE $collation) LIKE '%" . $esc['mysql']['query'] . "%' COLLATE $collation AND ";
         }
     }
     if (!empty($esc['mysql']['url_query'])) {
@@ -248,8 +249,8 @@ function sqlSubset($where = NULL) {
             $subqueries = explode(" AND ", $esc['mysql']['url_query']);
             foreach ($subqueries as $subquery) {
                 $sql .= "(";
-                $sql .= "(LOWER(u.url_followed) LIKE '%" . $subquery . "%') OR ";
-                $sql .= "(LOWER(u.url_expanded) LIKE '%" . $subquery . "%')";
+                $sql .= "(LOWER(u.url_followed COLLATE $collation) LIKE '%" . $subquery . "%' COLLATE $collation) OR ";
+                $sql .= "(LOWER(u.url_expanded COLLATE $collation) LIKE '%" . $subquery . "%' COLLATE $collation)";
                 $sql .= ")";
                 $sql .= " AND ";
             }
@@ -258,8 +259,8 @@ function sqlSubset($where = NULL) {
             $sql .= "(";
             foreach ($subqueries as $subquery) {
                 $sql .= "(";
-                $sql .= "(LOWER(u.url_followed) LIKE '%" . $subquery . "%') OR ";
-                $sql .= "(LOWER(u.url_expanded) LIKE '%" . $subquery . "%')";
+                $sql .= "(LOWER(u.url_followed COLLATE $collation) LIKE '%" . $subquery . "%' COLLATE $collation) OR ";
+                $sql .= "(LOWER(u.url_expanded COLLATE $collation) LIKE '%" . $subquery . "%' COLLATE $collation)";
                 $sql .= ")";
                 $sql .= " OR ";
             }
@@ -267,8 +268,8 @@ function sqlSubset($where = NULL) {
         } else {
             $subquery = $esc['mysql']['url_query'];
             $sql .= "(";
-            $sql .= "(LOWER(u.url_followed) LIKE '%" . $subquery . "%') OR ";
-            $sql .= "(LOWER(u.url_expanded) LIKE '%" . $subquery . "%')";
+            $sql .= "(LOWER(u.url_followed COLLATE $collation) LIKE '%" . $subquery . "%' COLLATE $collation) OR ";
+            $sql .= "(LOWER(u.url_expanded COLLATE $collation) LIKE '%" . $subquery . "%' COLLATE $collation)";
             $sql .= ") AND ";
         }
     }
@@ -285,23 +286,23 @@ function sqlSubset($where = NULL) {
         $sql .= " ) AND ";
     }
     if (!empty($esc['mysql']['from_source'])) {
-        $sql .= "LOWER(t.source) LIKE '%" . $esc['mysql']['from_source'] . "%' AND ";
+        $sql .= "LOWER(t.source COLLATE $collation) LIKE '%" . $esc['mysql']['from_source'] . "%' COLLATE $collation AND ";
     }
     if (!empty($esc['mysql']['exclude'])) {
         if (strstr($esc['mysql']['exclude'], "AND") !== false) {
             $subqueries = explode(" AND ", $esc['mysql']['exclude']);
             foreach ($subqueries as $subquery) {
-                $sql .= "LOWER(t.text) NOT LIKE '%" . $subquery . "%' AND ";
+                $sql .= "LOWER(t.text COLLATE $collation) NOT LIKE '%" . $subquery . "%' COLLATE $collation AND ";
             }
         } elseif (strstr($esc['mysql']['exclude'], "OR") !== false) {
             $subqueries = explode(" OR ", $esc['mysql']['exclude']);
             $sql .= "(";
             foreach ($subqueries as $subquery) {
-                $sql .= "LOWER(t.text) NOT LIKE '%" . $subquery . "%' OR ";
+                $sql .= "LOWER(t.text COLLATE $collation) NOT LIKE '%" . $subquery . "%' COLLATE $collation OR ";
             }
             $sql = substr($sql, 0, -3) . ") AND ";
         } else {
-            $sql .= "LOWER(t.text) NOT LIKE '%" . $esc['mysql']['exclude'] . "%' AND ";
+            $sql .= "LOWER(t.text COLLATE $collation) NOT LIKE '%" . $esc['mysql']['exclude'] . "%' COLLATE $collation AND ";
         }
     }
     if (!empty($esc['mysql']['from_user_lang'])) {
