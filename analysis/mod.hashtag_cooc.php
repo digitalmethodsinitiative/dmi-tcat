@@ -29,10 +29,6 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
             $esc['shell']['minf'] = 4;
         if (empty($esc['shell']['topu']))
             $esc['shell']['topu'] = 0;
-        if (is_string($esc['shell']['minf']))
-            $esc['shell']['minf'] = preg_replace("/[^0-9]/", '', $esc['shell']['minf']);
-        if (is_string($esc['shell']['topu']))
-            $esc['shell']['topu'] = preg_replace("/[^0-9]/", '', $esc['shell']['topu']);
 
         include_once('common/Coword.class.php');
         $coword = new Coword;
