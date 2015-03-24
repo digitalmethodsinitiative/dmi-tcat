@@ -49,10 +49,10 @@ require_once './common/functions.php';
         if (array_search("media", $exportSettings) !== false) {
             if (array_search("urls", $exportSettings) !== false) {
                 // full export of followed urls and media
-                $header .= ",media_id,media_type,media_indice_start,media_indice_end,photo_sizes_width,photo_sizes_height,photo_resize";
+                $header .= ",media_id,media_url,media_type,media_indice_start,media_indice_end,photo_sizes_width,photo_sizes_height,photo_resize";
             } else {
                 // export non-followed media urls
-                $header .= ",urls,urls_expanded,media_id,media_type,media_indice_start,media_indice_end,photo_sizes_width,photo_sizes_height,photo_resize";
+                $header .= ",urls,urls_expanded,media_id,media_url,media_type,media_indice_start,media_indice_end,photo_sizes_width,photo_sizes_height,photo_resize";
             }
         }
         if (array_search("mentions", $exportSettings) !== false)
@@ -119,7 +119,7 @@ require_once './common/functions.php';
                         (isset($data['from_user_created_at']) ? $data['from_user_created_at'] : "");
                 if (array_search("urls", $exportSettings) !== false || 
                     array_search("media", $exportSettings) !== false) {
-                    $urls = $expanded = $followed = $domain = $error = $media = $media_ids = $media_type = $photo_width = $photo_height = $photo_resize = $indice_start = $indice_end = array();
+                    $urls = $expanded = $followed = $domain = $error = $media = $media_ids = $media_urls = $media_type = $photo_width = $photo_height = $photo_resize = $indice_start = $indice_end = array();
                     // lookup urls
                     if (array_search("urls", $exportSettings) !== false) {
                         $sql2 = "SELECT * FROM " . $esc['mysql']['dataset'] . "_urls WHERE tweet_id = " . $data['id'];
@@ -132,6 +132,7 @@ require_once './common/functions.php';
                                 $domain[] = $res2['domain'];
                                 $error[] = $res2['error_code'];
                                 $media_ids[] = '';
+                                $media_urls[] = '';
                                 $media_type[] = '';
                                 $photo_width[] = '';
                                 $photo_height[] = '';
@@ -153,6 +154,7 @@ require_once './common/functions.php';
                                 $domain[] = '';
                                 $error[] = '';
                                 $media_ids[] = $res3['id'];
+                                $media_urls[] = $res3['media_url_https'];
                                 $media_type[] = $res3['media_type'];
                                 $photo_width[] = $res3['photo_size_width'];
                                 $photo_height[] = $res3['photo_size_height'];
@@ -165,13 +167,13 @@ require_once './common/functions.php';
 
                     if (array_search("media", $exportSettings) !== false && array_search("urls", $exportSettings) !== false) {
                         // full export of urls with media information
-                        $out .= ",\"" . textToCSV(implode("; ", $urls)) . "\",\"" . textToCSV(implode("; ", $expanded)) . "\",\"" . textToCSV(implode("; ", $followed)) . "\",\"" . textToCSV(implode("; ", $domain)) . "\",\"" . textToCSV(implode("; ", $error)) . "\",\"" . textToCSV(implode("; ", $media_ids)) . "\",\"" . textToCSV(implode("; ", $media_type)) . "\",\"" . textToCSV(implode("; ", $indice_start)) . "\",\"" . textToCSV(implode("; ", $indice_end)) . "\",\"" . textToCSV(implode("; ", $photo_width)) . "\",\"" . textToCSV(implode("; ", $photo_height)) . "\",\"" . textToCSV(implode("; ", $photo_resize)) . "\"";
+                        $out .= ",\"" . textToCSV(implode("; ", $urls)) . "\",\"" . textToCSV(implode("; ", $expanded)) . "\",\"" . textToCSV(implode("; ", $followed)) . "\",\"" . textToCSV(implode("; ", $domain)) . "\",\"" . textToCSV(implode("; ", $error)) . "\",\"" . textToCSV(implode("; ", $media_ids)) . "\",\"" . textToCSV(implode("; ", $media_urls)) . "\",\"" . textToCSV(implode("; ", $media_type)) . "\",\"" . textToCSV(implode("; ", $indice_start)) . "\",\"" . textToCSV(implode("; ", $indice_end)) . "\",\"" . textToCSV(implode("; ", $photo_width)) . "\",\"" . textToCSV(implode("; ", $photo_height)) . "\",\"" . textToCSV(implode("; ", $photo_resize)) . "\"";
                     } else if (array_search("urls", $exportSettings) !== false) {
                         // export of urls only
                         $out .= ",\"" . textToCSV(implode("; ", $urls)) . "\",\"" . textToCSV(implode("; ", $expanded)) . "\",\"" . textToCSV(implode("; ", $followed)) . "\",\"" . textToCSV(implode("; ", $domain)) . "\",\"" . textToCSV(implode("; ", $error)) . "\"";
                     } else {
                         // export of non-followed media urls
-                        $out .= ",\"" . textToCSV(implode("; ", $urls)) . "\",\"" . textToCSV(implode("; ", $expanded)) . "\",\"" . textToCSV(implode("; ", $media_ids)) . "\",\"" . textToCSV(implode("; ", $media_type)) . "\",\"" . textToCSV(implode("; ", $indice_start)) . "\",\"" . textToCSV(implode("; ", $indice_end)) . "\",\"" . textToCSV(implode("; ", $photo_width)) . "\",\"" . textToCSV(implode("; ", $photo_height)) . "\",\"" . textToCSV(implode("; ", $photo_resize)) . "\"";
+                        $out .= ",\"" . textToCSV(implode("; ", $urls)) . "\",\"" . textToCSV(implode("; ", $expanded)) . "\",\"" . textToCSV(implode("; ", $media_ids)) . "\",\"" . textToCSV(implode("; ", $media_urls)) . "\",\"" . textToCSV(implode("; ", $media_type)) . "\",\"" . textToCSV(implode("; ", $indice_start)) . "\",\"" . textToCSV(implode("; ", $indice_end)) . "\",\"" . textToCSV(implode("; ", $photo_width)) . "\",\"" . textToCSV(implode("; ", $photo_height)) . "\",\"" . textToCSV(implode("; ", $photo_resize)) . "\"";
                     }
                 }
                 if (array_search("mentions", $exportSettings) !== false) {
