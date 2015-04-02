@@ -1,6 +1,7 @@
 <?php
 require_once './common/config.php';
 require_once './common/functions.php';
+require_once './common/CSV.class.php';
 ?>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -27,13 +28,8 @@ require_once './common/functions.php';
 
         <?php
         validate_all_variables();
-
-
-        $header = "id,time,created_at,from_user_name,from_user_lang,text,source,location,lat,lng,from_user_followercount,from_user_friendcount,from_user_realname,to_user_name,in_reply_to_status_id,from_user_listed,from_user_utcoffset,from_user_timezone,from_user_description,from_user_url,from_user_verified,filter_level";
-        if (isset($_GET['includeUrls']) && $_GET['includeUrls'] == 1)
-            $header .= ",urls,urls_expanded,urls_followed,domains";
-        $header .= ",sentistrength,negative,positive";
-        $header .= "\n";
+        $filename = get_filename_for_export("sentiment_cloud");
+        $csv = new CSV($filename, $outputformat);
 
         $sql = "SELECT s.explanation FROM " . $esc['mysql']['dataset'] . "_tweets t, " . $esc['mysql']['dataset'] . "_sentiment s ";
         $sql .= sqlSubset("s.tweet_id = t.id AND ");
@@ -62,19 +58,26 @@ require_once './common/functions.php';
             }
         }
 
-        $out = "";
-        $out .= "word\tcount\tsentistrength\n";
+        $csv->writeheader(array('word', 'count', 'sentistrength'));
         arsort($positiveSentiments);
-        foreach ($positiveSentiments as $word => $val)
-            $out .= $word . "\t" . $val . "\t" . $wordValues[$word] . "\n";
+        foreach ($positiveSentiments as $word => $val) {
+            $csv->newrow();
+            $csv->addfield($word);
+            $csv->addfield($val);
+            $csv->addfield($wordValues[$word]);
+            $csv->writerow();
+        }
 
         arsort($negativeSentiments);
-        foreach ($negativeSentiments as $word => $val)
-            $out .= $word . "\t" . $val . "\t" . $wordValues[$word] . "\n";
+        foreach ($negativeSentiments as $word => $val) {
+            $csv->newrow();
+            $csv->addfield($word);
+            $csv->addfield($val);
+            $csv->addfield($wordValues[$word]);
+            $csv->writerow();
+        }
 
-
-        $filename = get_filename_for_export("sentiment_cloud");
-        file_put_contents($filename, chr(239) . chr(187) . chr(191) . $out);
+        $csv->close();
 
         echo '<fieldset class="if_parameters">';
         echo '<legend>Your File</legend>';

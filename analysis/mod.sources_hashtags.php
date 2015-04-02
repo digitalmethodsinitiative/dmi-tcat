@@ -29,7 +29,7 @@ require_once './common/Gexf.class.php';
         <?php
 
         validate_all_variables();
-        $filename = get_filename_for_export("sourceHashtag");
+        $filename = get_filename_for_export("sourceHashtag", '', 'gexf');
         $collation = current_collation();
 
 		//print_r($_GET);
@@ -71,7 +71,6 @@ require_once './common/Gexf.class.php';
 
         $gexf->render();
 
-        $filename = str_replace(".csv", ".gexf", $filename);
         file_put_contents($filename, $gexf->gexfFile);
 
         echo '<fieldset class="if_parameters">';

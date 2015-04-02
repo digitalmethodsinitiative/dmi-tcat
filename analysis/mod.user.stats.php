@@ -1,6 +1,7 @@
 <?php
 require_once './common/config.php';
 require_once './common/functions.php';
+require_once './common/CSV.class.php'
 ?>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -29,8 +30,8 @@ require_once './common/functions.php';
         validate_all_variables();
 
         $filename = get_filename_for_export("userStats");
-        $filename_locations = get_filename_for_export("locations");
-        $filename_languages = get_filename_for_export("languages");
+
+        $csv = new CSV($filename, $outputformat);
 
         // tweets per user
         $sql = "SELECT count(distinct(t.id)) AS count, t.from_user_id, ";
@@ -107,13 +108,23 @@ require_once './common/functions.php';
 
         // @todo: aantal retweets
 
-        $content = "date,what,min,max,avg,Q1,median,Q3,25%TrimmedMean\n";
+        $csv->writeheader(array("date", "what", "min", "max", "avg", "Q1", "median", "Q3", "25%TrimmedMean"));
         foreach ($stats as $date => $datestats) {
             foreach ($datestats as $what => $stat) {
-                $content.="$date,$what," . $stat['min'] . "," . $stat['max'] . "," . $stat['avg'] . "," . $stat['Q1'] . "," . $stat['median'] . "," . $stat['Q3'] . "," . $stat['truncatedMean'] . "\n";
+                $csv->newrow();
+                $csv->addfield($date);
+                $csv->addfield($what);
+                $csv->addfield($stat['min']);
+                $csv->addfield($stat['max']);
+                $csv->addfield($stat['avg']);
+                $csv->addfield($stat['Q1']);
+                $csv->addfield($stat['median']);
+                $csv->addfield($stat['Q3']);
+                $csv->addfield($stat['truncatedMean']);
+                $csv->writerow();
             }
         }
-        file_put_contents($filename, chr(239) . chr(187) . chr(191) . $content);
+        $csv->close();
 
         echo '<fieldset class="if_parameters">';
         echo '<legend>User stats</legend>';

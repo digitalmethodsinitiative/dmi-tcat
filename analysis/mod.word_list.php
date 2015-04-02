@@ -1,6 +1,7 @@
 <?php
 require_once './common/config.php';
 require_once './common/functions.php';
+require_once './common/CSV.class.php';
 
 $lowercase = isset($_GET['lowercase']) ? $lowercase = $_GET['lowercase'] : 0;
 $minf = isset($_GET['minf']) ? $minf = $_GET['minf'] : 1;
@@ -32,7 +33,7 @@ $minf = isset($_GET['minf']) ? $minf = $_GET['minf'] : 1;
         validate_all_variables();
 
         $filename = get_filename_for_export("wordList");
-        $csv = fopen($filename, "w");
+        $csv = new CSV($filename, $outputformat);
         
         mysql_query("set names utf8");
         $sql = "SELECT id, text FROM " . $esc['mysql']['dataset'] . "_tweets t ";
@@ -42,20 +43,21 @@ $minf = isset($_GET['minf']) ? $minf = $_GET['minf'] : 1;
         $debug = '';
         if ($sqlresults) {
             while ($data = mysql_fetch_assoc($sqlresults)) {
-                $text = textToCSV($data["text"], "tweet");
+                $text = $data["text"];
                 preg_match_all('/(https?:\/\/[^\s]+)|([\p{L}][\p{L}]+)/u', $text, $matches, PREG_PATTERN_ORDER);
                 foreach ($matches[0] as $word) {
                     if (preg_match('/(https?:\/\/)/u', $word))
                         continue;
-                    //if ($lowercase !== 0)
-                        $word = strtolower($word);
-                    fputs($csv, trim($word)."\t {'ids': [" . $data['id'] . "]}" . "\n");
+                    $word = strtolower($word);
+                    $csv->newrow();
+                    $csv->addfield(trim($word));
+                    $csv->addfield("{'ids': [" . $data['id'] . "]}");
+                    $csv->writerow();
                 }
             }
         }
 
-
-        fclose($csv);
+        $csv->close();
 
         echo '<fieldset class="if_parameters">';
         echo '<legend>Your File</legend>';

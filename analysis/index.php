@@ -25,6 +25,7 @@ require_once 'common/functions.php';
             function sendUrl(_file) {
                 var _d1 = $("#ipt_startdate").val();
                 var _d2 = $("#ipt_enddate").val();
+                var outputformat = getOutputformat();
 
                 if(!_d1.match(/\d{4}-\d{2}-\d{2}/) || !_d2.match(/\d{4}-\d{2}-\d{2}/)) {
                     alert("Please check the date format!");
@@ -53,7 +54,8 @@ if (defined('ANALYSIS_URL'))
             "&startdate=" + $("#ipt_startdate").val() +
             "&enddate=" + $("#ipt_enddate").val() +
             "&whattodo=" + $("#whattodo").val() +
-            "&graph_resolution=" + $("input[name=graph_resolution]:checked").val();
+            "&graph_resolution=" + $("input[name=graph_resolution]:checked").val() +
+            "&outputformat=" + outputformat;
 
         document.location.href = _url;
     }
@@ -100,6 +102,13 @@ if (defined('ANALYSIS_URL'))
             selectedValue = selected.val();
         var inter = "&interval="+selectedValue+"&customInterval="+$('[name="customInterval"]').val();
         return inter;
+    }
+    function getOutputformat() {
+        var selected = $('[name="outputformat"]:checked');
+        var selectedValue = undefined;
+        if (selected.length > 0)
+            selectedValue = selected.val();
+        return selectedValue;
     }
     function getExportSettings() {
         var exportSettings = "&exportSettings=";
@@ -551,6 +560,16 @@ foreach ($linedata as $key => $value) {
                 <legend>Export selected data</legend>
 
                 <p class="txt_desc">All exports have the following filename convention: {dataset}-{startdate}-{enddate}-{query}-{exclude}-{from_user_name}-{from_user_lang}-{url_query}-{module_name}-{module_settings}-{dmi-tcat_version}.{filetype}</p>
+
+                <p>
+                    <div class='txt_desc' style='background-color: #eee; padding: 5px;'>Output format for tables:
+                        <form>
+                            <input type='radio' name="outputformat" value="csv"<?php if ($outputformat == 'csv') print " CHECKED"; ?>>CSV (comma-separated)</input>
+                            <input type='radio' name="outputformat" value="tsv"<?php if ($outputformat == 'tsv') print " CHECKED"; ?>>TSV (tab-separated)</input>
+                        </form>
+                    </div>
+                </p>
+
                 <h2>Tweet statistics and activity metrics</h2>
 
                 <div class="if_export_block">

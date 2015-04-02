@@ -2,6 +2,7 @@
 require_once './common/config.php';
 require_once './common/functions.php';
 require_once './common/Gexf.class.php';
+require_once './common/CSV.class.php';
 ?>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -22,6 +23,8 @@ require_once './common/Gexf.class.php';
 
         <?php
         validate_all_variables();
+        $filename = get_filename_for_export("hashtagUserActivity", (isset($_GET['probabilityOfAssociation']) ? "_normalizedAssociationWeight" : ""));
+        $csv = new CSV($filename, $outputformat);
 
         // select nr of users in subset
         $sql = "SELECT count(id) AS count FROM " . $esc['mysql']['dataset'] . "_tweets t ";
@@ -82,17 +85,24 @@ require_once './common/Gexf.class.php';
         }
 
         // user-hashtag stats: hashtag, nr. of mentions, nr. of users participating (option: nr. of mentions)
-        $contents = "hashtag,nr of tweets with hashtag, distinct users for hashtag, distinct mentions with hashtag, total mentions with hashtag, nr of tweets in selection, nr of users in selection\n";
+        $csv->writeheader(array("hashtag", "nr of tweets with hashtag", "distinct users for hashtag", "distinct mentions with hashtag", "total mentions with hashtag", "nr of tweets in selection", "nr of users in selection"));
         foreach ($hashtagCount as $hashtag => $count) {
-            $contents .= "$hashtag,$count," . $hashtagDistinctUsers[$hashtag] . "," . (isset($hashtagDistinctMentions[$hashtag]) ? $hashtagDistinctMentions[$hashtag] : 0) . "," . (isset($hashtagMentions[$hashtag]) ? $hashtagMentions[$hashtag] : 0) . ",$nrOfTweets,$nrOfUsers\n";
+            $csv->newrow();
+            $csv->addfield($hashtag);
+            $csv->addfield($count);
+            $csv->addfield($hashtagDistinctUsers[$hashtag]);
+            $csv->addfield(isset($hashtagDistinctMentions[$hashtag]) ? $hashtagDistinctMentions[$hashtag] : 0);
+            $csv->addfield(isset($hashtagMentions[$hashtag]) ? $hashtagMentions[$hashtag] : 0);
+            $csv->addfield($nrOfTweets);
+            $csv->addfield($nrOfUsers);
+            $csv->writerow();
         }
 
-        $filename = get_filename_for_export("hashtagUserActivity", (isset($_GET['probabilityOfAssociation']) ? "_normalizedAssociationWeight" : ""));
-        file_put_contents($filename, chr(239) . chr(187) . chr(191) . $contents);
+        $csv->close();
 
         echo '<fieldset class="if_parameters">';
 
-        echo '<legend>Your GEXF File</legend>';
+        echo '<legend>Your CSV File</legend>';
 
         echo '<p><a href="' . filename_to_url($filename) . '">' . $filename . '</a></p>';
 

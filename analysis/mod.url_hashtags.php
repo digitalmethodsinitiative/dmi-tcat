@@ -2,6 +2,7 @@
 require_once './common/config.php';
 require_once './common/functions.php';
 require_once './common/Gexf.class.php';
+require_once './common/CSV.class.php';
 ?>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -29,6 +30,8 @@ require_once './common/Gexf.class.php';
         <?php
         validate_all_variables();
         $collation = current_collation();
+        $filename = get_filename_for_export("urlHashtag");
+        $csv = new CSV($filename, $outputformat);
 
         $sql = "SELECT COUNT(LOWER(h.text COLLATE $collation)) AS frequency, LOWER(h.text COLLATE $collation) AS hashtag, u.url_followed AS url, u.domain AS domain, u.error_code AS status_code FROM ";
         $sql .= $esc['mysql']['dataset'] . "_tweets t, " . $esc['mysql']['dataset'] . "_hashtags h, " . $esc['mysql']['dataset'] . "_urls u ";
@@ -39,15 +42,20 @@ require_once './common/Gexf.class.php';
 
         $sqlresults = mysql_query($sql);
 
-        $content = "frequency, hashtag, url, domain, status_code\n";
+        $csv->writeheader(array("frequency", "hashtag", "url", "domain", "status_code"));
         while ($res = mysql_fetch_assoc($sqlresults)) {
-            $content .= $res['frequency'] . "," . $res['hashtag'] . "," . $res['url'] . "," . $res['domain'] . "," . $res['status_code'] . "\n";
+            $csv->newrow();
+            $csv->addfield($res['frequency']);
+            $csv->addfield($res['hashtag']);
+            $csv->addfield($res['url']);
+            $csv->addfield($res['domain']);
+            $csv->addfield($res['status_code']);
+            $csv->writerow();
             $urlHashtags[$res['url']][$res['hashtag']] = $res['frequency'];
             $urlDomain[$res['url']] = $res['domain'];
             $urlStatusCode[$res['url']] = $res['status_code'];
         }
-        $filename = get_filename_for_export("urlHashtag");
-        file_put_contents($filename, chr(239) . chr(187) . chr(191) . $content);
+        $csv->close();
 
         echo '<fieldset class="if_parameters">';
 
@@ -80,7 +88,7 @@ require_once './common/Gexf.class.php';
 
         $gexf->render();
 
-        $filename = str_replace(".csv", ".gexf", $filename);
+        $filename = get_filename_for_export("urlHashtag", '', 'gexf');
         file_put_contents($filename, $gexf->gexfFile);
 
         echo '<fieldset class="if_parameters">';

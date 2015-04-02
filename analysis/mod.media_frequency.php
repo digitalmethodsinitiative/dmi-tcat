@@ -1,6 +1,7 @@
 <?php
 require_once './common/config.php';
 require_once './common/functions.php';
+require_once './common/CSV.class.php';
 
 $minf = isset($_GET['minf']) ? $minf = $_GET['minf'] : 1;
 
@@ -31,6 +32,8 @@ $minf = isset($_GET['minf']) ? $minf = $_GET['minf'] : 1;
         <?php
         validate_all_variables();
 
+        $media_url_count = array();
+
         $tempfile = tmpfile();
         fputs($tempfile, chr(239) . chr(187) . chr(191));
 
@@ -44,29 +47,35 @@ $minf = isset($_GET['minf']) ? $minf = $_GET['minf'] : 1;
         $debug = '';
         if ($sqlresults) {
             while ($data = mysql_fetch_assoc($sqlresults)) {
-                $url = textToCSV($data["url"]);
-                $datepart = str_replace(' ', '_', $data["datepart"]);
-                fputs($tempfile, "\"$datepart\" \"$url\"\n");
+                $datepart = $data["datepart"];
+                $url = $data["url"];
+                if (!array_key_exists($datepart, $media_url_count)) {
+                    $media_url_count[$datepart] = array();
+                }
+                if (!array_key_exists($url, $media_url_count[$datepart])) {
+                    $media_url_count[$datepart][$url] = 1;
+                } else {
+                    $media_url_count[$datepart][$url]++;
+                }
             }
         }
-
-        if (function_exists('eio_fsync')) { eio_fsync($tempfile); }
-                                     else { fflush($tempfile); }
-
-        $tempmeta = stream_get_meta_data($tempfile);
-        $templocation = $tempmeta["uri"];
 
         // write csv results
 
         $filename = get_filename_for_export("mediaFrequency");
-        $csv = fopen($filename, "w");
-        fputs($csv, chr(239) . chr(187) . chr(191));
-        fputs($csv, "data,media url,frequency\n");
-        system("sort -S 8% $templocation | uniq -c | sort -S 8% -b -k 2,2 -k 1,1nr -k 3,3 | awk '{ if ($1 >= $minf) { print $2 \",\" $3 \",\" $1} }' | sed -e 's/_/ /' >> $filename");
- 
-        fclose($csv);
-        
-        fclose($tempfile); // this removes the temporary file
+        $csv = new CSV($filename, $outputformat);
+        $csv->writeheader(array('interval', 'media url', 'frequency'));
+        foreach ($media_url_count as $datepart => $url_count) {
+            arsort($url_count);
+            foreach ($url_count as $url => $count) {
+                $csv->newrow();
+                $csv->addfield($datepart);
+                $csv->addfield($url);
+                $csv->addfield($count);
+                $csv->writerow();
+            }
+        }
+        $csv->close();
 
         echo '<fieldset class="if_parameters">';
         echo '<legend>Your File</legend>';

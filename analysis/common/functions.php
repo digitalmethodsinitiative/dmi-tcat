@@ -101,6 +101,11 @@ if (isset($_REQUEST['interval'])) {
     if (in_array($_REQUEST['interval'], array('hourly', 'daily', 'weekly', 'monthly', 'yearly', 'overall', 'custom')))
         $interval = $_REQUEST['interval'];
 }
+$outputformat = "csv";
+if (isset($_REQUEST['outputformat'])) {
+    if (in_array($_REQUEST['outputformat'], array('csv', 'tsv', 'gexf', 'gdf')))
+        $outputformat = $_REQUEST['outputformat'];
+}
 // check custom interval
 $intervalDates = array();
 if ($interval == "custom" && isset($_REQUEST['customInterval'])) {
@@ -371,11 +376,14 @@ function groupByInterval($date) {
 
 // generates the datafiles, only used if the file does not exist yet
 function generate($what, $filename) {
-    global $tsv, $network, $esc, $titles, $database, $interval;
+    global $tsv, $network, $esc, $titles, $database, $interval, $outputformat;
+
+    require_once("CSV.class.php");
 
     // initialize variables
     $tweets = $times = $from_user_names = $results = $urls = $urls_expanded = $hosts = $hashtags = array();
-    $file = "";
+    $csv = new CSV($filename, $outputformat);
+    $collation = current_collation();
 
     // determine interval
     $sql = "SELECT MIN(t.created_at) AS min, MAX(t.created_at) AS max FROM " . $esc['mysql']['dataset'] . "_tweets t ";
@@ -396,7 +404,7 @@ function generate($what, $filename) {
         // get other things
     } else {
         // @todo, this could also use database grouping
-        $sql = "SELECT id,text,created_at,from_user_name FROM " . $esc['mysql']['dataset'] . "_tweets t ";
+        $sql = "SELECT id,text COLLATE $collation as text,created_at,from_user_name COLLATE $collation as from_user_name FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
 
         // get slice and its min and max time
@@ -513,22 +521,24 @@ function generate($what, $filename) {
         if (isset($titles[$what])) {
             if (!empty($esc['shell']['query'])) {
                 $q = " with search " . $esc['shell']['query'];
-            } else
+            } else {
                 $q = "";
-            $file = $titles[$what] . $q . " from " . $esc['date']["startdate"] . " to " . $esc['date']["enddate"] . "\n";
-        } else
-            $file = "";
+            }
+            $csv->writeheader(array($titles[$what] . $q . " from " . $esc['date']["startdate"] . " to " . $esc['date']["enddate"]));
+        }
 
-        $file = "date,user,mentions,tweets\n";
+        $csv->writeheader(array("date", "user", "mentions", "tweets"));
         foreach ($results as $group => $things) {
             foreach ($things as $thing => $count) {
-                $file .= "$group,$thing,$count\n";
+                $csv->newrow();
+                $csv->addfield($group);
+                $csv->addfield($thing);
+                $csv->addfield($count);
+                $csv->writerow();
             }
         }
         // write tsv output
     } elseif (in_array($what, $tsv) !== false) {
-
-
 
         ksort($results);
 
@@ -536,18 +546,18 @@ function generate($what, $filename) {
         if (isset($titles[$what])) {
             if (!empty($esc['shell']['query'])) {
                 $q = " with search " . $esc['shell']['query'];
-            } else
+            } else {
                 $q = "";
-            $file = $titles[$what] . " for " . $esc['shell']['datasetname'] . $q . " from " . $esc['date']["startdate"] . " to " . $esc['date']["enddate"] . "\n";
-        } else
-            $file = "";
+            }
+            $csv->writeheader(array($titles[$what] . " for " . $esc['shell']['datasetname'] . $q . " from " . $esc['date']["startdate"] . " to " . $esc['date']["enddate"]));
+        }
 
         if ($what == "urls")
-            $file .= "date,frequency,tweetedurl\n";
+            $csv->writeheader(array("date", "frequency", "tweetedurl"));
         elseif ($what == "hosts")
-            $file .= "date,frequency,domain name\n";
+            $csv->writeheader(array("date", "frequency", "domain", "name"));
         else
-            $file .= "date,frequency,$what\n";
+            $csv->writeheader(array("date", "frequency", $what));
         foreach ($results as $group => $things) {
             arsort($things);
             foreach ($things as $thing => $count) {
@@ -555,18 +565,18 @@ function generate($what, $filename) {
                     continue;
                 if ($count < $esc['shell']['minf'])
                     continue;
-                if ($what == "retweet")
-                    $thing = '"' . textToCSV($thing) . '"';
-                $file .= "$group,$count,$thing\n";
+                $csv->newrow();
+                $csv->addfield($group);
+                $csv->addfield($count);
+                $csv->addfield($thing);
+                $csv->writerow();
             }
         }
-    } else
+    } else {
         die('no valid output format found');
+    }
 
-    if (!empty($file))
-        ;
-    #file_put_contents($filename, "\xEF\xBB\xBF" . $file);   // write BOM
-    file_put_contents($filename, chr(239) . chr(187) . chr(191) . $file);   // write BOM
+    $csv->close();
 }
 
 // does some cleanup of data types
@@ -620,21 +630,24 @@ function validate($what, $how) {
         case "url":
             $what = '"' . str_replace('"', '%22', $what) . '"';
             break;
+        case "outputformat":
+            if (!in_array($what, array('csv', 'tsv', 'gexf', 'gdf'))) $what = 'csv';
+            break;
         default:
             break;
     }
     return $what;
 }
 
-function textToCSV($text) {
-    return str_replace('"','""',preg_replace("/[\r\t\n]/", " ", html_entity_decode($text)));
+function decodeAndFlatten($text) {
+    return preg_replace("/[\r\t\n]/", " ", html_entity_decode($text));
 }
 
 // validate and escape all user input
 // make sure that we have all the right types and values
 // also make sure one cannot do a mysql injection attack
 function validate_all_variables() {
-    global $esc, $query, $url_query, $geo_query, $dataset, $exclude, $from_user_name, $from_source, $startdate, $enddate, $databases, $connection, $keywords, $database, $minf, $topu, $from_user_lang;
+    global $esc, $query, $url_query, $geo_query, $dataset, $exclude, $from_user_name, $from_source, $startdate, $enddate, $databases, $connection, $keywords, $database, $minf, $topu, $from_user_lang, $outputformat;
 
     $esc['mysql']['dataset'] = validate($dataset, "mysql");
     $esc['mysql']['query'] = validate($query, "mysql");
@@ -657,6 +670,8 @@ function validate_all_variables() {
 
     $esc['shell']['minf'] = validate($minf, 'frequency');
     $esc['shell']['topu'] = validate($topu, 'frequency');
+
+    $esc['shell']['outputformat'] = validate($outputformat, 'outputformat');
 
     $esc['date']['startdate'] = validate($startdate, "startdate");
     $esc['date']['enddate'] = validate($enddate, "enddate");
@@ -693,6 +708,11 @@ function current_collation() {
 // Output format: {dataset}-{startdate}-{enddate}-{query}-{exclude}-{from_user_name}-{from_user_lang}-{url_query}-{module_name}-{module_settings}-{hash}.{filetype}
 function get_filename_for_export($module, $settings = "", $filetype = "csv") {
     global $resultsdir, $esc;
+
+    $func_args = func_get_args();
+    if (!isset($func_args[2]) && array_key_exists('outputformat', $esc['shell'])) {
+        $filetype = $esc['shell']['outputformat'];
+    }
 
     // get software vesion
     exec('git rev-parse --verify HEAD 2> /dev/null', $output);

@@ -1,6 +1,7 @@
 <?php
 require_once './common/config.php';
 require_once './common/functions.php';
+require_once './common/CSV.class.php';
 ?>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -29,6 +30,8 @@ require_once './common/functions.php';
 
         validate_all_variables();
         $collation = current_collation();
+        $filename = get_filename_for_export("user.list");
+        $csv = new CSV($filename, $outputformat);
 
         // tweets per user
         $sql = "SELECT t.from_user_id,t.from_user_name COLLATE $collation as from_user_name,t.from_user_lang,t.from_user_tweetcount,t.from_user_followercount,t.from_user_friendcount,t.from_user_listed,t.from_user_utcoffset,t.from_user_verified,count(distinct(t.id)) as tweetcount, ";
@@ -116,41 +119,46 @@ require_once './common/functions.php';
             $tweetsWithhashtags[$res['datepart']][$res['from_user_name']] = $res['count'];
         }
 
-        $content = "date,from_user_id,from_user_name,from_user_lang,from_user_tweetcount (all time user queries),from_user_followercount,from_user_friendcount,from_user_listed,from_user_utcoffset,from_user_verified,tweets in data set,retweets by user, mentioning,mentioned,total nr of hashtags,nr of tweets with hashtags\n";
+        $csv->writeheader(explode(',', "date,from_user_id,from_user_name,from_user_lang,from_user_tweetcount (all time user queries),from_user_followercount,from_user_friendcount,from_user_listed,from_user_utcoffset,from_user_verified,tweets in data set,retweets by user, mentioning,mentioned,total nr of hashtags,nr of tweets with hashtags"));
         foreach ($array as $date => $user_array) {
             foreach ($user_array as $user => $a) {
-                $content .= $date . "," . $a["from_user_id"] . "," . $a["from_user_name"] . "," . $a["from_user_lang"] . "," . $a["from_user_tweetcount"] . "," . $a["from_user_followercount"] . "," . $a["from_user_friendcount"] . "," . $a["from_user_listed"] . "," . $a["from_user_utcoffset"] . "," . $a["from_user_verified"] . "," . $a["tweetcount"];
-                $content .= ",";
+                $csv->newrow();
+                $csv->addfield($date);
+                $csv->addfield($a["from_user_id"]);
+                $csv->addfield($a["from_user_name"]);
+                $csv->addfield($a["from_user_lang"]);
+                $csv->addfield($a["from_user_tweetcount"]);
+                $csv->addfield($a["from_user_followercount"]);
+                $csv->addfield($a["from_user_friendcount"]);
+                $csv->addfield($a["from_user_listed"]);
+                $csv->addfield($a["from_user_utcoffset"]);
+                $csv->addfield($a["from_user_verified"]);
+                $csv->addfield($a["tweetcount"]);
                 if (isset($retweets[$date][$user]))
-                    $content .= $retweets[$date][$user];
+                    $csv->addfield($retweets[$date][$user]);
                 else
-                    $content .= 0;
-                $content .= ",";
+                    $csv->addfield(0);
                 if (isset($mentioning[$date][$user]))
-                    $content .= $mentioning[$date][$user];
+                    $csv->addfield($mentioning[$date][$user]);
                 else
-                    $content .= 0;
-                $content .= ",";
+                    $csv->addfield(0);
                 if (isset($mentioned[$date][$user]))
-                    $content .= $mentioned[$date][$user];
+                    $csv->addfield($mentioned[$date][$user]);
                 else
-                    $content .= 0;
-                $content .= ",";
+                    $csv->addfield(0);
                 if (isset($hashtags[$date][$user]))
-                    $content .= $hashtags[$date][$user];
+                    $csv->addfield($hashtags[$date][$user]);
                 else
-                    $content .= 0;
-                $content .= ",";
+                    $csv->addfield(0);
                 if (isset($tweetsWithhashtags[$date][$user]))
-                    $content .= $tweetsWithhashtags[$date][$user];
+                    $csv->addfield($tweetsWithhashtags[$date][$user]);
                 else
-                    $content .= 0;
-                $content .= "\n";
+                    $csv->addfield(0);
+                $csv->writerow();
             }
         }
 
-        $filename = get_filename_for_export("user.list");
-        file_put_contents($filename, chr(239) . chr(187) . chr(191) . $content);
+        $csv->close();
 
         echo '<fieldset class="if_parameters">';
         echo '<legend>User stats</legend>';

@@ -2,6 +2,7 @@
 require_once './common/config.php';
 require_once './common/functions.php';
 require_once './common/Gexf.class.php';
+require_once './common/CSV.class.php';
 ?>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -29,6 +30,7 @@ require_once './common/Gexf.class.php';
         <?php
         validate_all_variables();
         $filename = get_filename_for_export("hostHashtag");
+        $csv = new CSV($filename, $outputformat);
 
         $collation = current_collation();
 
@@ -41,12 +43,16 @@ require_once './common/Gexf.class.php';
 
         $sqlresults = mysql_query($sql);
 
-        $content = "frequency, hashtag, domain\n";
+        $csv->writeheader(array("frequency", "hashtag", "domain"));
         while ($res = mysql_fetch_assoc($sqlresults)) {
-            $content .= $res['frequency'] . "," . $res['hashtag'] . "," . $res['domain'] . "\n";
+            $csv->newrow();
+            $csv->addfield($res['frequency']);
+            $csv->addfield($res['hashtag']);
+            $csv->addfield($res['domain']);
+            $csv->writerow();
             $urlHashtags[$res['domain']][$res['hashtag']] = $res['frequency'];
         }
-        file_put_contents($filename, chr(239) . chr(187) . chr(191) . $content);
+        $csv->close();
 
         echo '<fieldset class="if_parameters">';
 
@@ -76,7 +82,7 @@ require_once './common/Gexf.class.php';
 
         $gexf->render();
 
-        $filename = str_replace(".csv", ".gexf", $filename);
+        $filename = get_filename_for_export("hostHashtag", '', 'gexf');
         file_put_contents($filename, $gexf->gexfFile);
 
         echo '<fieldset class="if_parameters">';

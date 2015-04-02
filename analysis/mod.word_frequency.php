@@ -41,10 +41,9 @@ $minf = isset($_GET['minf']) ? $minf = $_GET['minf'] : 1;
         //$sql .= " GROUP BY datepart ORDER BY datepart ASC";
         $sql .= " ORDER BY datepart ASC";
         $sqlresults = mysql_query($sql);
-        $debug = '';
         if ($sqlresults) {
             while ($data = mysql_fetch_assoc($sqlresults)) {
-                $text = textToCSV($data["text"]);
+                $text = $data["text"];
                 $datepart = str_replace(' ', '_', $data["datepart"]);
                 preg_match_all('/(https?:\/\/[^\s]+)|([@#\p{L}][\p{L}]+)/u', $text, $matches, PREG_PATTERN_ORDER);
                 foreach ($matches[0] as $word) {
@@ -63,11 +62,21 @@ $minf = isset($_GET['minf']) ? $minf = $_GET['minf'] : 1;
 
         // write csv results
 
+        // CSV is written by awk here, so we explicitely handle the output format
+
         $filename = get_filename_for_export("wordFrequency");
         $csv = fopen($filename, "w");
         fputs($csv, chr(239) . chr(187) . chr(191));
-        fputs($csv, "interval,word,frequency\n");
-        system("sort -S 8% $templocation | uniq -c | sort -S 8% -b -k 2,2 -k 1,1nr -k 3,3 | awk '{ if ($1 >= $minf) { print $2 \",\" $3 \",\" $1} }' | sed -e 's/_/ /' >> $filename");
+        if ($outputformat == 'tsv') {
+            fputs($csv, "interval\tword\tfrequency\n");
+        } else {
+            fputs($csv, "interval,word,frequency\n");
+        }
+        if ($outputformat == 'tsv') {
+            system("sort -S 8% $templocation | uniq -c | sort -S 8% -b -k 2,2 -k 1,1nr -k 3,3 | awk '{ if ($1 >= $minf) { print $2 \"\\t\" $3 \"\\t\" $1} }' | sed -e 's/_/ /' >> $filename");
+        } else {
+            system("sort -S 8% $templocation | uniq -c | sort -S 8% -b -k 2,2 -k 1,1nr -k 3,3 | awk '{ if ($1 >= $minf) { print $2 \",\" $3 \",\" $1} }' | sed -e 's/_/ /' >> $filename");
+        }
  
         fclose($csv);
         

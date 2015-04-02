@@ -1,6 +1,7 @@
 <?php
 require_once './common/config.php';
 require_once './common/functions.php';
+require_once './common/CSV.class.php';
 ?>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -29,8 +30,8 @@ require_once './common/functions.php';
         validate_all_variables();
 
         $filename = get_filename_for_export("sourceStats");
-        $filename_locations = get_filename_for_export("locations");
-        $filename_languages = get_filename_for_export("languages");
+
+        $csv = new CSV($filename, $outputformat);
 
         // tweets per source 
         $sql = "SELECT COUNT(*) AS count, source, ";
@@ -57,16 +58,20 @@ require_once './common/functions.php';
             $array[$res['datepart']][$res['source']] += $res['count'];
         }
 
-        $content = "date,source,count\n";
+        $csv->writeheader(array("date", "source", "count"));
 
         foreach ($array as $date => $sources) {
         	arsort($sources);
         	foreach($sources as $source => $freq) {
-				$content .= $date . "," . $source . "," . $freq . "\n";
+                $csv->newrow();
+                $csv->addfield($date);
+                $csv->addfield($source);
+                $csv->addfield($freq);
+                $csv->writerow();
 			}
 		}
 
-        file_put_contents($filename, chr(239) . chr(187) . chr(191) . $content);
+        $csv->close();
 
         echo '<fieldset class="if_parameters">';
         echo '<legend>Source stats</legend>';

@@ -2,6 +2,7 @@
 require_once './common/config.php';
 require_once './common/functions.php';
 require_once './common/Coword.class.php';
+require_once './common/CSV.class.php';
 validate_all_variables();
 $collation = current_collation();
 $method = "word";
@@ -603,11 +604,14 @@ $method = "word";
                                                                 }
 
                                                                 function variabilityOfAssociationProfiles($filename, $series, $keywordToTrack, $ap) {
+                                                                    global $outputformat;
 
                                                                     if (empty($series) || empty($keywordToTrack))
                                                                         die('not enough data');
-                                                                    $filename = str_replace(".gexf", "_" . escapeshellarg(implode("_", $keywordToTrack)) . ".csv", $filename);
-                                                                    // group per slice 
+
+                                                                    $filename = get_filename_for_export("variability", "_variabilityOfAssociationProfiles");
+                                                                    $csv = new CSV($filename, $outputformat);
+                                                                    // group per slice
                                                                     // per keyword
                                                                     // 	get associated words (depth 1) per slice
                                                                     // 	get frequency, degree, ap variation (calculated on cooc frequency), words in, words out, ap keywords
@@ -657,7 +661,7 @@ $method = "word";
                                                                     }
 
                                                                     // @todo, frequency
-                                                                    $out = "key\ttime\tdegree\tsimilarity\tassociational profile\tchange in\tchange out\tstable\n";
+                                                                    $csv->writeheader(array("key", "time", "degree", "similarity", "associational profile", "change in", "change out", "stable"));
                                                                     foreach ($ap as $word => $times) {
                                                                         foreach ($times as $time => $profile) {
                                                                             if (isset($change_in[$word][$time])) {
@@ -694,12 +698,20 @@ $method = "word";
                                                                             if (isset($cos_sim[$word][$time]))
                                                                                 $cs = $cos_sim[$word][$time]; else
                                                                                 $cs = "";
-                                                                            $out .= $word . "\t" . $time . "\t" . $deg . "\t" . $cs . "\t" . $prof . "\t" . $inc . "\t" . $outc . "\t" . $stablec . "\n";
+                                                                            $csv->newrow();
+                                                                            $csv->addfield($word);
+                                                                            $csv->addfield($time);
+                                                                            $csv->addfield($deg);
+                                                                            $csv->addfield($cs);
+                                                                            $csv->addfield($prof);
+                                                                            $csv->addfield($inc);
+                                                                            $csv->addfield($outc);
+                                                                            $csv->addfield($stablec);
+                                                                            $csv->writerow();
                                                                         }
                                                                     }
+                                                                    $csv->close();
 
-
-                                                                    file_put_contents($filename, chr(239) . chr(187) . chr(191) . $out);
                                                                     echo '<fieldset class="if_parameters">';
                                                                     echo '<legend>Your co-hashtag variability File</legend>';
                                                                     echo '<p><a href="' . filename_to_url($filename) . '">' . $filename . '</a></p>';

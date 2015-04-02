@@ -555,7 +555,7 @@ validate_all_variables();
 
                                                                 if (empty($series) || empty($keywordToTrack))
                                                                     die('not enough data');
-                                                                $filename = str_replace(".gexf", "_" . escapeshellarg(implode("_", $keywordToTrack)) . ".csv", $filename);
+                                                                $filename = get_filename_for_export("hashtagVariability", "_variabilityOfAssociationProfiles", "gexf");
                                                                 // group per slice
                                                                 // per keyword
                                                                 // 	get associated words (depth 1) per slice
