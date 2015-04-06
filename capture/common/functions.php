@@ -298,7 +298,7 @@ function create_admin() {
     `id` INT NOT NULL AUTO_INCREMENT,
     `starttime` DATETIME NULL,
     `endtime` DATETIME NULL,
-    `user_id` INT NULL,
+    `user_id` BIGINT NULL,
     `querybin_id` INT NULL,
     PRIMARY KEY (`id`),
     KEY `starttime` (`starttime`),
