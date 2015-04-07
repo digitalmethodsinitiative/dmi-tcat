@@ -119,7 +119,7 @@ date_default_timezone_set("Europe/London");
 /*
  * Error reporting verbosity
  */
-error_reporting(E_ALL);
+error_reporting(E_ALL & ~E_DEPRECATED);
 
 /*
  * How long the script is allowed to run
