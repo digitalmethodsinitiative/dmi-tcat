@@ -268,6 +268,25 @@ function upgrades() {
         $rec->execute();
     }
 
+    // 17/04/2015 Change column to user_id to BIGINT in tcat_query_bins_users
+    $query = "SHOW FULL COLUMNS FROM tcat_query_bins_users";
+    $rec = $dbh->prepare($query);
+    $rec->execute();
+    $results = $rec->fetchAll();
+    $update = FALSE;
+    foreach ($results as $result) {
+        if ($result['Field'] == 'user_id' && !preg_match("/bigint/", $result['Type'])) {
+            $update = TRUE;
+            break;
+        }
+    }
+    if ($update) {
+        logit("cli", "Changing column type for column user_id in table tcat_query_bins_users");
+        $query = "ALTER TABLE tcat_query_bins_users MODIFY `user_id` BIGINT NULL";
+        $rec = $dbh->prepare($query);
+        $rec->execute();
+    }
+
 
     // End of upgrades
 }
