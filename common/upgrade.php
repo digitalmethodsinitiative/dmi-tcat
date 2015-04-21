@@ -1,26 +1,24 @@
 <?php
 
-// ----- only run from command line -----
-if (php_sapi_name() !== 'cli' && php_sapi_name() !== 'cgi-fcgi')
-    die;
+// ----- only run from command line, unless in dry mode -----
+if (php_sapi_name() == 'cli' || php_sapi_name() == 'cgi-fcgi') {
+    include_once("../config.php");
+    include "functions.php";
+    include "../capture/common/functions.php";
+    // make sure only one upgrade script is running
+    $thislockfp = script_lock('upgrade');
+    if (!is_resource($thislockfp)) {
+        logit("cli", "upgrade.php already running, skipping this check");
+        exit();
+    }
 
-include_once("../config.php");
-include "functions.php";
-include "../capture/common/functions.php";
-
-// make sure only one upgrade script is running
-$thislockfp = script_lock('upgrade');
-if (!is_resource($thislockfp)) {
-    logit("cli", "upgrade.php already running, skipping this check");
-    exit();
-}
-
-if (isset($argv[1])) {
-    $single = $argv[1];
-    logit("cli", "Restricting upgrade to bin $single");
-} else {
-    $single = false;
-    logit("cli", "Executing global upgrade");
+    if (isset($argv[1])) {
+        $single = $argv[1];
+        logit("cli", "Restricting upgrade to bin $single");
+    } else {
+        $single = false;
+        logit("cli", "Executing global upgrade");
+    }
 }
 
 function get_all_bins() {
@@ -37,16 +35,19 @@ function get_all_bins() {
     return $bins;
 }
 
-function upgrades() {
-    
+function upgrades($dry_run = false) {
     global $database;
     global $all_bins;
     global $single;
     $all_bins = get_all_bins();
     $dbh = pdo_connect();
 
-    // 29/08/2014 Alter tweets tables to add new fields, ex. 'possibly_sensitive'
+    // Tracker whether an update is needed, or even advised during a dry run.
+    // These values are ONLY tracked when doing a dry run; do not use them for CLI feedback.
+    $needed = false; $advised = false;
 
+    // 29/08/2014 Alter tweets tables to add new fields, ex. 'possibly_sensitive'
+    
     $query = "SHOW TABLES";
     $rec = $dbh->prepare($query);
     $rec->execute();
@@ -64,6 +65,10 @@ function upgrades() {
                 $update = FALSE;
                 break;
             }
+        }
+        if ($update && $dry_run) {
+            $needed = true;
+            $update = false;
         }
         if ($update) {
             logit("cli", "Adding new columns (ex. possibly_sensitive) to table $v");
@@ -93,6 +98,7 @@ function upgrades() {
     }
 
     // 16/09/2014 Create a new withheld table for every bin
+
     foreach ($all_bins as $bin) {
         if ($single && $bin !== $single) { continue; }
         $exists = false;
@@ -100,6 +106,10 @@ function upgrades() {
             if ($v == $bin . '_places') {
                 $exists = true;
             }
+        }
+        if (!$exists && $dry_run) {
+            $needed = true;
+            $exists = true;
         }
         if (!$exists) {
             $create = $bin . '_withheld';
@@ -120,6 +130,7 @@ function upgrades() {
     }
 
     // 16/09/2014 Create a new places table for every bin
+
     foreach ($all_bins as $bin) {
         if ($single && $bin !== $single) { continue; }
         $exists = false;
@@ -127,6 +138,10 @@ function upgrades() {
             if ($v == $bin . '_places') {
                 $exists = true;
             }
+        }
+        if (!$exists && $dry_run) {
+            $needed = true;
+            $exists = true;
         }
         if (!$exists) {
             $create = $bin . '_places';
@@ -157,40 +172,45 @@ function upgrades() {
     
     if ($character_set_database == 'utf8' && ($collation_database == 'utf8_general_ci' || $collation_database == 'utf8_unicode_ci')) {
 
-        if ($single === false) {
-            logit("cli", "Converting database character set from utf8 to utf8mb4");
-            $query = "ALTER DATABASE $database CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci";
-            $rec = $dbh->prepare($query);
-            $rec->execute();
-        }
+        if ($dry_run) {
+            $needed = true;
+        } else {
+            if ($single === false) {
+                logit("cli", "Converting database character set from utf8 to utf8mb4");
+                $query = "ALTER DATABASE $database CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci";
+                $rec = $dbh->prepare($query);
+                $rec->execute();
+            }
 
-        $query = "SHOW TABLES";
-        $rec = $dbh->prepare($query);
-        $rec->execute();
-        $results = $rec->fetchAll(PDO::FETCH_COLUMN);
-        foreach ($results as $k => $v) {
-            if (preg_match("/_places$/", $v) || preg_match("/_withheld$/", $v)) continue; 
-            if ($single && $v !== $single . '_tweets' && $v !== $single . '_hashtags' && $v !== $single . '_mentions' && $v !== $single . '_urls') continue;
-            logit("cli", "Converting table $v character set utf8 to utf8mb4");
-            $query ="ALTER TABLE $v DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci";
+            $query = "SHOW TABLES";
             $rec = $dbh->prepare($query);
             $rec->execute();
-            $query ="ALTER TABLE $v CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci";
-            $rec = $dbh->prepare($query);
-            $rec->execute();
-            logit("cli", "Repairing and optimizing table $v");
-            $query ="REPAIR TABLE $v";
-            $rec = $dbh->prepare($query);
-            $rec->execute();
-            $query ="OPTIMIZE TABLE $v";
-            $rec = $dbh->prepare($query);
-            $rec->execute();
+            $results = $rec->fetchAll(PDO::FETCH_COLUMN);
+            foreach ($results as $k => $v) {
+                if (preg_match("/_places$/", $v) || preg_match("/_withheld$/", $v)) continue; 
+                if ($single && $v !== $single . '_tweets' && $v !== $single . '_hashtags' && $v !== $single . '_mentions' && $v !== $single . '_urls') continue;
+                logit("cli", "Converting table $v character set utf8 to utf8mb4");
+                $query ="ALTER TABLE $v DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci";
+                $rec = $dbh->prepare($query);
+                $rec->execute();
+                $query ="ALTER TABLE $v CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci";
+                $rec = $dbh->prepare($query);
+                $rec->execute();
+                logit("cli", "Repairing and optimizing table $v");
+                $query ="REPAIR TABLE $v";
+                $rec = $dbh->prepare($query);
+                $rec->execute();
+                $query ="OPTIMIZE TABLE $v";
+                $rec = $dbh->prepare($query);
+                $rec->execute();
+            }
         }
 
     }
 
     // 24/02/2015 remove media_type, photo_size_width and photo_size_height fields from _urls table
     //            create media table
+
     $query = "SHOW TABLES";
     $rec = $dbh->prepare($query);
     $rec->execute();
@@ -210,6 +230,10 @@ function upgrades() {
             }
         }
         if ($update_remove) {
+            $needed = true;
+            $update_remove = false;
+        }
+        if ($update_remove) {
             logit("cli", "Removing columns media_type, photo_size_width and photo_size_height from table $v");
             $query = "ALTER TABLE " . quoteIdent($v) .
                         " DROP COLUMN `media_type`," .
@@ -221,35 +245,40 @@ function upgrades() {
         }
         $mediatable = preg_replace("/_urls$/", "_media", $v);
         if (!in_array($mediatable, array_values($results))) {
-            logit("cli", "Creating table $mediatable");
-            $query = "CREATE TABLE IF NOT EXISTS " . quoteIdent($mediatable) . " (
-                `id` bigint(20) NOT NULL,
-                `tweet_id` bigint(20) NOT NULL,
-                `url` varchar(2048),
-                `url_expanded` varchar(2048),
-                `media_url_https` varchar(2048),
-                `media_type` varchar(32),
-                `photo_size_width` int(11),
-                `photo_size_height` int(11),
-                `photo_resize` varchar(32),
-                `indice_start` int(11),
-                `indice_end` int(11),
-                PRIMARY KEY (`id`, `tweet_id`),
-                        KEY `media_url_https` (`media_url_https`),
-                        KEY `media_type` (`media_type`),
-                        KEY `photo_size_width` (`photo_size_width`),
-                        KEY `photo_size_height` (`photo_size_height`),
-                        KEY `photo_resize` (`photo_resize`)
-                ) ENGINE=MyISAM  DEFAULT CHARSET=utf8mb4";
-            $rec = $dbh->prepare($query);
-            $rec->execute();
+            if ($dry_run) {
+                $needed = true;
+            } else {
+                logit("cli", "Creating table $mediatable");
+                $query = "CREATE TABLE IF NOT EXISTS " . quoteIdent($mediatable) . " (
+                    `id` bigint(20) NOT NULL,
+                    `tweet_id` bigint(20) NOT NULL,
+                    `url` varchar(2048),
+                    `url_expanded` varchar(2048),
+                    `media_url_https` varchar(2048),
+                    `media_type` varchar(32),
+                    `photo_size_width` int(11),
+                    `photo_size_height` int(11),
+                    `photo_resize` varchar(32),
+                    `indice_start` int(11),
+                    `indice_end` int(11),
+                    PRIMARY KEY (`id`, `tweet_id`),
+                            KEY `media_url_https` (`media_url_https`),
+                            KEY `media_type` (`media_type`),
+                            KEY `photo_size_width` (`photo_size_width`),
+                            KEY `photo_size_height` (`photo_size_height`),
+                            KEY `photo_resize` (`photo_resize`)
+                    ) ENGINE=MyISAM  DEFAULT CHARSET=utf8mb4";
+                $rec = $dbh->prepare($query);
+                $rec->execute();
+            }
         }
-        if ($update_remove) {
+        if ($update_remove && $dry_run == false) {
             logit("cli", "Please run the upgrade-media.php script to lookup media data for Tweets in your bins.");
         }
     }
 
     // 03/03/2015 Add comments column
+
     $query = "SHOW COLUMNS FROM tcat_query_bins";
     $rec = $dbh->prepare($query);
     $rec->execute();
@@ -261,6 +290,10 @@ function upgrades() {
             break;
         }
     }
+    if ($update && $dry_run) {
+        $needed = true;
+        $update = false;
+    }
     if ($update) {
         logit("cli", "Adding new comments column to table tcat_query_bins");
         $query = "ALTER TABLE tcat_query_bins ADD COLUMN `comments` varchar(2048) DEFAULT NULL";
@@ -269,6 +302,7 @@ function upgrades() {
     }
 
     // 17/04/2015 Change column to user_id to BIGINT in tcat_query_bins_users
+
     $query = "SHOW FULL COLUMNS FROM tcat_query_bins_users";
     $rec = $dbh->prepare($query);
     $rec->execute();
@@ -281,14 +315,24 @@ function upgrades() {
         }
     }
     if ($update) {
+        $needed = true;
+        $advised = true;        // this is a bugfix, therefore advised
+        $update = false;
+    }
+    if ($update) {
         logit("cli", "Changing column type for column user_id in table tcat_query_bins_users");
         $query = "ALTER TABLE tcat_query_bins_users MODIFY `user_id` BIGINT NULL";
         $rec = $dbh->prepare($query);
         $rec->execute();
     }
 
-
     // End of upgrades
+
+    if ($dry_run) {
+        return array( 'needed' => $needed, 'advised' => $advised );
+    }
 }
 
-upgrades();
+if (php_sapi_name() == 'cli' || php_sapi_name() == 'cgi-fcgi') {
+    upgrades();
+}
