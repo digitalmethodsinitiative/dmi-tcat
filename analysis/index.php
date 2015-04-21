@@ -755,6 +755,31 @@ foreach ($linedata as $key => $value) {
                     <div class="txt_desc"></div>
                     <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('export_tweet_ids');sendUrl('mod.export_tweet_ids.php');return false;">launch</a></div>
 
+                    <hr />
+
+                    <h3>Export tweet ids with hashtags</h3>
+                    <div class="txt_desc">Contains tweet ids from your selection and hashtags.</div>
+                    <div class="txt_desc"></div>
+                    <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('export_hashtags');sendUrl('mod.export_hashtags.php');return false;">launch</a></div>
+
+                    <hr />
+
+                    <h3>Export tweet ids with mentions</h3>
+                    <div class="txt_desc">Contains tweet ids from your selection, with mentions and the mention type.</div>
+                    <div class="txt_desc"></div>
+                    <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('export_mentions');sendUrl('mod.export_mentions.php');return false;">launch</a></div>
+
+                    <?php if ($show_url_export) { ?>
+
+                    <hr />
+
+                    <h3>Export tweet ids with URLs</h3>
+                    <div class="txt_desc">Contains tweet ids from your selection and URLs.</div>
+                    <div class="txt_desc"></div>
+                    <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('export_urls');sendUrl('mod.export_urls.php');return false;">launch</a></div>
+
+                    <?php } ?>
+
                 </div>
                 <h2>Networks</h2>
 
