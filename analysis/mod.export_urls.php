@@ -32,9 +32,9 @@ require_once './common/CSV.class.php';
         $filename = get_filename_for_export('urlsExport');
         $csv = new CSV($filename, $outputformat);
 
-        $csv->writeheader(array('tweet_id', 'url'));
+        $csv->writeheader(array('tweet_id', 'url', 'url_expanded', 'url_followed'));
 
-        $sql = "SELECT t.id as id, u.url_expanded as url_expanded, u.url_followed as url_followed FROM " . $esc['mysql']['dataset'] . "_tweets t, " . $esc['mysql']['dataset'] . "_urls u ";
+        $sql = "SELECT t.id as id, u.url as url, u.url_expanded as url_expanded, u.url_followed as url_followed FROM " . $esc['mysql']['dataset'] . "_tweets t, " . $esc['mysql']['dataset'] . "_urls u ";
         $sql .= sqlSubset();
         $sql .= " AND u.tweet_id = t.id ORDER BY id";
         $sqlresults = mysql_query($sql);
@@ -43,12 +43,17 @@ require_once './common/CSV.class.php';
             while ($data = mysql_fetch_assoc($sqlresults)) {
                 $csv->newrow();    
                 $csv->addfield($data['id'], 'integer');
+                $csv->addfield($data['url'], 'string');
                 if (isset($data['url_followed']) && strlen($data['url_followed']) > 1) {
-                    $url = $data['url_followed'];
+                    $csv->addfield($data['url'], 'string');
                 } else {
-                    $url = $data['url_expanded'];
+                    $csv->addfield('', 'string');
                 }
-                $csv->addfield($url, 'string');
+                if (isset($data['url_expanded']) && strlen($data['url_expanded']) > 1) {
+                    $csv->addfield($data['url_expanded'], 'string');
+                } else {
+                    $csv->addfield('', 'string');
+                }
                 $csv->writerow();
             }
         }

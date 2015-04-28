@@ -176,10 +176,8 @@ function get_file($what) {
  * @var $toget specifies fieldname
  * @var $table specifies table name
  */
-
 function frequencyTable($table, $toget) {
     global $esc, $intervalDates;
-
     $results = array();
     $sql = "SELECT COUNT($table.$toget) AS count, $table.$toget AS toget, ";
     $sql .= sqlInterval();
@@ -973,6 +971,23 @@ function stats_summary($array) {
     $stats['Q3'] = array_thirdQuartile($array);
     $stats['truncatedMean'] = array_truncatedMean($array);
     return $stats;
+}
+
+function detect_mention_type($text, $user) {
+    $mention_type = 'mention';
+
+    $slangs = array( 'RT @', 'rt @', 'MT @', 'via @', '"@' );
+    $work = ' ' . str_replace(array("\r", "\t", "\n"), " ", $text);
+
+    foreach ($slangs as $slang) {
+        $match = ' ' . $slang . $user;
+        if (mb_strpos($work, $match) !== false) {
+            $mention_type = 'retweet';
+            break;   
+        }
+    }
+
+    return $mention_type;
 }
 
 function sentiment_graph() {

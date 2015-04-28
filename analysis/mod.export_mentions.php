@@ -3,23 +3,6 @@ require_once './common/config.php';
 require_once './common/functions.php';
 require_once './common/CSV.class.php';
 
-function detect_mention_type($text, $user) {
-    $mention_type = 'mention';
-
-    $slangs = array( 'RT @', 'rt @', 'MT @', 'via @', '"@' );
-    $work = ' ' . str_replace(array("\r", "\t", "\n"), " ", $text);
-
-    foreach ($slangs as $slang) {
-        $match = ' ' . $slang . $user;
-        if (mb_strpos($work, $match) !== false) {
-            $mention_type = 'retweet';
-            break;   
-        }
-    }
-
-    return $mention_type;
-}
-
 ?>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">

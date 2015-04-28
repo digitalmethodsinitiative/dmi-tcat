@@ -29,6 +29,8 @@ $lastRateLimitHit = getLastRateLimitHit();
 
             body,html { font-family:Arial, Helvetica, sans-serif; font-size:12px; }
 
+            #updatewarning { margin-top:5px;margin-bottom:5px;padding:8px;width:1024px;border:red 1px solid; }
+
             table { font-size:11px; }
             th { background-color: #ccc; padding:5px; }
             th.toppad { font-size:14px; text-align:left; padding-top:20px; background-color:#fff; }
@@ -75,36 +77,6 @@ $lastRateLimitHit = getLastRateLimitHit();
         if (!dbserver_has_utf8mb4_support()) {
             print "<br /><font color='red'>Your MySQL version is too old, please upgrade to at least MySQL 5.5.3 to use DMI-TCAT.</font><br>";
         }
-        $git = getGitLocal();
-        if (is_array($git)) {
-            $remote = getGitRemote($git['commit']);
-            if (is_array($remote)) {
-                if ($git['commit'] !== $remote['commit']) {
-                    $commit = '#' . substr($remote['commit'], 0, 7) . '...';
-                    $mesg = $remote['mesg'];
-                    $url = $remote['url'];
-                    $advised = $remote['advised'];
-                    if ($advised) {
-                        print "<font color='purple'>A newer version of TCAT is available, containing important updates. You are strongly recommended to upgrade through git. [ commit <a href='$url' target='_blank'>$commit</a> - $mesg ]</font><br><br>";
-                    } else {
-                        print "<font color='purple'>A newer version of TCAT is available. Please upgrade through git. [ commit <a href='$url' target='_blank'>$commit</a> - $mesg ]</font><br><br>";
-                    }
-                } else {
-                    print "Your installation of TCAT is up-to-date.<br/>";
-                }
-            }
-        }
-        $tests = upgrades(true);
-        if ($tests['needed'] == true) {
-            print "<br/>";
-            if ($tests['advised'] == true) {
-                    print "<font color='purple'>Your database is out-of-date and needs to be upgraded to fix bugs. Please run the command-line script common/upgrade.php from your shell.</font><br/>";
-            } else {
-                    print "Your database must be updated before some new TCAT features can be used. Please run the command-line script common/upgrade.php from your shell.<br/>";
-            }
-            print "Be advised: database upgrades may take a very long time to complete, depending on the size of your datasets. It is recommended to run the upgrade script from within a unix screen.<br/>";
-            print "<br/>";
-        }
         print "You currently have " . count($querybins) . " query bins and are tracking ";
         $trackWhat = array();
         if (array_search("track", $captureroles) !== false && $activePhrases)
@@ -130,6 +102,43 @@ $lastRateLimitHit = getLastRateLimitHit();
         print ".<br/>";
         if ($lastRateLimitHit) {
             print "<br /><font color='red'>Your latest rate limit hit was on $lastRateLimitHit</font><br>";
+        }
+        $git = getGitLocal();
+        $showupdatemsg = false;
+        if (is_array($git)) {
+            $remote = getGitRemote($git['commit'], $git['branch']);
+            if (is_array($remote)) {
+                if ($git['commit'] !== $remote['commit']) {
+                    $commit = '#' . substr($remote['commit'], 0, 7) . '...';
+                    $mesg = $remote['mesg'];
+                    $url = $remote['url'];
+                    $required = $remote['required'];
+                    print '<div id="updatewarning">';
+                    if ($required) {
+                        print "A newer version of TCAT is available, containing important updates. You are strongly recommended to upgrade through git. [ commit <a href='$url' target='_blank'>$commit</a> - $mesg ]<br>";
+                    } else {
+                        print "A newer version of TCAT is available. Please upgrade through git. [ commit <a href='$url' target='_blank'>$commit</a> - $mesg ]<br>";
+                    }
+                    $showupdatemsg = true;
+                }
+            }
+        }
+        $tests = upgrades(true);
+        if ($tests['suggested'] == true) {
+            if (!$showupdatemsg) {
+                print '<div id="updatewarning">';
+            } else {
+                print '<br/>';
+            }
+            if ($tests['required'] == true) {
+                    print "Your database is out-of-date and needs to be upgraded to fix bugs. Please run the command-line script common/upgrade.php from your shell.<br/>";
+            } else {
+                    print "Your database must be updated before some new TCAT features can be used. Please run the command-line script common/upgrade.php from your shell.<br/>";
+            }
+            $showupdatemsg = true;
+        }
+        if ($showupdatemsg) {
+            print "</div>";
         }
         ?>
         <h3>New query bin</h3>

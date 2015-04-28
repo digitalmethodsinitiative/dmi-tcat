@@ -38,6 +38,11 @@ require_once './common/CSV.class.php';
         $sql .= sqlSubset();
         $sql .= " AND h.tweet_id = t.id ORDER BY id";
         $sqlresults = mysql_query($sql);
+        // DEBUG BEGIN
+        print "<pre>";
+        print_r($sql);
+        print "</pre>";
+        // DEBUG END
         $out = "";
         if ($sqlresults) {
             while ($data = mysql_fetch_assoc($sqlresults)) {

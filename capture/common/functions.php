@@ -462,7 +462,11 @@ function getGitLocal() {
     if (preg_match("/^([a-z0-9]+)[\t ](.+)$/", $parse, $matches)) {
         $commit = $matches[1];
         $mesg = $matches[2];
-        return array( 'commit' => $commit,
+        $gitcmd = 'git --git-dir ' . BASE_FILE . '.git rev-parse --abbrev-ref HEAD';
+        $gitrev = `$gitcmd`;
+        $branch = rtrim($gitrev);
+        return array( 'branch' => $branch,
+                      'commit' => $commit,
                       'mesg' => $mesg );
     }
     return false;
@@ -472,13 +476,14 @@ function getGitLocal() {
  * Returns the git status information for the github repository
  * If compare_local_commit is set, we will not walk back the tree to count remarks about upgrades, etc.
  */
-function getGitRemote($compare_local_commit = '') {
+function getGitRemote($compare_local_commit = '', $branch = 'master') {
     if (!function_exists('curl_init')) return false;
     if (!defined('REPOSITORY_URL')) {
         $repository_url = 'https://api.github.com/repos/digitalmethodsinitiative/dmi-tcat/commits';
     } else {
         $repository_url = REPOSITORY_URL;
     }
+    $repository_url .= '?sha=' . $branch;
     $ch = curl_init($repository_url);
     curl_setopt($ch, CURLOPT_USERAGENT, 'DMI-TCAT GIT remote version checker (contact us at https://github.com/digitalmethodsinitiative/dmi-tcat)');
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
@@ -486,7 +491,7 @@ function getGitRemote($compare_local_commit = '') {
     curl_close($ch);
     $data = json_decode($output, true);
     $commit = $mesg = $url = null;
-    $advised = false;
+    $required = false;
     foreach ($data as $ent) {
         if ($commit === null) {
             $commit = $ent['sha'];
@@ -495,8 +500,8 @@ function getGitRemote($compare_local_commit = '') {
         }
         if ($ent['sha'] == $compare_local_commit) { break; }
         if (isset($ent['commit']['message'])) {
-            if (stripos($ent['commit']['message'], '[advised]') !== FALSE) {
-                $advised = true; break;
+            if (stripos($ent['commit']['message'], '[required]') !== FALSE) {
+                $required = true; break;
             }
         }
     }
@@ -506,7 +511,7 @@ function getGitRemote($compare_local_commit = '') {
     return array( 'commit' => $commit,
                   'mesg' => $mesg,
                   'url' => $url,
-                  'advised' => $advised,
+                  'required' => $required,
                 );
 }
 
