@@ -6,6 +6,7 @@ if (defined("ADMIN_USER") && ADMIN_USER != "" && (!isset($_SERVER['PHP_AUTH_USER
 
 include_once("query_manager.php");
 include_once BASE_FILE . '/common/functions.php';
+include_once BASE_FILE . '/common/upgrade.php';
 include_once BASE_FILE . '/capture/common/functions.php';
 
 create_admin();
@@ -27,6 +28,8 @@ $lastRateLimitHit = getLastRateLimitHit();
         <style type="text/css">
 
             body,html { font-family:Arial, Helvetica, sans-serif; font-size:12px; }
+
+            #updatewarning { margin-top:5px;margin-bottom:5px;padding:8px;width:1024px;border:red 1px solid; }
 
             table { font-size:11px; }
             th { background-color: #ccc; padding:5px; }
@@ -99,6 +102,45 @@ $lastRateLimitHit = getLastRateLimitHit();
         print ".<br/>";
         if ($lastRateLimitHit) {
             print "<br /><font color='red'>Your latest rate limit hit was on $lastRateLimitHit</font><br>";
+        }
+        $git = getGitLocal();
+        $showupdatemsg = false;
+        if (is_array($git)) {
+            $remote = getGitRemote($git['commit'], $git['branch']);
+            if (is_array($remote)) {
+                if ($git['commit'] !== $remote['commit']) {
+                    $commit = '#' . substr($remote['commit'], 0, 7) . '...';
+                    $mesg = $remote['mesg'];
+                    $url = $remote['url'];
+                    $required = $remote['required'];
+                    print '<div id="updatewarning">';
+                    $wikilink = 'https://github.com/digitalmethodsinitiative/dmi-tcat/wiki/Upgrading-TCAT';
+                    if ($required) {
+                        print "A newer version of TCAT is available, containing important updates. You are strongly recommended to upgrade via git pull. Please read the <a href='$wikilink' target='_blank'>documentation</a> for details. [ commit <a href='$url' target='_blank'>$commit</a> - $mesg ]<br>";
+                    } else {
+                        print "A newer version of TCAT is available. You can get the latest code via git pull. Please read the <a href='$wikilink' target='_blank'>documentation</a> for details. [ commit <a href='$url' target='_blank'>$commit</a> - $mesg ]<br>";
+                    }
+                    $showupdatemsg = true;
+                }
+            }
+        }
+        $tests = upgrades(true);
+        if ($tests['suggested'] == true) {
+            if (!$showupdatemsg) {
+                print '<div id="updatewarning">';
+            } else {
+                print '<br/>';
+            }
+            $wikilink = 'https://github.com/digitalmethodsinitiative/dmi-tcat/wiki/Upgrading-TCAT#upgrading-database-tables';
+            if ($tests['required'] == true) {
+                    print "Your database is out-of-date and needs to be upgraded to fix bugs. Follow the <a href='$wikilink' target='_blank'>documentation</a> and run the command-line script common/upgrade.php from your shell.<br/>";
+            } else {
+                    print "Your database must be updated before some new TCAT features can be used. Follow the <a href='$wikilink' target='_blank'>documentation</a> and run the command-line script common/upgrade.php from your shell.<br/>";
+            }
+            $showupdatemsg = true;
+        }
+        if ($showupdatemsg) {
+            print "</div>";
         }
         ?>
         <h3>New query bin</h3>
