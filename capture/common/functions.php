@@ -452,6 +452,69 @@ function logit($file, $message) {
         file_put_contents(BASE_FILE . "logs/" . $file, $message, FILE_APPEND);
 }
 
+/*
+ * Returns the git status information for the local install
+ */
+function getGitLocal() {
+    $gitcmd = 'git --git-dir ' . BASE_FILE . '.git log --pretty=oneline -n 1';
+    $gitlog = `$gitcmd`;
+    $parse = rtrim($gitlog);
+    if (preg_match("/^([a-z0-9]+)[\t ](.+)$/", $parse, $matches)) {
+        $commit = $matches[1];
+        $mesg = $matches[2];
+        $gitcmd = 'git --git-dir ' . BASE_FILE . '.git rev-parse --abbrev-ref HEAD';
+        $gitrev = `$gitcmd`;
+        $branch = rtrim($gitrev);
+        return array( 'branch' => $branch,
+                      'commit' => $commit,
+                      'mesg' => $mesg );
+    }
+    return false;
+}
+
+/*
+ * Returns the git status information for the github repository
+ * If compare_local_commit is set, we will not walk back the tree to count remarks about upgrades, etc.
+ */
+function getGitRemote($compare_local_commit = '', $branch = 'master') {
+    if (!function_exists('curl_init')) return false;
+    if (!defined('REPOSITORY_URL')) {
+        $repository_url = 'https://api.github.com/repos/digitalmethodsinitiative/dmi-tcat/commits';
+    } else {
+        $repository_url = REPOSITORY_URL;
+    }
+    $repository_url .= '?sha=' . $branch;
+    $ch = curl_init($repository_url);
+    curl_setopt($ch, CURLOPT_USERAGENT, 'DMI-TCAT GIT remote version checker (contact us at https://github.com/digitalmethodsinitiative/dmi-tcat)');
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    $output = curl_exec($ch);
+    curl_close($ch);
+    $data = json_decode($output, true);
+    $commit = $mesg = $url = null;
+    $required = false;
+    foreach ($data as $ent) {
+        if ($commit === null) {
+            $commit = $ent['sha'];
+            $mesg = $ent['commit']['message'];
+            $url = $ent['html_url'];
+        }
+        if ($ent['sha'] == $compare_local_commit) { break; }
+        if (isset($ent['commit']['message'])) {
+            if (stripos($ent['commit']['message'], '[required]') !== FALSE) {
+                $required = true; break;
+            }
+        }
+    }
+    if ($commit === null) {
+        return false;
+    }
+    return array( 'commit' => $commit,
+                  'mesg' => $mesg,
+                  'url' => $url,
+                  'required' => $required,
+                );
+}
+
 function getActivePhrases() {
     $dbh = pdo_connect();
     $sql = "SELECT DISTINCT(p.phrase) FROM tcat_query_phrases p, tcat_query_bins_phrases bp, tcat_query_bins b

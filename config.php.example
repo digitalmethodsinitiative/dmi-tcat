@@ -144,16 +144,24 @@ define("PHP_CLI", "/usr/bin/php");
 
 /*
  * Use mysql INSERT DELAYED statements to insert data into the MySQL database.
- * Recommended only for high-load sites, who may have nightly that lock database tables.
+ * Recommended only for high-load sites, who may have nightly backupscripts locking database tables.
  * Make sure to adjust the MySQL server variables delayed_queue_size, max_delayed_threads to an appropriate sizes.
+ * Experts only.
  */
 define('USE_INSERT_DELAYED', false);
 
-/* Set to true, if you want all insert statements to fail on errors. Even though such errors are caught and reported,
+/*
+ * Set to true, if you want all insert statements to fail on errors. Even though such errors are caught and reported,
  * setting this option on a production site is not recommended, since we are using multi-insert statements and all tweets
  * in such an insert will be lost on errors.
  * Developers only.
  */
 define('DISABLE_INSERT_IGNORE', false);
+
+/*
+ * This is the github API URL used to check whether your current DMI-TCAT install is up-to-date (assuming you are using git).
+ * You will want to change this only when you have forked the repository.
+ */
+define('REPOSITORY_URL', 'https://api.github.com/repos/digitalmethodsinitiative/dmi-tcat/commits');
  
 ?>
