@@ -117,7 +117,7 @@ $lastRateLimitHit = getLastRateLimitHit();
                     if ($required) {
                         print "A newer version of TCAT is available, containing important updates. You are strongly recommended to upgrade through git. [ commit <a href='$url' target='_blank'>$commit</a> - $mesg ]<br>";
                     } else {
-                        print "A newer version of TCAT is available. Please upgrade through git. [ commit <a href='$url' target='_blank'>$commit</a> - $mesg ]<br>";
+                        print "A newer version of TCAT is available. You can get the latest code via git pull. [ commit <a href='$url' target='_blank'>$commit</a> - $mesg ]<br>";
                     }
                     $showupdatemsg = true;
                 }
@@ -130,10 +130,11 @@ $lastRateLimitHit = getLastRateLimitHit();
             } else {
                 print '<br/>';
             }
+            $wikilink = 'https://github.com/digitalmethodsinitiative/dmi-tcat/wiki/Upgrading-TCAT#upgrading-database-tables';
             if ($tests['required'] == true) {
-                    print "Your database is out-of-date and needs to be upgraded to fix bugs. Please run the command-line script common/upgrade.php from your shell.<br/>";
+                    print "Your database is out-of-date and needs to be upgraded to fix bugs. Follow the <a href='$wikilink'>documentation</a> and run the command-line script common/upgrade.php from your shell.<br/>";
             } else {
-                    print "Your database must be updated before some new TCAT features can be used. Please run the command-line script common/upgrade.php from your shell.<br/>";
+                    print "Your database must be updated before some new TCAT features can be used. Follow the <a href='$wikilink'>documentation</a> and run the command-line script common/upgrade.php from your shell.<br/>";
             }
             $showupdatemsg = true;
         }
