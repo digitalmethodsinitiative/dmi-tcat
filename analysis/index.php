@@ -950,6 +950,7 @@ foreach ($linedata as $key => $value) {
 
                                 <div style="display:none" id="whattodo" />
                                 </div>
+				<span class='Z3988' title='url_ver=Z39.88-2004&amp;ctx_ver=Z39.88-2004&amp;rfr_id=info%3Asid%2Fzotero.org%3A2&amp;rft_val_fmt=info%3Aofi%2Ffmt%3Akev%3Amtx%3Ajournal&amp;rft.genre=article&amp;rft.atitle=Programmed%20method%3A%20developing%20a%20toolset%20for%20capturing%20and%20analyzing%20tweets&amp;rft.jtitle=Aslib%20Journal%20of%20Information%20Management&amp;rft.volume=66&amp;rft.issue=3&amp;rft.aufirst=Erik&amp;rft.aulast=Borra&amp;rft.au=Erik%20Borra&amp;rft.au=Bernhard%20Rieder&amp;rft.date=2014&amp;rft.pages=262%E2%80%93278'></span>
 
                                 </body>
                                 </html>
