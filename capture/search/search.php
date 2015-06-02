@@ -36,8 +36,7 @@ if (dbserver_has_utf8mb4_support() == false) {
 
 $querybin_id = queryManagerBinExists($bin_name, $cronjob);
 
-$current_key = $looped = $tweets_success = $tweets_failed = $tweets_processed = 0;
-$all_users = $all_tweet_ids = array();
+$current_key = 0;
 
 $tweetQueue = new TweetQueue();
 
@@ -55,21 +54,21 @@ if ($tweetQueue->length() > 0) {
 queryManagerCreateBinFromExistingTables($bin_name, $querybin_id, $type, explode("OR", $keywords));
 
 function search($keywords, $max_id = null) {
-    global $twitter_keys, $current_key, $ratefree, $all_users, $all_tweet_ids, $bin_name, $tweets_success, $tweets_failed, $tweets_processed, $dbh, $tweetQueue;
+    global $twitter_keys, $current_key, $ratefree, $bin_name, $dbh, $tweetQueue;
 
     $ratefree--;
     if ($ratefree < 1 || $ratefree % 10 == 0) {
-	$keyinfo = getRESTKey($current_key, 'search', 'tweets');
-	$current_key = $keyinfo['key'];
-	$ratefree = $keyinfo['remaining'];
+        $keyinfo = getRESTKey($current_key, 'search', 'tweets');
+        $current_key = $keyinfo['key'];
+        $ratefree = $keyinfo['remaining'];
     }
 
     $tmhOAuth = new tmhOAuth(array(
-                'consumer_key' => $twitter_keys[$current_key]['twitter_consumer_key'],
-                'consumer_secret' => $twitter_keys[$current_key]['twitter_consumer_secret'],
-                'token' => $twitter_keys[$current_key]['twitter_user_token'],
-                'secret' => $twitter_keys[$current_key]['twitter_user_secret'],
-            ));
+        'consumer_key' => $twitter_keys[$current_key]['twitter_consumer_key'],
+        'consumer_secret' => $twitter_keys[$current_key]['twitter_consumer_secret'],
+        'token' => $twitter_keys[$current_key]['twitter_user_token'],
+        'secret' => $twitter_keys[$current_key]['twitter_user_secret'],
+    ));
     $params = array(
         'q' => $keywords,
         'count' => 100,
@@ -81,7 +80,7 @@ function search($keywords, $max_id = null) {
         'method' => 'GET',
         'url' => $tmhOAuth->url('1.1/search/tweets'),
         'params' => $params
-            ));
+    ));
 
     if ($tmhOAuth->response['code'] == 200) {
         $data = json_decode($tmhOAuth->response['response'], true);
@@ -91,15 +90,11 @@ function search($keywords, $max_id = null) {
 
             $t = new Tweet();
             $t->fromJSON($tweet);
+            $tweet_ids[] = $t->id;
             if (!$t->isInBin($bin_name)) {
-                $all_users[] = $t->from_user_id;
-                $all_tweet_ids[] = $t->id;
-                $tweet_ids[] = $t->id;
-
                 $tweetQueue->push($t, $bin_name);
-                if ($tweetQueue->length() > 100) {
+                if ($tweetQueue->length() > 100)
                     $tweetQueue->insertDB();
-                }
 
                 print ".";
             }

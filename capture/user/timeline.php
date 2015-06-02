@@ -115,13 +115,12 @@ function get_timeline($user_id, $type, $max_id = null) {
         foreach ($tweets as $tweet) {
             $t = new Tweet();
             $t->fromJSON($tweet);
+            $tweet_ids[] = $t->id;
             if (!$t->isInBin($bin_name)) {
-                $tweet_ids[] = $t->id;
                 $tweetQueue->push($t, $bin_name);
                 print ".";
-                if ($tweetQueue->length() > 100) {
+                if ($tweetQueue->length() > 100)
                     $tweetQueue->insertDB();
-                }
             }
         }
 
