@@ -533,7 +533,7 @@ foreach ($linedata as $key => $value) {
                     <br />
                 <?php } ?>
 
-                <div class="txt_desc"><br />Date and time are in GMT (London).</div>
+                <div class="txt_desc"><br />Date and time are in <?php echo date('T')." (".date_default_timezone_get().")"; ?>.</div>
 
                 <form action="index.php" method="get" id="form2">
                     <table>
