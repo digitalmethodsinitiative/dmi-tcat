@@ -419,6 +419,44 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
         $rec->execute();
     }
 
+    // 09/06/2015 Use original retweet text for truncated tweets
+
+    $ans = '';
+    if ($interactive == false) {
+        // require auto-upgrade level 2
+        if ($aulevel > 1) {
+            $ans = 'a';
+        } else {
+            $ans = 'SKIP';
+        }
+    }
+    if ($ans != 'SKIP' ) {
+        foreach ($all_bins as $bin) {
+            if ($single && $bin !== $single) { continue; }
+            $tester = "select count(*) as count from " . $bin . "_tweets A inner join " . $bin . "_tweets B on A.retweet_id = B.id where LENGTH(A.text) != LENGTH(B.text) + LENGTH(B.from_user_name) + LENGTH('RT @ ')";
+            $rec = $dbh->prepare($tester);
+            $rec->execute();
+            $results = $rec->fetch(PDO::FETCH_ASSOC);
+            $count = isset($results['count']) ? $results['count'] : 0;
+            if ($count > 0) {
+                if ($dry_run) {
+                    $suggested = true;
+                }
+                if ($interactive && $ans !== 'a') {
+                    $ans = cli_yesnoall("Use original retweet text for truncated tweets in bin $bin", 2, 'n/a');
+                }
+                if ($ans == 'y' || $ans == 'a') {
+                    logit("cli", "Using original retweet text for tweets in bin $bin");
+                    /* Note: repeating the where clause would speed up this query, but overlook the case where the retweet was truncated, but the original tweet was 140 characters.
+                             therefore we rebuild the text table, which is expensive. */
+                    $fixer = "update $bin" . "_tweets A inner join " . $bin . "_tweets B on A.retweet_id = B.id set A.text = CONCAT('RT @', B.from_user_name, ' ', B.text)";
+                    $rec = $dbh->prepare($fixer);
+                    $rec->execute();
+                }
+            }
+        }
+    }
+
     // End of upgrades
 
     if ($dry_run) {
