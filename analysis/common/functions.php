@@ -24,7 +24,7 @@ else
     $url_query = "";
 if (isset($_GET['geo_query']) && !empty($_GET['geo_query'])) {
     $geo_query = urldecode($_GET['geo_query']);
-    if (preg_match("/[^\,\.0-9 ]/", $geo_query)) {
+    if (preg_match("/[^\-\,\.0-9 ]/", $geo_query)) {
         die("<font size='+1' color='red'>The GEO polygon should contain only longitude latitude pairs (with dots inside for precision), seperated by a single whitespace, and after the pair a comma to mark the next point in the polygon.</font><br />Make the polygon end at the point where you started drawing it. Please see the provided example for the proper value of a WKT polygon.");
     }
 } else {
