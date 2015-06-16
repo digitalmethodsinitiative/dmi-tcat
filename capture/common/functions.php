@@ -1073,7 +1073,11 @@ class Tweet {
             $this->geo_lat = $data["geo"]["coordinates"][0];
             $this->geo_lng = $data["geo"]["coordinates"][1];
         }
-        $this->text = $data["text"];
+        if (isset($data["retweeted_status"])) {
+            $this->text = "RT @" . $data["retweeted_status"]["user"]["screen_name"] . " " . $data["retweeted_status"]["text"];
+        } else {
+            $this->text = $data["text"];
+        }
         $this->retweet_id = null;
         if (isset($data["retweeted_status"])) {
             $this->retweet_id = $data["retweeted_status"]["id_str"];
