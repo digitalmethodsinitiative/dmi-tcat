@@ -1074,7 +1074,7 @@ class Tweet {
             $this->geo_lng = $data["geo"]["coordinates"][1];
         }
         if (isset($data["retweeted_status"])) {
-            $this->text = "RT @" . $data["retweeted_status"]["user"]["screen_name"] . " " . $data["retweeted_status"]["text"];
+            $this->text = "RT @" . $data["retweeted_status"]["user"]["screen_name"] . ": " . $data["retweeted_status"]["text"];
         } else {
             $this->text = $data["text"];
         }
