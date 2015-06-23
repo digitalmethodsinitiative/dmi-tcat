@@ -1098,6 +1098,8 @@ class Tweet {
         } else {
             $this->possibly_sensitive = null;
         }
+        /* Truncated Tweets are a historical attribute. Tweets send (through the API) which exceeded 140 characters got the truncated flag set.
+           This attribute is no longer set true for any new tweets. */
         $this->truncated = $data["truncated"];
         $this->place_ids = array();
         $this->places = array();
