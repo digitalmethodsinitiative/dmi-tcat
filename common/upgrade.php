@@ -430,17 +430,17 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
             $ans = 'SKIP';
         }
     }
-    if ($ans != 'SKIP' ) {
+    if ( $ans != 'SKIP' ) {
         foreach ($all_bins as $bin) {
             if ($single && $bin !== $single) { continue; }
             /*
              * Look for any tweets that have different length than pseudocode: length("RT @originaluser: " + text)
              * Also look for any tweets that have a different original username than what we find in the tweet text: "RT @retweetsuser: "
              * (.. yes, this can happen: the Twitter API can return a different retweeted username in the retweeted status substructure
-             *      than in the retweet text itself ..)
+             *      than in the retweet text itself - this may happen when a username has been renamed ..)
              *
              * The testing query should always return 0 for any bin we've already updated. This test is cheaper than the update itself,
-             * which is more inclusive but doesn't return information about whether the step itself is neccessary.
+             * which is more inclusive but does not return information about whether the step itself is neccessary.
              * Caveat: If the original tweet was exactly 140 characters, and the truncated retweet as well, this test will fail
              *         to detect it and still return 0 for that specific retweet. However, we can assume it will find other, more common,
              *         tweets that do return 1.
@@ -459,7 +459,8 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
                 }
                 if ($ans == 'y' || $ans == 'a') {
                     logit("cli", "Using original retweet text for tweets in bin $bin");
-                    /* Note: original tweet may have been length 140, truncated retweet may have length 140, therefore we need to check for more than just length. Here we update everything with length >= 140 and ending with '...' */
+                    /* Note: original tweet may have been length 140 and truncated retweet may have length 140,
+                     * therefore we need to check for more than just length. Here we update everything with length >= 140 and ending with '...' */
                     $fixer = "update $bin" . "_tweets A inner join " . $bin . "_tweets B on A.retweet_id = B.id set A.text = CONCAT('RT @', B.from_user_name, ': ', B.text) where (length(A.text) >= 140 and A.text like '%…') or substr(A.text, position('@' in A.text) + 1, position(': ' in A.text) - 5) != B.from_user_name";
                     $rec = $dbh->prepare($fixer);
                     $rec->execute();
