@@ -176,6 +176,7 @@ function get_file($what) {
  * @var $toget specifies fieldname
  * @var $table specifies table name
  */
+
 function frequencyTable($table, $toget) {
     global $esc, $intervalDates;
     $results = array();
@@ -193,7 +194,8 @@ function frequencyTable($table, $toget) {
                 $date = groupByInterval($res['datepart']);
             else
                 $date = $res['datepart'];
-            if ($table == 'urls') $res['toget'] = validate($res['toget'], 'url');
+            if ($table == 'urls')
+                $res['toget'] = validate($res['toget'], 'url');
             $results[$date][$res['toget']] = $res['count'];
         }
     }
@@ -623,13 +625,14 @@ function validate($what, $how) {
             $what = mysql_real_escape_string($what);
             break;
         case "frequency":
-            $what = '"' . str_replace('"', '""', preg_replace("/[^\d]/", "", $what)) . '"';
+            $what = preg_replace("/[^\d]/", "", $what);
             break;
         case "url":
-            $what = '"' . str_replace('"', '%22', $what) . '"';
+            $what = str_replace('"', '%22', $what);
             break;
         case "outputformat":
-            if (!in_array($what, array('csv', 'tsv', 'gexf', 'gdf'))) $what = 'csv';
+            if (!in_array($what, array('csv', 'tsv', 'gexf', 'gdf')))
+                $what = 'csv';
             break;
         default:
             break;
@@ -692,9 +695,13 @@ function current_collation() {
     $sql = "SHOW FULL COLUMNS FROM " . $esc['mysql']['dataset'] . "_hashtags";
     $sqlresults = mysql_query($sql);
     while ($res = mysql_fetch_assoc($sqlresults)) {
-        if (array_key_exists('Collation', $res) && ($res['Collation'] == 'utf8mb4_unicode_ci' || $res['Collation'] == 'utf8mb4_general_ci')) { $is_utf8mb4 = true; break; }
+        if (array_key_exists('Collation', $res) && ($res['Collation'] == 'utf8mb4_unicode_ci' || $res['Collation'] == 'utf8mb4_general_ci')) {
+            $is_utf8mb4 = true;
+            break;
+        }
     }
-    if ($is_utf8mb4) $collation = 'utf8mb4_bin';
+    if ($is_utf8mb4)
+        $collation = 'utf8mb4_bin';
     if ($is_utf8mb4 == false) {
         // When the table has columns with collation of utf8 (as opposed to utf8mb4)
         // fall back the current connection character set to utf8 as well, otherwise queries with 'COLLATE utf8_bin' will fail.
@@ -976,14 +983,14 @@ function stats_summary($array) {
 function detect_mention_type($text, $user) {
     $mention_type = 'mention';
 
-    $slangs = array( 'RT @', 'rt @', 'MT @', 'via @', '"@' );
+    $slangs = array('RT @', 'rt @', 'MT @', 'via @', '"@');
     $work = ' ' . str_replace(array("\r", "\t", "\n"), " ", $text);
 
     foreach ($slangs as $slang) {
         $match = ' ' . $slang . $user;
         if (mb_strpos($work, $match) !== false) {
             $mention_type = 'retweet';
-            break;   
+            break;
         }
     }
 
