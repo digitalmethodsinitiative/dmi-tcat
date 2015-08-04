@@ -1,9 +1,18 @@
 <?php
 /**
- * Save media file from _meedia table
+ * Store the media files from the _media table on disk.
  * 
- * In command line use command like below:
+ * This script requires the server to support retrieval of remote content using the file_get_contents() functions.
+ * You may need to adjust your php.ini file to activate the function.
+ *
+ * On the command line, use a command like below:
+ *
  * $ php media-save.php bin_name
+ *
+ * Optionally, pass the image save path as the second argument:
+ *
+ * $ php media-save.php bin_name /my/tmp/dir
+ *
  */
 require_once('../config.php');
 require_once('../capture/common/functions.php');
@@ -24,7 +33,7 @@ function saveMedia($bin_name, $base_imgpath)
         $rec = $dbh->prepare($sql);
         $rec->execute();
         $row = $rec->fetch(PDO::FETCH_NUM);
-        echo 'This bin: ' . $bin_name . 'has ' . $row[0] . ' medias.' . PHP_EOL;
+        echo 'This bin: ' . $bin_name . ' has ' . $row[0] . ' media files.' . PHP_EOL;
         
         $sql = 'SELECT DISTINCT `id`, `media_url_https` FROM `' . $bin_name . '_media`';
         $rec2 = $dbh->prepare($sql);
@@ -48,7 +57,7 @@ function saveMedia2File($folder_path, $file_uri, $media_id)
     $file_name = $media_id . '.' . $file_extension;
     // Skip when file exist
     if (checkFileExist($folder_path, $file_name)) {
-        echo 'The file: ' . $file_name . ' already exist!' . PHP_EOL;
+        echo 'The file: ' . $file_name . ' already exists!' . PHP_EOL;
     } else {
         $image = file_get_contents($file_uri);
         file_put_contents($folder_path . $file_name, $image);
@@ -78,7 +87,15 @@ function createFolder($bin_name, $base_imgpath)
 }
 
 // Get bin name from command line argument
-$bin_name = $argv[1];
+if (isset($argv[1])) {
+    $bin_name = $argv[1];
+} else {
+    die('The bin name is a required argument.' . PHP_EOL);
+}
+// Get save path from command line argument
+if (isset($argv[2])) {
+    $base_imgpath = $argv[2];
+}
 
 createFolder($bin_name, $base_imgpath);
 saveMedia($bin_name, $base_imgpath);
