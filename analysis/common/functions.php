@@ -186,7 +186,7 @@ function frequencyTable($table, $toget) {
     $where = "t.id = $table.tweet_id AND ";
     $sql .= sqlSubset($where);
     $sql .= " GROUP BY toget, datepart ORDER BY datepart ASC, count DESC";
-    $rec = mysql_query($sql);
+    $rec = mysql_unbuffered_query($sql);
     $date = false;
     while ($res = mysql_fetch_assoc($rec)) {
         if ($res['count'] > $esc['shell']['minf']) {
@@ -199,6 +199,7 @@ function frequencyTable($table, $toget) {
             $results[$date][$res['toget']] = $res['count'];
         }
     }
+    mysql_free_result($rec);
     return $results;
 }
 
@@ -389,7 +390,7 @@ function generate($what, $filename) {
     $sql = "SELECT MIN(t.created_at) AS min, MAX(t.created_at) AS max FROM " . $esc['mysql']['dataset'] . "_tweets t ";
     $sql .= sqlSubset();
     //print $sql . "<bR>";
-    $rec = mysql_query($sql);
+    $rec = mysql_unbuffered_query($sql);
     $res = mysql_fetch_assoc($rec);
 
     // get frequencies
@@ -693,6 +694,9 @@ function current_collation() {
     $collation = 'utf8_bin';
     $is_utf8mb4 = false;
     $sql = "SHOW FULL COLUMNS FROM " . $esc['mysql']['dataset'] . "_hashtags";
+	global $hostname, $dbuser, $dbpass, $database;
+	db_connect($hostname, $dbuser, $dbpass, $database);
+
     $sqlresults = mysql_query($sql);
     while ($res = mysql_fetch_assoc($sqlresults)) {
         if (array_key_exists('Collation', $res) && ($res['Collation'] == 'utf8mb4_unicode_ci' || $res['Collation'] == 'utf8mb4_general_ci')) {
@@ -820,11 +824,11 @@ function get_all_datasets() {
 
 function get_total_nr_of_tweets() {
     $select = "SHOW TABLES LIKE '%_tweets'";
-    $rec = mysql_query($select);
+    $rec = mysql_unbuffered_query($select);
     $count = 0;
     while ($res = mysql_fetch_row($rec)) {
         $sql = "SELECT COUNT(id) FROM " . $res[0];
-        $rec2 = mysql_query($sql);
+        $rec2 = mysql_unbuffered_query($sql);
         if ($rec2) {
             $res2 = mysql_fetch_row($rec2);
             $count += $res2[0];
@@ -840,7 +844,7 @@ function xml_escape($stuff) {
 // connect to the database
 function db_connect($db_host, $db_user, $db_pass, $db_name) {
     global $connection;
-    $connection = mysql_connect($db_host, $db_user, $db_pass);
+    $connection = mysql_pconnect($db_host, $db_user, $db_pass);
     if (!mysql_select_db($db_name, $connection))
         die("could not connect");
     if (!mysql_set_charset('utf8mb4', $connection)) {
@@ -1066,7 +1070,7 @@ function sentiment_avgs() {
     $sql .= sqlSubset("t.id = s.tweet_id AND ");
     $sql .= "GROUP BY datepart ORDER BY t.created_at";
 
-    $rec = mysql_query($sql);
+    $rec = mysql_unbuffered_query($sql);
     while ($res = mysql_fetch_assoc($rec)) {
         $neg = $res['neg'];
         $pos = $res['pos'];
@@ -1085,7 +1089,7 @@ function sentiment_avgs() {
     $sql .= sqlSubset("t.id = s.tweet_id AND (s.positive != 1 AND s.negative != 1) AND ");
     $sql .= "GROUP BY datepart ORDER BY t.created_at";
 
-    $rec = mysql_query($sql);
+    $rec = mysql_unbuffered_query($sql);
     while ($res = mysql_fetch_assoc($rec)) {
         $neg = $res['neg'];
         $pos = $res['pos'];

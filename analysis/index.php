@@ -254,27 +254,30 @@ if (defined('ANALYSIS_URL'))
             // count current subsample
             $sql = "SELECT count(distinct(t.id)) as count FROM " . $esc['mysql']['dataset'] . "_tweets t ";
             $sql .= sqlSubset();
-            $sqlresults = mysql_query($sql);
+            $sqlresults = mysql_unbuffered_query($sql);
             $data = mysql_fetch_assoc($sqlresults);
             $numtweets = $data["count"];
+            mysql_free_result($sqlresults);	
 
             // count tweets containing links
             $sql = "SELECT count(distinct(t.id)) AS count FROM " . $esc['mysql']['dataset'] . "_urls u, " . $esc['mysql']['dataset'] . "_tweets t ";
             $where = "u.tweet_id = t.id AND ";
             $sql .= sqlSubset($where);
-            $sqlresults = mysql_query($sql);
+            $sqlresults = mysql_unbuffered_query($sql);
             $numlinktweets = 0;
             if ($sqlresults && mysql_num_rows($sqlresults) > 0) {
                 $res = mysql_fetch_assoc($sqlresults);
                 $numlinktweets = $res['count'];
             }
+            mysql_free_result($sqlresults);	
 
             // number of users
             $sql = "SELECT count(distinct(t.from_user_id)) as count FROM " . $esc['mysql']['dataset'] . "_tweets t ";
             $sql .= sqlSubset();
-            $sqlresults = mysql_query($sql);
+            $sqlresults = mysql_unbuffered_query($sql);
             $data = mysql_fetch_assoc($sqlresults);
             $numusers = $data["count"];
+            mysql_free_result($sqlresults);	
 
             // see whether the relations table exists
             $show_relations_export = FALSE;
@@ -287,12 +290,13 @@ if (defined('ANALYSIS_URL'))
                 $sql = "SELECT count(u.id) as count FROM " . $esc['mysql']['dataset'] . "_urls u, " . $esc['mysql']['dataset'] . "_tweets t ";
                 $where = "u.tweet_id = t.id AND u.error_code != '' AND ";
                 $sql .= sqlSubset($where);
-                $rec = mysql_query($sql);
+                $rec = mysql_unbuffered_query($sql);
                 if ($rec && mysql_num_rows($rec) > 0) {
                     $res = mysql_fetch_assoc($rec);
                     if (($res['count'] / $numlinktweets) > 0.5)
                         $show_url_export = true;
                 }
+            	mysql_free_result($rec);	
             }
             // see whether the lang table exists
             $show_lang_export = FALSE;
@@ -349,13 +353,14 @@ if (defined('ANALYSIS_URL'))
             $sql .= sqlSubset();
             $sql .= "GROUP BY datepart ORDER BY datepart";
 
-            $rec = mysql_query($sql);
+            $rec = mysql_unbuffered_query($sql);
             while ($res = mysql_fetch_assoc($rec)) {
                 $linedata[$res['datepart']]["tweets"] = $res['count'];
                 $linedata[$res['datepart']]["users"] = $res['usercount'];
                 $linedata[$res['datepart']]["locations"] = $res['loccount'];
                 $linedata[$res['datepart']]["geolocs"] = $res['geocount'];
             }
+            mysql_free_result($rec);	
 
             if (isset($_GET['query']) && $_GET["query"] != "") {
 
@@ -369,11 +374,12 @@ if (defined('ANALYSIS_URL'))
                 $sql .= "FROM " . $esc['mysql']['dataset'] . "_tweets t ";
                 $sql .= "WHERE t.created_at >= '" . $esc['datetime']['startdate'] . "' AND t.created_at <= '" . $esc['datetime']['enddate'] . "' ";
                 $sql .= "GROUP BY datepart ORDER BY datepart";
-                $rec = mysql_query($sql);
+                $rec = mysql_unbuffered_query($sql);
 
                 while ($res = mysql_fetch_assoc($rec)) {
                     $linedata[$res['datepart']]["full"] = $res['count'];
                 }
+            	mysql_free_result($rec);	
             }
             ?>
 
