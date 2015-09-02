@@ -1,4 +1,3 @@
-<?php
 require_once '../config.php';
 require_once 'common/config.php';
 require_once 'common/functions.php';
@@ -254,30 +253,27 @@ if (defined('ANALYSIS_URL'))
             // count current subsample
             $sql = "SELECT count(distinct(t.id)) as count FROM " . $esc['mysql']['dataset'] . "_tweets t ";
             $sql .= sqlSubset();
-            $sqlresults = mysql_unbuffered_query($sql);
+            $sqlresults = mysql_query($sql);
             $data = mysql_fetch_assoc($sqlresults);
             $numtweets = $data["count"];
-            mysql_free_result($sqlresults);	
 
             // count tweets containing links
             $sql = "SELECT count(distinct(t.id)) AS count FROM " . $esc['mysql']['dataset'] . "_urls u, " . $esc['mysql']['dataset'] . "_tweets t ";
             $where = "u.tweet_id = t.id AND ";
             $sql .= sqlSubset($where);
-            $sqlresults = mysql_unbuffered_query($sql);
+            $sqlresults = mysql_query($sql);
             $numlinktweets = 0;
             if ($sqlresults && mysql_num_rows($sqlresults) > 0) {
                 $res = mysql_fetch_assoc($sqlresults);
                 $numlinktweets = $res['count'];
             }
-            mysql_free_result($sqlresults);	
 
             // number of users
             $sql = "SELECT count(distinct(t.from_user_id)) as count FROM " . $esc['mysql']['dataset'] . "_tweets t ";
             $sql .= sqlSubset();
-            $sqlresults = mysql_unbuffered_query($sql);
+            $sqlresults = mysql_query($sql);
             $data = mysql_fetch_assoc($sqlresults);
             $numusers = $data["count"];
-            mysql_free_result($sqlresults);	
 
             // see whether the relations table exists
             $show_relations_export = FALSE;
@@ -290,13 +286,12 @@ if (defined('ANALYSIS_URL'))
                 $sql = "SELECT count(u.id) as count FROM " . $esc['mysql']['dataset'] . "_urls u, " . $esc['mysql']['dataset'] . "_tweets t ";
                 $where = "u.tweet_id = t.id AND u.error_code != '' AND ";
                 $sql .= sqlSubset($where);
-                $rec = mysql_unbuffered_query($sql);
+                $rec = mysql_query($sql);
                 if ($rec && mysql_num_rows($rec) > 0) {
                     $res = mysql_fetch_assoc($rec);
                     if (($res['count'] / $numlinktweets) > 0.5)
                         $show_url_export = true;
                 }
-            	mysql_free_result($rec);	
             }
             // see whether the lang table exists
             $show_lang_export = FALSE;

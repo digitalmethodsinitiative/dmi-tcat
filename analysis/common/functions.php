@@ -390,7 +390,7 @@ function generate($what, $filename) {
     $sql = "SELECT MIN(t.created_at) AS min, MAX(t.created_at) AS max FROM " . $esc['mysql']['dataset'] . "_tweets t ";
     $sql .= sqlSubset();
     //print $sql . "<bR>";
-    $rec = mysql_unbuffered_query($sql);
+    $rec = mysql_query($sql);
     $res = mysql_fetch_assoc($rec);
 
     // get frequencies
@@ -830,12 +830,13 @@ function get_total_nr_of_tweets() {
     $count = 0;
     while ($res = mysql_fetch_row($rec)) {
         $sql = "SELECT COUNT(id) FROM " . $res[0];
-        $rec2 = mysql_unbuffered_query($sql);
+        $rec2 = mysql_query($sql);
         if ($rec2) {
             $res2 = mysql_fetch_row($rec2);
             $count += $res2[0];
         }
     }
+    mysql_free_result($rec);
     return $count;
 }
 
@@ -1079,6 +1080,7 @@ function sentiment_avgs() {
         $avgs[$res['datepart']][0] = (float) $pos;
         $avgs[$res['datepart']][1] = (float) abs($neg);
     }
+    mysql_free_result($rec);
 
     // only subjective
     $sql = "SELECT avg(s.positive) as pos, avg(s.negative) as neg, ";
@@ -1098,6 +1100,7 @@ function sentiment_avgs() {
         $avgs[$res['datepart']][2] = (float) $pos;
         $avgs[$res['datepart']][3] = (float) abs($neg);
     }
+    mysql_free_result($rec);
 
     // only dateparts
     $sql = "SELECT ";
