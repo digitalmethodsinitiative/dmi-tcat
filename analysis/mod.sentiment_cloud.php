@@ -34,7 +34,7 @@ require_once './common/CSV.class.php';
         $sql = "SELECT s.explanation FROM " . $esc['mysql']['dataset'] . "_tweets t, " . $esc['mysql']['dataset'] . "_sentiment s ";
         $sql .= sqlSubset("s.tweet_id = t.id AND ");
         //print $sql . "<br>";die;
-        $rec = mysql_query($sql);
+        $rec = mysql_unbuffered_query($sql);
         $negativeSentiments = $positiveSentiments = $wordValues = array();
         while ($res = mysql_fetch_assoc($rec)) {
             if (preg_match_all("/[\s|\B]([\p{L}\w\d_]+)\[(-?\d)\]/u", $res['explanation'], $matches)) {
@@ -57,6 +57,7 @@ require_once './common/CSV.class.php';
                 }
             }
         }
+        mysql_free_result($rec);
 
         $csv->writeheader(array('word', 'count', 'sentistrength'));
         arsort($positiveSentiments);

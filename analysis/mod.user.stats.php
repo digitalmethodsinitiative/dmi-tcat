@@ -40,11 +40,12 @@ require_once './common/CSV.class.php'
         $sql .= sqlSubset();
         $sql .= "GROUP BY datepart, from_user_id";
         //print $sql . "<br>";
-        $sqlresults = mysql_query($sql);
+        $sqlresults = mysql_unbuffered_query($sql);
         $array = array();
         while ($res = mysql_fetch_assoc($sqlresults)) {
             $array[$res['datepart']][$res['from_user_id']] = $res['count'];
         }
+        mysql_free_result($sqlresults);
         if (!empty($array)) {
             foreach ($array as $date => $ar)
                 $stats[$date]['tweets_per_user'] = stats_summary($ar);
@@ -57,11 +58,12 @@ require_once './common/CSV.class.php'
         $sql .= sqlSubset();
         $sql .= "GROUP BY datepart";
         //print $sql . "<br>";
-        $sqlresults = mysql_query($sql);
+        $sqlresults = mysql_unbuffered_query($sql);
         $array = array();
         while ($res = mysql_fetch_assoc($sqlresults)) {
             $array[$res['datepart']] = $res['count'];
         }
+        mysql_free_result($sqlresults);
         if (!empty($array)) {
             $stats['all dates']['users_per_date'] = stats_summary($array);
         }
@@ -74,11 +76,12 @@ require_once './common/CSV.class.php'
         $sql .= sqlSubset($where);
         $sql .= "GROUP BY datepart, from_user_id";
         //print $sql."<br>";
-        $sqlresults = mysql_query($sql);
+        $sqlresults = mysql_unbuffered_query($sql);
         $array = array();
         while ($res = mysql_fetch_assoc($sqlresults)) {
             $array[$res['datepart']][$res['from_user_id']] = $res['count'];
         }
+        mysql_free_result($sqlresults);
         if (!empty($array)) {
             foreach ($array as $date => $ar)
                 $stats[$date]['urls_per_user'] = stats_summary($ar);
@@ -91,13 +94,14 @@ require_once './common/CSV.class.php'
         $sql .= sqlSubset();
         $sql .= "GROUP BY datepart, from_user_id";
         //print $sql."<bR>";
-        $sqlresults = mysql_query($sql);
+        $sqlresults = mysql_unbuffered_query($sql);
         $array = array();
         while ($res = mysql_fetch_assoc($sqlresults)) {
             $array[$res['datepart']]['followercount'][$res['from_user_id']] = $res['from_user_followercount'];
             $array[$res['datepart']]['friendcount'][$res['from_user_id']] = $res['from_user_friendcount'];
             $array[$res['datepart']]['tweetcount'][$res['from_user_id']] = $res['from_user_tweetcount'];
         }
+        mysql_free_result($sqlresults);
         if (!empty($array)) {
             foreach ($array as $date => $ar) {
                 $stats[$date]['followercount'] = stats_summary($ar['followercount']);

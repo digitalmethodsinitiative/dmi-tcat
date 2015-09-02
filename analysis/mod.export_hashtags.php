@@ -37,12 +37,7 @@ require_once './common/CSV.class.php';
         $sql = "SELECT t.id as id, h.text as hashtag FROM " . $esc['mysql']['dataset'] . "_tweets t, " . $esc['mysql']['dataset'] . "_hashtags h ";
         $sql .= sqlSubset();
         $sql .= " AND h.tweet_id = t.id ORDER BY id";
-        $sqlresults = mysql_query($sql);
-        // DEBUG BEGIN
-        print "<pre>";
-        print_r($sql);
-        print "</pre>";
-        // DEBUG END
+        $sqlresults = mysql_unbuffered_query($sql);
         $out = "";
         if ($sqlresults) {
             while ($data = mysql_fetch_assoc($sqlresults)) {
@@ -51,6 +46,7 @@ require_once './common/CSV.class.php';
                 $csv->addfield($data['hashtag'], 'string');
                 $csv->writerow();
             }
+            mysql_free_result($sqlresults);
         }
 
         $csv->close();

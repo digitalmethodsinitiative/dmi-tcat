@@ -40,7 +40,7 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
         $sql .= "GROUP BY h1";
 
         //print $sql . "<bR>";
-        $sqlresults = mysql_query($sql);
+        $sqlresults = mysql_unbuffered_query($sql);
         while ($res = mysql_fetch_assoc($sqlresults)) {
             $word = $res['h1'];
             $coword->distinctUsersForWord[$word] = $res['d'];
@@ -49,11 +49,12 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
             $coword->wordFrequencyDividedByUniqueUsers[$word] = round($res['c'] / $res['d'], 2);
             $coword->wordFrequencyMultipliedByUniqueUsers[$word] = $res['c'] * $res['d'];
         }
+        mysql_free_result($sqlresults);
 
         // calculate sentiments per hashtag
         // min, max, avg
         $sql = "SELECT s.positive, s.negative, h.text COLLATE $collation AS hashtag, h.tweet_id as tid FROM " . $esc['mysql']['dataset'] . "_sentiment s, " . $esc['mysql']['dataset'] . "_hashtags h WHERE h.tweet_id = s.tweet_id";
-        $rec = mysql_query($sql);
+        $rec = mysql_unbuffered_query($sql);
         while ($res = mysql_fetch_assoc($rec)) {
             $word = $res['hashtag'];
             $sn = $res['negative'];
@@ -68,6 +69,7 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
             //$sentimentWeightedAbs[$word][abs($sn)] = $tid;
             //$sentimentWeightedAbs[$word][$sp] = $tid;
         }
+        mysql_free_result($rec);
         // @todo weighted average -5 + 5
         // @todo weighted absolute numbers / extremity 0-5
         foreach ($sentimentAvg as $word => $sentiments) {
@@ -91,12 +93,13 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
         $sql .= "LOWER(A.text COLLATE $collation) < LOWER(B.text COLLATE $collation) AND A.tweet_id = t.id AND A.tweet_id = B.tweet_id ";
         $sql .= "ORDER BY h1,h2";
         //print $sql."<br>";
-        $sqlresults = mysql_query($sql);
+        $sqlresults = mysql_unbuffered_query($sql);
         while ($res = mysql_fetch_assoc($sqlresults)) {
             $coword->addWord($res['h1']);
             $coword->addWord($res['h2']);
             $coword->addCoword($res['h1'], $res['h2'], 1);
         }
+        mysql_free_result($sqlresults);
 
         unset($coword->words); // as we are adding words manually the frequency would be messed up
         if ($esc['shell']['minf'] > 0 && !($esc['shell']['topu'] > 0)) {

@@ -202,7 +202,7 @@ require_once './common/Gexf.class.php';
 	        echo "sql query " . ($runcounter + 1) . ": " . $sql . "<br />";
 
 
-	        $sqlresults = mysql_query($sql);
+	        $sqlresults = mysql_unbuffered_query($sql);
 
 	        // run through the data once to create item counts for cutting and fusing
 	        $data = array();
@@ -254,6 +254,7 @@ require_once './common/Gexf.class.php';
 	            $data[] = $res;
 	        }
 
+            mysql_free_result($sqlresults);
 
 			// ---------------------
 			// cut off elements for the sankey column

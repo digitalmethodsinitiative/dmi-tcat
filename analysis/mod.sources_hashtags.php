@@ -39,7 +39,7 @@ require_once './common/Gexf.class.php';
         $where = "t.id = h.tweet_id AND ";
         $sql .= sqlSubset($where);
 
-        $sqlresults = mysql_query($sql);
+        $sqlresults = mysql_unbuffered_query($sql);
 
 		while ($res = mysql_fetch_assoc($sqlresults)) {
 
@@ -52,6 +52,8 @@ require_once './common/Gexf.class.php';
 			}
 			$sourcesHashtags[$res['source']][$res['hashtag']]++;
         }
+
+        mysql_free_result($sqlresults);
 
         $gexf = new Gexf();
         $gexf->setTitle("source-hashtag " . $filename);

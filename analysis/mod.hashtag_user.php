@@ -38,7 +38,7 @@ require_once './common/Gexf.class.php';
         $sql .= "LENGTH(A.text)>1 AND ";
         $sql .= "A.tweet_id = t.id ";
 
-        $sqlresults = mysql_query($sql);
+        $sqlresults = mysql_unbuffered_query($sql);
         $languages = $locations = array();
         while ($res = mysql_fetch_assoc($sqlresults)) {
             if (!isset($userHashtags[$res['user']][$res['h1']]))
@@ -55,6 +55,7 @@ require_once './common/Gexf.class.php';
             $from_user_timezone[$res['user']] = $res['timezone'];
             $from_user_utcoffset[$res['user']] = $res['utcoffset'];
         }
+        mysql_free_result($sqlresults);
 
         $gexf = new Gexf();
         $gexf->setTitle("Hashtag - user " . $filename);

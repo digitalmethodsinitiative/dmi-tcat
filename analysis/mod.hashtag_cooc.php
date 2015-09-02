@@ -43,7 +43,7 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
         $sql .= sqlSubset($where);
         $sql .= "GROUP BY h1";
         //print $sql . "<bR>";
-        $sqlresults = mysql_query($sql);
+        $sqlresults = mysql_unbuffered_query($sql);
         while ($res = mysql_fetch_assoc($sqlresults)) {
             $word = $res['h1'];
             $coword->distinctUsersForWord[$word] = $res['d'];
@@ -52,6 +52,7 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
             $coword->wordFrequencyDividedByUniqueUsers[$word] = round($res['c'] / $res['d'], 2);
             $coword->wordFrequencyMultipliedByUniqueUsers[$word] = $res['c'] * $res['d'];
         }
+        mysql_free_result($sqlresults);
 
         // do the actual job
         // get cowords

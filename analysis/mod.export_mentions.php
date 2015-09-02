@@ -38,7 +38,7 @@ require_once './common/CSV.class.php';
         $sql = "SELECT t.id as id, t.text as text, m.from_user_id as user_from_id, m.from_user_name as user_from_name, m.to_user_id as user_to_id, m.to_user as user_to_name FROM " . $esc['mysql']['dataset'] . "_tweets t, " . $esc['mysql']['dataset'] . "_mentions m ";
         $sql .= sqlSubset();
         $sql .= " AND m.tweet_id = t.id ORDER BY id";
-        $sqlresults = mysql_query($sql);
+        $sqlresults = mysql_unbuffered_query($sql);
         $out = "";
         if ($sqlresults) {
             while ($data = mysql_fetch_assoc($sqlresults)) {
@@ -51,6 +51,7 @@ require_once './common/CSV.class.php';
                 $csv->addfield(detect_mention_type($data['text'], $data['user_to_name']), 'string');
                 $csv->writerow();
             }
+            mysql_free_result($sqlresults);
         }
 
         $csv->close();

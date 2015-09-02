@@ -41,7 +41,7 @@ require_once './common/CSV.class.php';
         $sql .= " GROUP BY u.domain COLLATE $collation, LOWER(h.text COLLATE $collation) ORDER BY frequency DESC";
         //print $sql." - <br>";
 
-        $sqlresults = mysql_query($sql);
+        $sqlresults = mysql_unbuffered_query($sql);
 
         $csv->writeheader(array("frequency", "hashtag", "domain"));
         while ($res = mysql_fetch_assoc($sqlresults)) {
@@ -52,6 +52,7 @@ require_once './common/CSV.class.php';
             $csv->writerow();
             $urlHashtags[$res['domain']][$res['hashtag']] = $res['frequency'];
         }
+        mysql_free_result($sqlresults);
         $csv->close();
 
         echo '<fieldset class="if_parameters">';

@@ -39,7 +39,7 @@ $minf = isset($_GET['minf']) ? $minf = $_GET['minf'] : 1;
         $sql = "SELECT id, text FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
         
-        $sqlresults = mysql_query($sql);
+        $sqlresults = mysql_unbuffered_query($sql);
         $debug = '';
         if ($sqlresults) {
             while ($data = mysql_fetch_assoc($sqlresults)) {
@@ -55,6 +55,7 @@ $minf = isset($_GET['minf']) ? $minf = $_GET['minf'] : 1;
                     $csv->writerow();
                 }
             }
+            mysql_free_result($sqlresults);
         }
 
         $csv->close();

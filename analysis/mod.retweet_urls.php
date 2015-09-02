@@ -108,7 +108,7 @@ require_once './common/functions.php';
         $sql .= sqlSubset();
         $sql .= " ORDER BY ID";
         //print $sql; die;
-        $rec = mysql_query($sql);
+        $rec = mysql_unbuffered_query($sql);
         while ($res = mysql_fetch_assoc($rec)) {
             $tweets[$res['id']] = $res['text'];
             $dates[$res['id']] = $res['created_at'];
@@ -116,6 +116,7 @@ require_once './common/functions.php';
             $users[$res['id']] = $res['from_user_name'];
             $sources[$res['id']] = preg_replace("/<a href=.*>(.+?)<.*/","\\1",$res['source']);
         }
+        mysql_free_result($rec);
 
         $tweets_short_count = array_count_values($tweets_short);
         foreach ($tweets_short_count as $short => $count) {

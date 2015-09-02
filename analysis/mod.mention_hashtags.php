@@ -38,7 +38,7 @@ require_once './common/Gexf.class.php';
         $sql .= sqlSubset($where);
         //print $sql."<Br>";
 
-        $sqlresults = mysql_query($sql);
+        $sqlresults = mysql_unbuffered_query($sql);
         while ($res = mysql_fetch_assoc($sqlresults)) {
             if (!isset($userHashtags[$res['user']][$res['hashtag']]))
                 $userHashtags[$res['user']][$res['hashtag']] = 0;
@@ -50,6 +50,7 @@ require_once './common/Gexf.class.php';
                 $hashtagCount[$res['hashtag']] = 0;
             $hashtagCount[$res['hashtag']]++;
         }
+        mysql_free_result($sqlresults);
 
         $gexf = new Gexf();
         $gexf->setTitle("Hashtag - mentions " . $filename);

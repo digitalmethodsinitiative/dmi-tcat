@@ -43,7 +43,7 @@ require_once './common/CSV.class.php';
         //print $sql . "<br>"; exit;
 
 
-        $sqlresults = mysql_query($sql);
+        $sqlresults = mysql_unbuffered_query($sql);
         $array = array();
         while ($res = mysql_fetch_assoc($sqlresults)) {
 
@@ -57,6 +57,7 @@ require_once './common/CSV.class.php';
 			}
             $array[$res['datepart']][$res['source']] += $res['count'];
         }
+        mysql_free_result($sqlresults);
 
         $csv->writeheader(array("date", "source", "count"));
 

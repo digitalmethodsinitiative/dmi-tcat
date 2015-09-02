@@ -16,11 +16,12 @@ if (isset($_GET['minf'])&&!empty($_GET['minf'])) {
     $sql = "SELECT count(id) as cnt, from_user_name COLLATE $collation as from_user_name FROM " . $esc['mysql']['dataset'] . "_tweets t ";
     $sql .= sqlSubset();
     $sql .= " GROUP BY from_user_name COLLATE $collation"; 
-    $rec = mysql_query($sql);
+    $rec = mysql_unbuffered_query($sql);
     while ($res = mysql_fetch_assoc($rec)) {
         if ($res['cnt'] >= $minf)
             $users[] = $res['from_user_name'];
     }
+    mysql_free_result($rec);
 
     $sql = "SELECT $select FROM " . $esc['mysql']['dataset'] . "_tweets t ";
     $sql .= sqlSubset();
@@ -31,7 +32,7 @@ if (isset($_GET['minf'])&&!empty($_GET['minf'])) {
     $sql .= sqlSubset();
 }
 
-$sqlresults = mysql_query($sql);
+$sqlresults = mysql_unbuffered_query($sql);
 
 $tabtweets = array();
 $tabusers = array();
@@ -58,6 +59,8 @@ while ($res = mysql_fetch_assoc($sqlresults)) {
     $tabtweets[] = $tabtmp;
     $tabids[] = $tabtmp["id"];
 }
+
+mysql_free_result($sqlresults);
 
 //print_r($tabtweets);
 //exit;

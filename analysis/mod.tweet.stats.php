@@ -39,10 +39,11 @@ require_once './common/CSV.class.php';
         $sql .= " FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
         $sql .= " GROUP BY datepart ORDER BY datepart ASC";
-        $sqlresults = mysql_query($sql);
+        $sqlresults = mysql_unbuffered_query($sql);
         while ($data = mysql_fetch_assoc($sqlresults)) {
             $numtweets[$data['datepart']] = $data["count"];
         }
+        mysql_free_result($sqlresults);
 
         // tweet containing links
         $sql = "SELECT count(distinct(t.id)) AS count, ";

@@ -185,7 +185,7 @@ validate_all_variables();
                                                 $sql .= "LOWER(A.text COLLATE $collation) < LOWER(B.text COLLATE $collation) AND A.tweet_id = t.id AND A.tweet_id = B.tweet_id ";
                                                 $sql .= "ORDER BY datepart,h1,h2 ASC";
                                                 print $sql . "<br>";
-                                                $sqlresults = mysql_query($sql);
+                                                $sqlresults = mysql_unbuffered_query($sql);
 
                                                 $date = false;
 
@@ -234,6 +234,8 @@ validate_all_variables();
                                                     }
                                                 }
 
+                                                mysql_free_result($sqlresults);
+
                                                 // get user diversity per hasthag
                                                 $sql = "SELECT LOWER(h.text COLLATE $collation) as h1, COUNT(t.from_user_id) as c, COUNT(DISTINCT(t.from_user_id)) AS d ";
                                                 $sql .= ", " . sqlInterval();
@@ -242,7 +244,7 @@ validate_all_variables();
                                                 $sql .= sqlSubset($where);
                                                 $sql .= "GROUP BY datepart, h1";
                                                 //print $sql . "<br>";
-                                                $sqlresults = mysql_query($sql);
+                                                $sqlresults = mysql_unbuffered_query($sql);
                                                 $usersForWord = $userDiversity = $distinctUsersForWord = array();
                                                 while ($res = mysql_fetch_assoc($sqlresults)) {
                                                     $date = $res['datepart'];
@@ -257,6 +259,7 @@ validate_all_variables();
                                                         $distinctUsersForWord[$date][$word] = 0;
                                                     $distinctUsersForWord[$date][$word] += $res['d'];
                                                 }
+                                                mysql_free_result($sqlresults);
                                                 foreach ($distinctUsersForWord as $date => $words) {
                                                     foreach ($words as $word => $distinctUserCount) {
                                                         // (number of unique users using the hashtag) / (frequency of use)
@@ -273,7 +276,7 @@ validate_all_variables();
                                                 $sql .= "LENGTH(A.text)>1 AND ";
                                                 $sql .= "A.tweet_id = t.id GROUP BY datepart,h1 ORDER BY datepart,frequency ASC;";
                                                 //print $sql . "<br>";
-                                                $sqlresults = mysql_query($sql);
+                                                $sqlresults = mysql_unbuffered_query($sql);
 
                                                 $frequency_word_total = $frequency_word_interval = array();
 
@@ -291,6 +294,8 @@ validate_all_variables();
                                                     $frequency_word_total[$word]+=$res['frequency'];
                                                 }
 
+                                                mysql_free_result($sqlresults);
+
                                                 // get number of tweets in interval
                                                 $sql = "SELECT COUNT(t. id) AS numberOfTweets";
                                                 $sql .= ", " . sqlInterval();
@@ -298,13 +303,14 @@ validate_all_variables();
                                                 $sql .= sqlSubset() . " ";
                                                 $sql .= "GROUP BY datepart ORDER BY datepart";
                                                 //print $sql."<bR>";
-                                                $sqlresults = mysql_query($sql);
+                                                $sqlresults = mysql_unbuffered_query($sql);
                                                 while ($res = mysql_fetch_assoc($sqlresults)) {
                                                     $date = $res['datepart'];
                                                     if (!empty($intervalDates))
                                                         $date = groupByInterval($res['datepart']);
                                                     $numberOfTweets[$date] = $res['numberOfTweets'];
                                                 }
+                                                mysql_free_result($sqlresults);
 
                                                 if (isset($_REQUEST['normalizedCowordFrequency'])) {
                                                     // get number of tags co-occuring with focus word
@@ -318,7 +324,7 @@ validate_all_variables();
                                                     $sql .= "GROUP BY datepart,h1,h2 ";
                                                     $sql .= "ORDER BY datepart,h1,h2 ASC";
                                                     //print $sql . "<br>";
-                                                    $sqlresults = mysql_query($sql);
+                                                    $sqlresults = mysql_unbuffered_query($sql);
 
                                                     $normalizedCowordFrequency = array();
                                                     while ($res = mysql_fetch_assoc($sqlresults)) {
@@ -334,6 +340,7 @@ validate_all_variables();
                                                             $normalizedCowordFrequency[$date][$word] = 0;
                                                         $normalizedCowordFrequency[$date][$word] += $cowordFrequency;
                                                     }
+                                                    mysql_free_result($sqlresults);
                                                     foreach ($normalizedCowordFrequency as $date => $cowordFrequencies) {
                                                         $sum = array_sum($cowordFrequencies);
                                                         foreach ($cowordFrequencies as $word => $cowordFrequency)
@@ -355,13 +362,14 @@ validate_all_variables();
                                                 $sql .= sqlSubset();
                                                 $sql .= "GROUP BY datepart";
                                                 //print $sql."<bR>";
-                                                $sqlresults = mysql_query($sql);
+                                                $sqlresults = mysql_unbuffered_query($sql);
                                                 while ($res = mysql_fetch_assoc($sqlresults)) {
                                                     $date = $res['datepart'];
                                                     if (!empty($intervalDates))
                                                         $date = groupByInterval($res['datepart']);
                                                     $vis_data[$date] = array();
                                                 }
+                                                mysql_free_result($sqlresults);
                                                 $excludeFromGraph = array();
                                                 if (isset($_REQUEST['excludeFromGraph'])) {
                                                     $excludeFromGraph = explode(",", $_REQUEST['excludeFromGraph']);
@@ -501,11 +509,12 @@ validate_all_variables();
                                                                 $sql .= sqlSubset("t.id = hashtags.tweet_id AND ");
                                                                 $sql .= " GROUP BY toget ORDER BY count DESC limit 10";
                                                                 //print $sql."<br>";
-                                                                $rec = mysql_query($sql);
+                                                                $rec = mysql_unbuffered_query($sql);
                                                                 $out = "";
                                                                 while ($res = mysql_fetch_assoc($rec)) {
                                                                     $out .= $res['toget'] . " (" . $res['count'] . "), ";
                                                                 }
+                                                                mysql_free_result($rec);
                                                                 print substr($out, 0, -2);
                                                             }
 

@@ -31,7 +31,7 @@ require_once './common/functions.php';
 
         $sql = "SELECT id FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
-        $sqlresults = mysql_query($sql);
+        $sqlresults = mysql_unbuffered_query($sql);
         $out = "";
         if ($sqlresults) {
             while ($data = mysql_fetch_assoc($sqlresults)) {
@@ -41,6 +41,7 @@ require_once './common/functions.php';
                     $id = $data['id'];
                 $out .= $id . "\n";
             }
+            mysql_free_result($sqlresults);
         }
 
         $filename = get_filename_for_export("ids");

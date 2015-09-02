@@ -40,7 +40,7 @@ require_once './common/Gexf.class.php';
         $sql .= " AND in_reply_to_status_id != '' ORDER BY id ";
 
         $paths = $path_locations = $indegree = $outdegree = array();
-        $rec = mysql_query($sql);
+        $rec = mysql_unbuffered_query($sql);
         while ($res = mysql_fetch_assoc($rec)) {
             $id = $res['id'];
             $from_user_name = $res['from_user_name'];
@@ -83,6 +83,7 @@ require_once './common/Gexf.class.php';
                 $path_locations[$in_reply_to_status_id] = $curloc;
             }
         }
+        mysql_free_result($rec);
 
         // calculate how many nodes there are per path
         $paths_node_counts = $todo = array();

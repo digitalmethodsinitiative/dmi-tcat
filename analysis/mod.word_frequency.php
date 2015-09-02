@@ -40,7 +40,7 @@ $minf = isset($_GET['minf']) ? $minf = $_GET['minf'] : 1;
         $sql .= sqlSubset();
         //$sql .= " GROUP BY datepart ORDER BY datepart ASC";
         $sql .= " ORDER BY datepart ASC";
-        $sqlresults = mysql_query($sql);
+        $sqlresults = mysql_unbuffered_query($sql);
         if ($sqlresults) {
             while ($data = mysql_fetch_assoc($sqlresults)) {
                 $text = $data["text"];
@@ -52,6 +52,7 @@ $minf = isset($_GET['minf']) ? $minf = $_GET['minf'] : 1;
                     fputs($tempfile, "\"$datepart\" \"$word\"\n");
                 }
             }
+            mysql_free_result($sqlresults);
         }
 
         if (function_exists('eio_fsync')) { eio_fsync($tempfile); }

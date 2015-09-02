@@ -57,7 +57,7 @@ require_once './common/CSV.class.php';
 
         $hashtagUsers = $hashtagCount = $hashtagMentions = $hashtagDistinctMentions = $hashtagUsers = $hashtagDistinctUsers = array();
 
-        $sqlresults = mysql_query($sql);
+        $sqlresults = mysql_unbuffered_query($sql);
         while ($res = mysql_fetch_assoc($sqlresults)) {
             if (!isset($hashtagUsers[$res['h1']][$res['user']]))
                 $hashtagUsers[$res['h1']][$res['user']] = 0;
@@ -66,6 +66,7 @@ require_once './common/CSV.class.php';
                 $hashtagCount[$res['h1']] = 0;
             $hashtagCount[$res['h1']]++;
         }
+        mysql_free_result($sqlresults);
         foreach ($hashtagUsers as $hashtag => $users)
             $hashtagDistinctUsers[$hashtag] = count($users);
 
@@ -73,12 +74,13 @@ require_once './common/CSV.class.php';
         $sql = "SELECT m.to_user COLLATE $collation AS u, h.text COLLATE $collation AS h1 FROM " . $esc['mysql']['dataset'] . "_hashtags h, " . $esc['mysql']['dataset'] . "_mentions m, " . $esc['mysql']['dataset'] . "_tweets t";
         $sql .= sqlSubset() . " AND ";
         $sql .= "h.tweet_id = m.tweet_id AND h.tweet_id = t.id";
-        $rec = mysql_query($sql);
+        $rec = mysql_unbuffered_query($sql);
         while ($res = mysql_fetch_assoc($rec)) {
             if (!isset($hashtagMentions[$res['h1']][$res['u']]))
                 $hashtagMentions[$res['h1']][$res['u']] = 0;
             $hashtagMentions[$res['h1']][$res['u']]++;
         }
+        mysql_free_result($rec);
         foreach ($hashtagMentions as $hashtag => $mentions) {
             $hashtagDistinctMentions[$hashtag] = count($mentions);
             $hashtagMentions[$hashtag] = array_sum($mentions);
