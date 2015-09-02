@@ -826,7 +826,7 @@ function get_all_datasets() {
 
 function get_total_nr_of_tweets() {
     $select = "SHOW TABLES LIKE '%_tweets'";
-    $rec = mysql_unbuffered_query($select);
+    $rec = mysql_query($select);
     $count = 0;
     while ($res = mysql_fetch_row($rec)) {
         $sql = "SELECT COUNT(id) FROM " . $res[0];
@@ -836,7 +836,6 @@ function get_total_nr_of_tweets() {
             $count += $res2[0];
         }
     }
-    mysql_free_result($rec);
     return $count;
 }
 
