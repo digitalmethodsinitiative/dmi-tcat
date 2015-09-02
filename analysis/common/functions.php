@@ -846,7 +846,7 @@ function xml_escape($stuff) {
 // connect to the database
 function db_connect($db_host, $db_user, $db_pass, $db_name) {
     global $connection;
-    $connection = mysql_pconnect($db_host, $db_user, $db_pass);
+    $connection = mysql_connect($db_host, $db_user, $db_pass);
     if (!mysql_select_db($db_name, $connection))
         die("could not connect");
     if (!mysql_set_charset('utf8mb4', $connection)) {
