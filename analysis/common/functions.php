@@ -533,7 +533,9 @@ function generate($what, $filename) {
                 $csv->newrow();
                 $csv->addfield($group);
                 $csv->addfield($thing);
-                $csv->addfield($count);
+                $exp = explode(",", $count);    // unpack what we packed
+                $csv->addfield($exp[0]);
+                $csv->addfield($exp[1]);
                 $csv->writerow();
             }
         }
