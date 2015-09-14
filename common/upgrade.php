@@ -430,7 +430,14 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
             $ans = 'SKIP';
         }
     }
-    if ( $ans != 'SKIP' ) {
+    /* Skip the test during a dry-run if an upgrade has already been suggested, or when the auto-upgrade level is not high enough. */
+    if ( $ans != 'SKIP' && (($suggested == false && $required == false) || $dry_run == false) ) {
+        /*
+         * After n seconds of testing and no positive results, we assume the bins do not require updating.
+         * Unfortunately MySQL versions below 5.7.4 do not allow us to specify a timeout per query.
+         */
+        $total_test_time = 5;
+        $t1 = time();
         foreach ($all_bins as $bin) {
             if ($single && $bin !== $single) { continue; }
             /*
@@ -444,27 +451,34 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
              * Caveat: If the original tweet was exactly 140 characters, and the truncated retweet as well, this test will fail
              *         to detect it and still return 0 for that specific retweet. However, we can assume it will find other, more common,
              *         tweets that do return 1.
+             * Update 14/09/2015: The test query still took to much time on installations with very large bins. We now limit the total
+             *         execution time of all tests.
              */
-            $tester = "select count(*) as count from " . $bin . "_tweets A inner join " . $bin . "_tweets B on A.retweet_id = B.id where LENGTH(A.text) != LENGTH(B.text) + LENGTH(B.from_user_name) + LENGTH('RT @: ') or substr(A.text, position('@' in A.text) + 1, position(': ' in A.text) - 5) != B.from_user_name limit 1";
+            $tester = "select exists ( select 1 from " . $bin . "_tweets A inner join " . $bin . "_tweets B on A.retweet_id = B.id where LENGTH(A.text) != LENGTH(B.text) + LENGTH(B.from_user_name) + LENGTH('RT @: ') or substr(A.text, position('@' in A.text) + 1, position(': ' in A.text) - 5) != B.from_user_name limit 1 ) as `exists`";
             $rec = $dbh->prepare($tester);
             $rec->execute();
-            $results = $rec->fetch(PDO::FETCH_ASSOC);
-            $count = isset($results['count']) ? $results['count'] : 0;
-            if ($count > 0) {
+            $res = $rec->fetch(PDO::FETCH_ASSOC);
+            if ($res['exists'] === 1) {
                 if ($dry_run) {
                     $suggested = true;
+                    break;
+                } else {
+                    if ($interactive && $ans !== 'a') {
+                        $ans = cli_yesnoall("Use the original retweet text and username for truncated tweets in bin $bin - this will ALTER tweet contents", 2, 'n/a');
+                    }
+                    if ($ans == 'y' || $ans == 'a') {
+                        logit("cli", "Using original retweet text and username for tweets in bin $bin");
+                        /* Note: original tweet may have been length 140 and truncated retweet may have length 140,
+                         * therefore we need to check for more than just length. Here we update everything with length >= 140 and ending with '...' */
+                        $fixer = "update $bin" . "_tweets A inner join " . $bin . "_tweets B on A.retweet_id = B.id set A.text = CONCAT('RT @', B.from_user_name, ': ', B.text) where (length(A.text) >= 140 and A.text like '%…') or substr(A.text, position('@' in A.text) + 1, position(': ' in A.text) - 5) != B.from_user_name";
+                        $rec = $dbh->prepare($fixer);
+                        $rec->execute();
+                    }
                 }
-                if ($interactive && $ans !== 'a') {
-                    $ans = cli_yesnoall("Use the original retweet text and username for truncated tweets in bin $bin - this will ALTER tweet contents", 2, 'n/a');
-                }
-                if ($ans == 'y' || $ans == 'a') {
-                    logit("cli", "Using original retweet text and username for tweets in bin $bin");
-                    /* Note: original tweet may have been length 140 and truncated retweet may have length 140,
-                     * therefore we need to check for more than just length. Here we update everything with length >= 140 and ending with '...' */
-                    $fixer = "update $bin" . "_tweets A inner join " . $bin . "_tweets B on A.retweet_id = B.id set A.text = CONCAT('RT @', B.from_user_name, ': ', B.text) where (length(A.text) >= 140 and A.text like '%…') or substr(A.text, position('@' in A.text) + 1, position(': ' in A.text) - 5) != B.from_user_name";
-                    $rec = $dbh->prepare($fixer);
-                    $rec->execute();
-                }
+            }
+            $t2 = time();
+            if ($t2 - $t1 > $total_test_time) {
+                break;
             }
         }
     }

@@ -73,6 +73,7 @@ require_once './common/CSV.class.php';
             $sql .= " ORDER BY id";
 
         // loop over results and write to file
+        #print $sql."<br>";
         $sqlresults = mysql_query($sql);
         if ($sqlresults) {
             while ($data = mysql_fetch_assoc($sqlresults)) {
@@ -92,7 +93,8 @@ require_once './common/CSV.class.php';
                     $urls = $expanded = $followed = $domain = $error = $media = $media_ids = $media_urls = $media_type = $photo_width = $photo_height = $photo_resize = $indice_start = $indice_end = array();
                     // lookup urls
                     if (array_search("urls", $exportSettings) !== false) {
-                        $sql2 = "SELECT * FROM " . $esc['mysql']['dataset'] . "_urls WHERE tweet_id = " . $data['id'];
+                        $sql2 = "SELECT * FROM " . $esc['mysql']['dataset'] . "_urls WHERE tweet_id = " . $id;
+                        #print $sql2."<br>";
                         $rec2 = mysql_query($sql2);
                         if (mysql_num_rows($rec2) > 0) {
                             while ($res2 = mysql_fetch_assoc($rec2)) {
@@ -106,7 +108,7 @@ require_once './common/CSV.class.php';
                     }
                     // lookup media from media table
                     if (array_search("media", $exportSettings) !== false) {
-                        $sql3 = "SELECT * FROM " . $esc['mysql']['dataset'] . "_media WHERE tweet_id = " . $data['id'];
+                        $sql3 = "SELECT * FROM " . $esc['mysql']['dataset'] . "_media WHERE tweet_id = " . $id;
                         $rec3 = mysql_query($sql3);
                         if (mysql_num_rows($rec3) > 0) {
                             while ($res3 = mysql_fetch_assoc($rec3)) {
