@@ -453,17 +453,18 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
             if ($count > 0) {
                 if ($dry_run) {
                     $suggested = true;
-                }
-                if ($interactive && $ans !== 'a') {
-                    $ans = cli_yesnoall("Use the original retweet text and username for truncated tweets in bin $bin - this will ALTER tweet contents", 2, 'n/a');
-                }
-                if ($ans == 'y' || $ans == 'a') {
-                    logit("cli", "Using original retweet text and username for tweets in bin $bin");
-                    /* Note: original tweet may have been length 140 and truncated retweet may have length 140,
-                     * therefore we need to check for more than just length. Here we update everything with length >= 140 and ending with '...' */
-                    $fixer = "update $bin" . "_tweets A inner join " . $bin . "_tweets B on A.retweet_id = B.id set A.text = CONCAT('RT @', B.from_user_name, ': ', B.text) where (length(A.text) >= 140 and A.text like '%…') or substr(A.text, position('@' in A.text) + 1, position(': ' in A.text) - 5) != B.from_user_name";
-                    $rec = $dbh->prepare($fixer);
-                    $rec->execute();
+                } else {
+                    if ($interactive && $ans !== 'a') {
+                        $ans = cli_yesnoall("Use the original retweet text and username for truncated tweets in bin $bin - this will ALTER tweet contents", 2, 'n/a');
+                    }
+                    if ($ans == 'y' || $ans == 'a') {
+                        logit("cli", "Using original retweet text and username for tweets in bin $bin");
+                        /* Note: original tweet may have been length 140 and truncated retweet may have length 140,
+                         * therefore we need to check for more than just length. Here we update everything with length >= 140 and ending with '...' */
+                        $fixer = "update $bin" . "_tweets A inner join " . $bin . "_tweets B on A.retweet_id = B.id set A.text = CONCAT('RT @', B.from_user_name, ': ', B.text) where (length(A.text) >= 140 and A.text like '%…') or substr(A.text, position('@' in A.text) + 1, position(': ' in A.text) - 5) != B.from_user_name";
+                        $rec = $dbh->prepare($fixer);
+                        $rec->execute();
+                    }
                 }
             }
         }
