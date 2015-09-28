@@ -54,10 +54,10 @@ $twitter_user_token = "";
 $twitter_user_secret = "";
 
 $twitter_keys = array(
-    array("twitter_consumer_key" => "$twitter_consumer_key",
-          "twitter_consumer_secret" => "$twitter_consumer_secret",
-          "twitter_user_token" => "$twitter_user_token",
-          "twitter_user_secret" => "$twitter_user_secret",
+    array("twitter_consumer_key" => $twitter_consumer_key,
+          "twitter_consumer_secret" => $twitter_consumer_secret,
+          "twitter_user_token" => $twitter_user_token,
+          "twitter_user_secret" => $twitter_user_secret,
     )
 );
 
