@@ -56,10 +56,10 @@ $twitter_user_secret = "";
 // List of additional keys to loop over when there is a limited amount of requests per key, e.g. search
 // twitter_keys is an array of arrays listing different Twitter API keys
 $twitter_keys = array(
-    array("twitter_consumer_key" => "",
-        "twitter_consumer_secret" => "",
-        "twitter_user_token" => "",
-        "twitter_user_secret" => "",
+    array("twitter_consumer_key" => $twitter_consumer_key,
+        "twitter_consumer_secret" => $twitter_consumer_secret,
+        "twitter_user_token" => $twitter_user_token,
+        "twitter_user_secret" => $twitter_user_secret,
     )
 );
 
