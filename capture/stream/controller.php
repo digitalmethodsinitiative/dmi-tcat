@@ -147,7 +147,7 @@ foreach ($roles as $role) {
 
                 // notify user via email when we restart an idle script
                 if (!$reload && $idled && isset($mail_to) && trim($mail_to) != "")
-                    mail($mail_to, "DMI-TCAT controller killed a process", $restartmsg);
+                    mail($mail_to, "DMI-TCAT controller killed a process (server: " . getHostName() . ")" , $restartmsg, 'From: no-reply@dmitcat');
 
                 if (script_lock($role, true) === true) {
                     // restart script
