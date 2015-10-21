@@ -410,13 +410,21 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
     if ($update) {
         $suggested = true;
         $required = true;        // this is a bugfix, therefore required
-        $update = false;
-    }
-    if ($update) {
-        logit("cli", "Changing column type for column user_id in table tcat_query_bins_users");
-        $query = "ALTER TABLE tcat_query_bins_users MODIFY `user_id` BIGINT NULL";
-        $rec = $dbh->prepare($query);
-        $rec->execute();
+        if ($dry_run == false) {
+            // in non-interactive mode we always execute, because the complexity level is: trivial
+            if ($interactive) {
+                $ans = cli_yesnoall("Change column type for user_id in table tcat_query_bins_users to BIGINT", 0, 'n/a');
+                if ($ans != 'a' && $ans != 'y') {
+                    $update = false;
+                }
+            }
+            if ($update) {
+                logit("cli", "Changing column type for column user_id in table tcat_query_bins_users");
+                $query = "ALTER TABLE tcat_query_bins_users MODIFY `user_id` BIGINT NULL";
+                $rec = $dbh->prepare($query);
+                $rec->execute();
+            }
+        }
     }
 
     // 13/08/2015 Use original retweet text for all truncated tweets & original/cached user for all retweeted tweets
