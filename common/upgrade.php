@@ -18,7 +18,11 @@
  * @package dmitcat
  */
 
-if (php_sapi_name() == 'cli' || php_sapi_name() == 'cgi-fcgi') {
+function env_is_cli() {
+    return (!isset($_SERVER['SERVER_SOFTWARE']) && (php_sapi_name() == 'cli' || (is_numeric($_SERVER['argc']) && $_SERVER['argc'] > 0)));
+}
+
+if (env_is_cli()) {
     include_once("../config.php");
     include "functions.php";
     include "../capture/common/functions.php";
@@ -498,7 +502,7 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
     }
 }
 
-if (php_sapi_name() == 'cli' || php_sapi_name() == 'cgi-fcgi') {
+if (env_is_cli()) {
     // make sure only one upgrade script is running
     $thislockfp = script_lock('upgrade');
     if (!is_resource($thislockfp)) {

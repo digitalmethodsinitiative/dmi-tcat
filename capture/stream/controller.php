@@ -1,7 +1,11 @@
 <?php
 
+function env_is_cli() {
+    return (!isset($_SERVER['SERVER_SOFTWARE']) && (php_sapi_name() == 'cli' || (is_numeric($_SERVER['argc']) && $_SERVER['argc'] > 0)));
+}
+
 // ----- only run from command line -----
-if (php_sapi_name() !== 'cli' && php_sapi_name() !== 'cgi-fcgi')
+if (!env_is_cli())
     die;
 
 include_once("../../config.php");
