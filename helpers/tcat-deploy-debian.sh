@@ -41,6 +41,13 @@ while [ -z "$DBPASS" ]; do
       DBPASS=$DBPASS1
    fi
 done
+tput setaf 1
+echo "!!"
+echo "Remember to REPEAT this password later during the install, when you are asked: \"New password for the MariaDB \"root\" user\" !!"
+echo "!!"
+tput sgr0
+echo "(press enter once to continue ..)"
+read
 read -p "Please provide a (new) username for the TCAT MySQL database (for example: tcatdbuser, but don't use root): " TCATMYSQLUSER
 TCATMYSQLPASS=""
 while [ -z "$TCATMYSQLPASS" ]; do
@@ -54,7 +61,7 @@ while [ -z "$TCATMYSQLPASS" ]; do
       TCATMYSQLPASS=$MYSQLPASS1
    fi
 done
-read -p "Please provide a TCAT administrative username for the web-frontend (for example: admin) " TCATADMINUSER
+read -p "Please provide a TCAT administrative username for the web-frontend (for example admin): " TCATADMINUSER
 TCATADMINPASS=""
 while [ -z "$TCATADMINPASS" ]; do
    read -s -p "TCAT administrative password: " TCATADMINPASS1
@@ -97,14 +104,21 @@ done
 echo ""
 echo "Thank you. Now starting installation ..."
 echo ""
+
 tput bold
-echo "Installing MySQL server and Apache webserver ..."
+echo "Installing basic prerequisites ..."
 tput sgr0
 echo ""
 
 apt-get update
 apt-get -y upgrade
-apt-get install wget
+apt-get -y install wget debsums
+
+tput bold
+echo "Installing MySQL server and Apache webserver ..."
+tput sgr0
+echo ""
+
 wget http://dev.mysql.com/get/mysql-apt-config_0.3.5-1debian8_all.deb
 dpkg -i mysql-apt-config_0.3.5-1debian8_all.deb
 apt-get -y install mariadb-server apache2-mpm-prefork apache2-utils libapache2-mod-php5 php5-mysql php5-curl php5-cli php5-geos php-patchwork-utf8 git curl
@@ -266,10 +280,10 @@ while [ $INPUT -ne 1 ] && [ $INPUT -ne 2 ] && [ $INPUT -ne 3 ]; do
         echo "Using role: track"
    elif [ $INPUT -eq 2 ]; then
         echo "Using role: follow"
-	sed -i "s/array(\"track\")/array(\"follow\")/g" /var/www/dmi-tcat/config.php
+        sed -i "s/array(\"track\")/array(\"follow\")/g" /var/www/dmi-tcat/config.php
    elif [ $INPUT -eq 3 ]; then
         echo "Using role: onepercent"
-	sed -i "s/array(\"track\")/array(\"onepercent\")/g" /var/www/dmi-tcat/config.php
+        sed -i "s/array(\"track\")/array(\"onepercent\")/g" /var/www/dmi-tcat/config.php
    else
         echo "Unrecognized input. Please try again."
    fi
@@ -286,6 +300,64 @@ sed -i "s/^\$twitter_consumer_key = \"\";/\$twitter_consumer_key = \"$CONSUMERKE
 sed -i "s/^\$twitter_consumer_secret = \"\";/\$twitter_consumer_secret = \"$CONSUMERSECRET\";/g" /var/www/dmi-tcat/config.php
 sed -i "s/^\$twitter_user_token = \"\";/\$twitter_user_token = \"$USERTOKEN\";/g" /var/www/dmi-tcat/config.php
 sed -i "s/^\$twitter_user_secret = \"\";/\$twitter_user_secret = \"$USERSECRET\";/g" /var/www/dmi-tcat/config.php
+
+# Check if the current MySQL configuration is the system default one
+CHANGEDMYCNF=`debsums -ce | grep -c -e "/etc/mysql/my.cnf"`
+if [ "$CHANGEDMYCNF" == "0" ]; then
+    echo ""
+    read -p "Would you like me to autoconfigure your MySQL servers memory profile (recommended only for single-purpose TCAT servers) ([y]es/[n]o)?" YESNO
+    while [ "$YESNO" != "y" ] && [ "$YESNO" != "n" ]; do
+        echo "Unrecognized input. Please enter y or n"
+        read YESNO
+    done
+    if [ "$YESNO" == "y" ]; then
+        echo ""
+        tput bold
+        echo "Attempting to adjust MySQL server profile ..."
+        tput sgr0
+        echo ""
+        MAXMEM=`free -m | head -n 2 | tail -n 1 | tr -s ' ' | cut -d ' ' -f 2`
+        # Make this an integer, and non-empty for bash
+        MAXMEM=${MAXMEM//[^[:digit:]]/0}
+        MAXMEM=${MAXMEM//^$/0}
+        echo "Maximum machine memory detected: $MAXMEM Mb"
+        if [ "$MAXMEM" -lt "1024" ]; then
+            echo "This machine has a limited ammount of memory; leaving system defaults in place."
+        else
+            # Set the key buffer to 1/3 of system memory
+            SIZE=$(($MAXMEM/3))
+            echo "key_buffer              = $SIZE""M" >> /etc/mysql/conf.d/tcat-autoconfigured.cnf
+            if [ "$MAXMEM" -gt "1024" ]; then
+                # Set the query cache limit to 128 Mb
+                echo "query_cache_limit       = 128M" >> /etc/mysql/conf.d/tcat-autoconfigured.cnf
+            else
+                # For machines with 1G memory or less, set the query cache limit to 64 Mb
+                echo "query_cache_limit       = 64M" >> /etc/mysql/conf.d/tcat-autoconfigured.cnf
+            fi
+            # Set the total query cache size to 1/8 of systemn emory
+            SIZE=$(($MAXMEM/8))
+            echo "query_cache_size        = $SIZE""M" >> /etc/mysql/conf.d/tcat-autoconfigured.cnf
+            # Increase sizes of temporary tables (memory sort tables for doing a GROUP BY) for machines with sufficient memory
+            if [ "$MAXMEM" -gt "7168" ]; then
+                echo "tmp_table_size          = 1G" >> /etc/mysql/conf.d/tcat-autoconfigured.cnf
+                echo "max_heap_table_size     = 1G" >> /etc/mysql/conf.d/tcat-autoconfigured.cnf
+            elif [ "$MAXMEM" -gt "3072" ]; then
+                echo "tmp_table_size          = 256M" >> /etc/mysql/conf.d/tcat-autoconfigured.cnf
+                echo "max_heap_table_size     = 256M" >> /etc/mysql/conf.d/tcat-autoconfigured.cnf
+            fi
+            # Unless we have a machine capable of performing many heavy queries simultaneously,
+            # it is sensible to restrict the maximum number of client connections. This will reduce the overcommitment of memory.
+            # The default max_connections for MySQL 5.6 is 150. In any case, even 80 is still a high figure.
+            if [ "$MAXMEM" -lt "31744" ]; then
+                echo "max_connections         = 80" >> /etc/mysql/conf.d/tcat-autoconfigured.cnf
+            fi
+            echo "Memory profile adjusted"
+            # Finally, reload MySQL server configuration
+            echo "Reloading service ... "
+            systemctl reload mysql
+        fi
+    fi
+fi
 
 echo ""
 tput bold
