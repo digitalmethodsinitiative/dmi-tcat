@@ -324,6 +324,7 @@ if [ "$CHANGEDMYCNF" == "0" ]; then
         if [ "$MAXMEM" -lt "1024" ]; then
             echo "This machine has a limited ammount of memory; leaving system defaults in place."
         else
+            echo "[mysqld]" > /etc/mysql/conf.d/tcat-autoconfigured.cnf
             # Set the key buffer to 1/3 of system memory
             SIZE=$(($MAXMEM/3))
             echo "key_buffer              = $SIZE""M" >> /etc/mysql/conf.d/tcat-autoconfigured.cnf
