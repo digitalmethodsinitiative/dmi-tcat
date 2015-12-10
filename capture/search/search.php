@@ -46,12 +46,12 @@ create_bin($bin_name, $dbh);
 
 $ratefree = 0;
 
+queryManagerCreateBinFromExistingTables($bin_name, $querybin_id, $type, explode("OR", $keywords));
+
 search($keywords);
 if ($tweetQueue->length() > 0) {
     $tweetQueue->insertDB();
 }
-
-queryManagerCreateBinFromExistingTables($bin_name, $querybin_id, $type, explode("OR", $keywords));
 
 function search($keywords, $max_id = null) {
     global $twitter_keys, $current_key, $ratefree, $bin_name, $dbh, $tweetQueue;
