@@ -23,6 +23,7 @@ $querybin_id = queryManagerBinExists($bin_name);
 
 $dbh = pdo_connect();
 create_bin($bin_name, $dbh);
+queryManagerCreateBinFromExistingTables($bin_name, $querybin_id, 'import gnip');
 
 $all_files = glob("$dir/*");
 
@@ -36,8 +37,6 @@ for ($i = 0; $i < $count; ++$i) {
     process_json_file_timeline($filepath, $dbh);
     print $c-- . "\n";
 }
-
-queryManagerCreateBinFromExistingTables($bin_name, $querybin_id, 'import gnip');
 
 function process_json_file_timeline($filepath, $dbh) {
     print $filepath . "\n";

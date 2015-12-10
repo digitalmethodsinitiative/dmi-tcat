@@ -50,6 +50,7 @@ $querybin_id = queryManagerBinExists($bin_name);
 $ratefree = $current_key = $looped = 0;
 
 create_bin($bin_name, $dbh);
+queryManagerCreateBinFromExistingTables($bin_name, $querybin_id, $type);
 
 $tweetQueue = new TweetQueue();
 
@@ -63,8 +64,6 @@ foreach ($user_ids as $user_id) {
 if ($tweetQueue->length() > 0) {
     $tweetQueue->insertDB();
 }
-
-queryManagerCreateBinFromExistingTables($bin_name, $querybin_id, $type);
 
 function get_timeline($user_id, $type, $max_id = null) {
     print "doing $user_id\n";

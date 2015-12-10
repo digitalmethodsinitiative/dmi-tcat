@@ -41,9 +41,9 @@ create_bin($bin_name, $dbh);
 
 $tweetQueue = new TweetQueue();
 
-search($idlist);
-
 queryManagerCreateBinFromExistingTables($bin_name, $querybin_id, 'import tweetset');
+
+search($idlist);
 
 function search($idlist) {
     global $twitter_keys, $current_key, $all_users, $all_tweet_ids, $bin_name, $dbh, $tweetQueue;

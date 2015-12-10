@@ -43,6 +43,7 @@ $query->execute();
 
 // create new tables
 create_bin($bin_name, $dbh);
+queryManagerCreateBinFromExistingTables($bin_name, $querybin_id, 'import ytk', $queries);
 
 // insert old data in new tables
 while ($row = $query->fetch(PDO::FETCH_ASSOC)) {
@@ -193,5 +194,4 @@ while ($row = $query->fetch(PDO::FETCH_ASSOC)) {
     $q->execute();
 }
 
-queryManagerCreateBinFromExistingTables($bin_name, $querybin_id, 'import ytk', $queries);
 ?>
