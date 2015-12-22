@@ -186,7 +186,7 @@ require_once './common/functions.php';
 
 
 		// let's add more qualifications to the link
-        $content .= "edgedef>node1 VARCHAR,node2 VARCHAR,weight DOUBLE,socialslope DOUBLE\n";
+        $content .= "edgedef>node1 VARCHAR,node2 VARCHAR,weight DOUBLE,socialslope DOUBLE\n,directed BOOLEAN";
 
         foreach ($edges as $key => $value) {
 
@@ -208,7 +208,7 @@ require_once './common/functions.php';
 				$slope = $to / $from;
 			}
 
-            $content .= $key . "," . $value . "," . $slope . "\n";
+            $content .= $key . "," . $value . "," . $slope . ",true\n";
         }
 
         $filename = get_filename_for_export("mention","","gdf");
