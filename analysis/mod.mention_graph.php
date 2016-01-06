@@ -105,11 +105,11 @@ require_once './common/functions.php';
             }
         }
 
-        $content .= "edgedef>node1 VARCHAR,node2 VARCHAR,weight DOUBLE\n";
+        $content .= "edgedef>node1 VARCHAR,node2 VARCHAR,weight DOUBLE,directed BOOLEAN\n";
         foreach ($edges as $key => $value) {
 			$tmp = explode(",", $key);
 			if(isset($topusers[$usersinv[$tmp[0]]]) && isset($topusers[$usersinv[$tmp[1]]])) {
-            	$content .= $key . "," . $value . "\n";
+            	$content .= $key . "," . $value . ",true\n";
 			}
         }
 
