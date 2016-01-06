@@ -39,11 +39,39 @@ $all_users = $all_tweet_ids = array();
 $dbh = pdo_connect();
 create_bin($bin_name, $dbh);
 
+/* filter out the ids already in the database */
+$ids_in_db = array();
+for ($i = 0; $i < sizeof($idlist); $i += 3000) {
+    $query = "select id from $bin_name" . '_tweets where id in ( ' . $idlist[$i];
+    $n = $i + 1;
+    while ($n < $i + 100) {
+        if (!isset($idlist[$n])) break;
+        $query .= ", " . $idlist[$n];
+        $n++;
+    }
+    $query .= ")";
+    $rec = $dbh->prepare($query);
+    $rec->execute();
+    $results = $rec->fetchAll(PDO::FETCH_COLUMN);
+    foreach ($results as $f => $v) {
+        $ids_in_db[] = $v;
+    }
+}
+$orig_size = count($idlist);
+$idlist = array_diff($idlist, $ids_in_db);
+$idlist = array_values($idlist);			// re-index is needed
+$new_size = count($idlist);
+if ($new_size < $orig_size) {
+    print "skipping " . ($orig_size - $new_size) . " tweets from id list because they are already in our database\n";
+}
+
 $tweetQueue = new TweetQueue();
 
 queryManagerCreateBinFromExistingTables($bin_name, $querybin_id, 'import tweetset');
 
 search($idlist);
+
+$retries = 0;
 
 function search($idlist) {
     global $twitter_keys, $current_key, $all_users, $all_tweet_ids, $bin_name, $dbh, $tweetQueue;
@@ -52,7 +80,7 @@ function search($idlist) {
     $current_key = $keyinfo['key'];
     $ratefree = $keyinfo['remaining'];
 
-    print "current key $current_key ratefree $ratefree\n";
+    print "\ncurrent key $current_key ratefree $ratefree\n";
 
     $tmhOAuth = new tmhOAuth(array(
                 'consumer_key' => $twitter_keys[$current_key]['twitter_consumer_key'],
@@ -65,6 +93,7 @@ function search($idlist) {
     for ($i = 0; $i < sizeof($idlist); $i += 100) {
 
 	    if ($ratefree <= 0 || $ratefree % 10 == 0) {
+            print "\n";
     		$keyinfo = getRESTKey($current_key);
     		$current_key = $keyinfo['key'];
     		$ratefree = $keyinfo['remaining'];
@@ -96,6 +125,8 @@ function search($idlist) {
 
 	    $ratefree--;
 
+        $reset_connection = false;
+
         if ($tmhOAuth->response['code'] == 200) {
             $data = json_decode($tmhOAuth->response['response'], true);
 
@@ -123,15 +154,43 @@ function search($idlist) {
                 print ".";
             }
             sleep(1);
-        } else {
-            echo "Failure with code " . $tmhOAuth->response['response']['code'] . "\n";
+            $retries = 0;   // reset retry counter on success
+        } else if ($retries < 4 && $tmhOAuth->response['code'] == 503) {
+            /* this indicates problems on the Twitter side, such as overcapacity. we slow down and retry the connection */
+            print "!";
+            sleep(7);
+            $i--;  // rewind
+            $retries++;
+            $reset_connection = true;
+        } else if ($retries < 4) {
+            print "\n"; 
+            print "Failure with code " . $tmhOAuth->response['response']['code'] . "\n";
             var_dump($tmhOAuth->response['response']['info']);
             var_dump($tmhOAuth->response['response']['error']);
             var_dump($tmhOAuth->response['response']['errno']);
-            die();
+            print "The above error may not be permanent. We will sleep and retry the request.\n";
+            sleep(7);
+            $i--;  // rewind
+            $retries++;
+            $reset_connection = true;
+        } else {
+            print "\n";
+            print "Permanent error when querying the Twitter API. Please investigate the error output. Now stopping.\n";
+            exit(1);
         }
 
-        $tweetQueue->insertDB();
+        if ($reset_connection) {
+            $tmhOAuth = new tmhOAuth(array(
+                        'consumer_key' => $twitter_keys[$current_key]['twitter_consumer_key'],
+                        'consumer_secret' => $twitter_keys[$current_key]['twitter_consumer_secret'],
+                        'token' => $twitter_keys[$current_key]['twitter_user_token'],
+                        'secret' => $twitter_keys[$current_key]['twitter_user_secret'],
+                    ));
+            $reset_connection = false;
+        } else {
+            $tweetQueue->insertDB();
+        }
+
     }
 }
 ?>
