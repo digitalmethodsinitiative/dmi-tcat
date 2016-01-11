@@ -57,7 +57,26 @@ if (defined('ANALYSIS_URL'))
             "&graph_resolution=" + $("input[name=graph_resolution]:checked").val() +
             "&outputformat=" + outputformat;
 
-        document.location.href = _url;
+        /* verify server load */
+        $.ajax({
+            url: "ajax.serverload.php",
+            success: function(data){
+                    var load = parseInt(data.substr(0,1));
+                    var go = true
+                    if (load == 2) {
+                        alert('The load on the server is currently too high to continue. Please try again later.');
+                        go = false;
+                    } // else if (load == 1 && !confirm('The load on the server is currently above normal. Are you sure you wish to continue?')) {
+                      //  go = false;
+                      // }
+                    if (go) {
+                        document.location.href = _url;
+                    }
+                },
+            error: function(data){
+                    document.location.href = _url;
+                }
+            });
     }
     function saveSvg(id){
         $("svg").attr({ version: '1.1' , xmlns:"http://www.w3.org/2000/svg"});
@@ -240,7 +259,21 @@ if (defined('ANALYSIS_URL'))
                             <td class="tbl_head">Enddate:</td><td><input type="text" id="ipt_enddate" size="60" name="enddate" value="<?php echo $enddate; ?>" /> (YYYY-MM-DD or YYYY-MM-DD HH:MM:SS)</td>
                         </tr>
                         <tr>
-                            <td><input type="submit" value="update overview" /></td>
+                            <td valign="middle" style='padding-top: 4px'><input type="submit" value="update overview" /></td>
+                            <td valign="middle"><script type="text/javascript">
+                                function updatestatus() {
+                                    $.ajax({
+                                    url: "ajax.serverload.php",
+                                    success: function(data){
+                                            $('#loadstatus').html(data.substr(1));
+                                        }
+                                    });
+                                }
+                                updatestatus();
+                                setInterval(updatestatus, 3000);
+                                </script>
+                                <span id="loadstatus"></span>
+                            </td>
                         </tr>
                         <tr><td colspan='2'>*  You can also do AND <b>or</b> OR queries, although you cannot mix AND and OR in the same query.</td></tr>
                     </table>
