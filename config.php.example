@@ -149,7 +149,7 @@ ini_set("memory_limit", "2G");
 
 /* Sysload monitoring. Display a traffic light indicating system load in the analysis panel */
 
-define('TCAT_SYSLOAD_CHECKING', false;
+define('TCAT_SYSLOAD_CHECKING', false);
 
 /* If the sysload monitoring is enabled, a warning is issued when the number of running tcat queries has reached the threshold below */
 
