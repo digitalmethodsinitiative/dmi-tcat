@@ -75,7 +75,7 @@ putenv('LANG=en_US.UTF-8');
 putenv('LANGUAGE=en_US.UTF-8');
 putenv('MYSQL_PWD=' . $dbpass);     /* this avoids having to put the password on the command-line */
 
-$cmd = "$bin_mysql --default-character-set=utf8mb4 -u$dbuser -h $hostname $database < $filename";
+$cmd = "$bin_mysql --default-character-set=utf8mb4 -u$dbuser -h $hostname $database < $file";
 system($cmd);
 
 print "Import completed and queries added to TCAT.\n";
