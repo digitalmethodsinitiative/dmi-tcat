@@ -297,6 +297,8 @@ $lastRateLimitHit = getLastRateLimitHit();
             }
             echo '</td>';
             echo '<td valign="top"><a href="" onclick="sendDelete(\'' . $bin->id . '\',\'' . $bin->active . '\',\'' . $bin->type . '\'); return false;">delete</a></td>';
+            echo '<td valign="top"><a href="" onclick="sendRename(\'' . $bin->id . '\',\'' . $bin->active . '\',\'' . $bin->type . '\'); return false;">rename</a></td>';
+            echo '</tr>';
             echo '</tr>';
         }
         echo '</tbody>';
@@ -556,6 +558,35 @@ foreach ($bins as $id => $bin)
         }
         return false;
     }
+
+    function sendRename(_bin,_active,_type) {
+        
+        var _check = window.confirm("Are you sure that you want to rename this bin?");
+        
+        if(_check == true) {
+            
+            if(_active == 1) {
+                alert("The query bin is still running! You will need to stop it first.");
+                return false;
+            }
+
+            var _newname = window.prompt("Please enter the new name for your query bin.");
+
+            var _params = {action:"renamebin",bin:_bin,type:_type,active:_active,newname:_newname};
+
+            $.ajax({
+                dataType: "json",
+                url: "query_manager.php",
+                type: 'POST',
+                data: _params
+            }).done(function(_data) {
+                alert(_data["msg"]);
+                location.reload();
+            });   
+        }
+        return false;
+    }
+
 
     function sendNewForm() {
         var _type = $("#capture_type").val();
