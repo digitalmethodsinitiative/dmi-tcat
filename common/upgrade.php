@@ -495,6 +495,44 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
         }
     }
 
+    // 22/01/2016 Remove AUTO_INCREMENT from primary key and remove column user_name in tcat_query_users
+
+    $query = "SHOW FULL COLUMNS FROM tcat_query_users";
+    $rec = $dbh->prepare($query);
+    $rec->execute();
+    $results = $rec->fetchAll();
+    $update = FALSE;
+    foreach ($results as $result) {
+        if ($result['Field'] == 'id' && preg_match("/auto_increment/", $result['Extra'])) {
+            $update = TRUE;
+            break;
+        }
+    }
+    if ($update) {
+        $suggested = true;
+        $required = false;
+        if ($dry_run == false) {
+            // in non-interactive mode we always execute, because the complexity level is: trivial
+            if ($interactive) {
+                $ans = cli_yesnoall("Remove AUTO_INCREMENT from primary key and remove column user_name in tcat_query_users", 0, 'b11f11cbfb302e32f8db5dd1e883a16e7b2b0c67');
+                if ($ans != 'a' && $ans != 'y') {
+                    $update = false;
+                }
+            }
+            if ($update) {
+                logit("cli", "Removing AUTO_INCREMENT and column user_name from tcat_query_users");
+                $query = "ALTER TABLE tcat_query_users MODIFY `id` BIGINT NOT NULL";
+                $rec = $dbh->prepare($query);
+                $rec->execute();
+                $query = "ALTER TABLE tcat_query_users DROP COLUMN `user_name`";
+                $rec = $dbh->prepare($query);
+                $rec->execute();
+            }
+        }
+    }
+
+
+
     // End of upgrades
 
     if ($dry_run) {
