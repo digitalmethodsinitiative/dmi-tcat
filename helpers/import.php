@@ -34,6 +34,10 @@ if ($bin_mysql=== null) {
 if (!function_exists('gzopen')) {
     die("Apparantly your PHP installation does not have the zlib extension installed. You will need to install/enable it to continue.\n");
 }
+$bin_zcat = get_executable("zcat");
+if ($bin_zcat === null) {
+    die("The zcat binary appears to be missing. Please lookup this utility in your software repository.\n");
+}
 
 $file = $argv[1];
 
@@ -75,7 +79,7 @@ putenv('LANG=en_US.UTF-8');
 putenv('LANGUAGE=en_US.UTF-8');
 putenv('MYSQL_PWD=' . $dbpass);     /* this avoids having to put the password on the command-line */
 
-$cmd = "$bin_mysql --default-character-set=utf8mb4 -u$dbuser -h $hostname $database < $file";
+$cmd = "$bin_zcat $file | $bin_mysql --default-character-set=utf8mb4 -u$dbuser -h $hostname $database";
 system($cmd);
 
 print "Import completed and queries added to TCAT.\n";

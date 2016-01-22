@@ -48,7 +48,7 @@ putenv('MYSQL_PWD=' . $dbpass);     /* this avoids having to put the password on
 
 $bin = $argv[1];
 if (!isset($bin)) {
-    die("Cannot export bin!\n");
+    die("Please specify a bin name.\n");
 }
 $bintype = getBinType($bin);
 
@@ -71,7 +71,7 @@ switch($argv[2]) {
     }
 }
 
-$binforfile = preg_replace("/[^-_A-Za-z0-9]/", '', $bin);       /* sanitize to filename */
+$binforfile = escapeshellcmd($bin);       /* sanitize to filename */
 
 $storedir = BASE_FILE . 'analysis/' . $resultsdir;              /* resultsdir is relative to the analysis/ folder */
 $datepart = date("Y-m-d_h:i");
@@ -85,7 +85,7 @@ if (!is_writable($storedir)) {
 }
 
 if (file_exists($filename)) {
-    die("Archive file already exists!\n");
+    die("Archive file '$filename' already exists!\n");
 }
 
 set_time_limit(0);
@@ -104,6 +104,19 @@ while ($row = $q->fetch(PDO::FETCH_ASSOC)) {
     $phrases[] = $row['phrase'];
     $phrase_starttime[$row['phrase']] = $row['starttime'];
     $phrase_endtime[$row['phrase']] = $row['endtime'];
+}
+
+$users = array();
+$users_starttime = array(); $users_endtime = array();
+$sql = "SELECT DISTINCT(u.id) as id, bu.starttime as starttime, bu.endtime as endtime FROM tcat_query_users u, tcat_query_bins_users bu, tcat_query_bins b
+                                      WHERE u.id = bu.user_id AND bu.querybin_id = b.id AND b.querybin = :querybin";
+$q = $dbh->prepare($sql);
+$q->bindParam(':querybin', $bin, PDO::PARAM_STR);
+$q->execute();
+while ($row = $q->fetch(PDO::FETCH_ASSOC)) {
+    $users[] = $row['id'];
+    $users_starttime[$row['id']] = $row['starttime'];
+    $users_endtime[$row['id']] = $row['endtime'];
 }
 
 $periods = array();
@@ -140,7 +153,7 @@ if ($export == 'all') {
     }
 
     if ($string == '') {
-        die("That would dump complete database. Exiting!\n");
+        die("Empty bin name would dump the complete database. Exiting!\n");
     }
 
     $cmd = "$bin_mysqldump --default-character-set=utf8mb4 -u$dbuser -h $hostname $database $string > $filename";
@@ -162,30 +175,56 @@ fputs($fh, "--\n");
 fputs($fh, "-- DMI-TCAT - Update TCAT tables\n");
 fputs($fh, "--\n");
 
-fputs($fh, "UNLOCK TABLES;\n\n");
+/* Lock TCAT tables */
 
-$sql = "CREATE TEMPORARY TABLE temp_phrase_ids ( phrase_id bigint primary key, phrase varchar(512) );";
-fputs($fh, $sql . "\n");
+fputs($fh, "LOCK TABLES `tcat_query_bins` WRITE, `tcat_query_phrases` WRITE, `tcat_query_bins_periods` WRITE, `tcat_query_users` WRITE, `tcat_query_bins_phrases` WRITE, `tcat_query_bins_users` WRITE;\n");
 
 $sql = "INSERT INTO tcat_query_bins ( querybin, `type`, active, visible ) values ( " . $dbh->Quote($bin) . ", " . $dbh->Quote($bintype) . ", 0, 1 );";
 fputs($fh, $sql . "\n");
 
-foreach ($phrases as $phrase) {
-    $sql = "INSERT INTO tcat_query_phrases ( phrase ) values ( " . $dbh->Quote($phrase) . " );";
-    fputs($fh, $sql . "\n");
-    $sql = "INSERT INTO temp_phrase_ids ( phrase_id, phrase ) values ( LAST_INSERT_ID(), " . $dbh->Quote($phrase) . " );";
-    fputs($fh, $sql . "\n");
-}
+if ($bintype == 'track') {
 
-foreach ($phrases as $phrase) {
-    $starttime = $phrase_starttime[$phrase];
-    $endtime = $phrase_endtime[$phrase];
-    $sql = "INSERT INTO tcat_query_bins_phrases SET " .
-           " starttime = '$starttime', " .
-           " endtime = '$endtime', " .
-           " phrase_id = ( select phrase_id from temp_phrase_ids where phrase = " . $dbh->Quote($phrase) . " ), " .
-           " querybin_id = ( select MAX(id) from tcat_query_bins );";
+    $sql = "CREATE TEMPORARY TABLE temp_phrase_ids ( phrase_id bigint primary key, phrase varchar(512) );";
     fputs($fh, $sql . "\n");
+
+    foreach ($phrases as $phrase) {
+        $sql = "INSERT INTO tcat_query_phrases ( phrase ) values ( " . $dbh->Quote($phrase) . " );";
+        fputs($fh, $sql . "\n");
+        $sql = "INSERT INTO temp_phrase_ids ( phrase_id, phrase ) values ( LAST_INSERT_ID(), " . $dbh->Quote($phrase) . " );";
+        fputs($fh, $sql . "\n");
+    }
+
+    foreach ($phrases as $phrase) {
+        $starttime = $phrase_starttime[$phrase];
+        $endtime = $phrase_endtime[$phrase];
+        $sql = "INSERT INTO tcat_query_bins_phrases SET " .
+               " starttime = '$starttime', " .
+               " endtime = '$endtime', " .
+               " phrase_id = ( select phrase_id from temp_phrase_ids where phrase = " . $dbh->Quote($phrase) . " ), " .
+               " querybin_id = ( select MAX(id) from tcat_query_bins );";
+        fputs($fh, $sql . "\n");
+    }
+
+    fputs($fh, "DROP TABLE temp_phrase_ids;\n");
+
+} else if ($bintype == 'follow') {
+
+    foreach ($users as $user) {
+        $sql = "INSERT IGNORE INTO tcat_query_users ( id ) values ( $user );";
+        fputs($fh, $sql . "\n");
+    }
+
+    foreach ($users as $user) {
+        $starttime = $users_starttime[$user];
+        $endtime = $users_endtime[$user];
+        $sql = "INSERT INTO tcat_query_bins_users SET " .
+               " starttime = '$starttime', " .
+               " endtime = '$endtime', " .
+               " user_id = $user, " .
+               " querybin_id = ( select MAX(id) from tcat_query_bins );";
+        fputs($fh, $sql . "\n");
+    }
+
 }
 
 foreach ($periods as $prd) {
@@ -198,10 +237,9 @@ foreach ($periods as $prd) {
     fputs($fh, $sql . "\n");
 }
 
-fputs($fh, "DROP TABLE temp_phrase_ids;\n");
+fputs($fh, "UNLOCK TABLES;\n\n");
 
 fclose($fh);
-
 
 /* Finally gzip the file */
 
