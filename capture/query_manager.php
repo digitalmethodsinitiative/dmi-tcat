@@ -258,6 +258,120 @@ function remove_bin($params) {
     $dbh = false;
 }
 
+function pause_bin($params) {
+    global $captureroles, $now;
+
+    $dbh = pdo_connect();
+
+    if (!table_id_exists($params["bin"])) {
+        echo '{"msg":"The query bin could not be found"}';
+        return false;
+    }
+    $type = $params['type'];
+    if (array_search($type, $captureroles) === false && ($type !== 'geotrack' || array_search('track', $captureroles) === false)) {
+        echo '{"msg":"This capturing type is not defined in the config file"}';
+        return;
+    }
+
+    $querybin_id = $params["bin"];
+
+    // set the active flag in the query_bins table
+    $newstate = ($params["todo"] == "stop") ? 0 : 1;
+    $sql = "UPDATE tcat_query_bins SET active = :active WHERE id = :querybin_id";
+    $modify_bin = $dbh->prepare($sql);
+    $modify_bin->bindParam(":active", $newstate, PDO::PARAM_BOOL);
+    $modify_bin->bindParam(":querybin_id", $querybin_id, PDO::PARAM_INT);
+    $modify_bin->execute();
+
+    // manage the query_bins_periods
+    if ($params["todo"] == "stop") {
+        $sql = "SELECT distinct(id) FROM tcat_query_bins_periods WHERE querybin_id = :querybin_id AND endtime = '0000-00-00 00:00:00'";
+        $read_periods = $dbh->prepare($sql);
+        $read_periods->bindParam(":querybin_id", $querybin_id, PDO::PARAM_INT);
+        if ($read_periods->execute() && $read_periods->rowCount() > 0) {
+            $result = $read_periods->fetch();
+            $updateid = $result["id"];
+            $sql = "UPDATE tcat_query_bins_periods SET endtime = '$now' WHERE id = $updateid";
+            $update_periods = $dbh->prepare($sql);
+            $update_periods->execute();
+        }
+    } else {
+        $sql = "INSERT INTO tcat_query_bins_periods (querybin_id, starttime, endtime) VALUES (:querybin_id, '$now', '0000-00-00 00:00:00')";
+        $insert_periods = $dbh->prepare($sql);
+        $insert_periods->bindParam(":querybin_id", $querybin_id, PDO::PARAM_INT);
+        $insert_periods->execute();
+    }
+
+    if ($type == "onepercent") { // one percent does not have queries or users, only period is the bin period
+        echo '{"msg":"Your query bin has been ' . $params["todo"] . 'ed"}';
+        $dbh = false;
+        return;
+    }
+
+    // manage the phrase and user periods
+    if ($params["todo"] == "start") {
+        // get latest active queries or users
+        if ($type == "track" || $type == "geotrack")
+            $sql = "SELECT min(endtime) as min, max(endtime) AS max FROM tcat_query_bins_phrases WHERE querybin_id = :querybin_id";
+        elseif ($type == "follow")
+            $sql = "SELECT min(endtime) as min, max(endtime) AS max FROM tcat_query_bins_users WHERE querybin_id = :querybin_id";
+        $rec = $dbh->prepare($sql);
+        $rec->bindParam(":querybin_id", $querybin_id, PDO::PARAM_INT);
+        $rec->execute();
+        $res = $rec->fetch();
+        if ($res['min'] == "0000-00-00 00:00:00") // if prhases were first modified and now need to be started
+            $endtime = $res['min'];
+        else
+            $endtime = $res['max'];
+
+        if ($type == "track")
+            $sql = "SELECT phrase_id FROM tcat_query_bins_phrases WHERE querybin_id = :querybin_id AND endtime = '$endtime'";
+        elseif ($type == "follow")
+            $sql = "SELECT user_id FROM tcat_query_bins_users WHERE querybin_id = :querybin_id AND endtime = '$endtime'";
+        $read_periods = $dbh->prepare($sql);
+        $read_periods->bindParam(":querybin_id", $querybin_id, PDO::PARAM_INT);
+        $read_periods->execute();
+        $results = $read_periods->fetchAll();
+        foreach ($results as $res) {
+            if ($type == "track")
+                $sql = "INSERT tcat_query_bins_phrases (phrase_id, querybin_id, starttime, endtime) VALUES (" . $res['phrase_id'] . ", :querybin_id, '$now', '0000-00-00 00:00:00')";
+            elseif ($type == "follow")
+                $sql = "INSERT tcat_query_bins_users (user_id, querybin_id, starttime, endtime) VALUES (" . $res['user_id'] . ", :querybin_id, '$now', '0000-00-00 00:00:00')";
+            $insert_periods = $dbh->prepare($sql);
+            $insert_periods->bindParam(":querybin_id", $querybin_id, PDO::PARAM_INT);
+            $insert_periods->execute();
+        }
+    } else {
+        // stop all active queries or users
+        if ($type == "track")
+            $sql = "SELECT id, querybin_id FROM tcat_query_bins_phrases WHERE querybin_id = :querybin_id AND endtime = '0000-00-00 00:00:00'";
+        elseif ($type == "follow")
+            $sql = "SELECT id, querybin_id FROM tcat_query_bins_users WHERE querybin_id = :querybin_id AND endtime = '0000-00-00 00:00:00'";
+        $read_periods = $dbh->prepare($sql);
+        $read_periods->bindParam(":querybin_id", $querybin_id, PDO::PARAM_INT);
+        $read_periods->execute();
+        $results = $read_periods->fetchAll();
+        foreach ($results as $res) {
+            if ($type == "track")
+                $sql = "UPDATE tcat_query_bins_phrases SET endtime = '$now' WHERE querybin_id = :querybin_id AND id = " . $res['id'];
+            if ($type == "follow")
+                $sql = "UPDATE tcat_query_bins_users SET endtime = '$now' WHERE querybin_id = :querybin_id AND id = " . $res['id'];
+            $update_periods = $dbh->prepare($sql);
+            $update_periods->bindParam(":querybin_id", $querybin_id, PDO::PARAM_INT);
+            $update_periods->execute();
+        }
+    }
+
+    if ($params['todo'] == "stop")
+        $params['todo'] = "stopp";
+    if (web_reload_config_role($type)) {
+        echo '{"msg":"Your query bin has been ' . $params["todo"] . 'ed"}';
+    } else {
+        echo '{"msg":"Your query bin has been set as ' . $params["todo"] . 'ed but the ' . $type . ' script could NOT be restarted"}';
+    }
+    $dbh = false;
+}
+
 function rename_bin($params) {
     $dbh = pdo_connect();
 
