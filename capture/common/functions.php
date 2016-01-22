@@ -273,6 +273,7 @@ function create_admin() {
 
     $sql = "CREATE TABLE IF NOT EXISTS tcat_query_users (
     `id` bigint NOT NULL,
+    `user_name` varchar(255),
     PRIMARY KEY `id` (`id`)
     ) ENGINE = MyISAM DEFAULT CHARSET = utf8mb4";
     $create = $dbh->prepare($sql);
