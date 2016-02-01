@@ -528,6 +528,63 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
         }
     }
 
+    // 01/02/2016 Alter tweets tables to add new fields, ex. 'quoted_status_id'
+    
+    $query = "SHOW TABLES";
+    $rec = $dbh->prepare($query);
+    $rec->execute();
+    $results = $rec->fetchAll(PDO::FETCH_COLUMN);
+    $ans = '';
+    if ($interactive == false) {
+        // require auto-upgrade level 2
+        if ($aulevel > 1) {
+            $ans = 'a';
+        } else {
+            $ans = 'SKIP';
+        }
+    }
+    if ($ans !== 'SKIP') {
+        foreach ($results as $k => $v) {
+            if (!preg_match("/_tweets$/", $v)) continue; 
+            if ($single && $v !== $single . '_tweets') { continue; }
+            $query = "SHOW COLUMNS FROM $v";
+            $rec = $dbh->prepare($query);
+            $rec->execute();
+            $columns = $rec->fetchAll(PDO::FETCH_COLUMN);
+            $update = TRUE;
+            foreach ($columns as $i => $c) {
+                if ($c == 'quoted_status_id') {
+                    $update = FALSE;
+                    break;
+                }
+            }
+            if ($update && $dry_run) {
+                $suggested = true;
+                $update = false;
+            }
+            if ($update) {
+                if ($ans !== 'a') {
+                    $ans = cli_yesnoall("Add new columns and indexes (ex. quoted_status_id) to table $v", 2, '6b6c7ac716a9e179a2ea3e528c9374b94abdada6');
+                }
+                if ($ans == 'a' || $ans == 'y') {
+                    logit("cli", "Adding new columns (ex. quoted_status_id) to table $v");
+                    $definitions = array(
+                                  "`quoted_status_id` bigint"
+                                );
+                    $query = "ALTER TABLE " . quoteIdent($v); $first = TRUE;
+                    foreach ($definitions as $subpart) {
+                        if (!$first) { $query .= ", "; } else { $first = FALSE; }
+                        $query .= " ADD COLUMN $subpart";
+                    }
+                    // and add indexes
+                    $query .= ", ADD KEY `quoted_status_id` (`quoted_status_id`)";
+                    $rec = $dbh->prepare($query);
+                    $rec->execute();
+                }
+            }
+        }
+    }
+
 
 
     // End of upgrades
