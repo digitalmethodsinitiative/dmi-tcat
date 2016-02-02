@@ -138,7 +138,7 @@ echo "Preliminary DMI-TCAT configuration ..."
 tput sgr0
 echo ""
 
-chown -R $WEBUSER:$WEBGROUP /var/www/dmi-tcat/
+chown -R $SHELLUSER:$SHELLGROUP /var/www/dmi-tcat/
 cd /var/www/dmi-tcat
 mkdir analysis/cache logs proc
 chown $WEBUSER:$WEBGROUP analysis/cache
