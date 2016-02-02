@@ -24,6 +24,51 @@ if (dbserver_has_utf8mb4_support() == false) {
     exit();
 }
 
+if (!defined('AUTOUPDATE_ENABLED')) {
+    define('AUTOUPDATE_ENABLED', false);
+}
+if (!defined('AUTOUPDATE_LEVEL')) {
+    define('AUTOUPDATE_LEVEL', 'trivial');
+}
+if (AUTOUPDATE_ENABLED) {
+    $skipupdate = false;
+    $timerfile = BASE_FILE . "proc/autoupdate.timer";
+    if (file_exists($timerfile)) {
+        $previousupdate = file_get_contents($timerfile);        // a unix timestamp
+        if ($previousupdate > time() - (3600 * 24)) {           // a day
+            $skipdate = true;
+        }
+    }
+    // git pull
+    if ($skipupdate == false) {
+        file_put_contents($timerfile, time());
+        if (!is_writable(BASE_FILE . "capture")) {
+            logit("controller.log", "auto-update requested, but the cron user does not have the neccessary permissions to do a successful git pull");
+            $skipupdate = true;
+        } else {
+            logit("controller.log", "now attempting auto-update with: git pull");
+            chdir(BASE_FILE);
+            system("git pull 2>&1 >/dev/null", $status);
+            if ($status !== 0) {
+                logit("controller.log", "auto-update was not successful. The command 'git pull' seems to have failed. Please investigate manually.");
+                $skipupdate = true;
+            }
+        }
+    }
+    // run upgrade.php
+    if ($skipupdate == false) {
+        logit("controller.log", "now attempting database auto-update by running: php upgrade.php");
+        chdir(BASE_FILE . "common");
+        $flag = '--au0';
+        if (AUTOUPDATE_LEVEL == 'substantial') {
+            $flag = '--au1';
+        } elseif (AUTOUPDATE_LEVEL == 'expensive') {
+            $flag = '--au2';
+        }
+        system("nohup php upgrade.php --non-interactive $flag", $status);
+    }
+}
+
 $dbh = pdo_connect();
 
 $roles = unserialize(CAPTUREROLES);

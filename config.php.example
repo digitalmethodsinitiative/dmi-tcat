@@ -112,6 +112,21 @@ define('BASE_URL', 'http://example.com/dmi-tcat/');
 define('ANALYSIS_URL', BASE_URL . 'analysis/');
 
 /*
+ * Do you wish to enable auto updates?
+ */
+define('AUTOUPDATE_ENABLED', false);
+
+/*
+ * Up to what complexity level do you wish to auto-update your database?
+ *
+ * Since a lot of updates maintain locks on the database, captures may be blocked until the upgrade has finished.
+ * You may want to select a higher complexity level if you have small datasets or do not mind a temporary interruption.
+ *
+ * Legal values are: trivial, substantial, expensive
+ */
+define('AUTOUPDATE_LEVEL', 'trivial');
+
+/*
  * When no database activity has occured for IDLETIME seconds during a track, the controller restarts the process. Do not set this too low,
  * as there is caching before we insert. Usually the default is fine.
  */
