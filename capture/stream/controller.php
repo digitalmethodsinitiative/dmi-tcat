@@ -69,6 +69,8 @@ if (AUTOUPDATE_ENABLED) {
     }
 }
 
+chdir(BASE_FILE . "capture/stream");
+
 $dbh = pdo_connect();
 
 $roles = unserialize(CAPTUREROLES);
