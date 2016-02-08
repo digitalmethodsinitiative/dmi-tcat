@@ -113,12 +113,13 @@ $lastRateLimitHit = getLastRateLimitHit();
                     $mesg = $remote['mesg'];
                     $url = $remote['url'];
                     $required = $remote['required'];
+                    $autoupgrade = 'autoupgrade()';
                     print '<div id="updatewarning">';
                     $wikilink = 'https://github.com/digitalmethodsinitiative/dmi-tcat/wiki/Upgrading-TCAT';
                     if ($required) {
-                        print "A newer version of TCAT is available, containing important updates. You are strongly recommended to upgrade via git pull. Please read the <a href='$wikilink' target='_blank'>documentation</a> for details. [ commit <a href='$url' target='_blank'>$commit</a> - $mesg ]<br>";
+                        print "A newer version of TCAT is available, containing important updates. You are strongly recommended to upgrade. Please read the <a href='$wikilink' target='_blank'>documentation</a> for instructions on upgrading, or click <a onclick='$autoupgrade'>here</a> to schedule an automatic upgrade. [ commit <a href='$url' target='_blank'>$commit</a> - $mesg ]<br>";
                     } else {
-                        print "A newer version of TCAT is available. You can get the latest code via git pull. Please read the <a href='$wikilink' target='_blank'>documentation</a> for details. [ commit <a href='$url' target='_blank'>$commit</a> - $mesg ]<br>";
+                        print "A newer version of TCAT is available. You can get the latest code via git pull. Please read the <a href='$wikilink' target='_blank'>documentation</a> for instructions on upgrading, or click <a onclick='$autoupgrade'>here</a> to schedule an automatic upgrade. [ commit <a href='$url' target='_blank'>$commit</a> - $mesg ]<br>";
                     }
                     $showupdatemsg = true;
                 }
@@ -813,6 +814,10 @@ foreach ($bins as $id => $bin)
                 $("#if_row_phrases").hide();
                 break;
         }
+    }
+
+    function autoupgrade() {
+        alert('auto upgrade');
     }
 
     </script>
