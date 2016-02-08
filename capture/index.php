@@ -818,6 +818,7 @@ foreach ($bins as $id => $bin)
 
     function autoupgrade() {
         alert('auto upgrade');
+        // fake
     }
 
     </script>
