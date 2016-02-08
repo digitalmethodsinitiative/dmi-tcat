@@ -20,6 +20,33 @@ echo ""
 echo "Welcome to the DMI TCAT installation script"
 echo "==========================================="
 echo ""
+
+# Test OS version
+
+ISSUE=`cat /etc/issue`
+# Example: Ubuntu 14.04.3 LTS \n \l
+REGEX="Ubuntu ([0-9]*)\.([0-9]*)"
+[[ $ISSUE =~ $REGEX ]]
+MAJOR="${BASH_REMATCH[1]}"
+MINOR="${BASH_REMATCH[2]}"
+if [ -z "$MAJOR" ]; then
+   echo "It does not look like you are running Ubuntu. This is an Ubuntu installation script. Exiting."
+   exit;
+else
+   if [ "$MAJOR" -lt "15" ]; then
+      echo "You are running an older version of Ubuntu and will NOT be able to do geometrical searches!"
+      echo ""
+      read -p "Do you want to consider upgrading your distribution before running the installation script ([y]es/[n]o)?" YESNO
+      if [ "$YESNO" == "y" ]; then
+          echo "Exiting."
+          exit
+      fi
+   else
+      echo "You are running a recent version of Ubuntu and will be able to do geometrical searches."
+   fi
+fi
+
+echo ""
 echo "Before installation, you will to fill in some information about your server configuration."
 echo ""
 
@@ -43,7 +70,7 @@ while [ -z "$DBPASS" ]; do
 done
 tput setaf 1
 echo "!!"
-echo "Remember to REPEAT this password later during the install, when you are asked: \"New password for the MariaDB \"root\" user\" !!"
+echo "Remember to REPEAT this password later during the install, when you are asked: \"New password for the MySQL \"root\" user\" !!"
 echo "!!"
 tput sgr0
 echo "(press enter once to continue ..)"
@@ -119,10 +146,14 @@ echo "Installing MySQL server and Apache webserver ..."
 tput sgr0
 echo ""
 
-wget http://dev.mysql.com/get/mysql-apt-config_0.3.5-1debian8_all.deb
-dpkg -i mysql-apt-config_0.3.5-1debian8_all.deb
-apt-get -y install mariadb-server apache2-mpm-prefork apache2-utils libapache2-mod-php5 php5-mysql php5-curl php5-cli php5-geos php-patchwork-utf8 git curl
-php5enmod geos
+apt-get -y install mysql-server-5.6 mysql-client-5.6 apache2-mpm-prefork apache2-utils libapache2-mod-php5 php5-mysql php5-curl php5-cli php-patchwork-utf8 git curl
+if [ "$MAJOR" -gt "14" ]; then
+   apt-get -y install php5-geos
+   php5enmod geos
+fi
+# Installation and autoconfiguration of MySQL will not work with Apparmor profile enabled
+ln -s /etc/apparmor.d/usr.sbin.mysqld /etc/apparmor.d/disable/
+/etc/init.d/apparmor restart 
 
 echo ""
 tput bold
@@ -197,7 +228,7 @@ sed -i "s/define(\"ADMIN_USER\", \"admin\");/define(\"ADMIN_USER\", \"$TCATADMIN
 htpasswd -b /etc/apache2/passwords $TCATADMINUSER $TCATADMINPASS
 chown $SHELLUSER:$WEBGROUP /etc/apache2/passwords
 a2enmod rewrite
-systemctl restart apache2
+/etc/init.d/apache2 restart
 
 echo ""
 tput bold
@@ -354,8 +385,8 @@ if [ "$CHANGEDMYCNF" == "0" ]; then
             fi
             echo "Memory profile adjusted"
             # Finally, reload MySQL server configuration
-            echo "Reloading service ... "
-            systemctl reload mysql
+            echo "Restarting service ... "
+            /etc/init.d/mysql restart
         fi
     fi
 fi
