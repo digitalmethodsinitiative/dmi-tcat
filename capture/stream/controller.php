@@ -35,9 +35,10 @@ if (AUTOUPDATE_ENABLED) {
     $timerfile = BASE_FILE . "proc/autoupdate.timer";
     if (file_exists($timerfile)) {
         $previousupdate = file_get_contents($timerfile);        // a unix timestamp
-        if ($previousupdate > time() - (3600 * 24)) {           // a day
+        $timediff = time() - $previousupdate;
+        if ($timediff < 3600 * 24) {           // a day
             $skipdate = true;
-        }
+        } 
     }
     // git pull
     if ($skipupdate == false) {
