@@ -416,6 +416,22 @@ function web_reload_config_role($role) {
 }
 
 /*
+ * Inform controller we want TCAT to auto-upgrade
+ */
+
+function tcat_autoupgrade() {
+    $dbh = pdo_connect();
+    $sql = "CREATE TABLE IF NOT EXISTS tcat_controller_tasklist ( id bigint auto_increment, task varchar(32) not null, instruction varchar(255) not null, ts_issued timestamp default current_timestamp, primary key(id) )";
+    $h = $dbh->prepare($sql);
+    if (!$h->execute())
+        return false;
+    $sql = "INSERT INTO tcat_controller_tasklist ( task, instruction ) VALUES ( 'tcat', 'upgrade')";
+    $h = $dbh->prepare($sql);
+    return $h->execute();
+}
+
+
+/*
  * Acquire a lock as script $script
  * If test is true, only test if the lock could be gained, but do not hold on to it (this is how we test if a script is running)
  * Returns true on a lock success (in test), false on failure and a lock filepointer if really locking

@@ -24,13 +24,55 @@ if (dbserver_has_utf8mb4_support() == false) {
     exit();
 }
 
+$dbh = pdo_connect();
+$roles = unserialize(CAPTUREROLES);
+
+// first gather all instructions sent by the webinterface to the controller (ie. the instruction queue)
+$upgrade_requested = false;
+$commands = array();
+foreach ($roles as $role) {
+    $commands[$role] = array();
+}
+if (array_key_exists('track', $commands) && geobinsActive() && geophp_sane()) {
+    $geoActive = true;
+} else {
+    $geoActive = false;
+}
+$rec = $dbh->prepare("SHOW TABLES LIKE 'tcat_controller_tasklist'");
+if ($rec->execute() && $rec->rowCount() > 0) {
+    $sql = "select task, instruction from tcat_controller_tasklist order by id asc lock in share mode";
+    foreach ($dbh->query($sql) as $row) {
+        // first handle special tcat-wide instructions
+        if ($row['task'] == 'tcat') {
+            if ($row['instruction'] == 'upgrade') {
+                $upgrade_requested = true;
+            }
+        } else {
+            // then handle instructions per captrue role
+            if ($geoActive && $row['task'] = 'geotrack') $row['task'] = 'track';
+            if (!array_key_exists($row['task'], $commands)) {
+                continue;
+            }
+            $commands[$row['task']][] = $row;
+        }
+    }
+
+    // do not leave any unknown tasks linger
+    $sql = 'truncate tcat_controller_tasklist';
+    $h = $dbh->prepare($sql);
+    $res = $h->execute();
+}
+
 if (!defined('AUTOUPDATE_ENABLED')) {
     define('AUTOUPDATE_ENABLED', false);
 }
 if (!defined('AUTOUPDATE_LEVEL')) {
     define('AUTOUPDATE_LEVEL', 'trivial');
 }
-if (AUTOUPDATE_ENABLED) {
+if (AUTOUPDATE_ENABLED || $upgrade_requested) {
+    if ($upgrade_requested) {
+        logit("controller.log", "running auto-update at user request");
+    }
     $skipupdate = false;
     $timerfile = BASE_FILE . "proc/autoupdate.timer";
     if (file_exists($timerfile)) {
@@ -72,38 +114,7 @@ if (AUTOUPDATE_ENABLED) {
 
 chdir(BASE_FILE . "capture/stream");
 
-$dbh = pdo_connect();
-
-$roles = unserialize(CAPTUREROLES);
-
-// first gather all instructions sent by the webinterface to the controller (ie. the instruction queue)
-$commands = array();
-foreach ($roles as $role) {
-    $commands[$role] = array();
-}
-if (array_key_exists('track', $commands) && geobinsActive() && geophp_sane()) {
-    $geoActive = true;
-} else {
-    $geoActive = false;
-}
-$rec = $dbh->prepare("SHOW TABLES LIKE 'tcat_controller_tasklist'");
-if ($rec->execute() && $rec->rowCount() > 0) {
-    $sql = "select task, instruction from tcat_controller_tasklist order by id asc lock in share mode";
-    foreach ($dbh->query($sql) as $row) {
-        if ($geoActive && $row['task'] = 'geotrack') $row['task'] = 'track';
-        if (!array_key_exists($row['task'], $commands)) {
-            continue;
-        }
-        $commands[$row['task']][] = $row;
-    }
-
-    // do not leave any unknown tasks linger
-    $sql = 'truncate tcat_controller_tasklist';
-    $h = $dbh->prepare($sql);
-    $res = $h->execute();
-}
-
-// now check for each role what needs to be done
+// now check for each capture role what needs to be done
 foreach ($roles as $role) {
 
     $reload = false;
