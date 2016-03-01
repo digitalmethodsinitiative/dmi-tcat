@@ -69,8 +69,21 @@ if (!defined('AUTOUPDATE_ENABLED')) {
 if (!defined('AUTOUPDATE_LEVEL')) {
     define('AUTOUPDATE_LEVEL', 'trivial');
 }
-if (AUTOUPDATE_ENABLED || $upgrade_requested) {
-    if ($upgrade_requested) {
+if (AUTOUPDATE_ENABLED) {
+    /* some logic to ensure a single auto-update attempt is made per day */
+    $modified = filectime(__FILE__);
+    $minute_number_modified = date('i', $modified);
+    $minute_number_now = date('i', time());
+    $hour_number_modified = date('G', $modified);
+    $hour_number_now = date('G', time());
+    if ($hour_number_now == $hour_number_modified && $minute_number_now == $minute_number_modified) {
+        $upgrade_requested = true;
+    } else {
+        $upgrade_requested = false;
+    }
+}
+if ($upgrade_requested) {
+    if (AUTOUPDATE_ENABLED == false) {
         logit("controller.log", "running auto-update at user request");
     }
     $skipupdate = false;
