@@ -817,8 +817,19 @@ foreach ($bins as $id => $bin)
     }
 
     function autoupgrade() {
-        alert('auto upgrade');
-        // fake
+        var _check = window.confirm("Your config.php file currently instructs us to upgrade everything with a complexity level up to '<?php if (defined('AUTOUPDATE_LEVEL')) { echo AUTOUPDATE_LEVEL; } else { echo 'trivial'; } ?>'. \nPlease confirm you would like to schedule an upgrade of TCAT.");
+        if (_check) {
+            var _params = {action:"autoupgrade"};
+            $.ajax({
+                dataType: "json",
+                url: "query_manager.php",
+                type: 'POST',
+                data: _params
+            }).done(function(_data) {
+                alert(_data["msg"]);
+                location.reload();
+            });   
+        }
     }
 
     </script>
