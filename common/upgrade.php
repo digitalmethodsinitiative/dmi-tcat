@@ -9,7 +9,7 @@
  *
  * OPTIONAL COMMAND LINE ARGUMENTS
  *
- *     --non-interactive        run without any user interaction (for cron use) 
+ *     --non-interactive        run without any user interaction (for cron use), will cause log messages to go to controller.log
  *     --au0                    auto-upgrade everything with time consumption level 'trivial' (DEFAULT) (for non-interactive mode) 
  *     --au1                    auto-upgrade everything with time consumption level 'substantial' (for non-interactive mode) 
  *     --au2                    auto-upgrade everything with time consumption level 'expensive' (for non-interactive mode) 
@@ -86,6 +86,7 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
     global $all_bins;
     $all_bins = get_all_bins();
     $dbh = pdo_connect();
+    $logtarget = $interactive ? "cli" : "controller.log";
     
     // Tracker whether an update is suggested, or even required during a dry run.
     // These values are ONLY tracked when doing a dry run; do not use them for CLI feedback.
@@ -130,7 +131,7 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
                     $ans = cli_yesnoall("Add new columns and indexes (ex. possibly_sensitive) to table $v", 1, '639a0b93271eafca98c02e5a01968572d4435191');
                 }
                 if ($ans == 'a' || $ans == 'y') {
-                    logit("cli", "Adding new columns (ex. possibly_sensitive) to table $v");
+                    logit($logtarget, "Adding new columns (ex. possibly_sensitive) to table $v");
                     $definitions = array(
                                   "`from_user_withheld_scope` varchar(32)",
                                   "`from_user_favourites_count` int(11)",
@@ -174,7 +175,7 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
         }
         if (!$exists) {
             $create = $bin . '_withheld';
-            logit("cli", "Creating new table $create");
+            logit($logtarget, "Creating new table $create");
             $sql = "CREATE TABLE IF NOT EXISTS " . quoteIdent($create) . " (
                     `id` int(11) NOT NULL AUTO_INCREMENT,
                     `tweet_id` bigint(20) NOT NULL,
@@ -206,7 +207,7 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
         }
         if (!$exists) {
             $create = $bin . '_places';
-            logit("cli", "Creating new table $create");
+            logit($logtarget, "Creating new table $create");
             $sql = "CREATE TABLE IF NOT EXISTS " . quoteIdent($create) . " (
                     `id` varchar(32) NOT NULL,
                     `tweet_id` bigint(20) NOT NULL,
@@ -250,7 +251,7 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
                     $ans = cli_yesnoall("Change default database character to utf8mb4", 1, '639a0b93271eafca98c02e5a01968572d4435191');
                 }
                 if ($ans == 'y' || $ans == 'a') {
-                    logit("cli", "Converting database character set from utf8 to utf8mb4");
+                    logit($logtarget, "Converting database character set from utf8 to utf8mb4");
                     $query = "ALTER DATABASE $database CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci";
                     $rec = $dbh->prepare($query);
                     $rec->execute();
@@ -284,14 +285,14 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
                         $ans = cli_yesnoall("Convert table $v character set utf8 to utf8mb4", 2, '639a0b93271eafca98c02e5a01968572d4435191');
                     }
                     if ($ans == 'y' || $ans == 'a') {
-                        logit("cli", "Converting table $v character set utf8 to utf8mb4");
+                        logit($logtarget, "Converting table $v character set utf8 to utf8mb4");
                         $query ="ALTER TABLE $v DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci";
                         $rec = $dbh->prepare($query);
                         $rec->execute();
                         $query ="ALTER TABLE $v CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci";
                         $rec = $dbh->prepare($query);
                         $rec->execute();
-                        logit("cli", "Repairing and optimizing table $v");
+                        logit($logtarget, "Repairing and optimizing table $v");
                         $query ="REPAIR TABLE $v";
                         $rec = $dbh->prepare($query);
                         $rec->execute();
@@ -331,7 +332,7 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
             $update_remove = false;
         }
         if ($update_remove) {
-            logit("cli", "Removing columns media_type, photo_size_width and photo_size_height from table $v");
+            logit($logtarget, "Removing columns media_type, photo_size_width and photo_size_height from table $v");
             $query = "ALTER TABLE " . quoteIdent($v) .
                         " DROP COLUMN `media_type`," .
                         " DROP COLUMN `photo_size_width`," .
@@ -345,7 +346,7 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
             if ($dry_run) {
                 $suggested = true;
             } else {
-                logit("cli", "Creating table $mediatable");
+                logit($logtarget, "Creating table $mediatable");
                 $query = "CREATE TABLE IF NOT EXISTS " . quoteIdent($mediatable) . " (
                     `id` bigint(20) NOT NULL,
                     `tweet_id` bigint(20) NOT NULL,
@@ -370,7 +371,7 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
             }
         }
         if ($update_remove && $dry_run == false) {
-            logit("cli", "Please run the upgrade-media.php script to lookup media data for Tweets in your bins.");
+            logit($logtarget, "Please run the upgrade-media.php script to lookup media data for Tweets in your bins.");
         }
     }
 
@@ -392,7 +393,7 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
         $update = false;
     }
     if ($update) {
-        logit("cli", "Adding new comments column to table tcat_query_bins");
+        logit($logtarget, "Adding new comments column to table tcat_query_bins");
         $query = "ALTER TABLE tcat_query_bins ADD COLUMN `comments` varchar(2048) DEFAULT NULL";
         $rec = $dbh->prepare($query);
         $rec->execute();
@@ -423,7 +424,7 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
                 }
             }
             if ($update) {
-                logit("cli", "Changing column type for column user_id in table tcat_query_bins_users");
+                logit($logtarget, "Changing column type for column user_id in table tcat_query_bins_users");
                 $query = "ALTER TABLE tcat_query_bins_users MODIFY `user_id` BIGINT NULL";
                 $rec = $dbh->prepare($query);
                 $rec->execute();
@@ -479,7 +480,7 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
                         $ans = cli_yesnoall("Use the original retweet text and username for truncated tweets in bin $bin - this will ALTER tweet contents", 2, 'n/a');
                     }
                     if ($ans == 'y' || $ans == 'a') {
-                        logit("cli", "Using original retweet text and username for tweets in bin $bin");
+                        logit($logtarget, "Using original retweet text and username for tweets in bin $bin");
                         /* Note: original tweet may have been length 140 and truncated retweet may have length 140,
                          * therefore we need to check for more than just length. Here we update everything with length >= 140 and ending with '...' */
                         $fixer = "update $bin" . "_tweets A inner join " . $bin . "_tweets B on A.retweet_id = B.id set A.text = CONCAT('RT @', B.from_user_name, ': ', B.text) where (length(A.text) >= 140 and A.text like '%…') or substr(A.text, position('@' in A.text) + 1, position(': ' in A.text) - 5) != B.from_user_name";
@@ -520,7 +521,7 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
                 }
             }
             if ($update) {
-                logit("cli", "Removing AUTO_INCREMENT from primary key in tcat_query_users");
+                logit($logtarget, "Removing AUTO_INCREMENT from primary key in tcat_query_users");
                 $query = "ALTER TABLE tcat_query_users MODIFY `id` BIGINT NOT NULL";
                 $rec = $dbh->prepare($query);
                 $rec->execute();
@@ -567,7 +568,7 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
                     $ans = cli_yesnoall("Add new columns and indexes (ex. quoted_status_id) to table $v", 2, '6b6c7ac716a9e179a2ea3e528c9374b94abdada6');
                 }
                 if ($ans == 'a' || $ans == 'y') {
-                    logit("cli", "Adding new columns (ex. quoted_status_id) to table $v");
+                    logit($logtarget, "Adding new columns (ex. quoted_status_id) to table $v");
                     $definitions = array(
                                   "`quoted_status_id` bigint"
                                 );
@@ -598,7 +599,7 @@ if (env_is_cli()) {
     // make sure only one upgrade script is running
     $thislockfp = script_lock('upgrade');
     if (!is_resource($thislockfp)) {
-        logit("cli", "upgrade.php already running, skipping this check");
+        logit($logtarget, "upgrade.php already running, skipping this check");
         exit();
     }
 
@@ -623,20 +624,20 @@ if (env_is_cli()) {
     }
 
     if ($interactive) {
-        logit("cli", "Running in interactive mode");
+        logit($logtarget, "Running in interactive mode");
     } else {
-        logit("cli", "Running in non-interactive mode");
+        logit($logtarget, "Running in non-interactive mode");
         switch ($aulevel) {
-            case 0: { logit("cli", "Automatically executing upgrades with label: trivial"); break; }
-            case 1: { logit("cli", "Automatically executing upgrades with label: substantial"); break; }
-            case 2: { logit("cli", "Automatically executing upgrades with label: expensive"); break; }
+            case 0: { logit($logtarget, "Automatically executing upgrades with label: trivial"); break; }
+            case 1: { logit($logtarget, "Automatically executing upgrades with label: substantial"); break; }
+            case 2: { logit($logtarget, "Automatically executing upgrades with label: expensive"); break; }
         }
     }
 
     if (isset($single)) {
-        logit("cli", "Restricting upgrade to bin $single");
+        logit($logtarget, "Restricting upgrade to bin $single");
     } else {
-        logit("cli", "Executing global upgrade");
+        logit($logtarget, "Executing global upgrade");
     }
 
     upgrades(false, $interactive, $aulevel, $single);
