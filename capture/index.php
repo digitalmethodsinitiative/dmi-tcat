@@ -778,7 +778,7 @@ foreach ($bins as $id => $bin)
             return cont;
         } else if(type == "onepercent") {
             return true;
-       }
+        }
         alert('an unknown error occured');
         return false;
     }

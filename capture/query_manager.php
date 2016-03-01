@@ -17,7 +17,7 @@ if (isset($_POST) && isset($_POST['action'])) {
     switch ($action) {
         case "autoupgrade":
             tcat_autoupgrade();
-            echo '{"msg":"We are now running auto upgrade in the background. Please have patience, or watch logs/controller.log for progress indications."}';
+            echo '{"msg":"We are now running auto upgrade in the background. Please have patience or watch the logs/controller.log file on your server for progress indications."}';
             break;
         case "newbin":
             create_new_bin($_POST);
