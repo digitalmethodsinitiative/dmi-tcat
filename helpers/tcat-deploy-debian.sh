@@ -105,6 +105,14 @@ echo ""
 echo "Thank you. Now starting installation ..."
 echo ""
 
+# Clear any existing TCAT crontab references
+echo "" > /etc/cron.d/tcat
+# These lines used to be written to the global /etc/crontab file
+sed -i 's/^# Run TCAT controller every minute$//g' /etc/crontab
+sed -i 's/^.*cd \/var\/www\/dmi-tcat\/capture\/stream\/; php controller.php.*$//g' /etc/crontab
+sed -i 's/^# Run DMI-TCAT URL expander every hour$//g' /etc/crontab
+sed -i 's/^.*cd \/var\/www\/dmi-tcat\/helpers; sh urlexpand.sh.*$//g' /etc/crontab
+
 tput bold
 echo "Installing basic prerequisites ..."
 tput sgr0
@@ -223,9 +231,8 @@ if [ "$URLEXPANDYES" == "y" ]; then
    easy_install gevent 
    pip install requests
    CRONLINE="0 *     * * *   $SHELLUSER   (cd /var/www/dmi-tcat/helpers; sh urlexpand.sh)"
-   echo "" >> /etc/crontab
-   echo "# Run DMI-TCAT URL expander every hour" >> /etc/crontab
-   echo "$CRONLINE" >> /etc/crontab
+   echo "# Run DMI-TCAT URL expander every hour" >> /etc/cron.d/tcat
+   echo "$CRONLINE" >> /etc/cron.d/tcat
 fi
 
 echo ""
@@ -235,9 +242,9 @@ tput sgr0
 echo ""
 
 CRONLINE="* *     * * *   $SHELLUSER   (cd /var/www/dmi-tcat/capture/stream/; php controller.php)"
-echo "" >> /etc/crontab
-echo "# Run TCAT controller every minute" >> /etc/crontab
-echo "$CRONLINE" >> /etc/crontab
+echo "" >> /etc/cron.d/tcat
+echo "# Run TCAT controller every minute" >> /etc/cron.d/tcat
+echo "$CRONLINE" >> /etc/cron.d/tcat
 
 echo ""
 tput bold
