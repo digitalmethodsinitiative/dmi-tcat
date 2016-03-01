@@ -112,15 +112,16 @@ define('BASE_URL', 'http://example.com/dmi-tcat/');
 define('ANALYSIS_URL', BASE_URL . 'analysis/');
 
 /*
- * Do you wish to enable auto updates?
+ * Do you wish to enable fully automatic updates in the background? 
  */
 define('AUTOUPDATE_ENABLED', false);
 
 /*
- * Up to what complexity level do you wish to auto-update your database?
+ * Up to what complexity level do you wish to allow non-interactive (ie. in the background or at user request from inside the capture panel)
+ * updates of your database?
  *
- * Since a lot of updates maintain locks on the database, captures may be blocked until the upgrade has finished.
- * You may want to select a higher complexity level if you have small datasets or do not mind a temporary interruption.
+ * Since a lot of these updates maintain locks on the database, captures may be blocked until the upgrade has finished.
+ * You may want to select a higher complexity level if you have small datasets or do not mind a temporary interruption of service.
  *
  * Legal values are: trivial, substantial, expensive
  */
