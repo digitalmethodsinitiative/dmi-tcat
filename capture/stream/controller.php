@@ -46,6 +46,7 @@ if ($rec->execute() && $rec->rowCount() > 0) {
         if ($row['task'] == 'tcat') {
             if ($row['instruction'] == 'upgrade') {
                 $upgrade_requested = true;
+                logit("controller.log", "running auto-update at user request");
             }
         } else {
             // then handle instructions per captrue role
@@ -94,9 +95,6 @@ if (AUTOUPDATE_ENABLED && $upgrade_requested == false) {
     }
 }
 if ($upgrade_requested) {
-    if (AUTOUPDATE_ENABLED == false) {
-        logit("controller.log", "running auto-update at user request");
-    }
     // git pull
     if (!is_writable(BASE_FILE . "capture")) {
         logit("controller.log", "auto-update requested, but the cron user does not have the neccessary permissions to do a successful git pull");
