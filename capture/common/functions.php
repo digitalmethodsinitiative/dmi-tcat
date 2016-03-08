@@ -508,13 +508,14 @@ function getGitRemote($compare_local_commit = '', $branch = 'master') {
     $output = curl_exec($ch);
     curl_close($ch);
     $data = json_decode($output, true);
-    $commit = $mesg = $url = null;
+    $commit = $mesg = $url = $date = null;
     $required = false;
     foreach ($data as $ent) {
         if ($commit === null) {
             $commit = $ent['sha'];
             $mesg = $ent['commit']['message'];
             $url = $ent['html_url'];
+            $date = $ent['commit']['committer']['date'];
         }
         if ($ent['sha'] == $compare_local_commit) { break; }
         if (isset($ent['commit']['message'])) {
@@ -530,6 +531,7 @@ function getGitRemote($compare_local_commit = '', $branch = 'master') {
                   'mesg' => $mesg,
                   'url' => $url,
                   'required' => $required,
+                  'date' => $date,
                 );
 }
 

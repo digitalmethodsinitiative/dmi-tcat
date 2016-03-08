@@ -108,7 +108,8 @@ $lastRateLimitHit = getLastRateLimitHit();
         if (is_array($git)) {
             $remote = getGitRemote($git['commit'], $git['branch']);
             if (is_array($remote)) {
-                if ($git['commit'] !== $remote['commit']) {
+                $date_unix = strtotime($remote['date']);
+                if ($git['commit'] !== $remote['commit'] && $date_unix < time() - 3600 * 24) {
                     $commit = '#' . substr($remote['commit'], 0, 7) . '...';
                     $mesg = $remote['mesg'];
                     $url = $remote['url'];
