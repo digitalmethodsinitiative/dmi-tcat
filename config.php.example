@@ -117,11 +117,10 @@ define('ANALYSIS_URL', BASE_URL . 'analysis/');
 define('AUTOUPDATE_ENABLED', false);
 
 /*
- * Up to what complexity level do you wish to allow non-interactive (ie. in the background or at user request from inside the capture panel)
- * updates of your database?
+ * Up to what complexity level do you wish to allow automatic upgrades (ie. in the background or at user request from inside the capture panel)?
  *
  * Since a lot of these updates maintain locks on the database, captures may be blocked until the upgrade has finished.
- * You may want to select a higher complexity level if you have small datasets or do not mind a temporary interruption of service.
+ * You may want to select a higher complexity level ONLY if you have small datasets or do not mind a temporary interruption of service.
  *
  * Legal values are: trivial, substantial, expensive
  */
