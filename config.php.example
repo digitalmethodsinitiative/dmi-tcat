@@ -166,13 +166,13 @@ ini_set("memory_limit", "2G");
 
 define('TCAT_SYSLOAD_CHECKING', false);
 
-/* If the sysload monitoring is enabled, a warning is issued when the number of running tcat queries has reached the threshold below */
+/* If the sysload monitoring is enabled, a warning is issued when the sum processing time of all running tcat queries has reached the threshold below */
 
-define('TCAT_SYSLOAD_WARNING_QUERIES', 5);
+define('TCAT_SYSLOAD_WARNING', 20);
 
-/* If the sysload monitoring is enabled, a blocking message is seen when the number of running tcat queries has reached the threshold below */
+/* If the sysload monitoring is enabled, a blocking message is shown when the sum processing time of all running tcat queries has reached the threshold below */
 
-define('TCAT_SYSLOAD_MAXIMUM_QUERIES', 10);
+define('TCAT_SYSLOAD_MAXIMUM', 55);
 
 /*
  * Set encoding

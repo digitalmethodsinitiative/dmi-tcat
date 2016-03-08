@@ -6,11 +6,11 @@ require_once './common/functions.php';
 if (!defined('TCAT_SYSLOAD_CHECKING')) {
     define('TCAT_SYSLOAD_CHECKING', false);
 }
-if (!defined('TCAT_SYSLOAD_WARNING_QUERIES')) {
-    define('TCAT_SYSLOAD_WARNING_QUERIES', 5);
+if (!defined('TCAT_SYSLOAD_WARNING')) {
+    define('TCAT_SYSLOAD_WARNING', 20);
 }
-if (!defined('TCAT_SYSLOAD_MAXIMUM_QUERIES')) { 
-    define('TCAT_SYSLOAD_MAXIMUM_QUERIES', 10);
+if (!defined('TCAT_SYSLOAD_MAXIMUM')) { 
+    define('TCAT_SYSLOAD_MAXIMUM', 55);
 }
 
 if (TCAT_SYSLOAD_CHECKING == false) {
@@ -22,6 +22,7 @@ $exts = array ( 'tweets', 'mentions', 'urls', 'hashtags', 'media', 'places', 'wi
 $sql = "SHOW FULL PROCESSLIST";
 $rec = mysql_query($sql);
 $selects = 0; $working = array();
+$selecttimes = 0;
 if (mysql_num_rows($rec) > 0) {
     while ($res = mysql_fetch_assoc($rec)) {
         if ($res['db'] !== $database) { continue; }
@@ -35,18 +36,17 @@ if (mysql_num_rows($rec) > 0) {
                 }
             }
             $selects++;
+            $selecttimes += $res['Time'];
         }
     }
 }
 $working = array_unique($working);
 
-$load = 0;
-if ($selects >= TCAT_SYSLOAD_MAXIMUM_QUERIES) {
+// we accept two long running queries, otherwise we may block depending on the configured thresholds
+if ($selects > 2 && $selecttimes >= TCAT_SYSLOAD_MAXIMUM) {
     $load = 2;
-} else if ($selects >= TCAT_SYSLOAD_WARNING_QUERIES) {
+} else if ($selecttimes >= TCAT_SYSLOAD_WARNING) {
     $load = 1;
-} else {
-    $load = 0;
 }
 
 print "$load<div style='margin:0;padding:0'>";
@@ -86,7 +86,7 @@ if($load == 0) {
     	print ", processing query bins $binstr";
     }
 } elseif($load == 1) {
-	print " The server is already processing query bins $binstr, but can accept yours too";
+	print " The server is already processing query bins $binstr";
 } elseif($load == 2) {
 	print " The server is very busy with query bins $binstr, <u>please wait until the light turns green</u>";
 }
