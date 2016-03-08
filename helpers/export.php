@@ -177,22 +177,23 @@ fputs($fh, "--\n");
 
 /* Lock TCAT tables */
 
-fputs($fh, "LOCK TABLES `tcat_query_bins` WRITE, `tcat_query_phrases` WRITE, `tcat_query_bins_periods` WRITE, `tcat_query_users` WRITE, `tcat_query_bins_phrases` WRITE, `tcat_query_bins_users` WRITE;\n");
-
 $sql = "INSERT INTO tcat_query_bins ( querybin, `type`, active, visible ) values ( " . $dbh->Quote($bin) . ", " . $dbh->Quote($bintype) . ", 0, 1 );";
 fputs($fh, $sql . "\n");
 
 if ($bintype == 'track') {
 
-    $sql = "CREATE TEMPORARY TABLE temp_phrase_ids ( phrase_id bigint primary key, phrase varchar(512) );";
-    fputs($fh, $sql . "\n");
-
     foreach ($phrases as $phrase) {
         $sql = "INSERT INTO tcat_query_phrases ( phrase ) values ( " . $dbh->Quote($phrase) . " );";
         fputs($fh, $sql . "\n");
-        $sql = "INSERT INTO temp_phrase_ids ( phrase_id, phrase ) values ( LAST_INSERT_ID(), " . $dbh->Quote($phrase) . " );";
+    }
+
+    foreach ($phrases as $phrase) {
+        $sql = "UPDATE tcat_query_bins_phrases as BP inner join tcat_query_phrases as P on BP.phrase_id = P.id set BP.phrase_id = ( select min(id) from tcat_query_phrases where phrase = " . $dbh->Quote($phrase) .  " ) where P.phrase = " . $dbh->Quote($phrase) . ';';
         fputs($fh, $sql . "\n");
     }
+
+    $sql = "DELETE FROM tcat_query_phrases where id not in ( select phrase_id from tcat_query_bins_phrases );";
+    fputs($fh, $sql . "\n");
 
     foreach ($phrases as $phrase) {
         $starttime = $phrase_starttime[$phrase];
@@ -200,12 +201,10 @@ if ($bintype == 'track') {
         $sql = "INSERT INTO tcat_query_bins_phrases SET " .
                " starttime = '$starttime', " .
                " endtime = '$endtime', " .
-               " phrase_id = ( select phrase_id from temp_phrase_ids where phrase = " . $dbh->Quote($phrase) . " ), " .
+               " phrase_id = ( select id from tcat_query_phrases where phrase = " . $dbh->Quote($phrase) . " ), " .
                " querybin_id = ( select MAX(id) from tcat_query_bins );";
         fputs($fh, $sql . "\n");
     }
-
-    fputs($fh, "DROP TABLE temp_phrase_ids;\n");
 
 } else if ($bintype == 'follow') {
 
@@ -236,8 +235,6 @@ foreach ($periods as $prd) {
            " endtime = '$endtime';";
     fputs($fh, $sql . "\n");
 }
-
-fputs($fh, "UNLOCK TABLES;\n\n");
 
 fclose($fh);
 
