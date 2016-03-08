@@ -71,13 +71,27 @@ if (!defined('AUTOUPDATE_LEVEL')) {
     define('AUTOUPDATE_LEVEL', 'trivial');
 }
 if (AUTOUPDATE_ENABLED && $upgrade_requested == false) {
-    // some logic to ensure a single auto-update attempt is made per day
-    $nomodifyfile = BASE_FILE . 'nomodify.txt';
     $failure = false;
-    if (!file_exists($nomodifyfile)) {
-        // the nomodify file does not seem to exist, attempt to create it
-        if (!touch($nomodifyfile)) {
-            logit("controller.log", "cannot perform auto updates, because the cron user does not have sufficient permissions on the tcat installation directory");
+    // we will wait at least one day before pulling new code
+    $git = getGitLocal();
+    if (is_array($git)) {
+        $remote = getGitRemote($git['commit'], $git['branch']);
+        if (is_array($remote)) {
+            $date_unix = strtotime($remote['date']);
+            if ($git['commit'] == $remote['commit'] || $date_unix > time() - 3600 * 24) {
+                $failure = true;
+            }
+        } else {
+            $failure = true;
+        }
+    } else {
+        $failure = true;
+    }
+    if ($failure == false) {
+        // additionally we want to ensure only a single auto-update attempt is made per day
+        $nomodifyfile = BASE_FILE . 'nomodify.txt';
+        if (!file_exists($nomodifyfile)) {
+            // the nomodify file does not seem to exist
             $failure = true;
         }
     }
@@ -104,7 +118,7 @@ if ($upgrade_requested) {
         chdir(BASE_FILE);
         system("git pull 2>&1 >/dev/null", $status);
         if ($status !== 0) {
-            logit("controller.log", "auto-update was not successful. The command 'git pull' seems to have failed. Please investigate manually.");
+            logit("controller.log", "auto-update was not successful. The command 'git pull' seems to have failed. Did you make any local TCAT modifications? Please investigate manually.");
             $skipupdate = true;
         }
     }
