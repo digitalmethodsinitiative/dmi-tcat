@@ -70,16 +70,27 @@ if (!defined('AUTOUPDATE_LEVEL')) {
     define('AUTOUPDATE_LEVEL', 'trivial');
 }
 if (AUTOUPDATE_ENABLED) {
-    /* some logic to ensure a single auto-update attempt is made per day */
-    $modified = filectime(getcwd() . '/nomodify.txt');
-    $minute_number_modified = date('i', $modified);
-    $minute_number_now = date('i', time());
-    $hour_number_modified = date('G', $modified);
-    $hour_number_now = date('G', time());
-    if ($hour_number_now == $hour_number_modified && $minute_number_now == $minute_number_modified) {
-        $upgrade_requested = true;
-    } else {
-        $upgrade_requested = false;
+    // some logic to ensure a single auto-update attempt is made per day
+    $nomodifyfile = BASE_FILE . 'nomodify.txt';
+    $failure = false;
+    if (!file_exists($nomodifyfile)) {
+        // the nomodify file does not seem to exist, attempt to create it
+        if (!touch($nomodifyfile)) {
+            logit("controller.log", "cannot perform auto updates, because the cron user does not have sufficient permissions on the tcat installation directory");
+            $failure = true;
+        }
+    }
+    if ($failure == false) {
+        $modified = filectime($nomodifyfile);
+        $minute_number_modified = date('i', $modified);
+        $minute_number_now = date('i', time());
+        $hour_number_modified = date('G', $modified);
+        $hour_number_now = date('G', time());
+        if ($hour_number_now == $hour_number_modified && $minute_number_now == $minute_number_modified) {
+            $upgrade_requested = true;
+        } else {
+            $upgrade_requested = false;
+        }
     }
 }
 if ($upgrade_requested) {
