@@ -80,9 +80,13 @@ putenv('LANGUAGE=en_US.UTF-8');
 putenv('MYSQL_PWD=' . $dbpass);     /* this avoids having to put the password on the command-line */
 
 $cmd = "$bin_zcat $file | $bin_mysql --default-character-set=utf8mb4 -u$dbuser -h $hostname $database";
-system($cmd);
+system($cmd, $return_code);
 
-print "Import completed and queries added to TCAT.\n";
+if ($return_code == 0) {
+    print "Import completed and queries added to TCAT.\n";
+} else {
+    print "There was a problem with importing data into TCAT.\n";
+}
 
 function get_executable($binary) {
     $where = `which $binary`;
