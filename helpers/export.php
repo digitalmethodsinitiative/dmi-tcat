@@ -175,8 +175,6 @@ fputs($fh, "--\n");
 fputs($fh, "-- DMI-TCAT - Update TCAT tables\n");
 fputs($fh, "--\n");
 
-/* Lock TCAT tables */
-
 $sql = "INSERT INTO tcat_query_bins ( querybin, `type`, active, visible ) values ( " . $dbh->Quote($bin) . ", " . $dbh->Quote($bintype) . ", 0, 1 );";
 fputs($fh, $sql . "\n");
 
