@@ -71,7 +71,7 @@ if (!defined('AUTOUPDATE_LEVEL')) {
 }
 if (AUTOUPDATE_ENABLED) {
     /* some logic to ensure a single auto-update attempt is made per day */
-    $modified = filectime(__FILE__);
+    $modified = filectime(getcwd() . '/nomodify.txt');
     $minute_number_modified = date('i', $modified);
     $minute_number_now = date('i', time());
     $hour_number_modified = date('G', $modified);
