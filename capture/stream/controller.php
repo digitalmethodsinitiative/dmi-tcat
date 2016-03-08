@@ -69,7 +69,7 @@ if (!defined('AUTOUPDATE_ENABLED')) {
 if (!defined('AUTOUPDATE_LEVEL')) {
     define('AUTOUPDATE_LEVEL', 'trivial');
 }
-if (AUTOUPDATE_ENABLED) {
+if (AUTOUPDATE_ENABLED && $upgrade_requested == false) {
     // some logic to ensure a single auto-update attempt is made per day
     $nomodifyfile = BASE_FILE . 'nomodify.txt';
     $failure = false;
