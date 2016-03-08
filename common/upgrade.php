@@ -596,13 +596,6 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
 }
 
 if (env_is_cli()) {
-    // make sure only one upgrade script is running
-    $thislockfp = script_lock('upgrade');
-    if (!is_resource($thislockfp)) {
-        logit($logtarget, "upgrade.php already running, skipping this check");
-        exit();
-    }
-
     $interactive = true;
     $aulevel = 0;
     $single = null;
@@ -621,6 +614,15 @@ if (env_is_cli()) {
                 $single = $argv[$a];
             }
         }
+    }
+
+    $logtarget = $interactive ? "cli" : "controller.log";
+
+    // make sure only one upgrade script is running
+    $thislockfp = script_lock('upgrade');
+    if (!is_resource($thislockfp)) {
+        logit($logtarget, "upgrade.php already running, skipping this check");
+        exit();
     }
 
     if ($interactive) {
