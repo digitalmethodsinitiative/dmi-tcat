@@ -178,42 +178,27 @@ function remove_bin($params) {
     $delete_querybin_periods->bindParam(':id', $bin_id, PDO::PARAM_INT);
     $delete_querybin_periods->execute();
 
+    // delete phrase references associated with the query bin
+    $sql = "DELETE FROM tcat_query_bins_phrases WHERE querybin_id = :id";
+    $delete_query_bins_phrases = $dbh->prepare($sql);
+    $delete_query_bins_phrases->bindParam(":id", $bin_id, PDO::PARAM_INT);
+    $delete_query_bins_phrases->execute();
 
-    if ($type == "track" || $type == "geotrack") { // delete phrases
-        $sql = "SELECT phrase_id FROM tcat_query_bins_phrases WHERE querybin_id = :id";
-        $select_query_bins_phrases = $dbh->prepare($sql);
-        $select_query_bins_phrases->bindParam(":id", $bin_id, PDO::PARAM_INT);
-        $select_query_bins_phrases->execute();
-        if ($select_query_bins_phrases->rowCount() > 0) {
-            while ($results = $select_query_bins_phrases->fetch()) {
-                $sql = "DELETE FROM tcat_query_phrases WHERE id = :phrase_id";
-                $delete_query_phrases = $dbh->prepare($sql);
-                $delete_query_phrases->bindParam(":phrase_id", $results['phrase_id'], PDO::PARAM_INT);
-                $delete_query_phrases->execute();
-            }
-            $sql = "DELETE FROM tcat_query_bins_phrases WHERE querybin_id = :id";
-            $delete_query_bins_phrases = $dbh->prepare($sql);
-            $delete_query_bins_phrases->bindParam(":id", $bin_id, PDO::PARAM_INT);
-            $delete_query_bins_phrases->execute();
-        }
-    } elseif ($type == "follow") { // delete users
-        $sql = "SELECT user_id FROM tcat_query_bins_users WHERE querybin_id = :id";
-        $select_query_bins_users = $dbh->prepare($sql);
-        $select_query_bins_users->bindParam(":id", $bin_id, PDO::PARAM_INT);
-        $select_query_bins_users->execute();
-        if ($select_query_bins_users->rowCount() > 0) {
-            while ($results = $select_query_bins_users->fetch()) {
-                $sql = "DELETE FROM tcat_query_users WHERE id = :user_id";
-                $delete_query_users = $dbh->prepare($sql);
-                $delete_query_users->bindParam(":user_id", $results['user_id'], PDO::PARAM_INT);
-                $delete_query_users->execute();
-            }
-            $sql = "DELETE FROM tcat_query_bins_users WHERE querybin_id = :id";
-            $delete_query_bins_users = $dbh->prepare($sql);
-            $delete_query_bins_users->bindParam(":id", $bin_id, PDO::PARAM_INT);
-            $delete_query_bins_users->execute();
-        }
-    }
+    // delete orphaned phrases
+    $sql = "DELETE FROM tcat_query_phrases where id not in ( select phrase_id from tcat_query_bins_phrases )";
+    $delete_query_phrases = $dbh->prepare($sql);
+    $delete_query_phrases->execute();
+
+    // delete user references associated with the query bin
+    $sql = "DELETE FROM tcat_query_bins_users WHERE querybin_id = :id";
+    $delete_query_bins_users = $dbh->prepare($sql);
+    $delete_query_bins_users->bindParam(":id", $bin_id, PDO::PARAM_INT);
+    $delete_query_bins_users->execute();
+
+    // delete orphaned users
+    $sql = "DELETE FROM tcat_query_users where id not in ( select user_id from tcat_query_bins_users )";
+    $delete_query_users = $dbh->prepare($sql);
+    $delete_query_users->execute();
 
     $sql = "DROP TABLE " . $bin_name . "_tweets";
     $delete_table = $dbh->prepare($sql);
