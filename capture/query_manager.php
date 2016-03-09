@@ -119,23 +119,13 @@ function create_new_bin($params) {
         $users = explode(",", $params["newbin_users"]);
         $users = array_trim_and_unique($users);
 
-        // populate the phrases and connector tables
         foreach ($users as $user) {
-            $sql = "SELECT distinct(id) FROM tcat_query_users WHERE id = :user_id";
-            $check_phrase = $dbh->prepare($sql);
-            $check_phrase->bindParam(":user_id", $user, PDO::PARAM_INT);
-            $check_phrase->execute();
-            if ($check_phrase->rowCount() > 0) {
-                $results = $check_phrase->fetch();
-                $inid = $results['id'];
-            } else {
-                $sql = "INSERT INTO tcat_query_users (id) VALUES (:user_id)";
-                $insert_phrase = $dbh->prepare($sql);
-                $insert_phrase->bindParam(":user_id", $user, PDO::PARAM_INT);
-                $insert_phrase->execute();
-                $inid = $dbh->lastInsertId();
-            }
-            $sql = "INSERT INTO tcat_query_bins_users (user_id,querybin_id,starttime,endtime) VALUES ('" . $inid . "','" . $lastbinid . "','$now','0000-00-00 00:00:00')";
+            // populate the users and connector tables
+            $sql = "INSERT IGNORE INTO tcat_query_users (id) VALUES (:user_id)";
+            $insert_phrase = $dbh->prepare($sql);
+            $insert_phrase->bindParam(":user_id", $user, PDO::PARAM_INT);
+            $insert_phrase->execute();      // the user id can already exist here, but this 'error' will be ignored
+            $sql = "INSERT INTO tcat_query_bins_users (user_id,querybin_id,starttime,endtime) VALUES ('" . $user . "','" . $lastbinid . "','$now','0000-00-00 00:00:00')";
             $insert_connect = $dbh->prepare($sql);
             $insert_connect->execute();
         }
