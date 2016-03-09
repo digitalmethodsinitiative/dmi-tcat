@@ -186,23 +186,26 @@ if ($bintype == 'track') {
     }
 
     foreach ($phrases as $phrase) {
-        $sql = "UPDATE tcat_query_bins_phrases as BP inner join tcat_query_phrases as P on BP.phrase_id = P.id set BP.phrase_id = ( select min(id) from tcat_query_phrases where phrase = " . $dbh->Quote($phrase) .  " ) where P.phrase = " . $dbh->Quote($phrase) . ';';
+        $starttime = $phrase_starttime[$phrase];
+        $endtime = $phrase_endtime[$phrase];
+        $sql = "INSERT INTO tcat_query_bins_phrases SET " .
+               " starttime = '$starttime', " .
+               " endtime = '$endtime', " .
+               " phrase_id = ( select MIN(id) from tcat_query_phrases where phrase = " . $dbh->Quote($phrase) . " ), " .
+               " querybin_id = ( select MAX(id) from tcat_query_bins );";
+        fputs($fh, $sql . "\n");
+    }
+
+    // we could have just now inserted duplicate phrases in the database, the next two queries resolve that problem
+
+    foreach ($phrases as $phrase) {
+        $sql = "UPDATE tcat_query_bins_phrases as BP inner join tcat_query_phrases as P on BP.phrase_id = P.id set BP.phrase_id = ( select MIN(id) from tcat_query_phrases where phrase = " . $dbh->Quote($phrase) .  " ) where P.phrase = " . $dbh->Quote($phrase) . ';';
         fputs($fh, $sql . "\n");
     }
 
     $sql = "DELETE FROM tcat_query_phrases where id not in ( select phrase_id from tcat_query_bins_phrases );";
     fputs($fh, $sql . "\n");
 
-    foreach ($phrases as $phrase) {
-        $starttime = $phrase_starttime[$phrase];
-        $endtime = $phrase_endtime[$phrase];
-        $sql = "INSERT INTO tcat_query_bins_phrases SET " .
-               " starttime = '$starttime', " .
-               " endtime = '$endtime', " .
-               " phrase_id = ( select id from tcat_query_phrases where phrase = " . $dbh->Quote($phrase) . " ), " .
-               " querybin_id = ( select MAX(id) from tcat_query_bins );";
-        fputs($fh, $sql . "\n");
-    }
 
 } else if ($bintype == 'follow') {
 
