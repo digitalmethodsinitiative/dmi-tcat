@@ -24,7 +24,7 @@ if (!env_is_cli()) {
 
 if ($argc !== 3) {
     print "Please provide exactly two arguments to this script: the first one the name of your query bin, the second one either 'structure' or 'all'\n";
-    print "All will export query phrases AND data, structure will export only query phrases.\n";
+    print "All will export query phrases AND data, structure will export only query phrases and create an empty bin.\n";
     print "Example: php export.php flowers all\n";
     exit();
 }
@@ -131,39 +131,35 @@ while ($row = $q->fetch(PDO::FETCH_ASSOC)) {
     $periods[] = $obj;
 }
 
-if ($export == 'all') {
+/* First run the mysqldump */
 
-    /* First run the mysqldump */
-
-    $tables_in_db = array();
-    $sql = "show tables";
-    $q = $dbh->prepare($sql);
-    $q->execute();
-    while ($row = $q->fetch(PDO::FETCH_NUM)) {
-        $tables_in_db[] = $row[0];
-    }
-
-    $string = '';
-    $tables = array('tweets', 'mentions', 'urls', 'hashtags', 'withheld', 'places', 'media');
-    foreach ($tables as $table) {
-        $tablename = "$bin" . '_' . $table;
-        if (in_array($tablename, $tables_in_db)) {
-            $string .= $tablename . ' ';
-        }
-    }
-
-    if ($string == '') {
-        die("Empty bin name would dump the complete database. Exiting!\n");
-    }
-
-    $cmd = "$bin_mysqldump --default-character-set=utf8mb4 -u$dbuser -h $hostname $database $string > $filename";
-    system($cmd);
-
-} else {
-
-    touch($filename);
-
+$tables_in_db = array();
+$sql = "show tables";
+$q = $dbh->prepare($sql);
+$q->execute();
+while ($row = $q->fetch(PDO::FETCH_NUM)) {
+    $tables_in_db[] = $row[0];
 }
+
+$string = '';
+$tables = array('tweets', 'mentions', 'urls', 'hashtags', 'withheld', 'places', 'media');
+foreach ($tables as $table) {
+    $tablename = "$bin" . '_' . $table;
+    if (in_array($tablename, $tables_in_db)) {
+        $string .= $tablename . ' ';
+    }
+}
+
+if ($string == '') {
+    die("Empty bin name would dump the complete database. Exiting!\n");
+}
+
+if ($export == "all") {
+    $cmd = "$bin_mysqldump --default-character-set=utf8mb4 -u$dbuser -h $hostname $database $string > $filename";
+} else {
+    $cmd = "$bin_mysqldump --no-data --default-character-set=utf8mb4 -u$dbuser -h $hostname $database $string > $filename";
+}
+system($cmd);
 
 /* Now append the dump with TCAT table information */
 
