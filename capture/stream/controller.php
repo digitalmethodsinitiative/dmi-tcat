@@ -79,12 +79,15 @@ if (AUTOUPDATE_ENABLED && $upgrade_requested == false) {
         if (is_array($remote)) {
             $date_unix = strtotime($remote['date']);
             if ($git['commit'] == $remote['commit'] || $date_unix > time() - 3600 * 24) {
+                logit("controller.log", "not yet executing auto-update, because the last commit is less than a day old");
                 $failure = true;
             }
         } else {
+            logit("controller.log", "auto-update not supported, because we cannot get the remote git information");
             $failure = true;
         }
     } else {
+        logit("controller.log", "auto-update not supported, because we cannot get the local git information");
         $failure = true;
     }
     if ($failure == false) {
@@ -92,6 +95,7 @@ if (AUTOUPDATE_ENABLED && $upgrade_requested == false) {
         $nomodifyfile = BASE_FILE . 'nomodify.txt';
         if (!file_exists($nomodifyfile)) {
             // the nomodify file does not seem to exist
+            logit("controller.log", "auto-update not supported, because the nomodify.txt file appears to be missing");
             $failure = true;
         }
     }
