@@ -643,6 +643,16 @@ if (env_is_cli()) {
     }
 
     upgrades(false, $interactive, $aulevel, $single);
+
+    $dbh = pdo_connect();
+    $roles = unserialize(CAPTUREROLES);
+    foreach ($roles as $role) {
+        logit($logtarget, "Restarting active capture role: $role");
+        $query = "INSERT INTO tcat_controller_tasklist ( task, instruction ) values ( '$role', 'reload' )";
+        $rec = $dbh->prepare($query);
+        $rec->execute();
+    }
+
 }
 
 
