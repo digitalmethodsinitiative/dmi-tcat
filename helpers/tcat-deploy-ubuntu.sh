@@ -863,7 +863,7 @@ apt-get -y install $MYSQL_SERVER_PKG mysql-client-5.6
 
 echo "$PROG: installing Apache and PHP"
 apt-get -y install \
-    apache2-mpm-prefork apache2-utils \
+    apache2 apache2-utils \
     libapache2-mod-php5 \
     php5-mysql php5-curl php5-cli php-patchwork-utf8
 if [ "$UBUNTU_VERSION_MAJOR" -ge 15 ]; then
