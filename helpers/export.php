@@ -75,7 +75,7 @@ $binforfile = escapeshellcmd($bin);       /* sanitize to filename */
 
 $storedir = BASE_FILE . 'analysis/' . $resultsdir;              /* resultsdir is relative to the analysis/ folder */
 $datepart = date("Y-m-d_h:i");
-$filepart = $binforfile . '-' . $bintype . '-' . $export . '-' . $datepart . '.sql';
+$filepart = str_replace(" ", "_", $binforfile . '-' . $bintype . '-' . $export . '-' . $datepart . '.sql');
 $filename = $storedir . $filepart;
 
 if (!is_writable($storedir)) {
