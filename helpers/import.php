@@ -5,7 +5,7 @@ function env_is_cli() {
     return (!isset($_SERVER['SERVER_SOFTWARE']) && (php_sapi_name() == 'cli' || (is_numeric($_SERVER['argc']) && $_SERVER['argc'] > 0)));
 }
 
-require_once("../config.php");
+require_once(__DIR__ . "/../config.php");
 
 require_once(BASE_FILE . '/capture/query_manager.php');
 require_once(BASE_FILE . '/analysis/common/config.php');      /* to get global variable $resultsdir */
@@ -96,3 +96,5 @@ function get_executable($binary) {
     }
     return $where;
 }
+
+?>
