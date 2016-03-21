@@ -5,7 +5,7 @@ function env_is_cli() {
     return (!isset($_SERVER['SERVER_SOFTWARE']) && (php_sapi_name() == 'cli' || (is_numeric($_SERVER['argc']) && $_SERVER['argc'] > 0)));
 }
 
-require_once("../config.php");
+require_once(__DIR__ . "/../config.php");
 
 require_once(BASE_FILE . '/capture/query_manager.php');
 require_once(BASE_FILE . '/analysis/common/config.php');      /* to get global variable $resultsdir */
@@ -22,12 +22,73 @@ if (!env_is_cli()) {
     }
 }
 
-if ($argc !== 3) {
-    print "Please provide exactly two arguments to this script: the first one the name of your query bin, the second one either 'structure' or 'all'\n";
-    print "All will export query phrases AND data, structure will export only query phrases and create an empty bin.\n";
-    print "Example: php export.php flowers all\n";
-    exit();
+// Process command line
+// Sets these variables:
+//   $outfile - set if -o specified
+//   $bin - name of query bin
+//   $export - either 'all' or 'query'
+
+$prog = basename($argv[0]);
+
+$args = array();
+for ($i = 1; $i < $argc; $i++) {
+    if (substr($argv[$i], 0, 1) === '-') {
+        $opt = substr($argv[$i], 1);
+        switch ($opt) {
+        case 'o':
+            $i++;
+            if ($argc <= $i) {
+                die(" $prog: usage error: missing option argument for -$opt\n");
+            }
+            $outfile = $argv[$i];
+            break;
+        case 'h':
+            echo "Usage: $prog [options] queryBin exportType\n";
+            echo "Options:\n";
+            echo "  -o file  output file (default: automatically generated)\n";
+            echo "  -h       show this help message\n";
+            echo "exportType:\n";
+            echo "  all        export query phrases AND data\n";
+            echo "  structure  export only query phrases and create an empty bin\n";
+            exit(0);
+            break;
+        default:
+            die("$prog: usage error: unknown option: -$opt (-h for help)\n");
+            break;
+        }
+    } else {
+        array_push($args, $argv[$i]);
+    }
 }
+
+if (count($args) < 1) {
+    die("$prog: usage error: missing query bin (-h for help)\n");
+}
+if (count($args) < 2) {
+    die("$prog: usage error: missing exportType (-h for help)\n");
+}
+if (2 < count($args)) {
+    die("$prog: usage error: too many arguments (-h for help)\n");
+}
+
+$bin = $args[0];
+
+switch ($args[1]) {
+    case "structure": {
+        $export = 'queries';
+        break;
+    }
+    case "all": {
+        $export = 'all';
+        break;
+    }
+    default: {
+        die("$prog: usage error: unrecognized exportType: $args[1] (-h for help)\n");
+        break;
+    }
+}
+
+// Execute
 
 $bin_mysqldump = get_executable("mysqldump");
 if ($bin_mysqldump === null) {
@@ -46,46 +107,38 @@ putenv('LANG=en_US.UTF-8');
 putenv('LANGUAGE=en_US.UTF-8');
 putenv('MYSQL_PWD=' . $dbpass);     /* this avoids having to put the password on the command-line */
 
-$bin = $argv[1];
-if (!isset($bin)) {
-    die("Please specify a bin name.\n");
-}
 $bintype = getBinType($bin);
 
 if ($bintype === false) {
-    die("The query bin '$bin' could not be found!\n");
+    die("$prog: error: unknown query bin: $bin\n");
 }
 
-switch($argv[2]) {
-    case "structure": {
-        $export = 'queries';
-        break;
-    }
-    case "all": {
-        $export = 'all';
-        break;
-    }
-    default: {
-        die("Unrecognized export option.\n");
-        break;
-    }
-}
+if (! isset($outfile)) {
+  // Output to generated filename
 
 $binforfile = escapeshellcmd($bin);       /* sanitize to filename */
 
 $storedir = BASE_FILE . 'analysis/' . $resultsdir;              /* resultsdir is relative to the analysis/ folder */
 $datepart = date("Y-m-d_h:i");
-$filepart = $binforfile . '-' . $bintype . '-' . $export . '-' . $datepart . '.sql';
+$filepart = str_replace(" ", "_", $binforfile . '-' . $bintype . '-' . $export . '-' . $datepart . '.sql');
 $filename = $storedir . $filepart;
+} else {
+  // Output to filename from command line
 
-if (!is_writable($storedir)) {
-    print "The store directory '$storedir' is not writable for the user you are currently running under!\n";
-    print "You need to run this script as another user (ie. root or www-data) or change the directory permissions.\n";
-    exit();
+  $p = (substr($outfile, 0, 1) === '/') ? $outfile :
+        getcwd() . '/' . $outfile;
+  $storedir = dirname($p);
+  $filename = preg_replace("/\.gz$/", "", $p);
 }
 
+if (!is_writable($storedir)) {
+   die("$prog: error: directory not writable: $storedir\n");
+}
 if (file_exists($filename)) {
-    die("Archive file '$filename' already exists!\n");
+    die("$prog: error: file already exists: $filename\n");
+}
+if (file_exists($filename . '.gz')) {
+    die("$prog: error: file already exists: ${filename}.gz\n");
 }
 
 set_time_limit(0);
@@ -240,8 +293,11 @@ fclose($fh);
 system("$bin_gzip $filename");
 
 print "Dump completed and saved on disk: $filename.gz\n";
-$url_destination = BASE_URL . 'analysis/' . $resultsdir . $filepart . '.gz';
-print "URL to download dump: $url_destination\n";
+
+if (! isset($outfile)) {
+    $url_destination = BASE_URL . 'analysis/' . $resultsdir . $filepart . '.gz';
+    print "URL to download dump: $url_destination\n";
+}
 
 function get_executable($binary) {
     $where = `which $binary`;
@@ -251,3 +307,5 @@ function get_executable($binary) {
     }
     return $where;
 }
+
+?>
