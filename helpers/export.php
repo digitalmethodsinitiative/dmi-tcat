@@ -1,5 +1,56 @@
 #!/usr/bin/php5
 <?php
+// DMI-TCAT export
+// 
+// Exports query bins (with or with captured data) from DMI-TCAT.
+// 
+// Usage: export.php [options] {queryBins...}
+// 
+// ## Examples:
+// 
+// Export queries and data for all query bins in TCAT. By default the export
+// is saved in the "analysis/cache" directory under the DMI-TCAT install
+// directory (usually: /var/www/dmi-tcat).
+// 
+//     export.php
+// 
+// Export structure (i.e. queries only, no data) for all query bins in TCAT:
+// 
+//     export.php -s
+// 
+// Export queries and data for the query bin "foobar":
+// 
+//     export.php foobar
+// 
+// Export queries and data for the three query bins "foo", "bar" and "baz":
+// 
+//     export.php foo bar baz
+// 
+// Export queries and data for all query bins, saving it to the named file:
+// 
+//     export.php -o myexportfile.sql.gz
+// 
+// Show help message:
+// 
+//     export.php -h
+// 
+// ## Old syntax
+// 
+// The old syntax (where there must be exactly two arguments: the query
+// bin and the export type) is still supported for backward compatibility.
+// 
+// Exports queries and data for the query bin "foobar":
+// 
+//    export.php foobar all
+// 
+// Exports queries only for the query bin "foobar":
+// 
+//    export.php foobar structure
+// 
+// Note: if exporting two query bins the name of the last/second query
+// bin cannot be "all" or "structure", otherwise it will be interepreted
+// as the export type instead of the name of a query bin.
+// 
 
 function env_is_cli() {
     return (!isset($_SERVER['SERVER_SOFTWARE']) && (php_sapi_name() == 'cli' || (is_numeric($_SERVER['argc']) && $_SERVER['argc'] > 0)));
@@ -25,14 +76,16 @@ if (!env_is_cli()) {
 // Process command line
 // Sets these variables:
 //   $outfile - set if -o specified
-//   $bin - name of query bin
+//   $queryBins - array of query bin names (empty array means export all)
 //   $export - either 'all' or 'query'
+
+$export = 'all'; // default
 
 $prog = basename($argv[0]);
 
 $args = array();
 for ($i = 1; $i < $argc; $i++) {
-    if (substr($argv[$i], 0, 1) === '-') {
+    if (substr($argv[$i], 0, 1) == '-') {
         $opt = substr($argv[$i], 1);
         switch ($opt) {
         case 'o':
@@ -42,14 +95,19 @@ for ($i = 1; $i < $argc; $i++) {
             }
             $outfile = $argv[$i];
             break;
+	case 'd':
+	    $export = 'all';
+	    break;
+	case 's':
+	    $export = 'query';
+	    break;
         case 'h':
-            echo "Usage: $prog [options] queryBin exportType\n";
+            echo "Usage: $prog [options] {queryBins...}\n";
             echo "Options:\n";
+            echo "  -d       export query phrases AND data (default)\n";
+            echo "  -s       export query pharases only, with no data\n";
             echo "  -o file  output file (default: automatically generated)\n";
             echo "  -h       show this help message\n";
-            echo "exportType:\n";
-            echo "  all        export query phrases AND data\n";
-            echo "  structure  export only query phrases and create an empty bin\n";
             exit(0);
             break;
         default:
@@ -61,32 +119,49 @@ for ($i = 1; $i < $argc; $i++) {
     }
 }
 
-if (count($args) < 1) {
-    die("$prog: usage error: missing query bin (-h for help)\n");
-}
-if (count($args) < 2) {
-    die("$prog: usage error: missing exportType (-h for help)\n");
-}
-if (2 < count($args)) {
-    die("$prog: usage error: too many arguments (-h for help)\n");
+if (2 <= count($args)) {
+    // Legacy command line format: treat last argument as exportType
+    switch ($args[count($args) - 1]) {
+        case "structure": {
+            $export = 'queries';
+            array_pop($args);
+            break;
+        }
+        case "all": {
+            $export = 'all';
+	    array_pop($args);
+            break;
+        }
+	// Default: ignore and treat last argument as a queryBin name
+    }
 }
 
-$bin = $args[0];
+$queryBins = $args;
 
-switch ($args[1]) {
-    case "structure": {
-        $export = 'queries';
-        break;
+// All query bins
+
+$isAllBins = false;
+if (count($queryBins) == 0) {
+    // No query bins specified, export all of them
+
+    $isAllBins = true;
+    $queryBins = getAllbins();
+    if (count($queryBins) == 0) {
+        die("$prog: no query bins exist in this deployment of TCAT)\n");
     }
-    case "all": {
-        $export = 'all';
-        break;
-    }
-    default: {
-        die("$prog: usage error: unrecognized exportType: $args[1] (-h for help)\n");
-        break;
+    sort($queryBins);
+} else {
+
+    // Check query bin names are vali
+    foreach ($queryBins as $bin) {
+        $bintype = getBinType($queryBins[0]);
+        if ($bintype === false) {
+            die("$prog: error: unknown query bin: $queryBins[0]\n");
+        }
     }
 }
+
+
 
 // Execute
 
@@ -107,28 +182,35 @@ putenv('LANG=en_US.UTF-8');
 putenv('LANGUAGE=en_US.UTF-8');
 putenv('MYSQL_PWD=' . $dbpass);     /* this avoids having to put the password on the command-line */
 
-$bintype = getBinType($bin);
+// Output file
 
-if ($bintype === false) {
-    die("$prog: error: unknown query bin: $bin\n");
-}
+$timestamp = date("Y-m-d_h:i");
 
 if (! isset($outfile)) {
-  // Output to generated filename
+    // Generate filename
 
-$binforfile = escapeshellcmd($bin);       /* sanitize to filename */
+    if (count($queryBins) == 1) {
+        $bintype = getBinType($queryBins[0]);
+        if ($bintype === false) {
+            die("$prog: error: unknown query bin: $queryBins[0]\n");
+        }
+        $binAndType = escapeshellcmd($queryBins[0]) . '-' . $bintype;
+    } else if ($isAllBins) {
+	$binAndType = 'TCAT_allQueryBins';
+    } else {
+	$binAndType = 'TCAT_queryBins';
+    }
 
-$storedir = BASE_FILE . 'analysis/' . $resultsdir;              /* resultsdir is relative to the analysis/ folder */
-$datepart = date("Y-m-d_h:i");
-$filepart = str_replace(" ", "_", $binforfile . '-' . $bintype . '-' . $export . '-' . $datepart . '.sql');
-$filename = $storedir . $filepart;
+    $storedir = BASE_FILE . 'analysis/' . $resultsdir;
+    $filepart = $binAndType . '-' . $export . '-' . $timestamp . '.sql';
+    $filename = $storedir . str_replace(' ', '_', $filepart);
 } else {
-  // Output to filename from command line
+    // Use filename from command line
 
-  $p = (substr($outfile, 0, 1) === '/') ? $outfile :
-        getcwd() . '/' . $outfile;
-  $storedir = dirname($p);
-  $filename = preg_replace("/\.gz$/", "", $p);
+    $p = (substr($outfile, 0, 1) === '/') ? $outfile :
+          getcwd() . '/' . $outfile;
+    $storedir = dirname($p);
+    $filename = preg_replace("/\.gz$/", "", $p);
 }
 
 if (!is_writable($storedir)) {
@@ -140,6 +222,32 @@ if (file_exists($filename)) {
 if (file_exists($filename . '.gz')) {
     die("$prog: error: file already exists: ${filename}.gz\n");
 }
+
+// Start file
+
+$fh = fopen($filename, "a");
+fputs($fh, "-- Export DMI-TCAT: begin ($timestamp) $export\n");
+fputs($fh, ($isAllBins) ? "-- All Query Bins:\n" : "-- Query Bins:\n");
+$n = 0;
+foreach ($queryBins as $bin) {
+  $n++;
+  fputs($fh, "-- $n. $bin\n");
+}
+fputs($fh, "\n");
+fclose($fh);
+
+// Export all named bins
+
+foreach ($queryBins as $bin) {
+
+$bintype = getBinType($bin);
+if ($bintype === false) {
+    die("$prog: error: unknown query bin: $bin\n");
+}
+
+$fh = fopen($filename, "a");
+fputs($fh, "-- Export DMI-TCAT query bin: begin: ${bin} ($bintype)\n");
+fclose($fh);
 
 set_time_limit(0);
 
@@ -208,9 +316,9 @@ if ($string == '') {
 }
 
 if ($export == "all") {
-    $cmd = "$bin_mysqldump --default-character-set=utf8mb4 -u$dbuser -h $hostname $database $string > $filename";
+    $cmd = "$bin_mysqldump --default-character-set=utf8mb4 -u$dbuser -h $hostname $database $string >> $filename";
 } else {
-    $cmd = "$bin_mysqldump --no-data --default-character-set=utf8mb4 -u$dbuser -h $hostname $database $string > $filename";
+    $cmd = "$bin_mysqldump --no-data --default-character-set=utf8mb4 -u$dbuser -h $hostname $database $string >> $filename";
 }
 system($cmd);
 
@@ -286,6 +394,16 @@ foreach ($periods as $prd) {
     fputs($fh, $sql . "\n");
 }
 
+fputs($fh, "-- Export DMI-TCAT query bin: end: ${bin}\n");
+fputs($fh, "\n");
+fclose($fh);
+
+} // foreach ($bin in $queryBins)
+
+// Finish file
+
+$fh = fopen($filename, "a");
+fputs($fh, "-- Export DMI-TCAT: end\n");
 fclose($fh);
 
 /* Finally gzip the file */
@@ -293,6 +411,10 @@ fclose($fh);
 system("$bin_gzip $filename");
 
 print "Dump completed and saved on disk: $filename.gz\n";
+
+if ($isAllBins) {
+    print "Number of query bins: " . count($queryBins) . "\n";
+}
 
 if (! isset($outfile)) {
     $url_destination = BASE_URL . 'analysis/' . $resultsdir . $filepart . '.gz';
