@@ -245,7 +245,7 @@ promptPassword() {
 #----------------------------------------------------------------
 # Process command line
 
-SHORT_OPTS="bc:fGhs:U"
+SHORT_OPTS="bc:Ghs:U"
 if ! getopt $SHORT_OPTS "$@" >/dev/null; then
     echo "$PROG: usage error (use -h for help)" >&2
     exit 2
@@ -258,7 +258,6 @@ eval set -- $ARGS
 BATCH_MODE=
 CONFIG_FILE=
 GEO_SEARCH=y
-FORCE_REINSTALL=
 CMD_SERVERNAME=
 DO_UPDATE_UPGRADE=y
 HELP=
@@ -268,7 +267,6 @@ while [ $# -gt 0 ]; do
         -b) BATCH_MODE=y;;
 	-c) CONFIG_FILE="$2"; shift;;
 	-G) GEO_SEARCH=n;;
-	-f) FORCE_REINSTALL=y;;
         -s) CMD_SERVERNAME="$2"; shift;;
 	-U) DO_UPDATE_UPGRADE=n;;
         -h) HELP='y';;
@@ -285,7 +283,6 @@ Options:
   -c configFile  load parameters from file
   -s server      the name or IP address of this machine
   -G             install without geographical search (for Ubuntu < 15.x)
-  -f             force re-install
   -U             do not run apt-get update; apt-get update at the beginning
   -h             show this help message
 EOF
@@ -307,27 +304,6 @@ if [ $(id -u) -ne 0 ]; then
    echo "$PROG: error: this script was run without root privileges" 1>&2
    tput sgr0
    exit 1
-fi
-
-# Already installed?
-
-if [ "$FORCE_REINSTALL" != 'y' ]; then
-    # Reinstall not explicity allowed, check if not already installed
-
-    if dpkg --status $MYSQL_SERVER_PKG >/dev/null 2>&1; then
-	echo "$PROG: $MYSQL_SERVER_PKG already installed (use -f to force reinstall)" >&2
-	exit 1
-    fi
-
-    if [ -e "$TCAT_DIR" ]; then
-	echo "$PROG: TCAT already installed (use -f to force reinstall)" >&2
-	exit 1
-    fi
-
-    if [ -L /etc/apparmor.d/disable/usr.sbin.mysqld ]; then
-	echo "$PROG: apparmor configured (use -f to forece reinstall)" >&2
-	exit 1
-    fi
 fi
 
 # Expected OS version
@@ -362,6 +338,18 @@ if [ "$UBUNTU_VERSION_MAJOR" -lt 15 ]; then
 	    fi
 	fi
     fi
+fi
+
+# Already installed?
+
+if [ -e "$TCAT_DIR" ]; then
+    echo "$PROG: cannot install: TCAT already installed: $TCAT_DIR" >&2
+    exit 1
+fi
+
+if dpkg --status $MYSQL_SERVER_PKG >/dev/null 2>&1; then
+    echo "$PROG: cannot install: $MYSQL_SERVER_PKG already installed" >&2
+    exit 1
 fi
 
 #----------------------------------------------------------------
@@ -487,7 +475,6 @@ while [ "$BATCH_MODE" != "y" ]; do
 	echo "    TCAT standard login name: $TCATUSER"
 	echo
 	if promptYN "Use these values (or \"q\" to quit)"; then
-	    BATCH_MODE=n # actually this is redundant: the break will exit the loop
 	    break; # exit while-loop to start installing
 	fi
 	echo
@@ -788,50 +775,15 @@ if [ "$BATCH_MODE" != 'y' ]; then
 fi
 
 # Clear any existing TCAT crontab references
-# TODO: are these needed? /etc/crontab is not written to (anymore?)
 echo "" > /etc/cron.d/tcat
+
+# Remove entries in /etc/crontab from by a previous version of the installer.
+# Note: this version of the installer does not add entries to /etc/crontab.
 # These lines used to be written to the global /etc/crontab file
 sed -i 's/^# Run TCAT controller every minute$//g' /etc/crontab
 sed -i 's/^.*cd \/var\/www\/dmi-tcat\/capture\/stream\/; php controller.php.*$//g' /etc/crontab
 sed -i 's/^# Run DMI-TCAT URL expander every hour$//g' /etc/crontab
 sed -i 's/^.*cd \/var\/www\/dmi-tcat\/helpers; sh urlexpand.sh.*$//g' /etc/crontab
-
-#----------------------------------------------------------------
-# Undo things that prevents a re-install
-#
-# WARNING: reinstalls are experimental. It certainly does not undo
-# everything that was previously installed.
-#
-# If these were present, the -f option must have been specified for the
-# script to get this far. So the user is ok to remove them.
-
-# MySQL already installed?
-
-if dpkg --status $MYSQL_SERVER_PKG >/dev/null 2>&1; then
-    # Remove MySQL and re-install it so new root password gets used,
-    # otherwise this script will need to be much more complex.
-    tput bold
-    echo "Uninstalling MySQL ..."
-    tput sgr0
-    echo
-
-    apt-get -y purge $MYSQL_SERVER_PKG
-
-    rm -rf /var/lib/mysql
-    echo
-fi
-
-# TCAT directory already exists
-
-if [ -e "$TCAT_DIR" ]; then
-    rm -r "$TCAT_DIR"
-fi
-
-# Link already exists
-
-if [ -L /etc/apparmor.d/disable/usr.sbin.mysqld ]; then
-    rm /etc/apparmor.d/disable/usr.sbin.mysqld
-fi
 
 #----------------------------------------------------------------
 
@@ -881,6 +833,9 @@ fi
 
 # Installation and autoconfiguration of MySQL will not work with Apparmor profile enabled
 
+if [ -L /etc/apparmor.d/disable/usr.sbin.mysqld ]; then
+    rm /etc/apparmor.d/disable/usr.sbin.mysqld # remove so "ln" does not fail
+fi
 ln -s /etc/apparmor.d/usr.sbin.mysqld /etc/apparmor.d/disable/
 /etc/init.d/apparmor restart 
 
