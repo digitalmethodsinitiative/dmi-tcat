@@ -16,29 +16,7 @@
 #
 # Run with -h for help.
 #
-# WARNING: reinstalls are experimental. Running this script more than
-# once is not guaranteed to work.
 # ----------------------------------------------------------------
-
-#----------------------------------------------------------------
-# Changelog:
-#
-# - set MySQL server's password so user is not prompted for it by apt-get
-# - batch mode added for unattended installation (with a config file)
-# - in interactive mode, all questions are asked at the beginning
-# - default values provided for parameters (novice users can just accept them)
-# - default SERVERNAME is derived from IP address (useful for testing on VMs)
-# - option to generate random passwords (more secure than user made up ones)
-# - shell user and groups are automatically created if they don't already exist
-# - user cannot change the name of the MySQL admin account (it must be "root")
-# - experimental support for reinstalling (i.e. running the script again)
-# - tested on Ubuntu 14.04.3 and 15.04.
-#
-# TODO:
-#
-# - Handle errors from commands properly. Abort if a subcommand fails.
-# - Reorganise so installation of MySQL, Apache and TCAT are logically separate
-#----------------------------------------------------------------
 
 # TCAT Installer parameters
 
@@ -56,6 +34,10 @@ URLEXPANDYES=y # install URL Expander or not
 # Apache
 
 SERVERNAME= # should default to this machine's IP address (-s overrides)
+
+# TCAT
+
+TCAT_AUTO_UPDATE=0 # 0=off, 1=trivial, 2=substantial, 3=expensive
 
 # Unix user and group to own the TCAT files
 
@@ -571,6 +553,35 @@ while [ "$BATCH_MODE" != "y" ]; do
 	fi
     done
 
+    # Automatic updates
+
+    if [ "$FIRST_PASS" = 'y' ]; then
+	echo
+	echo "TCAT can automatically update itself in the background."
+	echo "When updates are applied, the database is usually locked and"
+	echo "tweet capturing may be blocked. A lower update level means"
+	echo "long lock times and interrupted captures can be avoided, at the"
+	echo "cost of not automatically receiving some updates. Zero means"
+	echo "automatic updates are disabled."
+	echo
+    fi
+
+    DEFAULT=$TCAT_AUTO_UPDATE
+    TCAT_AUTO_UPDATE=
+    while [ -z "$TCAT_AUTO_UPDATE" ]; do
+	read -p "Automatically upgrade TCAT (0=off, 1=trivial, 2=substantial, 3=expensive) [$DEFAULT]: " TCAT_AUTO_UPDATE
+	if [ -z "$TCAT_AUTO_UPDATE" ]; then
+	    TCAT_AUTO_UPDATE=$DEFAULT
+	fi
+	if [ "$TCAT_AUTO_UPDATE" != '0' -a \
+	    "$TCAT_AUTO_UPDATE" != '1' -a \
+	    "$TCAT_AUTO_UPDATE" != '2' -a \
+	    "$TCAT_AUTO_UPDATE" != '3' ] ; then
+	    echo "Invalid value (expecting 0, 1, 2 or 3)"
+	    TCAT_AUTO_UPDATE= # clear to reprompt
+	fi
+    done
+
     # Advanced parameters
 
     if [ "$FIRST_PASS" = 'y' ]; then
@@ -735,6 +746,14 @@ if [ -z "$USERTOKEN" ]; then
 fi
 if [ -z "$USERSECRET" ]; then
     echo "$PROG: Twitter USERSECRET cannot be blank" >&2
+    exit 1
+fi
+
+if [ "$TCAT_AUTO_UPDATE" -ne 0 -a \
+     "$TCAT_AUTO_UPDATE" -ne 1 -a \
+     "$TCAT_AUTO_UPDATE" -ne 2 -a \
+     "$TCAT_AUTO_UPDATE" -ne 3 ] ; then
+    echo "$PROG: invalid TCAT_AUTO_UPDATE (expecting 0, 1, 2 or 3): $TCAT_AUTO_UPDATE" >&2
     exit 1
 fi
 
@@ -1066,6 +1085,26 @@ sed -i "s/^\$twitter_consumer_key = \"\";/\$twitter_consumer_key = \"$CONSUMERKE
 sed -i "s/^\$twitter_consumer_secret = \"\";/\$twitter_consumer_secret = \"$CONSUMERSECRET\";/g" /var/www/dmi-tcat/config.php
 sed -i "s/^\$twitter_user_token = \"\";/\$twitter_user_token = \"$USERTOKEN\";/g" /var/www/dmi-tcat/config.php
 sed -i "s/^\$twitter_user_secret = \"\";/\$twitter_user_secret = \"$USERSECRET\";/g" /var/www/dmi-tcat/config.php
+
+# Configure TCAT automatic updates
+
+VARIABLE=AUTOUPDATE_ENABLED
+if [ $TCAT_AUTO_UPDATE -eq 0 ]; then
+    VALUE=false
+else
+    VALUE=true
+fi
+sed -i "s/^define('$VARIABLE',[^)]*);/define('$VARIABLE', $VALUE);/g" "$CFG"
+
+VARIABLE=AUTOUPDATE_LEVEL
+case $TCAT_AUTO_UPDATE in
+    0) VALUE="'trivial'";; # note: quotes in value are important
+    1) VALUE="'trivial'";;
+    2) VALUE="'substantial'";;
+    3) VALUE="'expensive'";;
+    *) echo "$PROG: internal error: bad TCAT_AUTO_UPDATE" >&2; exit 1;;
+esac
+sed -i "s/^define('$VARIABLE',[^)]*);/define('$VARIABLE', $VALUE);/g" "$CFG"
 
 # Check if the current MySQL configuration is the system default one
 CHANGEDMYCNF=`debsums -ce | grep -c -e "/etc/mysql/my.cnf"`
