@@ -97,12 +97,12 @@ set -u # fail on attempts to expand undefined variables
 
 # Where the MySQL defaults files are written
 
-MYSQL_CNF_PREFIX='/var/lib/mysql/user-'
+MYSQL_CNF_PREFIX='/etc/mysql/conf.d/tcat-'
 MYSQL_CNF_SUFFIX='.cnf'
 
 # Where the TCAT logins are written
 
-TCAT_CNF_PREFIX='/var/lib/mysql/tcat-login-'
+TCAT_CNF_PREFIX='/etc/apache2/tcat-login-'
 TCAT_CNF_SUFFIX='.txt'
 
 # Where to install TCAT files
