@@ -245,7 +245,7 @@ promptPassword() {
 #----------------------------------------------------------------
 # Process command line
 
-SHORT_OPTS="bc:fGs:h"
+SHORT_OPTS="bc:fGhs:U"
 if ! getopt $SHORT_OPTS "$@" >/dev/null; then
     echo "$PROG: usage error (use -h for help)" >&2
     exit 2
@@ -260,6 +260,7 @@ CONFIG_FILE=
 GEO_SEARCH=y
 FORCE_REINSTALL=
 CMD_SERVERNAME=
+DO_UPDATE_UPGRADE=y
 HELP=
 
 while [ $# -gt 0 ]; do
@@ -269,6 +270,7 @@ while [ $# -gt 0 ]; do
 	-G) GEO_SEARCH=n;;
 	-f) FORCE_REINSTALL=y;;
         -s) CMD_SERVERNAME="$2"; shift;;
+	-U) DO_UPDATE_UPGRADE=n;;
         -h) HELP='y';;
 	--) break;;
     esac
@@ -284,6 +286,7 @@ Options:
   -s server      the name or IP address of this machine
   -G             install without geographical search (for Ubuntu < 15.x)
   -f             force re-install
+  -U             do not run apt-get update; apt-get update at the beginning
   -h             show this help message
 EOF
     exit 0
@@ -832,15 +835,19 @@ fi
 
 #----------------------------------------------------------------
 
-tput bold
-echo "Installing basic prerequisites ..."
-tput sgr0
-echo ""
+if [ "$DO_UPDATE_UPGRADE" = 'y' ]; then
+    tput bold
+    echo "Updating and upgrading ..."
+    tput sgr0
+    echo ""
 
-# apt-get update
-# apt-get -y upgrade
+    apt-get update
+    apt-get -y upgrade
+fi
+
 apt-get -y install wget debsums
 
+#----------------------------------------------------------------
 echo
 tput bold
 echo "Installing MySQL server and Apache webserver ..."
