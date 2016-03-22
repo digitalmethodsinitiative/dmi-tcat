@@ -20,6 +20,8 @@
 
 # TCAT Installer parameters
 
+# Convention for Boolean: 'y' true; all other values (e.g. blank or 'n') false
+
 # Twitter API credentials and capture options
 
 CONSUMERKEY=
@@ -265,7 +267,7 @@ Options:
   -c configFile  load parameters from file
   -s server      the name or IP address of this machine
   -G             install without geographical search (for Ubuntu < 15.x)
-  -U             do not run apt-get update; apt-get update at the beginning
+  -U             do not run apt-get update and apt-get upgrade
   -h             show this help message
 EOF
     exit 0
@@ -448,6 +450,13 @@ while [ "$BATCH_MODE" != "y" ]; do
 
 	echo "  Expands URLs in tweets: $URLEXPANDYES"
 	echo "  Server: $SERVERNAME (TCAT will be at http://$SERVERNAME/)"
+
+	if [ $TCAT_AUTO_UPDATE = '0' ]; then
+	    echo "  Automatically update TCAT: (not enabled)"
+	else
+	    echo "  Automatically update TCAT: enabled, level=$TCAT_AUTO_UPDATE"
+	fi
+
 	echo "  Advanced parameters:"
 	echo "    Shell user: $SHELLUSER"
 	echo "    Shell group: $SHELLGROUP"
@@ -471,6 +480,7 @@ while [ "$BATCH_MODE" != "y" ]; do
 	echo "These can be obtained from <https://apps.twitter.com>."
 	echo "You will need an application's Consumer Key and its Consumer Secret,"
 	echo "and an Access Token and its Access Token Secret."
+	echo "Values must be provided for them: they cannot be left blank."
 	echo
     fi
 
@@ -569,7 +579,7 @@ while [ "$BATCH_MODE" != "y" ]; do
     DEFAULT=$TCAT_AUTO_UPDATE
     TCAT_AUTO_UPDATE=
     while [ -z "$TCAT_AUTO_UPDATE" ]; do
-	read -p "Automatically upgrade TCAT (0=off, 1=trivial, 2=substantial, 3=expensive) [$DEFAULT]: " TCAT_AUTO_UPDATE
+	read -p "Automatically upgrade TCAT (0=off, 1=trivial,2=substantial,3=expensive) [$DEFAULT]: " TCAT_AUTO_UPDATE
 	if [ -z "$TCAT_AUTO_UPDATE" ]; then
 	    TCAT_AUTO_UPDATE=$DEFAULT
 	fi
@@ -586,7 +596,7 @@ while [ "$BATCH_MODE" != "y" ]; do
 
     if [ "$FIRST_PASS" = 'y' ]; then
 	echo
-	echo "Advanced pramerters for the file owner, MySQL accounts and TCAT"
+	echo "Advanced parameters for the file owner, MySQL accounts and TCAT"
 	echo "Web logins can be set. Normally, the defaults can be used."
 	echo
     fi
