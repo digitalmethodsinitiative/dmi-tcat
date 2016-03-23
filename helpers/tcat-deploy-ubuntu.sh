@@ -235,7 +235,7 @@ promptPassword() {
 #----------------------------------------------------------------
 # Process command line
 
-SHORT_OPTS="bc:Ghs:U"
+SHORT_OPTS="bc:Ghls:U"
 if ! getopt $SHORT_OPTS "$@" >/dev/null; then
     echo "$PROG: usage error (use -h for help)" >&2
     exit 2
@@ -250,6 +250,7 @@ CONFIG_FILE=
 GEO_SEARCH=y
 CMD_SERVERNAME=
 DO_UPDATE_UPGRADE=y
+DO_SAVE_TCAT_LOGINS=
 HELP=
 
 while [ $# -gt 0 ]; do
@@ -257,6 +258,7 @@ while [ $# -gt 0 ]; do
         -b) BATCH_MODE=y;;
 	-c) CONFIG_FILE="$2"; shift;;
 	-G) GEO_SEARCH=n;;
+	-l) DO_SAVE_TCAT_LOGINS=y;;
         -s) CMD_SERVERNAME="$2"; shift;;
 	-U) DO_UPDATE_UPGRADE=n;;
         -h) HELP='y';;
@@ -273,6 +275,7 @@ Options:
   -c configFile  load parameters from file
   -s server      the name or IP address of this machine
   -G             install without geographical search (for Ubuntu < 15.x)
+  -l             save a copy of TCAT login username and passwords in plain text
   -U             do not run apt-get update and apt-get upgrade
   -h             show this help message
 EOF
@@ -919,31 +922,33 @@ echo ""
 
 # Save Web UI passwords
 
-# Save TCAT admin's password
+if [ "$DO_SAVE_TCAT_LOGINS" = 'y' ]; then
+    # Save TCAT admin's password
 
-FILE="${TCAT_CNF_PREFIX}${TCATADMINUSER}${TCAT_CNF_SUFFIX}"
-touch "$FILE"
-chown $SHELLUSER:$SHELLGROUP "$FILE"
-chmod 600 "$FILE" # secure file before writing password to it
-cat > "$FILE" <<EOF
+    FILE="${TCAT_CNF_PREFIX}${TCATADMINUSER}${TCAT_CNF_SUFFIX}"
+    touch "$FILE"
+    chown $SHELLUSER:$SHELLGROUP "$FILE"
+    chmod 600 "$FILE" # secure file before writing password to it
+    cat > "$FILE" <<EOF
 # TCAT Web-UI administrator user
 user=$TCATADMINUSER
 password="${TCATADMINPASS}"
 EOF
-echo "$PROG: login details saved: $FILE"
+    echo "$PROG: TCAT login details saved: $FILE"
 
-# Save TCAT standard user's password
+    # Save TCAT standard user's password
 
-FILE="${TCAT_CNF_PREFIX}${TCATUSER}${TCAT_CNF_SUFFIX}"
-touch "$FILE"
-chown $SHELLUSER:$SHELLGROUP "$FILE"
-chmod 600 "$FILE" # secure file before writing password to it
-cat > "$FILE" <<EOF
+    FILE="${TCAT_CNF_PREFIX}${TCATUSER}${TCAT_CNF_SUFFIX}"
+    touch "$FILE"
+    chown $SHELLUSER:$SHELLGROUP "$FILE"
+    chmod 600 "$FILE" # secure file before writing password to it
+    cat > "$FILE" <<EOF
 # TCAT Web-UI standard user
 user=$TCATUSER
 password="${TCATPASS}"
 EOF
-echo "$PROG: login details saved: $FILE"
+    echo "$PROG: TCAT login details saved: $FILE"
+fi
 
 # Create Apache TCAT config file
 
@@ -1221,7 +1226,9 @@ if [ "$TCATPASS_GENERATED" = 'y' ]; then
 fi
 echo
 echo "If you ever need them, the usernames and passwords have been saved."
-echo "TCAT logins have been saved to ${TCAT_CNF_PREFIX}*${TCAT_CNF_SUFFIX}"
+if [ "$DO_SAVE_TCAT_LOGINS" = 'y' ]; then
+    echo "TCAT logins have been saved to ${TCAT_CNF_PREFIX}*${TCAT_CNF_SUFFIX}"
+fi
 echo "MySQL accounts have been saved to ${MYSQL_CNF_PREFIX}*${MYSQL_CNF_SUFFIX}"
 echo
 echo "The following steps are recommended, but not mandatory"
