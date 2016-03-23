@@ -70,8 +70,10 @@ PROG=`basename "$0"`
 
 # Trap to abort script when a command fails.
 
-# This script does not yet handle errors properly. When it does, uncomment:
-# trap "echo $PROG: error: aborted; exit 3" ERR
+trap "echo $PROG: command failed: install aborted; exit 3" ERR
+# Can't figure out which command failed? Run using "bash -x" or uncomment:
+# set -x # write each command to stderr before it is exceuted
+
 # set -e # fail if a command fails (this works in sh, since trap ERR does not)
 
 set -u # fail on attempts to expand undefined variables
@@ -826,7 +828,7 @@ if [ "$DO_UPDATE_UPGRADE" = 'y' ]; then
     apt-get -y upgrade
 fi
 
-apt-get -y install wget debsums
+apt-get -y install wget
 
 #----------------------------------------------------------------
 echo
@@ -939,10 +941,14 @@ password="${TCATPASS}"
 EOF
 echo "$PROG: login details saved: $FILE"
 
-read -d '' APACHECONF1 <<"EOF"
+# Create Apache TCAT config file
+
+cat > /etc/apache2/sites-available/tcat.conf <<EOF
+# Apache config for DMI-TCAT
+
 <VirtualHost *:80>
-EOF
-read -d '' APACHECONF2 <<"EOF"
+        ServerName $SERVERNAME
+
         DocumentRoot /var/www/dmi-tcat/
 
         RewriteEngine On
@@ -961,8 +967,9 @@ read -d '' APACHECONF2 <<"EOF"
             AuthName "Log in to DMI-TCAT"
             AuthBasicProvider file
             AuthUserFile /etc/apache2/passwords
-EOF
-read -d '' APACHECONF3 <<"EOF"
+
+            Require user $TCATADMINUSER $TCATUSER
+
             DirectoryIndex index.html index.php
             # some directories and files should not be accessible via the web, make sure to enable mod_rewrite
             RewriteEngine on
@@ -970,11 +977,7 @@ read -d '' APACHECONF3 <<"EOF"
         </Directory>
 </VirtualHost>
 EOF
-echo "$APACHECONF1"  > /etc/apache2/sites-available/tcat.conf
-echo "        ServerName $SERVERNAME"  >> /etc/apache2/sites-available/tcat.conf
-echo "        $APACHECONF2"  >> /etc/apache2/sites-available/tcat.conf
-echo "            Require user $TCATADMINUSER $TCATUSER" >> /etc/apache2/sites-available/tcat.conf
-echo "        $APACHECONF3"  >> /etc/apache2/sites-available/tcat.conf
+
 a2dissite 000-default
 a2ensite tcat.conf
 
@@ -1067,8 +1070,8 @@ echo "Setting up logfile rotation ..."
 tput sgr0
 echo ""
 
-read -d '' LOGROTATE <<"EOF"
-/var/www/dmi-tcat/logs/controller.log /var/www/dmi-tcat/logs/track.error.log /var/www/dmi-tcat/logs/follow.error.log /var/www/dmi-tcat/logs/onepercent.error.log  
+cat > /etc/logrotate.d/dmi-tcat <<EOF
+/var/www/dmi-tcat/logs/controller.log /var/www/dmi-tcat/logs/track.error.log /var/www/dmi-tcat/logs/follow.error.log /var/www/dmi-tcat/logs/onepercent.error.log
 { 
    weekly  
    rotate 8  
@@ -1076,10 +1079,9 @@ read -d '' LOGROTATE <<"EOF"
    delaycompress  
    missingok  
    ifempty
+   create 644 $SHELLUSER $SHELLGROUP
+}
 EOF
-echo "$LOGROTATE" > /etc/logrotate.d/dmi-tcat
-echo "   create 644 $SHELLUSER $SHELLGROUP"  >> /etc/logrotate.d/dmi-tcat
-echo "}" >> /etc/logrotate.d/dmi-tcat
 
 case "$CAPTURE_MODE" in
     1)  echo "Using role: track" ;;
@@ -1117,8 +1119,17 @@ esac
 sed -i "s/^define('$VARIABLE',[^)]*);/define('$VARIABLE', $VALUE);/g" "$CFG"
 
 # Check if the current MySQL configuration is the system default one
-CHANGEDMYCNF=`debsums -ce | grep -c -e "/etc/mysql/my.cnf"`
-if [ "$CHANGEDMYCNF" == "0" ]; then
+
+apt-get -y install debsums
+
+# Note: previously this checked /etc/mysql/my.cnf, but that is a symlink
+# to /etc/alternatives/my.cnf which itself is symlink to /etc/mysql/mysql.cnf.
+# If modified, debsums reports that /etc/mysql/mysql.cnf has changed, but does
+# not report /etc/mysql/my.cnf has changed.
+
+if debsums -ce | grep "/etc/mysql/mysql.cnf" >/dev/null; then
+    # The MySQL config file was not changed: can attempt to fix memory profile
+
     if [ "$DB_CONFIG_MEMORY_PROFILE" = "y" ]; then
         echo ""
         tput bold
