@@ -91,6 +91,10 @@ MYSQL_CNF_SUFFIX='.cnf'
 TCAT_CNF_PREFIX='/etc/apache2/tcat-login-'
 TCAT_CNF_SUFFIX='.txt'
 
+# Where the TCAT logins for Apache Basic Authentication credentials are written
+
+APACHE_PASSWORDS_FILE=/etc/apache2/tcat.htpasswd
+
 # Where to install TCAT files
 
 TCAT_DIR=/var/www/dmi-tcat
@@ -878,7 +882,7 @@ echo ""
 
 apt-get -qq install -y git
 
-git clone https://github.com/digitalmethodsinitiative/dmi-tcat.git /var/www/dmi-tcat
+git clone https://github.com/digitalmethodsinitiative/dmi-tcat.git "$TCAT_DIR"
 
 echo ""
 tput bold
@@ -898,8 +902,8 @@ if ! grep "^$SHELLGROUP:" /etc/group >/dev/null; then
     addgroup --quiet "$SHELLGROUP"
 fi
 
-chown -R $SHELLUSER:$SHELLGROUP /var/www/dmi-tcat/
-cd /var/www/dmi-tcat
+chown -R $SHELLUSER:$SHELLGROUP "$TCAT_DIR"
+cd "$TCAT_DIR"
 mkdir analysis/cache logs proc
 chown $WEBUSER:$WEBGROUP analysis/cache
 chmod 755 analysis/cache
@@ -949,7 +953,7 @@ cat > /etc/apache2/sites-available/tcat.conf <<EOF
 <VirtualHost *:80>
         ServerName $SERVERNAME
 
-        DocumentRoot /var/www/dmi-tcat/
+        DocumentRoot "$TCAT_DIR"
 
         RewriteEngine On
         RewriteRule ^/$ /analysis/ [R,L]
@@ -959,14 +963,14 @@ cat > /etc/apache2/sites-available/tcat.conf <<EOF
                 AllowOverride None
         </Directory>
 
-        <Directory /var/www/dmi-tcat/>
+        <Directory "$TCAT_DIR">
             # make sure directory lists are not possible
             Options -Indexes
             # basic authentication
             AuthType Basic
             AuthName "Log in to DMI-TCAT"
             AuthBasicProvider file
-            AuthUserFile /etc/apache2/passwords
+            AuthUserFile "$APACHE_PASSWORDS_FILE"
 
             Require user $TCATADMINUSER $TCATUSER
 
@@ -981,13 +985,27 @@ EOF
 a2dissite 000-default
 a2ensite tcat.conf
 
+# Create TCAT config file
+
 CFG="$TCAT_DIR/config.php"
 
 cp "$TCAT_DIR/config.php.example" "$CFG"
-htpasswd -b -c /etc/apache2/passwords $TCATUSER $TCATPASS
-sed -i "s/define(\"ADMIN_USER\", \"admin\");/define(\"ADMIN_USER\", \"$TCATADMINUSER\");/g" /var/www/dmi-tcat/config.php
-htpasswd -b /etc/apache2/passwords $TCATADMINUSER $TCATADMINPASS
-chown $SHELLUSER:$WEBGROUP /etc/apache2/passwords
+
+VAR=BASE_FILE
+sed -i "s/^define('$VAR',[^)]*);/define('$VAR', __DIR__ . '\/');/g" "$CFG"
+# Note: some PHP files requires BASE_FILE to ends with a slash, but some don't
+# TODO: PHP code should be changed to just use __DIR__ and not need BASE_FILE
+
+VAR=ADMIN_USER
+VALUE="'$TCATADMINUSER'"
+sed -i "s/^define('$VAR',[^)]*);/define('$VAR', $VALUE);/g" "$CFG"
+
+# Create TCAT login credentials file for Apache Basic Authentication
+
+htpasswd -b -c "$APACHE_PASSWORDS_FILE" $TCATUSER $TCATPASS
+htpasswd -b "$APACHE_PASSWORDS_FILE" $TCATADMINUSER $TCATADMINPASS
+chown $SHELLUSER:$WEBGROUP "$APACHE_PASSWORDS_FILE"
+
 a2enmod rewrite
 /etc/init.d/apache2 restart
 
@@ -1033,9 +1051,9 @@ echo "$PROG: account details saved: $FILE"
 echo "CREATE DATABASE IF NOT EXISTS twittercapture DEFAULT CHARACTER SET utf8mb4 DEFAULT COLLATE utf8mb4_unicode_ci;" | mysql --defaults-file="$MYSQL_USER_ADMIN_CNF"
 echo "GRANT CREATE, DROP, LOCK TABLES, ALTER, DELETE, INDEX, INSERT, SELECT, UPDATE, CREATE TEMPORARY TABLES ON twittercapture.* TO '$TCATMYSQLUSER'@'localhost' IDENTIFIED BY '$TCATMYSQLPASS';" | mysql --defaults-file="$MYSQL_USER_ADMIN_CNF"
 echo "FLUSH PRIVILEGES;" | mysql --defaults-file="$MYSQL_USER_ADMIN_CNF"
-sed -i "s/dbuser = \"\"/dbuser = \"$TCATMYSQLUSER\"/g" /var/www/dmi-tcat/config.php
-sed -i "s/dbpass = \"\"/dbpass = \"$TCATMYSQLPASS\"/g" /var/www/dmi-tcat/config.php
-sed -i "s/example.com\/dmi-tcat\//$SERVERNAME\//g" /var/www/dmi-tcat/config.php
+sed -i "s/dbuser = \"\"/dbuser = \"$TCATMYSQLUSER\"/g" "$CFG"
+sed -i "s/dbpass = \"\"/dbpass = \"$TCATMYSQLPASS\"/g" "$CFG"
+sed -i "s/example.com\/dmi-tcat\//$SERVERNAME\//g" "$CFG"
 
 if [ "$URLEXPANDYES" == "y" ]; then
    echo ""
@@ -1047,7 +1065,7 @@ if [ "$URLEXPANDYES" == "y" ]; then
    easy_install greenlet
    easy_install gevent 
    pip install requests
-   CRONLINE="0 *     * * *   $SHELLUSER   (cd /var/www/dmi-tcat/helpers; sh urlexpand.sh)"
+   CRONLINE="0 *     * * *   $SHELLUSER   (cd \"$TCAT_DIR/helpers\"; sh urlexpand.sh)"
    echo "" >> /etc/cron.d/tcat
    echo "# Run DMI-TCAT URL expander every hour" >> /etc/cron.d/tcat
    echo "$CRONLINE" >> /etc/cron.d/tcat
@@ -1059,7 +1077,7 @@ echo "Activating TCAT controller in cron ..."
 tput sgr0
 echo ""
 
-CRONLINE="* *     * * *   $SHELLUSER   (cd /var/www/dmi-tcat/capture/stream/; php controller.php)"
+CRONLINE="* *     * * *   $SHELLUSER   (cd \"$TCAT_DIR/capture/stream\"; php controller.php)"
 echo "" >> /etc/cron.d/tcat
 echo "# Run TCAT controller every minute" >> /etc/cron.d/tcat
 echo "$CRONLINE" >> /etc/cron.d/tcat
@@ -1071,7 +1089,7 @@ tput sgr0
 echo ""
 
 cat > /etc/logrotate.d/dmi-tcat <<EOF
-/var/www/dmi-tcat/logs/controller.log /var/www/dmi-tcat/logs/track.error.log /var/www/dmi-tcat/logs/follow.error.log /var/www/dmi-tcat/logs/onepercent.error.log
+$TCAT_DIR/logs/controller.log $TCAT_DIR/logs/track.error.log $TCAT_DIR/logs/follow.error.log $TCAT_DIR/logs/onepercent.error.log
 { 
    weekly  
    rotate 8  
@@ -1093,10 +1111,10 @@ case "$CAPTURE_MODE" in
 	exit 3 ;;
 esac
 
-sed -i "s/^\$twitter_consumer_key = \"\";/\$twitter_consumer_key = \"$CONSUMERKEY\";/g" /var/www/dmi-tcat/config.php
-sed -i "s/^\$twitter_consumer_secret = \"\";/\$twitter_consumer_secret = \"$CONSUMERSECRET\";/g" /var/www/dmi-tcat/config.php
-sed -i "s/^\$twitter_user_token = \"\";/\$twitter_user_token = \"$USERTOKEN\";/g" /var/www/dmi-tcat/config.php
-sed -i "s/^\$twitter_user_secret = \"\";/\$twitter_user_secret = \"$USERSECRET\";/g" /var/www/dmi-tcat/config.php
+sed -i "s/^\$twitter_consumer_key = \"\";/\$twitter_consumer_key = \"$CONSUMERKEY\";/g" "$CFG"
+sed -i "s/^\$twitter_consumer_secret = \"\";/\$twitter_consumer_secret = \"$CONSUMERSECRET\";/g" "$CFG"
+sed -i "s/^\$twitter_user_token = \"\";/\$twitter_user_token = \"$USERTOKEN\";/g" "$CFG"
+sed -i "s/^\$twitter_user_secret = \"\";/\$twitter_user_secret = \"$USERSECRET\";/g" "$CFG"
 
 # Configure TCAT automatic updates
 
