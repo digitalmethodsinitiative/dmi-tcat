@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Installer for DMI-TCAT on Ubuntu.
+# Installer for DMI-TCAT on Linux.
 #
 # This script prompts the user interactively for parameters, or it can
 # be run in batch mode (with the -b option).
@@ -8,15 +8,22 @@
 # The paramaters can also be loaded from a configuration file (with
 # the -c option).  The format of the config file is a Bash shell file
 # that sets values for some/all of the parameter environment variables
-# from the top section of this file (since it is simply sourced by
-# this script).
+# from the top section of this file (since the config file is simply
+# sourced by this script).
 #
-# To be able to run in batch mode, a config file *must* at least provide
-# values for CONSUMERKEY, CONSUMERSECRET, USERTOKEN and USERSECRET.
+# To be able to run in batch mode, a config file *must* minimally
+# provide values for CONSUMERKEY, CONSUMERSECRET, USERTOKEN and
+# USERSECRET.
 #
 # Run with -h for help.
 #
-# ----------------------------------------------------------------
+# Currently only supports Ubuntu and Debian. Tested on:
+# - Ubuntu 14.043
+# - Ubuntu 15.04
+# - Ubuntu 15.10
+# - Debian 8.1
+#
+#----------------------------------------------------------------
 
 # TCAT Installer parameters
 
@@ -63,6 +70,8 @@ TCATADMINPASS=
 TCATUSER=tcat
 TCATPASS=
 
+# End of TCAT installer parameters
+
 #----------------------------------------------------------------
 # Error checking
 
@@ -98,10 +107,6 @@ APACHE_PASSWORDS_FILE=/etc/apache2/tcat.htpasswd
 # Where to install TCAT files
 
 TCAT_DIR=/var/www/dmi-tcat
-
-# MySQL server package name for apt-get
-
-MYSQL_SERVER_PKG=mysql-server-5.6
 
 # Apache user and group
 
@@ -302,35 +307,55 @@ fi
 # Expected OS version
 
 if [ ! -f '/etc/issue' ]; then
-    echo "$PROG: error: system not running Ubuntu: /etc/issue missing" >&2
+    echo "$PROG: error: system is not Ubuntu or Debian: /etc/issue missing" >&2
     exit 1
 fi
 
-# Example: "Ubuntu 14.04.3 LTS \n \l"
-# -> UBUNTU_VERSION=14.04.3, UBUNTU_VERSION_MAJOR=14
-UBUNTU_VERSION=`awk '{print $2}' /etc/issue`
-UBUNTU_VERSION_MAJOR=$(echo $UBUNTU_VERSION |
-			      awk -F . '{if (match($1, /^[0-9]+$/)) print $1}')
+if grep ^Ubuntu /etc/issue >/dev/null; then
+    # Example: "Ubuntu 14.04.3 LTS \n \l"
+    # -> UBUNTU_VERSION=14.04.3, UBUNTU_VERSION_MAJOR=14
+    UBUNTU_VERSION=`awk '{print $2}' /etc/issue`
+    DEBIAN_VERSION=
+    UBUNTU_VERSION_MAJOR=$(echo $UBUNTU_VERSION |
+	awk -F . '{if (match($1, /^[0-9]+$/)) print $1}')
 
-if [ -z "$UBUNTU_VERSION_MAJOR" ]; then
-    echo "$PROG: error: system not running Ubuntu: $UBUNTU_VERSION" >&2
-    exit 1;
-fi
+    if [ -z "$UBUNTU_VERSION_MAJOR" ]; then
+	echo "$PROG: error: system not running Ubuntu: $UBUNTU_VERSION" >&2
+	exit 1
+    fi
 
-if [ "$UBUNTU_VERSION_MAJOR" -lt 15 ]; then
-    echo "Warning: geographical search not available on Ubuntu $UBUNTU_VERSION < 15.x"
+    if [ "$UBUNTU_VERSION_MAJOR" -lt 15 ]; then
+	echo "Warning: no geographical search on Ubuntu $UBUNTU_VERSION < 15.x"
 
-    if [ "$GEO_SEARCH" = 'y' ]; then
-	if [ "$BATCH_MODE" = 'y' ]; then
-	    echo "$PROG: aborted (use -G to install without geographical search)" >&2
-	    exit 1
-	else
-	    if ! promptYN "Continue install without geographical search"; then
-		echo "$PROG: aborted by user"
+	if [ "$GEO_SEARCH" = 'y' ]; then
+	    if [ "$BATCH_MODE" = 'y' ]; then
+		echo "$PROG: aborted (use -G to leave out geo search)" >&2
 		exit 1
+	    else
+		if ! promptYN "Continue install without geographical search";
+		then
+		    echo "$PROG: aborted by user"
+		    exit 1
+		fi
 	    fi
 	fi
     fi
+
+elif grep ^Debian /etc/issue >/dev/null; then
+    if [ ! -f /etc/debian_version ]; then
+	echo "$PROG: /etc/issue says Debian, but no /etc/debian_version" >&2
+	exit 1
+    fi
+    DEBIAN_VERSION=`cat /etc/debian_version`
+    UBUNTU_VERSION=
+
+    if [ -z "$DEBIAN_VERSION" ]; then
+	echo "$PROG: error: system not running Debian" >&2
+	exit 1
+    fi
+else
+    echo "$PROG: error: unsupported system: not Ubuntu or Debian" >&2
+    exit 1
 fi
 
 # Already installed?
@@ -340,9 +365,22 @@ if [ -e "$TCAT_DIR" ]; then
     exit 1
 fi
 
-if dpkg --status $MYSQL_SERVER_PKG >/dev/null 2>&1; then
-    echo "$PROG: cannot install: $MYSQL_SERVER_PKG already installed" >&2
-    exit 1
+# MySQL server package name for apt-get
+
+if [ -n "$UBUNTU_VERSION" ]; then
+    UBUNTU_MYSQL_SVR_PKG=mysql-server-5.6
+
+    if dpkg --status $UBUNTU_MYSQL_SVR_PKG >/dev/null 2>&1; then
+	echo "$PROG: cannot install: $UBUNTU_MYSQL_SVR_PKG already installed" >&2
+	exit 1
+    fi
+
+elif [ -n "$DEBIAN_VERSION" ]; then
+    if dpkg --status mariadb-server >/dev/null 2>&1; then
+	echo "$PROG: cannot install: mariadb-server already installed" >&2
+	exit 1
+    fi
+
 fi
 
 #----------------------------------------------------------------
@@ -835,8 +873,6 @@ if [ "$DO_UPDATE_UPGRADE" = 'y' ]; then
     apt-get -y upgrade
 fi
 
-apt-get -y install wget
-
 #----------------------------------------------------------------
 echo
 tput bold
@@ -851,31 +887,61 @@ debconf-set-selections
 echo "mysql-server mysql-server/root_password_again password $DBPASS" |
 debconf-set-selections
 
-# Install MySQL
-
-echo "$PROG: installing MySQL"
-apt-get -y install $MYSQL_SERVER_PKG mysql-client-5.6
-
-# Install Apache
-
 echo "$PROG: installing Apache and PHP"
-apt-get -y install \
-    apache2 apache2-utils \
-    libapache2-mod-php5 \
-    php5-mysql php5-curl php5-cli php-patchwork-utf8
-if [ "$UBUNTU_VERSION_MAJOR" -ge 15 ]; then
-    echo "$PROG: installing PHP module for geographical search"
-    apt-get -y install php5-geos
+
+if [ -n "$UBUNTU_VERSION" ]; then
+    echo "$PROG: installing MySQL for Ubuntu"
+
+    apt-get -y install $UBUNTU_MYSQL_SVR_PKG mysql-client-5.6
+
+    echo "$PROG: installing Apache for Ubuntu"
+
+    apt-get -y install \
+	apache2 apache2-utils \
+	libapache2-mod-php5 \
+	php5-mysql php5-curl php5-cli php-patchwork-utf8
+
+    if [ "$UBUNTU_VERSION_MAJOR" -ge 15 ]; then
+	echo "$PROG: installing PHP module for geographical search"
+	apt-get -y install php5-geos
+	php5enmod geos
+    fi
+
+    # Installation and autoconfiguration of MySQL will not work with
+    # Apparmor profile enabled
+
+    if [ -L /etc/apparmor.d/disable/usr.sbin.mysqld ]; then
+	rm /etc/apparmor.d/disable/usr.sbin.mysqld # remove so "ln" will work
+    fi
+    ln -s /etc/apparmor.d/usr.sbin.mysqld /etc/apparmor.d/disable/
+    /etc/init.d/apparmor restart
+
+elif [ -n "$DEBIAN_VERSION" ]; then
+    echo "$PROG: installing MySQL for Debian"
+
+    apt-get -qq -y install wget
+
+    wget http://dev.mysql.com/get/mysql-apt-config_0.3.5-1debian8_all.deb
+
+    # Note: this prompts the user to choose the MySQL product to configure :-(
+    # TODO: find a debconf-set-selections setting to avoid user interaction
+    dpkg -i mysql-apt-config_0.3.5-1debian8_all.deb
+
+    apt-get -y install mariadb-server
+
+    echo "$PROG: installing Apache for Debian"
+
+    apt-get -y install \
+	apache2-mpm-prefork apache2-utils \
+	libapache2-mod-php5 \
+	php5-mysql php5-curl php5-cli php5-geos php-patchwork-utf8
+
     php5enmod geos
-fi
 
-# Installation and autoconfiguration of MySQL will not work with Apparmor profile enabled
-
-if [ -L /etc/apparmor.d/disable/usr.sbin.mysqld ]; then
-    rm /etc/apparmor.d/disable/usr.sbin.mysqld # remove so "ln" does not fail
+else
+    echo "$PROG: internal error: unexpected OS" >&2
+    exit 3
 fi
-ln -s /etc/apparmor.d/usr.sbin.mysqld /etc/apparmor.d/disable/
-/etc/init.d/apparmor restart 
 
 echo ""
 tput bold
@@ -1012,7 +1078,15 @@ htpasswd -b "$APACHE_PASSWORDS_FILE" $TCATADMINUSER $TCATADMINPASS
 chown $SHELLUSER:$WEBGROUP "$APACHE_PASSWORDS_FILE"
 
 a2enmod rewrite
-/etc/init.d/apache2 restart
+
+if [ -n "$UBUNTU_VERSION" ]; then
+    /etc/init.d/apache2 restart
+elif [ -n "$DEBIAN_VERSION" ]; then
+    systemctl restart apache2
+else
+    echo "$PROG: internal error: unexpected OS" >&2
+    exit 3
+fi
 
 echo ""
 tput bold
@@ -1196,9 +1270,19 @@ if debsums -ce | grep "/etc/mysql/mysql.cnf" >/dev/null; then
                 echo "max_connections         = 80" >> /etc/mysql/conf.d/tcat-autoconfigured.cnf
             fi
             echo "Memory profile adjusted"
+
             # Finally, reload MySQL server configuration
-            echo "Restarting service ... "
-            /etc/init.d/mysql restart
+
+	    if [ -n "$UBUNTU_VERSION" ]; then
+		echo "Restarting service ... "
+		/etc/init.d/mysql restart
+	    elif [ -n "$DEBIAN_VERSION" ]; then
+		echo "Reloading service ..."
+		systemctl reload mysql
+	    else
+		echo "$PROG: internal error: unexpected OS" >&2
+		exit 3
+	    fi
         fi
     fi
 fi
