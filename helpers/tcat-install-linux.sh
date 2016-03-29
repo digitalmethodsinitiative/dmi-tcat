@@ -1309,11 +1309,14 @@ if [ "$TCATPASS_GENERATED" = 'y' ]; then
     echo "  Password: $TCATPASS"
 fi
 echo
-echo "If you ever need them, the usernames and passwords have been saved."
 if [ "$DO_SAVE_TCAT_LOGINS" = 'y' ]; then
-    echo "TCAT logins have been saved to ${TCAT_CNF_PREFIX}*${TCAT_CNF_SUFFIX}"
+    echo "TCAT logins have been saved to ${TCAT_CNF_PREFIX}*${TCAT_CNF_SUFFIX}."
+else
+  if [ "$TCATPASS_GENERATED" = 'y' ]; then
+      echo "IMPORTANT: please save the above generated TCAT Web login passwords."
+  fi
 fi
-echo "MySQL accounts have been saved to ${MYSQL_CNF_PREFIX}*${MYSQL_CNF_SUFFIX}"
+echo "MySQL accounts have been saved to ${MYSQL_CNF_PREFIX}*${MYSQL_CNF_SUFFIX}."
 echo
 echo "The following steps are recommended, but not mandatory"
 echo ""
