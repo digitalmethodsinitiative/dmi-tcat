@@ -34,23 +34,6 @@
 // 
 //     export.php -h
 // 
-// ## Old syntax
-// 
-// The old syntax (where there must be exactly two arguments: the query
-// bin and the export type) is still supported for backward compatibility.
-// 
-// Exports queries and data for the query bin "foobar":
-// 
-//    export.php foobar all
-// 
-// Exports queries only for the query bin "foobar":
-// 
-//    export.php foobar structure
-// 
-// Note: if exporting two query bins the name of the last/second query
-// bin cannot be "all" or "structure", otherwise it will be interepreted
-// as the export type instead of the name of a query bin.
-// 
 
 function env_is_cli() {
     return (!isset($_SERVER['SERVER_SOFTWARE']) && (php_sapi_name() == 'cli' || (is_numeric($_SERVER['argc']) && $_SERVER['argc'] > 0)));
@@ -119,23 +102,6 @@ for ($i = 1; $i < $argc; $i++) {
     }
 }
 
-if (2 <= count($args)) {
-    // Legacy command line format: treat last argument as exportType
-    switch ($args[count($args) - 1]) {
-        case "structure": {
-            $export = 'queries';
-            array_pop($args);
-            break;
-        }
-        case "all": {
-            $export = 'all';
-	    array_pop($args);
-            break;
-        }
-	// Default: ignore and treat last argument as a queryBin name
-    }
-}
-
 $queryBins = $args;
 
 // All query bins
@@ -152,7 +118,7 @@ if (count($queryBins) == 0) {
     sort($queryBins);
 } else {
 
-    // Check query bin names are vali
+    // Check query bin names are valid
     foreach ($queryBins as $bin) {
         $bintype = getBinType($queryBins[0]);
         if ($bintype === false) {
