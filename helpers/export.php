@@ -286,7 +286,7 @@ foreach ($tables as $table) {
 
 if ($string == '') {
     unlink($filename);
-    die("$prog: internal error: could not find suitable tables for bin: $bin\n");
+    die("$prog: internal error: no tables for bin: $bin (check case is correct)\n");
 }
 
 if ($export == "all") {
