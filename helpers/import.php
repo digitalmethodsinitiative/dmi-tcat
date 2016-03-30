@@ -11,12 +11,11 @@ function env_is_cli() {
     return (!isset($_SERVER['SERVER_SOFTWARE']) && (php_sapi_name() == 'cli' || (is_numeric($_SERVER['argc']) && $_SERVER['argc'] > 0)));
 }
 
-require_once(__DIR__ . "/../config.php");
-
-require_once(BASE_FILE . '/capture/query_manager.php');
-require_once(BASE_FILE . '/analysis/common/config.php');      /* to get global variable $resultsdir */
-require_once(BASE_FILE . '/common/functions.php');
-require_once(BASE_FILE . '/capture/common/functions.php');
+require_once(__DIR__ . '/../config.php');
+require_once(__DIR__ . '/../capture/query_manager.php');
+require_once(__DIR__ . '/../analysis/common/config.php');      /* to get global variable $resultsdir */
+require_once(__DIR__ . '/../common/functions.php');
+require_once(__DIR__ . '/../capture/common/functions.php');
 
 global $dbuser, $dbpass, $database, $hostname;
 

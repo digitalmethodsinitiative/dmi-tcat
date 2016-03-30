@@ -40,11 +40,10 @@ function env_is_cli() {
 }
 
 require_once(__DIR__ . "/../config.php");
-
-require_once(BASE_FILE . '/capture/query_manager.php');
-require_once(BASE_FILE . '/analysis/common/config.php');      /* to get global variable $resultsdir */
-require_once(BASE_FILE . '/common/functions.php');
-require_once(BASE_FILE . '/capture/common/functions.php');
+require_once(__DIR__ . '/../capture/query_manager.php');
+require_once(__DIR__ . '/../analysis/common/config.php');      /* to get global variable $resultsdir */
+require_once(__DIR__ . '/../common/functions.php');
+require_once(__DIR__ . '/../capture/common/functions.php');
 
 global $dbuser, $dbpass, $database, $hostname;
 
@@ -65,6 +64,9 @@ if (!env_is_cli()) {
 $export = 'all'; // default
 
 $prog = basename($argv[0]);
+
+// Directory where the export file will be saved (if -o is not used)
+$defaultOutputDir = realpath(__DIR__ . "/../analysis/$resultsdir");
 
 $args = array();
 for ($i = 1; $i < $argc; $i++) {
@@ -91,6 +93,9 @@ for ($i = 1; $i < $argc; $i++) {
             echo "  -s       export query pharases only, with no data\n";
             echo "  -o file  output file (default: automatically generated)\n";
             echo "  -h       show this help message\n";
+	    echo "If no queryBins are named, all the queryBins are exported.\n";
+	    echo "Default output file is a .sql.gz file in $defaultOutputDir\n";
+	    echo "Caution: query bin names are case sensitive.\n";
             exit(0);
             break;
         default:
@@ -167,7 +172,7 @@ if (! isset($outfile)) {
 	$binAndType = 'TCAT_queryBins';
     }
 
-    $storedir = BASE_FILE . 'analysis/' . $resultsdir;
+    $storedir = $defaultOutputDir;
     $filepart = $binAndType . '-' . $export . '-' . $timestamp . '.sql';
     $filename = $storedir . str_replace(' ', '_', $filepart);
 } else {
@@ -205,6 +210,7 @@ fclose($fh);
 // Export all named bins
 
 foreach ($queryBins as $bin) {
+    print "Exporting query bin: $bin\n";
 
 $bintype = getBinType($bin);
 if ($bintype === false) {
@@ -278,7 +284,7 @@ foreach ($tables as $table) {
 }
 
 if ($string == '') {
-    die("Empty bin name would dump the complete database. Exiting!\n");
+    die("$prog: internal error: could not find suitable tables for bin: $bin\n");
 }
 
 if ($export == "all") {
@@ -379,7 +385,7 @@ system("$bin_gzip $filename");
 print "Dump completed and saved on disk: $filename.gz\n";
 
 if ($isAllBins) {
-    print "Number of query bins: " . count($queryBins) . "\n";
+    print "Number of query bins exported: " . count($queryBins) . "\n";
 }
 
 if (! isset($outfile)) {
