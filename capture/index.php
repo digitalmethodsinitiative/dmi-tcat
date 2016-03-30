@@ -108,17 +108,19 @@ $lastRateLimitHit = getLastRateLimitHit();
         if (is_array($git)) {
             $remote = getGitRemote($git['commit'], $git['branch']);
             if (is_array($remote)) {
-                if ($git['commit'] !== $remote['commit']) {
+                $date_unix = strtotime($remote['date']);
+                if ($git['commit'] !== $remote['commit'] && $date_unix < time() - 3600 * 24) {
                     $commit = '#' . substr($remote['commit'], 0, 7) . '...';
                     $mesg = $remote['mesg'];
                     $url = $remote['url'];
                     $required = $remote['required'];
+                    $autoupgrade = 'autoupgrade()';
                     print '<div id="updatewarning">';
                     $wikilink = 'https://github.com/digitalmethodsinitiative/dmi-tcat/wiki/Upgrading-TCAT';
                     if ($required) {
-                        print "A newer version of TCAT is available, containing important updates. You are strongly recommended to upgrade via git pull. Please read the <a href='$wikilink' target='_blank'>documentation</a> for details. [ commit <a href='$url' target='_blank'>$commit</a> - $mesg ]<br>";
+                        print "A newer version of TCAT is available, containing important updates. You are strongly recommended to upgrade. Please read the <a href='$wikilink' target='_blank'>documentation</a> for instructions on upgrading, or click <a href='#' onclick='$autoupgrade'>here</a> to schedule an automatic upgrade. [ commit <a href='$url' target='_blank'>$commit</a> - $mesg ]<br>";
                     } else {
-                        print "A newer version of TCAT is available. You can get the latest code via git pull. Please read the <a href='$wikilink' target='_blank'>documentation</a> for details. [ commit <a href='$url' target='_blank'>$commit</a> - $mesg ]<br>";
+                        print "A newer version of TCAT is available. You can get the latest code via git pull. Please read the <a href='$wikilink' target='_blank'>documentation</a> for instructions on upgrading, or click <a href='#' onclick='$autoupgrade'>here</a> to schedule an automatic upgrade. [ commit <a href='$url' target='_blank'>$commit</a> - $mesg ]<br>";
                     }
                     $showupdatemsg = true;
                 }
@@ -812,6 +814,22 @@ foreach ($bins as $id => $bin)
                 $("#if_row_users").hide();
                 $("#if_row_phrases").hide();
                 break;
+        }
+    }
+
+    function autoupgrade() {
+        var _check = window.confirm("Your config.php file currently instructs us to upgrade everything with a complexity level up to '<?php if (defined('AUTOUPDATE_LEVEL')) { echo AUTOUPDATE_LEVEL; } else { echo 'trivial'; } ?>'. \nPlease confirm you would like to schedule an upgrade of TCAT.");
+        if (_check) {
+            var _params = {action:"autoupgrade"};
+            $.ajax({
+                dataType: "json",
+                url: "query_manager.php",
+                type: 'POST',
+                data: _params
+            }).done(function(_data) {
+                alert(_data["msg"]);
+                location.reload();
+            });   
         }
     }
 

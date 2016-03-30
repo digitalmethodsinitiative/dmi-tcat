@@ -25,10 +25,10 @@ if (dbserver_has_utf8mb4_support() == false) {
 }
 
 $dbh = pdo_connect();
-
 $roles = unserialize(CAPTUREROLES);
 
 // first gather all instructions sent by the webinterface to the controller (ie. the instruction queue)
+$upgrade_requested = false;
 $commands = array();
 foreach ($roles as $role) {
     $commands[$role] = array();
@@ -42,11 +42,20 @@ $rec = $dbh->prepare("SHOW TABLES LIKE 'tcat_controller_tasklist'");
 if ($rec->execute() && $rec->rowCount() > 0) {
     $sql = "select task, instruction from tcat_controller_tasklist order by id asc lock in share mode";
     foreach ($dbh->query($sql) as $row) {
-        if ($geoActive && $row['task'] = 'geotrack') $row['task'] = 'track';
-        if (!array_key_exists($row['task'], $commands)) {
-            continue;
+        // first handle special tcat-wide instructions
+        if ($row['task'] == 'tcat') {
+            if ($row['instruction'] == 'upgrade') {
+                $upgrade_requested = true;
+                logit("controller.log", "running auto-update at user request");
+            }
+        } else {
+            // then handle instructions per captrue role
+            if ($geoActive && $row['task'] = 'geotrack') $row['task'] = 'track';
+            if (!array_key_exists($row['task'], $commands)) {
+                continue;
+            }
+            $commands[$row['task']][] = $row;
         }
-        $commands[$row['task']][] = $row;
     }
 
     // do not leave any unknown tasks linger
@@ -55,7 +64,83 @@ if ($rec->execute() && $rec->rowCount() > 0) {
     $res = $h->execute();
 }
 
-// now check for each role what needs to be done
+if (!defined('AUTOUPDATE_ENABLED')) {
+    define('AUTOUPDATE_ENABLED', false);
+}
+if (!defined('AUTOUPDATE_LEVEL')) {
+    define('AUTOUPDATE_LEVEL', 'trivial');
+}
+if (AUTOUPDATE_ENABLED && $upgrade_requested == false) {
+    $failure = false;
+    // we will wait at least one day before pulling new code
+    $git = getGitLocal();
+    if (is_array($git)) {
+        $remote = getGitRemote($git['commit'], $git['branch']);
+        if (is_array($remote)) {
+            $date_unix = strtotime($remote['date']);
+            if ($git['commit'] == $remote['commit'] || $date_unix > time() - 3600 * 24) {
+                logit("controller.log", "not yet executing auto-update, because the last commit is less than a day old");
+                $failure = true;
+            }
+        } else {
+            logit("controller.log", "auto-update not supported, because we cannot get the remote git information");
+            $failure = true;
+        }
+    } else {
+        logit("controller.log", "auto-update not supported, because we cannot get the local git information");
+        $failure = true;
+    }
+    if ($failure == false) {
+        // additionally we want to ensure only a single auto-update attempt is made per day
+        $nomodifyfile = BASE_FILE . 'nomodify.txt';
+        if (!file_exists($nomodifyfile)) {
+            // the nomodify file does not seem to exist
+            logit("controller.log", "auto-update not supported, because the nomodify.txt file appears to be missing");
+            $failure = true;
+        }
+    }
+    if ($failure == false) {
+        $modified = filectime($nomodifyfile);
+        $minute_number_modified = date('i', $modified);
+        $minute_number_now = date('i', time());
+        $hour_number_modified = date('G', $modified);
+        $hour_number_now = date('G', time());
+        if ($hour_number_now == $hour_number_modified && $minute_number_now == $minute_number_modified) {
+            $upgrade_requested = true;
+        } else {
+            $upgrade_requested = false;
+        }
+    }
+}
+if ($upgrade_requested) {
+    // git pull
+    if (!is_writable(BASE_FILE . "capture")) {
+        logit("controller.log", "auto-update requested, but the cron user does not have the neccessary permissions to do a successful git pull");
+        $skipupdate = true;
+    } else {
+        logit("controller.log", "now attempting auto-update with: git pull");
+        chdir(BASE_FILE);
+        system("git pull 2>&1 >/dev/null", $status);
+        if ($status !== 0) {
+            logit("controller.log", "auto-update was not successful. The command 'git pull' seems to have failed. Did you make any local TCAT modifications? Please investigate manually.");
+            $skipupdate = true;
+        }
+    }
+    // run upgrade.php
+    logit("controller.log", "now attempting database auto-update by running: php upgrade.php");
+    chdir(BASE_FILE . "common");
+    $flag = '--au0';
+    if (AUTOUPDATE_LEVEL == 'substantial') {
+        $flag = '--au1';
+    } elseif (AUTOUPDATE_LEVEL == 'expensive') {
+        $flag = '--au2';
+    }
+    system("nohup php upgrade.php --non-interactive $flag", $status);
+}
+
+chdir(BASE_FILE . "capture/stream");
+
+// now check for each capture role what needs to be done
 foreach ($roles as $role) {
 
     $reload = false;

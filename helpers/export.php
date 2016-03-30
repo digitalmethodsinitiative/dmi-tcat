@@ -158,7 +158,7 @@ putenv('MYSQL_PWD=' . $dbpass);     /* this avoids having to put the password on
 $timestamp = date("Y-m-d_h:i");
 
 if (! isset($outfile)) {
-    // Generate filename
+    // Generate a filename in $defaultOutputDir
 
     if (count($queryBins) == 1) {
         $bintype = getBinType($queryBins[0]);
@@ -176,11 +176,14 @@ if (! isset($outfile)) {
     $filepart = $binAndType . '-' . $export . '-' . $timestamp . '.sql';
     $filename = $storedir . str_replace(' ', '_', $filepart);
 } else {
-    // Use filename from command line
+    // Use the filename specified from the command line
 
+    // Extract the directory name into $storedir
     $p = (substr($outfile, 0, 1) === '/') ? $outfile :
           getcwd() . '/' . $outfile;
     $storedir = dirname($p);
+
+    // Remove .gz suffix (if any) since it will be appended when file is gzipped
     $filename = preg_replace("/\.gz$/", "", $p);
 }
 

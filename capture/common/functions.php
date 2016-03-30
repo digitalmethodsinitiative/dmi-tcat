@@ -396,7 +396,7 @@ function ratelimit_report_problem() {
 }
 
 function toDateTime($unixTimestamp) {
-    return date("Y-m-d H:m:s", $unixTimestamp);
+    return date("Y-m-d H:i:s", $unixTimestamp);
 }
 
 /*
@@ -414,6 +414,22 @@ function web_reload_config_role($role) {
     $h->bindParam(":role", $role, PDO::PARAM_STR);
     return $h->execute();
 }
+
+/*
+ * Inform controller we want TCAT to auto-upgrade
+ */
+
+function tcat_autoupgrade() {
+    $dbh = pdo_connect();
+    $sql = "CREATE TABLE IF NOT EXISTS tcat_controller_tasklist ( id bigint auto_increment, task varchar(32) not null, instruction varchar(255) not null, ts_issued timestamp default current_timestamp, primary key(id) )";
+    $h = $dbh->prepare($sql);
+    if (!$h->execute())
+        return false;
+    $sql = "INSERT INTO tcat_controller_tasklist ( task, instruction ) VALUES ( 'tcat', 'upgrade')";
+    $h = $dbh->prepare($sql);
+    return $h->execute();
+}
+
 
 /*
  * Acquire a lock as script $script
@@ -492,13 +508,14 @@ function getGitRemote($compare_local_commit = '', $branch = 'master') {
     $output = curl_exec($ch);
     curl_close($ch);
     $data = json_decode($output, true);
-    $commit = $mesg = $url = null;
+    $commit = $mesg = $url = $date = null;
     $required = false;
     foreach ($data as $ent) {
         if ($commit === null) {
             $commit = $ent['sha'];
             $mesg = $ent['commit']['message'];
             $url = $ent['html_url'];
+            $date = $ent['commit']['committer']['date'];
         }
         if ($ent['sha'] == $compare_local_commit) { break; }
         if (isset($ent['commit']['message'])) {
@@ -514,6 +531,7 @@ function getGitRemote($compare_local_commit = '', $branch = 'master') {
                   'mesg' => $mesg,
                   'url' => $url,
                   'required' => $required,
+                  'date' => $date,
                 );
 }
 

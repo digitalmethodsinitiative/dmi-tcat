@@ -16,31 +16,11 @@
 #
 # Run with -h for help.
 #
-# WARNING: reinstalls are experimental. Running this script more than
-# once is not guaranteed to work.
 # ----------------------------------------------------------------
 
-#----------------------------------------------------------------
-# Changelog:
-#
-# - set MySQL server's password so user is not prompted for it by apt-get
-# - batch mode added for unattended installation (with a config file)
-# - in interactive mode, all questions are asked at the beginning
-# - default values provided for parameters (novice users can just accept them)
-# - default SERVERNAME is derived from IP address (useful for testing on VMs)
-# - option to generate random passwords (more secure than user made up ones)
-# - shell user and groups are automatically created if they don't already exist
-# - user cannot change the name of the MySQL admin account (it must be "root")
-# - experimental support for reinstalling (i.e. running the script again)
-# - tested on Ubuntu 14.04.3 and 15.04.
-#
-# TODO:
-#
-# - Handle errors from commands properly. Abort if a subcommand fails.
-# - Reorganise so installation of MySQL, Apache and TCAT are logically separate
-#----------------------------------------------------------------
-
 # TCAT Installer parameters
+
+# Convention for Boolean: 'y' true; all other values (e.g. blank or 'n') false
 
 # Twitter API credentials and capture options
 
@@ -56,6 +36,10 @@ URLEXPANDYES=y # install URL Expander or not
 # Apache
 
 SERVERNAME= # should default to this machine's IP address (-s overrides)
+
+# TCAT
+
+TCAT_AUTO_UPDATE=0 # 0=off, 1=trivial, 2=substantial, 3=expensive
 
 # Unix user and group to own the TCAT files
 
@@ -86,8 +70,10 @@ PROG=`basename "$0"`
 
 # Trap to abort script when a command fails.
 
-# This script does not yet handle errors properly. When it does, uncomment:
-# trap "echo $PROG: error: aborted; exit 3" ERR
+trap "echo $PROG: command failed: install aborted; exit 3" ERR
+# Can't figure out which command failed? Run using "bash -x" or uncomment:
+# set -x # write each command to stderr before it is exceuted
+
 # set -e # fail if a command fails (this works in sh, since trap ERR does not)
 
 set -u # fail on attempts to expand undefined variables
@@ -97,13 +83,17 @@ set -u # fail on attempts to expand undefined variables
 
 # Where the MySQL defaults files are written
 
-MYSQL_CNF_PREFIX='/var/lib/mysql/user-'
+MYSQL_CNF_PREFIX='/etc/mysql/conf.d/tcat-'
 MYSQL_CNF_SUFFIX='.cnf'
 
 # Where the TCAT logins are written
 
-TCAT_CNF_PREFIX='/var/lib/mysql/tcat-login-'
+TCAT_CNF_PREFIX='/etc/apache2/tcat-login-'
 TCAT_CNF_SUFFIX='.txt'
+
+# Where the TCAT logins for Apache Basic Authentication credentials are written
+
+APACHE_PASSWORDS_FILE=/etc/apache2/tcat.htpasswd
 
 # Where to install TCAT files
 
@@ -245,7 +235,7 @@ promptPassword() {
 #----------------------------------------------------------------
 # Process command line
 
-SHORT_OPTS="bc:fGs:h"
+SHORT_OPTS="bc:Ghls:U"
 if ! getopt $SHORT_OPTS "$@" >/dev/null; then
     echo "$PROG: usage error (use -h for help)" >&2
     exit 2
@@ -258,8 +248,9 @@ eval set -- $ARGS
 BATCH_MODE=
 CONFIG_FILE=
 GEO_SEARCH=y
-FORCE_REINSTALL=
 CMD_SERVERNAME=
+DO_UPDATE_UPGRADE=y
+DO_SAVE_TCAT_LOGINS=
 HELP=
 
 while [ $# -gt 0 ]; do
@@ -267,8 +258,9 @@ while [ $# -gt 0 ]; do
         -b) BATCH_MODE=y;;
 	-c) CONFIG_FILE="$2"; shift;;
 	-G) GEO_SEARCH=n;;
-	-f) FORCE_REINSTALL=y;;
+	-l) DO_SAVE_TCAT_LOGINS=y;;
         -s) CMD_SERVERNAME="$2"; shift;;
+	-U) DO_UPDATE_UPGRADE=n;;
         -h) HELP='y';;
 	--) break;;
     esac
@@ -283,7 +275,8 @@ Options:
   -c configFile  load parameters from file
   -s server      the name or IP address of this machine
   -G             install without geographical search (for Ubuntu < 15.x)
-  -f             force re-install
+  -l             save a copy of TCAT login username and passwords in plain text
+  -U             do not run apt-get update and apt-get upgrade
   -h             show this help message
 EOF
     exit 0
@@ -304,27 +297,6 @@ if [ $(id -u) -ne 0 ]; then
    echo "$PROG: error: this script was run without root privileges" 1>&2
    tput sgr0
    exit 1
-fi
-
-# Already installed?
-
-if [ "$FORCE_REINSTALL" != 'y' ]; then
-    # Reinstall not explicity allowed, check if not already installed
-
-    if dpkg --status $MYSQL_SERVER_PKG >/dev/null 2>&1; then
-	echo "$PROG: $MYSQL_SERVER_PKG already installed (use -f to force reinstall)" >&2
-	exit 1
-    fi
-
-    if [ -e "$TCAT_DIR" ]; then
-	echo "$PROG: TCAT already installed (use -f to force reinstall)" >&2
-	exit 1
-    fi
-
-    if [ -L /etc/apparmor.d/disable/usr.sbin.mysqld ]; then
-	echo "$PROG: apparmor configured (use -f to forece reinstall)" >&2
-	exit 1
-    fi
 fi
 
 # Expected OS version
@@ -359,6 +331,18 @@ if [ "$UBUNTU_VERSION_MAJOR" -lt 15 ]; then
 	    fi
 	fi
     fi
+fi
+
+# Already installed?
+
+if [ -e "$TCAT_DIR" ]; then
+    echo "$PROG: cannot install: TCAT already installed: $TCAT_DIR" >&2
+    exit 1
+fi
+
+if dpkg --status $MYSQL_SERVER_PKG >/dev/null 2>&1; then
+    echo "$PROG: cannot install: $MYSQL_SERVER_PKG already installed" >&2
+    exit 1
 fi
 
 #----------------------------------------------------------------
@@ -475,6 +459,13 @@ while [ "$BATCH_MODE" != "y" ]; do
 
 	echo "  Expands URLs in tweets: $URLEXPANDYES"
 	echo "  Server: $SERVERNAME (TCAT will be at http://$SERVERNAME/)"
+
+	if [ $TCAT_AUTO_UPDATE = '0' ]; then
+	    echo "  Automatically update TCAT: (not enabled)"
+	else
+	    echo "  Automatically update TCAT: enabled, level=$TCAT_AUTO_UPDATE"
+	fi
+
 	echo "  Advanced parameters:"
 	echo "    Shell user: $SHELLUSER"
 	echo "    Shell group: $SHELLGROUP"
@@ -484,7 +475,6 @@ while [ "$BATCH_MODE" != "y" ]; do
 	echo "    TCAT standard login name: $TCATUSER"
 	echo
 	if promptYN "Use these values (or \"q\" to quit)"; then
-	    BATCH_MODE=n # actually this is redundant: the break will exit the loop
 	    break; # exit while-loop to start installing
 	fi
 	echo
@@ -499,6 +489,7 @@ while [ "$BATCH_MODE" != "y" ]; do
 	echo "These can be obtained from <https://apps.twitter.com>."
 	echo "You will need an application's Consumer Key and its Consumer Secret,"
 	echo "and an Access Token and its Access Token Secret."
+	echo "Values must be provided for them: they cannot be left blank."
 	echo
     fi
 
@@ -581,11 +572,40 @@ while [ "$BATCH_MODE" != "y" ]; do
 	fi
     done
 
+    # Automatic updates
+
+    if [ "$FIRST_PASS" = 'y' ]; then
+	echo
+	echo "TCAT can automatically update itself in the background."
+	echo "When updates are applied, the database is usually locked and"
+	echo "tweet capturing may be blocked. A lower update level means"
+	echo "long lock times and interrupted captures can be avoided, at the"
+	echo "cost of not automatically receiving some updates. Zero means"
+	echo "automatic updates are disabled."
+	echo
+    fi
+
+    DEFAULT=$TCAT_AUTO_UPDATE
+    TCAT_AUTO_UPDATE=
+    while [ -z "$TCAT_AUTO_UPDATE" ]; do
+	read -p "Automatically upgrade TCAT (0=off, 1=trivial,2=substantial,3=expensive) [$DEFAULT]: " TCAT_AUTO_UPDATE
+	if [ -z "$TCAT_AUTO_UPDATE" ]; then
+	    TCAT_AUTO_UPDATE=$DEFAULT
+	fi
+	if [ "$TCAT_AUTO_UPDATE" != '0' -a \
+	    "$TCAT_AUTO_UPDATE" != '1' -a \
+	    "$TCAT_AUTO_UPDATE" != '2' -a \
+	    "$TCAT_AUTO_UPDATE" != '3' ] ; then
+	    echo "Invalid value (expecting 0, 1, 2 or 3)"
+	    TCAT_AUTO_UPDATE= # clear to reprompt
+	fi
+    done
+
     # Advanced parameters
 
     if [ "$FIRST_PASS" = 'y' ]; then
 	echo
-	echo "Advanced pramerters for the file owner, MySQL accounts and TCAT"
+	echo "Advanced parameters for the file owner, MySQL accounts and TCAT"
 	echo "Web logins can be set. Normally, the defaults can be used."
 	echo
     fi
@@ -748,6 +768,14 @@ if [ -z "$USERSECRET" ]; then
     exit 1
 fi
 
+if [ "$TCAT_AUTO_UPDATE" -ne 0 -a \
+     "$TCAT_AUTO_UPDATE" -ne 1 -a \
+     "$TCAT_AUTO_UPDATE" -ne 2 -a \
+     "$TCAT_AUTO_UPDATE" -ne 3 ] ; then
+    echo "$PROG: invalid TCAT_AUTO_UPDATE (expecting 0, 1, 2 or 3): $TCAT_AUTO_UPDATE" >&2
+    exit 1
+fi
+
 #----------------------------------------------------------------
 # Generate random passwords, if they are a blank string.
 
@@ -785,8 +813,10 @@ if [ "$BATCH_MODE" != 'y' ]; then
 fi
 
 # Clear any existing TCAT crontab references
-# TODO: are these needed? /etc/crontab is not written to (anymore?)
 echo "" > /etc/cron.d/tcat
+
+# Remove entries in /etc/crontab from by a previous version of the installer.
+# Note: this version of the installer does not add entries to /etc/crontab.
 # These lines used to be written to the global /etc/crontab file
 sed -i 's/^# Run TCAT controller every minute$//g' /etc/crontab
 sed -i 's/^.*cd \/var\/www\/dmi-tcat\/capture\/stream\/; php controller.php.*$//g' /etc/crontab
@@ -794,53 +824,20 @@ sed -i 's/^# Run DMI-TCAT URL expander every hour$//g' /etc/crontab
 sed -i 's/^.*cd \/var\/www\/dmi-tcat\/helpers; sh urlexpand.sh.*$//g' /etc/crontab
 
 #----------------------------------------------------------------
-# Undo things that prevents a re-install
-#
-# WARNING: reinstalls are experimental. It certainly does not undo
-# everything that was previously installed.
-#
-# If these were present, the -f option must have been specified for the
-# script to get this far. So the user is ok to remove them.
 
-# MySQL already installed?
-
-if dpkg --status $MYSQL_SERVER_PKG >/dev/null 2>&1; then
-    # Remove MySQL and re-install it so new root password gets used,
-    # otherwise this script will need to be much more complex.
+if [ "$DO_UPDATE_UPGRADE" = 'y' ]; then
     tput bold
-    echo "Uninstalling MySQL ..."
+    echo "Updating and upgrading ..."
     tput sgr0
-    echo
+    echo ""
 
-    apt-get -y purge $MYSQL_SERVER_PKG
-
-    rm -rf /var/lib/mysql
-    echo
+    apt-get update
+    apt-get -y upgrade
 fi
 
-# TCAT directory already exists
-
-if [ -e "$TCAT_DIR" ]; then
-    rm -r "$TCAT_DIR"
-fi
-
-# Link already exists
-
-if [ -L /etc/apparmor.d/disable/usr.sbin.mysqld ]; then
-    rm /etc/apparmor.d/disable/usr.sbin.mysqld
-fi
+apt-get -y install wget
 
 #----------------------------------------------------------------
-
-tput bold
-echo "Installing basic prerequisites ..."
-tput sgr0
-echo ""
-
-# apt-get update
-# apt-get -y upgrade
-apt-get -y install wget debsums
-
 echo
 tput bold
 echo "Installing MySQL server and Apache webserver ..."
@@ -874,6 +871,9 @@ fi
 
 # Installation and autoconfiguration of MySQL will not work with Apparmor profile enabled
 
+if [ -L /etc/apparmor.d/disable/usr.sbin.mysqld ]; then
+    rm /etc/apparmor.d/disable/usr.sbin.mysqld # remove so "ln" does not fail
+fi
 ln -s /etc/apparmor.d/usr.sbin.mysqld /etc/apparmor.d/disable/
 /etc/init.d/apparmor restart 
 
@@ -885,7 +885,7 @@ echo ""
 
 apt-get -qq install -y git
 
-git clone https://github.com/digitalmethodsinitiative/dmi-tcat.git /var/www/dmi-tcat
+git clone https://github.com/digitalmethodsinitiative/dmi-tcat.git "$TCAT_DIR"
 
 echo ""
 tput bold
@@ -905,8 +905,8 @@ if ! grep "^$SHELLGROUP:" /etc/group >/dev/null; then
     addgroup --quiet "$SHELLGROUP"
 fi
 
-chown -R $SHELLUSER:$SHELLGROUP /var/www/dmi-tcat/
-cd /var/www/dmi-tcat
+chown -R $SHELLUSER:$SHELLGROUP "$TCAT_DIR"
+cd "$TCAT_DIR"
 mkdir analysis/cache logs proc
 chown $WEBUSER:$WEBGROUP analysis/cache
 chmod 755 analysis/cache
@@ -922,37 +922,43 @@ echo ""
 
 # Save Web UI passwords
 
-# Save TCAT admin's password
+if [ "$DO_SAVE_TCAT_LOGINS" = 'y' ]; then
+    # Save TCAT admin's password
 
-FILE="${TCAT_CNF_PREFIX}${TCATADMINUSER}${TCAT_CNF_SUFFIX}"
-touch "$FILE"
-chown $SHELLUSER:$SHELLGROUP "$FILE"
-chmod 600 "$FILE" # secure file before writing password to it
-cat > "$FILE" <<EOF
+    FILE="${TCAT_CNF_PREFIX}${TCATADMINUSER}${TCAT_CNF_SUFFIX}"
+    touch "$FILE"
+    chown $SHELLUSER:$SHELLGROUP "$FILE"
+    chmod 600 "$FILE" # secure file before writing password to it
+    cat > "$FILE" <<EOF
 # TCAT Web-UI administrator user
 user=$TCATADMINUSER
 password="${TCATADMINPASS}"
 EOF
-echo "$PROG: login details saved: $FILE"
+    echo "$PROG: TCAT login details saved: $FILE"
 
-# Save TCAT standard user's password
+    # Save TCAT standard user's password
 
-FILE="${TCAT_CNF_PREFIX}${TCATUSER}${TCAT_CNF_SUFFIX}"
-touch "$FILE"
-chown $SHELLUSER:$SHELLGROUP "$FILE"
-chmod 600 "$FILE" # secure file before writing password to it
-cat > "$FILE" <<EOF
+    FILE="${TCAT_CNF_PREFIX}${TCATUSER}${TCAT_CNF_SUFFIX}"
+    touch "$FILE"
+    chown $SHELLUSER:$SHELLGROUP "$FILE"
+    chmod 600 "$FILE" # secure file before writing password to it
+    cat > "$FILE" <<EOF
 # TCAT Web-UI standard user
 user=$TCATUSER
 password="${TCATPASS}"
 EOF
-echo "$PROG: login details saved: $FILE"
+    echo "$PROG: TCAT login details saved: $FILE"
+fi
 
-read -d '' APACHECONF1 <<"EOF"
+# Create Apache TCAT config file
+
+cat > /etc/apache2/sites-available/tcat.conf <<EOF
+# Apache config for DMI-TCAT
+
 <VirtualHost *:80>
-EOF
-read -d '' APACHECONF2 <<"EOF"
-        DocumentRoot /var/www/dmi-tcat/
+        ServerName $SERVERNAME
+
+        DocumentRoot "$TCAT_DIR"
 
         RewriteEngine On
         RewriteRule ^/$ /analysis/ [R,L]
@@ -962,16 +968,17 @@ read -d '' APACHECONF2 <<"EOF"
                 AllowOverride None
         </Directory>
 
-        <Directory /var/www/dmi-tcat/>
+        <Directory "$TCAT_DIR">
             # make sure directory lists are not possible
             Options -Indexes
             # basic authentication
             AuthType Basic
             AuthName "Log in to DMI-TCAT"
             AuthBasicProvider file
-            AuthUserFile /etc/apache2/passwords
-EOF
-read -d '' APACHECONF3 <<"EOF"
+            AuthUserFile "$APACHE_PASSWORDS_FILE"
+
+            Require user $TCATADMINUSER $TCATUSER
+
             DirectoryIndex index.html index.php
             # some directories and files should not be accessible via the web, make sure to enable mod_rewrite
             RewriteEngine on
@@ -979,21 +986,31 @@ read -d '' APACHECONF3 <<"EOF"
         </Directory>
 </VirtualHost>
 EOF
-echo "$APACHECONF1"  > /etc/apache2/sites-available/tcat.conf
-echo "        ServerName $SERVERNAME"  >> /etc/apache2/sites-available/tcat.conf
-echo "        $APACHECONF2"  >> /etc/apache2/sites-available/tcat.conf
-echo "            Require user $TCATADMINUSER $TCATUSER" >> /etc/apache2/sites-available/tcat.conf
-echo "        $APACHECONF3"  >> /etc/apache2/sites-available/tcat.conf
+
 a2dissite 000-default
 a2ensite tcat.conf
+
+# Create TCAT config file
 
 CFG="$TCAT_DIR/config.php"
 
 cp "$TCAT_DIR/config.php.example" "$CFG"
-htpasswd -b -c /etc/apache2/passwords $TCATUSER $TCATPASS
-sed -i "s/define(\"ADMIN_USER\", \"admin\");/define(\"ADMIN_USER\", \"$TCATADMINUSER\");/g" /var/www/dmi-tcat/config.php
-htpasswd -b /etc/apache2/passwords $TCATADMINUSER $TCATADMINPASS
-chown $SHELLUSER:$WEBGROUP /etc/apache2/passwords
+
+VAR=BASE_FILE
+sed -i "s/^define('$VAR',[^)]*);/define('$VAR', __DIR__ . '\/');/g" "$CFG"
+# Note: some PHP files requires BASE_FILE to ends with a slash, but some don't
+# TODO: PHP code should be changed to just use __DIR__ and not need BASE_FILE
+
+VAR=ADMIN_USER
+VALUE="'$TCATADMINUSER'"
+sed -i "s/^define('$VAR',[^)]*);/define('$VAR', $VALUE);/g" "$CFG"
+
+# Create TCAT login credentials file for Apache Basic Authentication
+
+htpasswd -b -c "$APACHE_PASSWORDS_FILE" $TCATUSER $TCATPASS
+htpasswd -b "$APACHE_PASSWORDS_FILE" $TCATADMINUSER $TCATADMINPASS
+chown $SHELLUSER:$WEBGROUP "$APACHE_PASSWORDS_FILE"
+
 a2enmod rewrite
 /etc/init.d/apache2 restart
 
@@ -1039,9 +1056,9 @@ echo "$PROG: account details saved: $FILE"
 echo "CREATE DATABASE IF NOT EXISTS twittercapture DEFAULT CHARACTER SET utf8mb4 DEFAULT COLLATE utf8mb4_unicode_ci;" | mysql --defaults-file="$MYSQL_USER_ADMIN_CNF"
 echo "GRANT CREATE, DROP, LOCK TABLES, ALTER, DELETE, INDEX, INSERT, SELECT, UPDATE, CREATE TEMPORARY TABLES ON twittercapture.* TO '$TCATMYSQLUSER'@'localhost' IDENTIFIED BY '$TCATMYSQLPASS';" | mysql --defaults-file="$MYSQL_USER_ADMIN_CNF"
 echo "FLUSH PRIVILEGES;" | mysql --defaults-file="$MYSQL_USER_ADMIN_CNF"
-sed -i "s/dbuser = \"\"/dbuser = \"$TCATMYSQLUSER\"/g" /var/www/dmi-tcat/config.php
-sed -i "s/dbpass = \"\"/dbpass = \"$TCATMYSQLPASS\"/g" /var/www/dmi-tcat/config.php
-sed -i "s/example.com\/dmi-tcat\//$SERVERNAME\//g" /var/www/dmi-tcat/config.php
+sed -i "s/dbuser = \"\"/dbuser = \"$TCATMYSQLUSER\"/g" "$CFG"
+sed -i "s/dbpass = \"\"/dbpass = \"$TCATMYSQLPASS\"/g" "$CFG"
+sed -i "s/example.com\/dmi-tcat\//$SERVERNAME\//g" "$CFG"
 
 if [ "$URLEXPANDYES" == "y" ]; then
    echo ""
@@ -1053,7 +1070,7 @@ if [ "$URLEXPANDYES" == "y" ]; then
    easy_install greenlet
    easy_install gevent 
    pip install requests
-   CRONLINE="0 *     * * *   $SHELLUSER   (cd /var/www/dmi-tcat/helpers; sh urlexpand.sh)"
+   CRONLINE="0 *     * * *   $SHELLUSER   (cd \"$TCAT_DIR/helpers\"; sh urlexpand.sh)"
    echo "" >> /etc/cron.d/tcat
    echo "# Run DMI-TCAT URL expander every hour" >> /etc/cron.d/tcat
    echo "$CRONLINE" >> /etc/cron.d/tcat
@@ -1065,7 +1082,7 @@ echo "Activating TCAT controller in cron ..."
 tput sgr0
 echo ""
 
-CRONLINE="* *     * * *   $SHELLUSER   (cd /var/www/dmi-tcat/capture/stream/; php controller.php)"
+CRONLINE="* *     * * *   $SHELLUSER   (cd \"$TCAT_DIR/capture/stream\"; php controller.php)"
 echo "" >> /etc/cron.d/tcat
 echo "# Run TCAT controller every minute" >> /etc/cron.d/tcat
 echo "$CRONLINE" >> /etc/cron.d/tcat
@@ -1076,8 +1093,8 @@ echo "Setting up logfile rotation ..."
 tput sgr0
 echo ""
 
-read -d '' LOGROTATE <<"EOF"
-/var/www/dmi-tcat/logs/controller.log /var/www/dmi-tcat/logs/track.error.log /var/www/dmi-tcat/logs/follow.error.log /var/www/dmi-tcat/logs/onepercent.error.log  
+cat > /etc/logrotate.d/dmi-tcat <<EOF
+$TCAT_DIR/logs/controller.log $TCAT_DIR/logs/track.error.log $TCAT_DIR/logs/follow.error.log $TCAT_DIR/logs/onepercent.error.log
 { 
    weekly  
    rotate 8  
@@ -1085,10 +1102,9 @@ read -d '' LOGROTATE <<"EOF"
    delaycompress  
    missingok  
    ifempty
+   create 644 $SHELLUSER $SHELLGROUP
+}
 EOF
-echo "$LOGROTATE" > /etc/logrotate.d/dmi-tcat
-echo "   create 644 $SHELLUSER $SHELLGROUP"  >> /etc/logrotate.d/dmi-tcat
-echo "}" >> /etc/logrotate.d/dmi-tcat
 
 case "$CAPTURE_MODE" in
     1)  echo "Using role: track" ;;
@@ -1100,14 +1116,43 @@ case "$CAPTURE_MODE" in
 	exit 3 ;;
 esac
 
-sed -i "s/^\$twitter_consumer_key = \"\";/\$twitter_consumer_key = \"$CONSUMERKEY\";/g" /var/www/dmi-tcat/config.php
-sed -i "s/^\$twitter_consumer_secret = \"\";/\$twitter_consumer_secret = \"$CONSUMERSECRET\";/g" /var/www/dmi-tcat/config.php
-sed -i "s/^\$twitter_user_token = \"\";/\$twitter_user_token = \"$USERTOKEN\";/g" /var/www/dmi-tcat/config.php
-sed -i "s/^\$twitter_user_secret = \"\";/\$twitter_user_secret = \"$USERSECRET\";/g" /var/www/dmi-tcat/config.php
+sed -i "s/^\$twitter_consumer_key = \"\";/\$twitter_consumer_key = \"$CONSUMERKEY\";/g" "$CFG"
+sed -i "s/^\$twitter_consumer_secret = \"\";/\$twitter_consumer_secret = \"$CONSUMERSECRET\";/g" "$CFG"
+sed -i "s/^\$twitter_user_token = \"\";/\$twitter_user_token = \"$USERTOKEN\";/g" "$CFG"
+sed -i "s/^\$twitter_user_secret = \"\";/\$twitter_user_secret = \"$USERSECRET\";/g" "$CFG"
+
+# Configure TCAT automatic updates
+
+VARIABLE=AUTOUPDATE_ENABLED
+if [ $TCAT_AUTO_UPDATE -eq 0 ]; then
+    VALUE=false
+else
+    VALUE=true
+fi
+sed -i "s/^define('$VARIABLE',[^)]*);/define('$VARIABLE', $VALUE);/g" "$CFG"
+
+VARIABLE=AUTOUPDATE_LEVEL
+case $TCAT_AUTO_UPDATE in
+    0) VALUE="'trivial'";; # note: quotes in value are important
+    1) VALUE="'trivial'";;
+    2) VALUE="'substantial'";;
+    3) VALUE="'expensive'";;
+    *) echo "$PROG: internal error: bad TCAT_AUTO_UPDATE" >&2; exit 1;;
+esac
+sed -i "s/^define('$VARIABLE',[^)]*);/define('$VARIABLE', $VALUE);/g" "$CFG"
 
 # Check if the current MySQL configuration is the system default one
-CHANGEDMYCNF=`debsums -ce | grep -c -e "/etc/mysql/my.cnf"`
-if [ "$CHANGEDMYCNF" == "0" ]; then
+
+apt-get -y install debsums
+
+# Note: previously this checked /etc/mysql/my.cnf, but that is a symlink
+# to /etc/alternatives/my.cnf which itself is symlink to /etc/mysql/mysql.cnf.
+# If modified, debsums reports that /etc/mysql/mysql.cnf has changed, but does
+# not report /etc/mysql/my.cnf has changed.
+
+if debsums -ce | grep "/etc/mysql/mysql.cnf" >/dev/null; then
+    # The MySQL config file was not changed: can attempt to fix memory profile
+
     if [ "$DB_CONFIG_MEMORY_PROFILE" = "y" ]; then
         echo ""
         tput bold
@@ -1181,7 +1226,9 @@ if [ "$TCATPASS_GENERATED" = 'y' ]; then
 fi
 echo
 echo "If you ever need them, the usernames and passwords have been saved."
-echo "TCAT logins have been saved to ${TCAT_CNF_PREFIX}*${TCAT_CNF_SUFFIX}"
+if [ "$DO_SAVE_TCAT_LOGINS" = 'y' ]; then
+    echo "TCAT logins have been saved to ${TCAT_CNF_PREFIX}*${TCAT_CNF_SUFFIX}"
+fi
 echo "MySQL accounts have been saved to ${MYSQL_CNF_PREFIX}*${MYSQL_CNF_SUFFIX}"
 echo
 echo "The following steps are recommended, but not mandatory"

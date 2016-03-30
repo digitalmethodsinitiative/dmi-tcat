@@ -1,0 +1,10 @@
+This is a text file which shouldn't be modified.
+
+The creation time of this file will be read by controller.php to test whether it should run an automatic update.
+Such an update will only be executed at the same time of day as this file was originally created (= installation time).
+This ensures all TCAT installations world-wide will not 'git pull' and update their databases at the same time.
+
+The philosophy behind this strategy is:
+
+1) an accidentally pushed syntax error could be less catastrophic if detected in time
+2) be nice to github 
