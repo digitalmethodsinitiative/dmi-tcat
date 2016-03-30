@@ -12,7 +12,7 @@
 // is saved in the "analysis/cache" directory under the DMI-TCAT install
 // directory (usually: /var/www/dmi-tcat).
 // 
-//     export.php
+//     export.php -a
 // 
 // Export structure (i.e. queries only, no data) for all query bins in TCAT:
 // 
