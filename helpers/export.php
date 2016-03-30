@@ -291,9 +291,9 @@ if ($string == '') {
 }
 
 if ($export == "all") {
-    $cmd = "$bin_mysqldump --default-character-set=utf8mb4 -u$dbuser -h $hostname $database $string >> $filename";
+    $cmd = "$bin_mysqldump --skip-add-drop-table --default-character-set=utf8mb4 -u$dbuser -h $hostname $database $string >> $filename";
 } else {
-    $cmd = "$bin_mysqldump --no-data --default-character-set=utf8mb4 -u$dbuser -h $hostname $database $string >> $filename";
+    $cmd = "$bin_mysqldump --skip-add-drop-table --no-data --default-character-set=utf8mb4 -u$dbuser -h $hostname $database $string >> $filename";
 }
 system($cmd);
 
