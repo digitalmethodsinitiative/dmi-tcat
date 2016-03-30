@@ -66,7 +66,7 @@ $export = 'all'; // default
 $prog = basename($argv[0]);
 
 // Directory where the export file will be saved (if -o is not used)
-$defaultOutputDir = realpath(__DIR__ . "/../analysis/$resultsdir");
+$defaultOutputDir = realpathslash(__DIR__ . "/../analysis/$resultsdir");
 
 $args = array(); $isAllBins = false;
 for ($i = 1; $i < $argc; $i++) {
@@ -165,9 +165,9 @@ if (! isset($outfile)) {
         }
         $binAndType = escapeshellcmd($queryBins[0]) . '-' . $bintype;
     } else if ($isAllBins) {
-	$binAndType = 'TCAT_allQueryBins';
+    	$binAndType = 'TCAT_allQueryBins';
     } else {
-	$binAndType = 'TCAT_queryBins';
+    	$binAndType = 'TCAT_queryBins';
     }
 
     $storedir = $defaultOutputDir;
@@ -403,6 +403,10 @@ function get_executable($binary) {
         return null;
     }
     return $where;
+}
+
+function realpathslash($path) {
+    return rtrim(realpath($path), '/') . '/';
 }
 
 function print_help($prog, $defaultOutputDir) {
