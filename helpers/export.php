@@ -39,7 +39,7 @@ function env_is_cli() {
     return (!isset($_SERVER['SERVER_SOFTWARE']) && (php_sapi_name() == 'cli' || (is_numeric($_SERVER['argc']) && $_SERVER['argc'] > 0)));
 }
 
-require_once(__DIR__ . "/../config.php");
+require_once(__DIR__ . '/../config.php');
 require_once(__DIR__ . '/../capture/query_manager.php');
 require_once(__DIR__ . '/../analysis/common/config.php');      /* to get global variable $resultsdir */
 require_once(__DIR__ . '/../common/functions.php');
@@ -90,10 +90,10 @@ for ($i = 1; $i < $argc; $i++) {
             echo "Usage: $prog [options] {queryBins...}\n";
             echo "Options:\n";
             echo "  -d       export query phrases AND data (default)\n";
-            echo "  -s       export query pharases only, with no data\n";
+            echo "  -s       export structure: query pharases only, no data\n";
             echo "  -o file  output file (default: automatically generated)\n";
             echo "  -h       show this help message\n";
-	    echo "If no queryBins are named, all the queryBins are exported.\n";
+	    echo "If no queryBins are named, all the query bins are exported.\n";
 	    echo "Default output file is a .sql.gz file in $defaultOutputDir\n";
 	    echo "Caution: query bin names are case sensitive.\n";
             exit(0);
@@ -214,6 +214,7 @@ foreach ($queryBins as $bin) {
 
 $bintype = getBinType($bin);
 if ($bintype === false) {
+    unlink($filename);
     die("$prog: error: unknown query bin: $bin\n");
 }
 
@@ -284,6 +285,7 @@ foreach ($tables as $table) {
 }
 
 if ($string == '') {
+    unlink($filename);
     die("$prog: internal error: could not find suitable tables for bin: $bin\n");
 }
 
