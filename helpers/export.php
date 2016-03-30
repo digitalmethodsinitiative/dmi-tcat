@@ -68,62 +68,60 @@ $prog = basename($argv[0]);
 // Directory where the export file will be saved (if -o is not used)
 $defaultOutputDir = realpath(__DIR__ . "/../analysis/$resultsdir");
 
-$args = array();
+$args = array(); $isAllBins = false;
 for ($i = 1; $i < $argc; $i++) {
     if (substr($argv[$i], 0, 1) == '-') {
         $opt = substr($argv[$i], 1);
         switch ($opt) {
-        case 'o':
-            $i++;
-            if ($argc <= $i) {
-                die(" $prog: usage error: missing option argument for -$opt\n");
-            }
-            $outfile = $argv[$i];
-            break;
-	case 'd':
-	    $export = 'all';
-	    break;
-	case 's':
-	    $export = 'query';
-	    break;
-        case 'h':
-            echo "Usage: $prog [options] {queryBins...}\n";
-            echo "Options:\n";
-            echo "  -d       export query phrases AND data (default)\n";
-            echo "  -s       export structure: query pharases only, no data\n";
-            echo "  -o file  output file (default: automatically generated)\n";
-            echo "  -h       show this help message\n";
-	    echo "If no queryBins are named, all the query bins are exported.\n";
-	    echo "Default output file is a .sql.gz file in $defaultOutputDir\n";
-	    echo "Caution: query bin names are case sensitive.\n";
-            exit(0);
-            break;
-        default:
-            die("$prog: usage error: unknown option: -$opt (-h for help)\n");
-            break;
+            case 'o':
+                $i++;
+                if ($argc <= $i) {
+                    die(" $prog: usage error: missing option argument for -$opt\n");
+                }
+                $outfile = $argv[$i];
+                break;
+            case 'a':
+                $isAllBins = true;
+                break;
+            case 'd':
+                $export = 'all';
+                break;
+            case 's':
+                $export = 'query';
+                break;
+            case 'h':
+                print_help($prog, $defaultOutputDir);
+                exit(0);
+                break;
+            default:
+                die("$prog: usage error: unknown option: -$opt (-h for help)\n");
+                break;
         }
     } else {
         array_push($args, $argv[$i]);
     }
 }
 
-$queryBins = $args;
+$queryBins = $isAllBins ? array() : $args;
+
+if (!$isAllBins && count($queryBins) == 0) {
+    print_help($prog, $defaultOutputDir);
+    exit(0);
+}
 
 // All query bins
 
-$isAllBins = false;
-if (count($queryBins) == 0) {
-    // No query bins specified, export all of them
+if ($isAllBins) {
+    // Export all of the query bins
 
-    $isAllBins = true;
     $queryBins = getAllbins();
     if (count($queryBins) == 0) {
         die("$prog: no query bins exist in this deployment of TCAT)\n");
     }
     sort($queryBins);
 } else {
-
     // Check query bin names are valid
+
     foreach ($queryBins as $bin) {
         $bintype = getBinType($queryBins[0]);
         if ($bintype === false) {
@@ -405,6 +403,19 @@ function get_executable($binary) {
         return null;
     }
     return $where;
+}
+
+function print_help($prog, $defaultOutputDir) {
+    echo "Usage: $prog [options] {queryBins...}\n";
+    echo "Options:\n";
+    echo "  -a       export all existing bins\n";
+    echo "  -d       export query phrases AND data (default)\n";
+    echo "  -s       export structure: query pharases only, no data\n";
+    echo "  -o file  output file (default: automatically generated)\n";
+    echo "  -h       show this help message\n";
+    echo "If no queryBins are named and the -a option is not used, this help message is displayed.\n";
+    echo "Default output file is a .sql.gz file in $defaultOutputDir\n";
+    echo "Caution: query bin names are case sensitive.\n";
 }
 
 ?>
