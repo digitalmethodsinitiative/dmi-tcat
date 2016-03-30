@@ -1,16 +1,21 @@
 #!/usr/bin/php5
 <?php
+// DMI-TCAT import
+//
+// Imports query bins exported by the DMI-TCAT export.php script.
+//
+// Usage: import.php filename.sql.gz
+//
 
 function env_is_cli() {
     return (!isset($_SERVER['SERVER_SOFTWARE']) && (php_sapi_name() == 'cli' || (is_numeric($_SERVER['argc']) && $_SERVER['argc'] > 0)));
 }
 
-require_once("../config.php");
-
-require_once(BASE_FILE . '/capture/query_manager.php');
-require_once(BASE_FILE . '/analysis/common/config.php');      /* to get global variable $resultsdir */
-require_once(BASE_FILE . '/common/functions.php');
-require_once(BASE_FILE . '/capture/common/functions.php');
+require_once(__DIR__ . '/../config.php');
+require_once(__DIR__ . '/../capture/query_manager.php');
+require_once(__DIR__ . '/../analysis/common/config.php');      /* to get global variable $resultsdir */
+require_once(__DIR__ . '/../common/functions.php');
+require_once(__DIR__ . '/../capture/common/functions.php');
 
 global $dbuser, $dbpass, $database, $hostname;
 
@@ -48,25 +53,36 @@ if (!is_readable($file)) {
 }
 
 $fh = gzopen("$file", "r") or die ("Cannot open gzipped '$file' for reading. Perhaps you are trying to open an uncompressed dump?\n");
-$bin = '';
+$queryBins = array();
 while ($line = fgets($fh)) {
     if (preg_match("/^-- Table structure for table `(.*)_tweets`/", $line, $matches)) {
-        $bin = $matches[1]; break;
+        array_push($queryBins, $matches[1]);
     }
     if (preg_match("/^INSERT INTO tcat_query_bins \( querybin, `type`, active, visible \) values \( '(.*?)',/", $line, $matches)) {
-        $bin = $matches[1]; break;
+        array_push($queryBins, $matches[1]);
     }
 }
 fclose($fh);
-if ($bin == '') {
+
+$queryBins = array_unique($queryBins);
+
+if (count($queryBins) == 0) {
     die("I did not recognize '$file' as a TCAT export.\n");
 }
 
-print "Recognized query bin '$bin'.\n";
+$binsExist = false;
+foreach ($queryBins as $bin) {
+    if (getBinType($bin) === false) {
+        print "Query bin: $bin\n";
+    } else {
+        print "Query bin already exists: $bin\n";
+        $binsExist = true;
+    }
+}
 
-$bintype = getBinType($bin);
-if ($bintype !== false) {
-    die("The query bin '$bin' already exists. Will not override. You may want to rename the existing query bin through the TCAT administration panel.\n");
+if ($binsExist) {
+    print "Error: query bin(s) already exist. Will not overwrite.\n";
+    die("You may want to rename the existing query bin through the TCAT administration panel.\n");
 }
 
 print "Now importing...\n";
@@ -96,3 +112,5 @@ function get_executable($binary) {
     }
     return $where;
 }
+
+?>
