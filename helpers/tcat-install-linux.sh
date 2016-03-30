@@ -951,7 +951,9 @@ echo ""
 
 apt-get -qq install -y git
 
-git clone https://github.com/digitalmethodsinitiative/dmi-tcat.git "$TCAT_DIR"
+# Create a shallow clone of the DMI-TCAT repository. Can be changed
+# later with "git-fetch --depth", or restore full history with --unshallow.
+git clone --depth 1 https://github.com/digitalmethodsinitiative/dmi-tcat.git "$TCAT_DIR"
 
 echo ""
 tput bold
