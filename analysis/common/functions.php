@@ -379,7 +379,7 @@ function groupByInterval($date) {
 function generate($what, $filename) {
     global $tsv, $network, $esc, $titles, $database, $interval, $outputformat;
 
-    require_once("CSV.class.php");
+    require_once __DIR__ . '/CSV.class.php';
 
     // initialize variables
     $tweets = $times = $from_user_names = $results = $urls = $urls_expanded = $hosts = $hashtags = array();

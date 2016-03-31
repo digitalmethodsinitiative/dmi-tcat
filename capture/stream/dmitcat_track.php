@@ -15,11 +15,11 @@ error_reporting(E_ALL);
 define('CAPTURE', 'track');
 
 // ----- includes -----
-include "../../config.php";                  // load base config file
-include "../../common/functions.php";        // load base functions file
-include "../common/functions.php";           // load capture function file
+include __DIR__ . '/../../config.php';                  // load base config file
+include __DIR__ . '/../../common/functions.php';        // load base functions file
+include __DIR__ . '/../common/functions.php';           // load capture function file
 
-require BASE_FILE . 'capture/common/tmhOAuth/tmhOAuth.php';
+require __DIR__ . '/../common/tmhOAuth/tmhOAuth.php';
 
 $thislockfp = script_lock(CAPTURE);
 if (!is_resource($thislockfp)) {

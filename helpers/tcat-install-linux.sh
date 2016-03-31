@@ -1064,11 +1064,6 @@ CFG="$TCAT_DIR/config.php"
 
 cp "$TCAT_DIR/config.php.example" "$CFG"
 
-VAR=BASE_FILE
-sed -i "s/^define('$VAR',[^)]*);/define('$VAR', __DIR__ . '\/');/g" "$CFG"
-# Note: some PHP files requires BASE_FILE to ends with a slash, but some don't
-# TODO: PHP code should be changed to just use __DIR__ and not need BASE_FILE
-
 VAR=ADMIN_USER
 VALUE="'$TCATADMINUSER'"
 sed -i "s/^define('$VAR',[^)]*);/define('$VAR', $VALUE);/g" "$CFG"

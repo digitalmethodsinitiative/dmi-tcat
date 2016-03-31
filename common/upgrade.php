@@ -23,9 +23,9 @@ function env_is_cli() {
 }
 
 if (env_is_cli()) {
-    include_once("../config.php");
-    include "functions.php";
-    include "../capture/common/functions.php";
+    include_once __DIR__ . '/../config.php';
+    include __DIR__ . '/functions.php';
+    include __DIR__ . '/../capture/common/functions.php';
 }
 
 function get_all_bins() {

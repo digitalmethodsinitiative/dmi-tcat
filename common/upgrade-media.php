@@ -6,10 +6,10 @@ if ($argc < 1)
 set_time_limit(0);
 error_reporting(E_ALL);
 
-include_once("../config.php");
-include "functions.php";
-include "../capture/common/functions.php";
-include "../capture/common/tmhOAuth/tmhOAuth.php";
+include_once __DIR__ . '/../config.php';
+include __DIR__ . '/functions.php';
+include __DIR__ . '/../capture/common/functions.php';
+include __DIR__ . '/../capture/common/tmhOAuth/tmhOAuth.php';
 
 if (dbserver_has_utf8mb4_support() == false) {
     die("DMI-TCAT requires at least MySQL version 5.5.3 - please upgrade your server\n");

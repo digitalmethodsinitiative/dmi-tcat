@@ -18,9 +18,9 @@
 if ($argc < 1)
     exit(); // only run from command line
 
-require_once('../config.php');
-require_once('../common/functions.php');
-require_once('../capture/common/functions.php');
+require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/../common/functions.php';
+require_once __DIR__ . '/../capture/common/functions.php';
 
 print "Were you running DMI-TCAT before the query manager was implemented (6 March 2014)? (yes/no)" . PHP_EOL;
 $ans = trim(fgets(fopen("php://stdin", "r")));
@@ -214,21 +214,21 @@ function querybinsPhpToDb() {
     create_admin();
     if (file_exists('../querybins.php')) {
         print "importing from querybins.php" . PHP_EOL;
-        include('../querybins.php');
+        include __DIR__ . '/../querybins.php';
         if (isset($querybins))
             binsToDb($querybins, 'track');
         $querybins = false;
     }
     if (file_exists('../followbins.php')) {
         print "importing from followbins.php" . PHP_EOL;
-        include('../followbins.php');
+        include __DIR__ . '/../followbins.php';
         if (isset($querybins))
             binsToDb($querybins, 'follow');
         $querybins = false;
     }
     if (file_exists('../querybins.php')) {
         print "importing query archives" . PHP_EOL;
-        include('../querybins.php');
+        include __DIR__ . '/../querybins.php';
         if (isset($queryarchives))
             binsToDb($queryarchives, 'track');
     }

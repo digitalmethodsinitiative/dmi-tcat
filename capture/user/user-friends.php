@@ -7,11 +7,11 @@ if ($argc < 1)
 // ----- params -----
 set_time_limit(0);
 error_reporting(E_ALL);
-include_once "../../config.php";
-include_once BASE_FILE . '/common/functions.php';
-include_once BASE_FILE . '/capture/common/functions.php';
+include_once __DIR__ . '/../../config.php';
+include_once __DIR__ . '/../../common/functions.php';
+include_once __DIR__ . '/../common/functions.php';
 
-require BASE_FILE . '/capture/common/tmhOAuth/tmhOAuth.php';
+require __DIR__ . '/../common/tmhOAuth/tmhOAuth.php';
 
 // ----- connection -----
 $dbh = pdo_connect();
