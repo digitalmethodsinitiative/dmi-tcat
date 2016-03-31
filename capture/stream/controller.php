@@ -8,7 +8,7 @@ function env_is_cli() {
 if (!env_is_cli())
     die;
 
-include_once __DIR__ . '../../config.php';
+include_once __DIR__ . '/../../config.php';
 include __DIR__ . '/../../common/functions.php';
 include __DIR__ . '/../common/functions.php';
 

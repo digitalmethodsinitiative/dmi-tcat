@@ -6,7 +6,7 @@ if ($argc < 1)
 
 require_once __DIR__ . '/../../config.php';
 require_once __DIR__ . '/../../analysis/common/functions.php';
-require_once __DIR__ . 'KloutAPIv2-PHP/KloutAPIv2.class.php';
+require_once __DIR__ . '/KloutAPIv2-PHP/KloutAPIv2.class.php';
 
 while (1) {
 
