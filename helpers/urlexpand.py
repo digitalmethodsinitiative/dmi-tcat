@@ -10,6 +10,7 @@ import MySQLdb
 import time
 from collections import deque
 import re
+import os.path
 
 from gevent import monkey
 monkey.patch_all(thread=False)
@@ -25,7 +26,7 @@ db_user = 'root'
 db_passwd = ''
 db_db = 'twittercapture'
 
-with open('../config.php', 'r') as f:
+with open(os.path.dirname(__file__) + '/../config.php', 'r') as f:
     read_data = f.read()
     lines = read_data.split('\n')
     for line in lines:
