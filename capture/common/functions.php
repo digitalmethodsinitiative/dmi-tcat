@@ -311,6 +311,15 @@ function create_admin() {
     $create = $dbh->prepare($sql);
     $create->execute();
 
+    $sql = "CREATE TABLE IF NOT EXISTS tcat_controller_tasklist (
+    `id` BIGINT AUTO_INCREMENT,
+    `task` VARCHAR(32) NOT NULL,
+    `instruction` VARCHAR(255) NOT NULL,
+    `ts_issued` timestamp DEFAULT current_timestamp,
+    primary key(id) ) ENGINE = MyISAM DEFAULT CHARSET = utf8mb4";
+    $create = $dbh->prepare($sql);
+    $create->execute();
+
     // 03/03/2015 Add comments column [fast auto-upgrade - reminder to remove]
     $query = "SHOW COLUMNS FROM tcat_query_bins";
     $rec = $dbh->prepare($query);
