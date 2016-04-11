@@ -1,7 +1,7 @@
 <?php
-require_once './common/config.php';
-require_once '../config.separate.php';
-require_once './common/functions.php';
+require_once __DIR__ . '/common/config.php';
+require_once __DIR__ . '/../config.separate.php';
+require_once __DIR__ . '/common/functions.php';
 
 $bootstrap = 14;
 if (isset($_GET['bootstrap']))

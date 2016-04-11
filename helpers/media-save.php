@@ -14,8 +14,8 @@
  * $ php media-save.php bin_name /my/tmp/dir
  *
  */
-require_once('../config.php');
-require_once('../capture/common/functions.php');
+require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/../capture/common/functions.php';
 
 $base_imgpath = '/tmp';
 

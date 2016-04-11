@@ -2,9 +2,9 @@
 
 if ($argc < 1)
     die(); // only access from command line
-include_once('../config.php');
-include_once('../common/functions.php');
-include_once('../capture/common/functions.php');
+include_once __DIR__ . '/../config.php';
+include_once __DIR__ . '/../common/functions.php';
+include_once __DIR__ . '/../capture/common/functions.php';
 
 # NOTE: twitter api normally gives back url and url_expanded. YourTwapperKeeper only has url. The url expansion script which needs to be run after this one needs url_expanded to work (has to do with optimalizations). Ergo: no analysis of link shortening servies on ytk_ datasets
 // From this db

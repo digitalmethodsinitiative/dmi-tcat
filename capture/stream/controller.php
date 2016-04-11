@@ -8,9 +8,9 @@ function env_is_cli() {
 if (!env_is_cli())
     die;
 
-include_once("../../config.php");
-include "../../common/functions.php";
-include "../common/functions.php";
+include_once __DIR__ . '/../../config.php';
+include __DIR__ . '/../../common/functions.php';
+include __DIR__ . '/../common/functions.php';
 
 // make sure only one controller script is running
 $thislockfp = script_lock('controller');
@@ -92,7 +92,7 @@ if (AUTOUPDATE_ENABLED && $upgrade_requested == false) {
     }
     if ($failure == false) {
         // additionally we want to ensure only a single auto-update attempt is made per day
-        $nomodifyfile = BASE_FILE . 'nomodify.txt';
+        $nomodifyfile = __DIR__ . '/../../nomodify.txt';
         if (!file_exists($nomodifyfile)) {
             // the nomodify file does not seem to exist
             logit("controller.log", "auto-update not supported, because the nomodify.txt file appears to be missing");
@@ -114,12 +114,12 @@ if (AUTOUPDATE_ENABLED && $upgrade_requested == false) {
 }
 if ($upgrade_requested) {
     // git pull
-    if (!is_writable(BASE_FILE . "capture")) {
+    if (!is_writable(__DIR__ . '/../../capture')) {
         logit("controller.log", "auto-update requested, but the cron user does not have the neccessary permissions to do a successful git pull");
         $skipupdate = true;
     } else {
         logit("controller.log", "now attempting auto-update with: git pull");
-        chdir(BASE_FILE);
+        chdir(__DIR__ . '/../..');
         system("git pull 2>&1 >/dev/null", $status);
         if ($status !== 0) {
             logit("controller.log", "auto-update was not successful. The command 'git pull' seems to have failed. Did you make any local TCAT modifications? Please investigate manually.");
@@ -128,7 +128,7 @@ if ($upgrade_requested) {
     }
     // run upgrade.php
     logit("controller.log", "now attempting database auto-update by running: php upgrade.php");
-    chdir(BASE_FILE . "common");
+    chdir(__DIR__ . '/../../common');
     $flag = '--au0';
     if (AUTOUPDATE_LEVEL == 'substantial') {
         $flag = '--au1';
@@ -138,7 +138,7 @@ if ($upgrade_requested) {
     system("nohup php upgrade.php --non-interactive $flag", $status);
 }
 
-chdir(BASE_FILE . "capture/stream");
+chdir(__DIR__);
 
 // now check for each capture role what needs to be done
 foreach ($roles as $role) {
@@ -167,9 +167,9 @@ foreach ($roles as $role) {
     $pid = 0;
     $last = 0;
     $running = false;
-    if (file_exists(BASE_FILE . "proc/$role.procinfo")) {
+    if (file_exists(__DIR__ . '/../../proc/$role.procinfo')) {
 
-        $procfile = read_procfile(BASE_FILE . "proc/$role.procinfo");
+        $procfile = read_procfile(__DIR__ . "/../../proc/$role.procinfo");
         $pid = $procfile['pid'];
         $last = $procfile['last'];
 	    if ($pid == -1) exit();
@@ -243,7 +243,7 @@ foreach ($roles as $role) {
 
                     // a forked process may inherit our lock, but we prevent this.
                     flock($thislockfp, LOCK_UN); fclose($thislockfp);
-                    passthru(PHP_CLI . " " . BASE_FILE . "capture/stream/dmitcat_$role.php > /dev/null 2>&1 &");
+                    passthru(PHP_CLI . " " . __DIR__ . "/dmitcat_$role.php > /dev/null 2>&1 &");
                     $thislockfp = script_lock('controller');
                 }
             }
@@ -261,7 +261,7 @@ foreach ($roles as $role) {
 
             // a forked process may inherit our lock, but we prevent this.
             flock($thislockfp, LOCK_UN); fclose($thislockfp);
-            passthru(PHP_CLI . " " . BASE_FILE . "capture/stream/dmitcat_$role.php > /dev/null 2>&1 &");
+            passthru(PHP_CLI . " " . __DIR__ . "/dmitcat_$role.php > /dev/null 2>&1 &");
             $thislockfp = script_lock('controller');
         }
     }

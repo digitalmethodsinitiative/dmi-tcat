@@ -1,6 +1,6 @@
 <?php
-require_once './common/config.php';
-require_once './common/functions.php';
+require_once __DIR__ . '/common/config.php';
+require_once __DIR__ . '/common/functions.php';
 
 $lowercase = isset($_GET['lowercase']) ? $lowercase = $_GET['lowercase'] : 0;
 $minf = isset($_GET['minf']) ? $minf = $_GET['minf'] : 1;

@@ -1,7 +1,7 @@
 <?php
-require_once './common/config.php';
-require_once './common/functions.php';
-require_once './common/Coword.class.php';
+require_once __DIR__ . '/common/config.php';
+require_once __DIR__ . '/common/functions.php';
+require_once __DIR__ . '/common/Coword.class.php';
 validate_all_variables();
 ?>
 
@@ -519,7 +519,7 @@ validate_all_variables();
                                                             }
 
                                                             function getGEXFtimeseries($filename, $series) {
-                                                                include_once('common/Gexf.class.php');
+                                                                include_once(__DIR__ . '/common/Gexf.class.php');
                                                                 $gexf = new Gexf();
                                                                 $gexf->setTitle("Co-word " . $filename);
                                                                 $gexf->setEdgeType(GEXF_EDGE_UNDIRECTED);

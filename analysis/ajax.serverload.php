@@ -1,6 +1,6 @@
 <?php
-require_once './common/config.php';
-require_once './common/functions.php';
+require_once __DIR__ . '/common/config.php';
+require_once __DIR__ . '/common/functions.php';
 
 /** configuration defaults **/
 if (!defined('TCAT_SYSLOAD_CHECKING')) {

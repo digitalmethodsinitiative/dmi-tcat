@@ -1,7 +1,7 @@
 <?php
-require_once '../config.php';
-require_once 'common/config.php';
-require_once 'common/functions.php';
+require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/common/config.php';
+require_once __DIR__ . '/common/functions.php';
 ?>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">

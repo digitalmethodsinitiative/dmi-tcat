@@ -240,7 +240,7 @@ promptPassword() {
 #----------------------------------------------------------------
 # Process command line
 
-SHORT_OPTS="bc:Ghls:U"
+SHORT_OPTS="bc:DGhls:U"
 if ! getopt $SHORT_OPTS "$@" >/dev/null; then
     echo "$PROG: usage error (use -h for help)" >&2
     exit 2
@@ -256,12 +256,14 @@ GEO_SEARCH=y
 CMD_SERVERNAME=
 DO_UPDATE_UPGRADE=y
 DO_SAVE_TCAT_LOGINS=
+DEBUG_MODE=
 HELP=
 
 while [ $# -gt 0 ]; do
     case "$1" in
         -b) BATCH_MODE=y;;
 	-c) CONFIG_FILE="$2"; shift;;
+        -D) DEBUG_MODE=y;; # undocumented option for testing
 	-G) GEO_SEARCH=n;;
 	-l) DO_SAVE_TCAT_LOGINS=y;;
         -s) CMD_SERVERNAME="$2"; shift;;
@@ -951,9 +953,35 @@ echo ""
 
 apt-get -qq install -y git
 
-# Create a shallow clone of the DMI-TCAT repository. Can be changed
-# later with "git-fetch --depth", or restore full history with --unshallow.
-git clone --depth 1 https://github.com/digitalmethodsinitiative/dmi-tcat.git "$TCAT_DIR"
+# Release of DMI-TCAT to use
+
+TCAT_GIT_REPOSITORY=https://github.com/digitalmethodsinitiative/dmi-tcat.git
+TCAT_GIT_BRANCH=master
+
+# To deploy a differnt branch or tagged release, change the above two variables
+# e.g. testing change from BASE_FILE to __DIR__: run in debug mode
+if [ "$DEBUG_MODE" = 'y' ]; then
+    TCAT_GIT_REPOSITORY=https://github.com/hoylen/dmi-tcat.git
+    TCAT_GIT_BRANCH=BASE_FILE
+fi
+
+if [ "$TCAT_GIT_BRANCH" == 'master' ]; then
+    # Can do a shallow clone to minimize the data download
+    # Can be changed later with "git fetch --depth" or "git fetch --unshallow"
+    GIT_DEPTH="--depth 1"
+else
+    # TODO: work out how to checkout another branch from a shallow clone
+    # Workaround: do not do a shallow clone
+    GIT_DEPTH=
+fi
+
+echo
+echo "Cloning $TCAT_GIT_REPOSITORY into $TCAT_DIR $GIT_DEPTH"
+git clone $GIT_DEPTH "$TCAT_GIT_REPOSITORY" "$TCAT_DIR"
+
+echo
+echo "Using branch/tag $TCAT_GIT_BRANCH"
+git -C "$TCAT_DIR" checkout "$TCAT_GIT_BRANCH"
 
 echo ""
 tput bold
@@ -1063,11 +1091,6 @@ a2ensite tcat.conf
 CFG="$TCAT_DIR/config.php"
 
 cp "$TCAT_DIR/config.php.example" "$CFG"
-
-VAR=BASE_FILE
-sed -i "s/^define('$VAR',[^)]*);/define('$VAR', __DIR__ . '\/');/g" "$CFG"
-# Note: some PHP files requires BASE_FILE to ends with a slash, but some don't
-# TODO: PHP code should be changed to just use __DIR__ and not need BASE_FILE
 
 VAR=ADMIN_USER
 VALUE="'$TCATADMINUSER'"

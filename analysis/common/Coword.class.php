@@ -93,7 +93,7 @@ class Coword {
         arsort($this->words);
 
         // remove stop words
-        include_once('common/Stopwords.class.php');
+        include_once __DIR__ . '/common/Stopwords.class.php';
         $sw = new Stopwords();
         $sw->loadAllLists();
         $cleaned = $sw->removeStopwords(array_keys($this->words));
@@ -288,7 +288,7 @@ class Coword {
     }
 
     function getCowordsAsGexf($title = "") {
-        include_once('Gexf.class.php');
+        include_once __DIR__ . '/Gexf.class.php';
         $gexf = new Gexf();
         $gexf->setTitle("Co-word " . $title);
         $gexf->setEdgeType(GEXF_EDGE_UNDIRECTED);

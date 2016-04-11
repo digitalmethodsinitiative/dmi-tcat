@@ -1,7 +1,7 @@
 <?php
 // @todo order by date
-require_once './common/config.php';
-require_once './common/functions.php';
+require_once __DIR__ . '/common/config.php';
+require_once __DIR__ . '/common/functions.php';
 
 validate_all_variables();
 $collation = current_collation();

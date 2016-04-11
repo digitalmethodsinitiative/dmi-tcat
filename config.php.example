@@ -97,11 +97,6 @@ if (!defined('CAPTURE') || !strcmp(CAPTURE, "track")) {
 $kloutapi_key = "";
 
 /*
- * file root in which dmi-tcat resides
- */
-define('BASE_FILE', '/var/www/dmi-tcat/');
-
-/*
  * URL root in which dmi-tcats resides
  */
 define('BASE_URL', 'http://example.com/dmi-tcat/');

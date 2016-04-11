@@ -1,13 +1,13 @@
 <?php
-include_once("../config.php");
+include_once __DIR__ . '/../config.php';
 
 if (defined("ADMIN_USER") && ADMIN_USER != "" && (!isset($_SERVER['PHP_AUTH_USER']) || $_SERVER['PHP_AUTH_USER'] != ADMIN_USER))
     die("Go away, you evil hacker!");
 
-include_once("query_manager.php");
-include_once BASE_FILE . '/common/functions.php';
-include_once BASE_FILE . '/common/upgrade.php';
-include_once BASE_FILE . '/capture/common/functions.php';
+include_once __DIR__ . '/query_manager.php';
+include_once __DIR__ . '/../common/functions.php';
+include_once __DIR__ . '/../common/upgrade.php';
+include_once __DIR__ . '/../capture/common/functions.php';
 
 create_admin();
 create_error_logs();
