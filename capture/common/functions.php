@@ -556,13 +556,17 @@ function getActivePhrases() {
 
 function getBinType($binname) {
     $dbh = pdo_connect();
-    $sql = "SELECT `type` FROM tcat_query_bins WHERE querybin = :querybin";
+    $sql = "SELECT querybin, `type` FROM tcat_query_bins WHERE querybin = :querybin";
     $rec = $dbh->prepare($sql);
     $rec->bindParam(':querybin', $binname);
     $rec->execute();
-    $results = $rec->fetchAll(PDO::FETCH_COLUMN);
-    foreach ($results as $k => $v) {
-        return $v;
+    if ($rec->execute() && $rec->rowCount() > 0) {
+        while ($res = $rec->fetch()) {
+            // This enforces a case-sensitive comparison without having to explicitely detect the collation any tables (utf8 or utf8mb4)
+            if ($res['querybin'] == $binname) {
+                return $res['type'];
+            }
+        }
     }
     $dbh = false;
     return false;
