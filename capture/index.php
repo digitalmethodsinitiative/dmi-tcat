@@ -595,6 +595,7 @@ foreach ($bins as $id => $bin)
         if(!validateType(_type))
             return false;
         var _bin = $("#newbin_name").val();
+        _bin = _bin.replace(/ /g,"_");
         if(!validateBin(_bin))
             return false;
         var _comments = $("textarea[name=newbin_comments]").val();
