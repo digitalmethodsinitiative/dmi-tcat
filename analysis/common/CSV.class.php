@@ -26,7 +26,7 @@ class CSV {
             $this->enclosure = '"';
         } else {
             $this->delimiter = "\t";
-            $this->enclosure = '';
+            $this->enclosure = '"';
         }
         $this->newrow();
     }
@@ -36,11 +36,8 @@ class CSV {
     }
 
     public function writeheader($header) {
-        if ($this->enclosure == '') {
-            fputcsv($this->fp, $header, $this->delimiter);
-        } else {
-            fputcsv($this->fp, $header, $this->delimiter, $this->enclosure);
-        }
+        // null-character as escape character is neccessary due to PHP bug https://bugs.php.net/bug.php?id=43225
+        fputcsv($this->fp, $header, $this->delimiter, $this->enclosure, "\0");
     }
 
     public function addfield($value, $type = 'string') {
@@ -56,11 +53,8 @@ class CSV {
     }
 
     public function writerow() {
-        if ($this->enclosure == '') {
-            fputcsv($this->fp, $this->row, $this->delimiter);
-        } else {
-            fputcsv($this->fp, $this->row, $this->delimiter, $this->enclosure);
-        }
+        // null-character as escape character is neccessary due to PHP bug https://bugs.php.net/bug.php?id=43225
+        fputcsv($this->fp, $this->row, $this->delimiter, $this->enclosure, "\0");
     }
 
     public function close() {
