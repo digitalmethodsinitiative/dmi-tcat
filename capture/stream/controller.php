@@ -167,7 +167,7 @@ foreach ($roles as $role) {
     $pid = 0;
     $last = 0;
     $running = false;
-    if (file_exists(__DIR__ . '/../../proc/$role.procinfo')) {
+    if (file_exists(__DIR__ . "/../../proc/$role.procinfo")) {
 
         $procfile = read_procfile(__DIR__ . "/../../proc/$role.procinfo");
         $pid = $procfile['pid'];
