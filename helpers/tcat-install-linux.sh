@@ -308,22 +308,29 @@ fi
 
 # Expected OS version
 
-if [ ! -f '/etc/issue' ]; then
-    echo "$PROG: error: system is not Ubuntu or Debian: /etc/issue missing" >&2
+if ! which lsb_release >/dev/null 2>&1; then
+    echo "$PROG: error: unsupported system: missing lsb_release" >&2
     exit 1
 fi
 
-if grep ^Ubuntu /etc/issue >/dev/null; then
-    # Example: "Ubuntu 14.04.3 LTS \n \l"
-    # -> UBUNTU_VERSION=14.04.3, UBUNTU_VERSION_MAJOR=14
-    UBUNTU_VERSION=`awk '{print $2}' /etc/issue`
+DISTRIBUTION_ID=`lsb_release -i -s`
+
+if [ "$DISTRIBUTION_ID" = 'Ubuntu' ]; then
+    UBUNTU_VERSION=`lsb_release -r -s`
     DEBIAN_VERSION=
     UBUNTU_VERSION_MAJOR=$(echo $UBUNTU_VERSION |
 	awk -F . '{if (match($1, /^[0-9]+$/)) print $1}')
 
     if [ -z "$UBUNTU_VERSION_MAJOR" ]; then
-	echo "$PROG: error: system not running Ubuntu: $UBUNTU_VERSION" >&2
+	echo "$PROG: error: unexpected Ubuntu version: $UBUNTU_VERSION" >&2
 	exit 1
+    fi
+    if [ \
+	"$UBUNTU_VERSION" != '14.03' -a \
+	"$UBUNTU_VERSION" != '15.04' -a \
+	"$UBUNTU_VERSION" != '15.10' \
+	]; then
+	echo "$PROG: warning: untested system: Ubuntu $UBUNTU_VERSION" >&2
     fi
 
     if [ "$UBUNTU_VERSION_MAJOR" -lt 15 ]; then
@@ -343,20 +350,20 @@ if grep ^Ubuntu /etc/issue >/dev/null; then
 	fi
     fi
 
-elif grep ^Debian /etc/issue >/dev/null; then
-    if [ ! -f /etc/debian_version ]; then
-	echo "$PROG: /etc/issue says Debian, but no /etc/debian_version" >&2
-	exit 1
-    fi
-    DEBIAN_VERSION=`cat /etc/debian_version`
+elif [ "$DISTRIBUTION_ID" = 'Debian' ]; then
+    DEBIAN_VERSION=`lsb_release -r -s`
     UBUNTU_VERSION=
 
     if [ -z "$DEBIAN_VERSION" ]; then
-	echo "$PROG: error: system not running Debian" >&2
+	echo "$PROG: error: unexpected Debian version: $DEBIAN_VERSION" >&2
 	exit 1
     fi
+    if [ "$DEBIAN_VERSION" != '8.1' ]; then
+	echo "$PROG: warning: untested system: Debian $DEBIAN_VERSION" >&2
+    fi
+
 else
-    echo "$PROG: error: unsupported system: not Ubuntu or Debian" >&2
+    echo "$PROG: error: unsupported system: $DISTRIBUTION_ID" >&2
     exit 1
 fi
 
