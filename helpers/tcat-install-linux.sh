@@ -895,13 +895,18 @@ if [ "$DO_UPDATE_UPGRADE" = 'y' ]; then
 
     apt-get update
 
-    # Upgrade without user interaction
-    # http://askubuntu.com/questions/146921/how-do-i-apt-get-y-dist-upgrade-without-a-grub-config-prompt
-    DEBIAN_FRONTEND=noninteractive \
-	apt-get -y \
-	-o Dpkg::Options::="--force-confdef" \
-	-o Dpkg::Options::="--force-confold" \
-	upgrade
+    if [ "$BATCH_MODE" = 'y' ]; then
+        # Upgrade without user interaction
+        # http://askubuntu.com/questions/146921/how-do-i-apt-get-y-dist-upgrade-without-a-grub-config-prompt
+	DEBIAN_FRONTEND=noninteractive \
+	    apt-get -y \
+	    -o Dpkg::Options::="--force-confdef" \
+	    -o Dpkg::Options::="--force-confold" \
+	    upgrade
+    else
+	# Upgrade normally: which might prompt the user in some situations
+	apt-get -y upgrade
+    fi
 fi
 
 #----------------------------------------------------------------
