@@ -17,8 +17,8 @@
 #
 # Run with -h for help.
 #
-# Currently only supports Ubuntu and Debian. Tested on:
-# - Ubuntu 14.043
+# Supported distributions:
+# - Ubuntu 14.04
 # - Ubuntu 15.04
 # - Ubuntu 15.10
 # - Debian 8.1
@@ -240,7 +240,7 @@ promptPassword() {
 #----------------------------------------------------------------
 # Process command line
 
-SHORT_OPTS="bc:DGhls:U"
+SHORT_OPTS="bc:DfGhls:U"
 if ! getopt $SHORT_OPTS "$@" >/dev/null; then
     echo "$PROG: usage error (use -h for help)" >&2
     exit 2
@@ -256,6 +256,7 @@ GEO_SEARCH=y
 CMD_SERVERNAME=
 DO_UPDATE_UPGRADE=y
 DO_SAVE_TCAT_LOGINS=
+FORCE_INSTALL=
 DEBUG_MODE=
 HELP=
 
@@ -264,6 +265,7 @@ while [ $# -gt 0 ]; do
         -b) BATCH_MODE=y;;
 	-c) CONFIG_FILE="$2"; shift;;
         -D) DEBUG_MODE=y;; # undocumented option for testing
+	-f) FORCE_INSTALL=y;;
 	-G) GEO_SEARCH=n;;
 	-l) DO_SAVE_TCAT_LOGINS=y;;
         -s) CMD_SERVERNAME="$2"; shift;;
@@ -284,6 +286,7 @@ Options:
   -G             install without geographical search (for Ubuntu < 15.x)
   -l             save a copy of TCAT login username and passwords in plain text
   -U             do not run apt-get update and apt-get upgrade
+  -f             force install on unsupported distributions (for testing only)
   -h             show this help message
 EOF
     exit 0
@@ -308,8 +311,14 @@ fi
 
 # Expected OS version
 
+OS=`uname -s`
+if [ $OS != 'Linux' ]; then
+    echo "$PROG: error: unsupported operating system: not Linux: $OS" >&2
+    exit 1
+fi
+
 if ! which lsb_release >/dev/null 2>&1; then
-    echo "$PROG: error: unsupported system: missing lsb_release" >&2
+    echo "$PROG: error: unsupported distribution: missing lsb_release" >&2
     exit 1
 fi
 
@@ -326,11 +335,14 @@ if [ "$DISTRIBUTION_ID" = 'Ubuntu' ]; then
 	exit 1
     fi
     if [ \
-	"$UBUNTU_VERSION" != '14.03' -a \
+	"$UBUNTU_VERSION" != '14.04' -a \
 	"$UBUNTU_VERSION" != '15.04' -a \
 	"$UBUNTU_VERSION" != '15.10' \
 	]; then
-	echo "$PROG: warning: untested system: Ubuntu $UBUNTU_VERSION" >&2
+	if [ -z "$FORCE_INSTALL" ]; then
+	    echo "$PROG: error: unsupported distribution: Ubuntu $UBUNTU_VERSION" >&2
+	    exit 1
+	fi
     fi
 
     if [ "$UBUNTU_VERSION_MAJOR" -lt 15 ]; then
@@ -359,11 +371,14 @@ elif [ "$DISTRIBUTION_ID" = 'Debian' ]; then
 	exit 1
     fi
     if [ "$DEBIAN_VERSION" != '8.1' ]; then
-	echo "$PROG: warning: untested system: Debian $DEBIAN_VERSION" >&2
+	if [ -z "$FORCE_INSTALL" ]; then
+	    echo "$PROG: error: unsupported distribution: Debian $DEBIAN_VERSION" >&2
+	    exit 1
+	fi
     fi
 
 else
-    echo "$PROG: error: unsupported system: $DISTRIBUTION_ID" >&2
+    echo "$PROG: error: unsupported distribution: $DISTRIBUTION_ID" >&2
     exit 1
 fi
 
@@ -377,7 +392,7 @@ fi
 # MySQL server package name for apt-get
 
 if [ -n "$UBUNTU_VERSION" ]; then
-    UBUNTU_MYSQL_SVR_PKG=mysql-server-5.6
+    UBUNTU_MYSQL_SVR_PKG=mysql-server
 
     if dpkg --status $UBUNTU_MYSQL_SVR_PKG >/dev/null 2>&1; then
 	echo "$PROG: cannot install: $UBUNTU_MYSQL_SVR_PKG already installed" >&2
@@ -907,17 +922,22 @@ echo "$PROG: installing Apache and PHP"
 
 if [ -n "$UBUNTU_VERSION" ]; then
     echo "$PROG: installing MySQL for Ubuntu"
-
-    apt-get -y install $UBUNTU_MYSQL_SVR_PKG mysql-client-5.6
+    apt-get -y install $UBUNTU_MYSQL_SVR_PKG mysql-client
 
     echo "$PROG: installing Apache for Ubuntu"
+    apt-get -y install apache2 apache2-utils
 
-    apt-get -y install \
-	apache2 apache2-utils \
-	libapache2-mod-php5 \
-	php5-mysql php5-curl php5-cli php-patchwork-utf8
+    if [ "$UBUNTU_VERSION" = '16.04' ]; then
+	PHP_PACKAGES="libapache2-mod-php php-mysql php-curl php-cli php-patchwork-utf8 php-mbstring"
+    else
+	# 14.04, 15.04, 15.10 and untested
+	PHP_PACKAGES="libapache2-mod-php5 php5-mysql php5-curl php5-cli php-patchwork-utf8"
+    fi
+    echo "$PROG: installing PHP packages:"
+    echo "  $PHP_PACKAGES"
+    apt-get -y install $PHP_PACKAGES
 
-    if [ "$UBUNTU_VERSION_MAJOR" -ge 15 ]; then
+    if [ "$UBUNTU_VERSION_MAJOR" -eq 15 ]; then
 	echo "$PROG: installing PHP module for geographical search"
 	apt-get -y install php5-geos
 	php5enmod geos
