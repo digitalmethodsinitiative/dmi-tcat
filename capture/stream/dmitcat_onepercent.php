@@ -17,7 +17,7 @@ define('CAPTURE', 'onepercent');
 // ----- includes -----
 include __DIR__ . '/../../config.php';                  // load base config file
 include __DIR__ . '/../../common/functions.php';        // load base functions file
-include __DIR__ . '/../common/functions.php";           // load capture function file
+include __DIR__ . '/../common/functions.php';           // load capture function file
 
 require __DIR__ . '/../common/tmhOAuth/tmhOAuth.php';
 
