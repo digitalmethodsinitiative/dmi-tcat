@@ -933,6 +933,7 @@ if [ -n "$UBUNTU_VERSION" ]; then
     apt-get -y install apache2 apache2-utils
 
     if [ "$UBUNTU_VERSION" = '16.04' ]; then
+        # This will install PHP 7 which is NOT supported by TCAT currently
 	PHP_PACKAGES="libapache2-mod-php php-mysql php-curl php-cli php-patchwork-utf8 php-mbstring"
     else
 	# 14.04, 15.04, 15.10 and untested
