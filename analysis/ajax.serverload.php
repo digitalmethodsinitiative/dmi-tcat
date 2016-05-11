@@ -49,7 +49,7 @@ if ($selects > 2 && $selecttimes >= TCAT_SYSLOAD_MAXIMUM) {
     $load = 1;
 }
 
-print "$load<div style='margin:0;padding:0'>";
+print "$load <div style='margin:0;padding:0'>";
 switch ($load) {
     case 0: {
                 svg_circle('#42c168'); # green
