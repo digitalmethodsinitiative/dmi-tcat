@@ -2,31 +2,7 @@
 require_once __DIR__ . '/common/config.php';
 require_once __DIR__ . '/common/functions.php';
 require_once __DIR__ . '/common/CSV.class.php';
-?>
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
-<html xmlns="http://www.w3.org/1999/xhtml">
-    <head>
-        <title>TCAT :: Export Tweets</title>
-
-        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-
-        <link rel="stylesheet" href="css/main.css" type="text/css" />
-
-        <script type="text/javascript" language="javascript">
-
-
-
-        </script>
-
-    </head>
-
-    <body>
-
-        <h1>TCAT :: Export Tweets</h1>
-
-        <?php
         validate_all_variables();
         // make filename and open file for write
         $module = "fullExport";
@@ -40,7 +16,9 @@ require_once __DIR__ . '/common/CSV.class.php';
         if ((isset($_GET['location']) && $_GET['location'] == 1))
             $module = "geoTweets";
         $filename = get_filename_for_export($module, implode("_", $exportSettings));
-        $csv = new CSV($filename, $outputformat);
+        $stream_to_open = export_start($filename, $outputformat);
+	
+        $csv = new CSV($stream_to_open, $outputformat);
 
         // write header
         $header = "id,time,created_at,from_user_name,text,filter_level,possibly_sensitive,withheld_copyright,withheld_scope,truncated,retweet_count,favorite_count,lang,to_user_name,in_reply_to_status_id,quoted_status_id,source,location,lat,lng,from_user_id,from_user_realname,from_user_verified,from_user_description,from_user_url,from_user_profile_image_url,from_user_utcoffset,from_user_timezone,from_user_lang,from_user_tweetcount,from_user_followercount,from_user_friendcount,from_user_favourites_count,from_user_listed,from_user_withheld_scope,from_user_created_at";
@@ -192,11 +170,40 @@ require_once __DIR__ . '/common/CSV.class.php';
         }
         $csv->close();
 
+    if (! $use_cache_file) {
+        exit(0);
+    }
+    // Rest of script is the HTML page with a link to the cached CSV/TSV file.
+?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <title>TCAT :: Export Tweets</title>
+
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+        <link rel="stylesheet" href="css/main.css" type="text/css" />
+
+        <script type="text/javascript" language="javascript">
+
+        </script>
+
+    </head>
+
+    <body>
+
+        <h1>TCAT :: Export Tweets</h1>
+
+<?php
         echo '<fieldset class="if_parameters">';
         echo '<legend>Your File</legend>';
-        echo '<p><a href="' . filename_to_url($filename) . '">' . $filename . '</a></p>';
+	echo '<p>';
+        echo '<a href="' . htmlspecialchars(filename_to_url($filename)) . '">';
+	echo htmlspecialchars($filename);
+	echo '</a></p>';
         echo '</fieldset>';
-        ?>
+?>
 
     </body>
 </html>

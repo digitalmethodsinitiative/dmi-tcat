@@ -1,6 +1,39 @@
 <?php
 require_once __DIR__ . '/common/config.php';
 require_once __DIR__ . '/common/functions.php';
+
+$filename = get_filename_for_export("ids");
+$stream_to_open = export_start($filename, $outputformat);
+
+        validate_all_variables();
+
+
+        $sql = "SELECT id FROM " . $esc['mysql']['dataset'] . "_tweets t ";
+        $sql .= sqlSubset();
+        $sqlresults = mysql_unbuffered_query($sql);
+        $out = "";
+        if ($sqlresults) {
+            while ($data = mysql_fetch_assoc($sqlresults)) {
+                if (preg_match("/_urls/", $sql))
+                    $id = $data['tweet_id'];
+                else
+                    $id = $data['id'];
+                $out .= $id . "\n";
+            }
+            mysql_free_result($sqlresults);
+        }
+
+        $fp = fopen($stream_to_open, 'w');
+	if ($fp === false) {
+	  die("Could not open output file.");
+	}
+        fwrite($fp, chr(239) . chr(187) . chr(191) . $out);
+	fclose($fp);
+
+    if (! $use_cache_file) {
+        exit(0);
+    }
+    // Rest of script is the HTML page with a link to the cached CSV/TSV file.
 ?>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -26,27 +59,6 @@ require_once __DIR__ . '/common/functions.php';
         <h1>TCAT :: Export Tweet IDs</h1>
 
         <?php
-        validate_all_variables();
-
-
-        $sql = "SELECT id FROM " . $esc['mysql']['dataset'] . "_tweets t ";
-        $sql .= sqlSubset();
-        $sqlresults = mysql_unbuffered_query($sql);
-        $out = "";
-        if ($sqlresults) {
-            while ($data = mysql_fetch_assoc($sqlresults)) {
-                if (preg_match("/_urls/", $sql))
-                    $id = $data['tweet_id'];
-                else
-                    $id = $data['id'];
-                $out .= $id . "\n";
-            }
-            mysql_free_result($sqlresults);
-        }
-
-        $filename = get_filename_for_export("ids");
-        file_put_contents($filename, chr(239) . chr(187) . chr(191) . $out);
-
         echo '<fieldset class="if_parameters">';
         echo '<legend>Your File</legend>';
         echo '<p><a href="' . filename_to_url($filename) . '">' . $filename . '</a></p>';
