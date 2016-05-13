@@ -1004,7 +1004,7 @@ TCAT_GIT_BRANCH=master
 # e.g. testing change from BASE_FILE to __DIR__: run in debug mode
 if [ "$DEBUG_MODE" = 'y' ]; then
     TCAT_GIT_REPOSITORY=https://github.com/hoylen/dmi-tcat.git
-    TCAT_GIT_BRANCH=BASE_FILE
+    TCAT_GIT_BRANCH="export-direct"
 fi
 
 if [ "$TCAT_GIT_BRANCH" == 'master' ]; then
