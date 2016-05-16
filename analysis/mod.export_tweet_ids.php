@@ -2,11 +2,11 @@
 require_once __DIR__ . '/common/config.php';
 require_once __DIR__ . '/common/functions.php';
 
-$filename = get_filename_for_export("ids");
-$stream_to_open = export_start($filename, $outputformat);
-
         validate_all_variables();
+        dataset_must_exist();
 
+        $filename = get_filename_for_export("ids");
+        $stream_to_open = export_start($filename, $outputformat);
 
         $sql = "SELECT id FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
