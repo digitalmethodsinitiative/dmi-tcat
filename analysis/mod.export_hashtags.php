@@ -4,6 +4,7 @@ require_once __DIR__ . '/common/functions.php';
 require_once __DIR__ . '/common/CSV.class.php';
 
         validate_all_variables();
+        dataset_must_exist();
 
         $filename = get_filename_for_export('hashtagExport');
         $stream_to_open = export_start($filename, $outputformat);

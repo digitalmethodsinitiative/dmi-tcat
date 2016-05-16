@@ -4,6 +4,8 @@ require_once __DIR__ . '/common/functions.php';
 require_once __DIR__ . '/common/CSV.class.php';
 
         validate_all_variables();
+        dataset_must_exist();
+
         $collation = current_collation();
         $min_nr_of_nodes = (isset($_GET['minf']) && is_numeric($_GET['minf'])) ? $min_nr_of_nodes = $_GET['minf'] : 4;
 

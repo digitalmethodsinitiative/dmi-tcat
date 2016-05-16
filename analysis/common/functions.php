@@ -1125,6 +1125,23 @@ function sentiment_avgs() {
     return $avgs;
 }
 
+// Check if $dataset is the name of an existing query bin in $datasets.
+//
+// If it exists, nothing happens.
+// If it does not exist, an error page is produced and execution stops.
+
+function dataset_must_exist() {
+  global $dataset;
+  global $datasets;
+
+  if (! isset($datasets[$dataset])) {
+    http_response_code(404);
+    header("Content-Type: text/plain");
+    echo "Error: unknown query bin: $dataset";
+    exit(0);
+  }
+}
+
 // Prepare for data export.
 //
 // The $filename is the suggested filename and the $outputformat
