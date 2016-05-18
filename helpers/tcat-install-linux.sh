@@ -46,6 +46,8 @@ SERVERNAME= # should default to this machine's IP address (-s overrides)
 
 # TCAT
 
+TCAT_TIMEZONE='UTC' # timezone used by TCAT to display times
+
 TCAT_AUTO_UPDATE=0 # 0=off, 1=trivial, 2=substantial, 3=expensive
 
 # Unix user and group to own the TCAT files
@@ -536,6 +538,8 @@ while [ "$BATCH_MODE" != "y" ]; do
 	echo "  Expands URLs in tweets: $URLEXPANDYES"
 	echo "  Server: $SERVERNAME (TCAT will be at http://$SERVERNAME/)"
 
+	echo "  Timezone: $TCAT_TIMEZONE"
+
 	if [ $TCAT_AUTO_UPDATE = '0' ]; then
 	    echo "  Automatically update TCAT: (not enabled)"
 	else
@@ -645,6 +649,36 @@ while [ "$BATCH_MODE" != "y" ]; do
 		    SERVERNAME= # clear value to ask again
 		fi
 	    fi
+	fi
+    done
+
+    # Timezone
+
+    if [ "$FIRST_PASS" = 'y' ]; then
+	echo
+	echo "The timezone for dates and times be displayed in."
+        echo "This must be \"UTC\" or of the form <region>/<place>."
+        echo "For example, \"Europe/London\" or \"Australia/Brisbane\"."
+	echo "Values are case-insensitive. Time offsets are not supported." 
+        echo "A list of supported timezones can be found at:"
+        echo "  http://php.net/manual/en/timezones.php"
+	echo "DO NOT USE AN UNSUPPORTED VALUE. TCAT will not work with an"
+	echo "unsupported value (even though this install script accepts it)."
+        echo
+    fi
+
+    DEFAULT=$TCAT_TIMEZONE
+    TCAT_TIMEZONE=
+    while [ -z "$TCAT_TIMEZONE" ]; do
+	read -p "Timezone [$DEFAULT]: " TCAT_TIMEZONE
+	if [ -z "$TCAT_TIMEZONE" ]; then
+	    TCAT_TIMEZONE=$DEFAULT
+	fi
+        if [ `echo "$TCAT_TIMEZONE" | tr A-Z a-z` != 'utc' ]; then
+	    if ! echo "$TCAT_TIMEZONE" | grep -q '^\S\S*/\S\S*$' ; then
+	        echo "Invalid value (expecting UTC or <region>/<place>)"
+	        TCAT_TIMEZONE= # clear to reprompt
+            fi
 	fi
     done
 
@@ -1262,6 +1296,10 @@ sed -i "s/^\$twitter_consumer_key = \"\";/\$twitter_consumer_key = \"$CONSUMERKE
 sed -i "s/^\$twitter_consumer_secret = \"\";/\$twitter_consumer_secret = \"$CONSUMERSECRET\";/g" "$CFG"
 sed -i "s/^\$twitter_user_token = \"\";/\$twitter_user_token = \"$USERTOKEN\";/g" "$CFG"
 sed -i "s/^\$twitter_user_secret = \"\";/\$twitter_user_secret = \"$USERSECRET\";/g" "$CFG"
+
+# Configure TCAT timezone
+
+sed -i "s/^date_default_timezone_set([^)]*);/date_default_timezone_set('$TCAT_TIMEZONE');/g" "$CFG"
 
 # Configure TCAT automatic updates
 
