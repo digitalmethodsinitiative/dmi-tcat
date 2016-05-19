@@ -197,9 +197,13 @@ define('USE_INSERT_DELAYED', false);
 define('DISABLE_INSERT_IGNORE', false);
 
 /*
- * This is the github API URL used to check whether your current DMI-TCAT install is up-to-date (assuming you are using git).
+ * This is the Git repository from which TCAT was installed from.
+ *
+ * If this is a GitHub HTTPS URL, it will be converted into a GitHub API URL
+ * to check whether the current install is up-to-date.
+ *
  * You will want to change this only when you have forked the repository.
  */
-define('REPOSITORY_URL', 'https://api.github.com/repos/digitalmethodsinitiative/dmi-tcat/commits');
+define('REPOSITORY_URL', 'https://github.com/digitalmethodsinitiative/dmi-tcat.git');
  
 ?>
