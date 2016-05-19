@@ -1299,7 +1299,7 @@ sed -i "s/^\$twitter_user_secret = \"\";/\$twitter_user_secret = \"$USERSECRET\"
 
 # Configure TCAT timezone
 
-sed -i "s/^date_default_timezone_set([^)]*);/date_default_timezone_set('$TCAT_TIMEZONE');/g" "$CFG"
+sed -i "s|^date_default_timezone_set([^)]*);|date_default_timezone_set('$TCAT_TIMEZONE');|g" "$CFG"
 
 # Configure TCAT automatic updates
 
