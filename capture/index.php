@@ -64,7 +64,8 @@ $lastRateLimitHit = getLastRateLimitHit();
                 background-color: #3399FF; 
             } 
 
-
+            p#timezone { color: #ccc; }
+            p#timezone:before { content: "Timezone: "; }
         </style>
         <link rel="stylesheet" href="http://code.jquery.com/ui/1.11.1/themes/smoothness/jquery-ui.css">
 
@@ -318,6 +319,8 @@ $lastRateLimitHit = getLastRateLimitHit();
     <div id="dialog-editcomments" title="Modify notes for bin">
         <p><span><textarea type='textarea' name='comments' rows='15' cols='43'></textarea></span></p>
     </div>
+
+    <p id="timezone"><?php echo date_default_timezone_get(); ?><p>
 
     <script type='text/javascript' src='../analysis/scripts/jquery-1.7.1.min.js'></script>
     <script src="http://code.jquery.com/ui/1.11.1/jquery-ui.js"></script>
