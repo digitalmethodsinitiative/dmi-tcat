@@ -163,12 +163,13 @@ $lastRateLimitHit = getLastRateLimitHit();
                                         <option value="onepercent">one percent sample</option>
                         <?php } ?>
                                 </select>
+                                <span>(cannot be changed later on)</span>
                             </div>
                         </div>
                         <div class="if_row">
                             <div class='if_row_header'>Bin name:</div>
                             <div class='if_row_content'>
-                                <input id="newbin_name" name="newbin_name" type="text"/> (cannot be changed later on)
+                                <input id="newbin_name" name="newbin_name" type="text"/>
                             </div>
                         </div>
 <?php if (array_search('track', $captureroles) !== false) { ?>
