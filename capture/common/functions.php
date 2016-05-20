@@ -85,7 +85,7 @@ function create_bin($bin_name, $dbh = false) {
             `country` char(5),
             PRIMARY KEY (`id`),
                     KEY `user_id` (`user_id`),
-                    KEY `tweet_id` (`user_id`),
+                    KEY `tweet_id` (`tweet_id`),
                     KEY `country` (`country`)
             ) ENGINE=MyISAM  DEFAULT CHARSET=utf8mb4";
 
