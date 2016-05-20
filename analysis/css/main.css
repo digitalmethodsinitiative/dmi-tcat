@@ -25,7 +25,8 @@ hr { border:0; color:#aaa; background-color:#aaa; height:1px; width:100%; margin
 
 /* classes */
 
-.if_toplinks { font-size:12px; text-decoration:none; color: #000; }
+.if_toplinks { display: inline-block; margin-left: 1em; font-size:12px; text-decoration:none; color: #000; }
+.if_toplinks:before { content: "» "; }
 .if_toplinks:hover { text-decoration:underline; }
 
 .if_panel_box { float:left; margin:10px 0px 10px 0px; }
