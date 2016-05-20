@@ -1125,4 +1125,98 @@ function sentiment_avgs() {
     return $avgs;
 }
 
+// Check if $dataset is the name of an existing query bin in $datasets.
+//
+// If it exists, nothing happens.
+// If it does not exist, an error page is produced and execution stops.
+
+function dataset_must_exist() {
+  global $dataset;
+  global $datasets;
+
+  if (! isset($datasets[$dataset])) {
+    http_response_code(404);
+    header("Content-Type: text/plain");
+    echo "Error: unknown query bin: $dataset";
+    exit(0);
+  }
+}
+
+// Prepare for data export.
+//
+// The $filename is the suggested filename and the $outputformat
+// determines the MIME type.
+//
+// Depending on the DEFAULT_USE_CACHE_FILE or "cache" query parameter, it
+// will either:
+// - output CSV/TSV directly to the HTTP response; or
+// - saves CSV/TSV to cache file and the HTTP response is a HTML page
+//
+// The default mode can overwritten with cache=y or cache=n query param
+//
+// Returns the "file" that should be opened and the results written to.
+// This will either be the provided $filename or 'php://output'.
+//
+// Will also set the global $use_cache_file variable. If true, HTML output
+// should be produced to tell the user to download the cache file, otherwise
+// no HTML output should be produced.
+
+define('DEFAULT_USE_CACHE_FILE', false); // true=old; false=new behaviour
+
+function export_start($filename, $outputformat) {
+    global $default_use_cache_file;
+    global $use_cache_file;
+    global $resultsdir;
+
+    // Determine which mode to use
+
+    $use_cache_file = DEFAULT_USE_CACHE_FILE;
+
+    if (isset($_GET['cache'])) {
+    switch ($_GET['cache']) {
+        case 'n':
+            $use_cache_file = false;
+            break;
+	case 'y':
+	    $use_cache_file = true;
+	    break;
+	default:
+            die("Invalid query parameter: cache=" . $_GET['cache']);
+	}
+    }
+
+    // Determine the MIME type
+
+    switch ($outputformat) {
+    case 'csv':
+        $mimetype = 'text/csv; charset=utf-8';
+        break;
+    case 'tsv':
+        $mimetype = 'text/tab-separated-values; charset=utf-8';
+        break;
+    default:
+        $mimetype = 'application/octet-stream';
+        break;
+    }
+
+    // Use cache file or return results as an attachment
+
+    if ($use_cache_file) {
+        // Write data to cache file
+        return $filename;
+
+    } else {
+        // Write into HTTP response
+        $suggest = 'tcat_' . basename($filename);
+
+        header("Content-Type: $mimetype");
+        header("Content-Disposition: attachment; filename=\"$suggest\"");
+        header('Cache-Control: no-cache');
+        ob_clean();
+        flush();
+
+        return 'php://output';
+    }
+}    
+
 ?>
