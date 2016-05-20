@@ -18,13 +18,14 @@
 //
 // If the script is not invoked by a Web server, NULL is returned.
 
-function choose_mediatype($mediatypes) {
+function choose_mediatype($mediatypes)
+{
     if (PHP_SAPI == 'cli') {
         return NULL;
     }
 
-    if (! empty($mediatypes)) {
-        if (! array_key_exists('HTTP_ACCEPT', $_SERVER)) {
+    if (!empty($mediatypes)) {
+        if (!array_key_exists('HTTP_ACCEPT', $_SERVER)) {
             return $mediatypes[0]; // no Accept request-header
         }
 
@@ -34,10 +35,10 @@ function choose_mediatype($mediatypes) {
         $parts = preg_split('/\s*,\s*/', $_SERVER['HTTP_ACCEPT']);
         foreach ($parts as $pos => $t) {
             if (preg_match(",^(\S+)\s*;\s*(?:q|level)=([0-9\.]+),i", $t, $M)) {
-                $accepts[] = [ 'pos' => $pos, 'type' => $M[1],
-                    'q' => (double)$M[2] ];
+                $accepts[] = ['pos' => $pos, 'type' => $M[1],
+                    'q' => (double)$M[2]];
             } else {
-                $accepts[] = [ 'pos' => $pos, 'type' => $t, 'q' => 1.0 ];
+                $accepts[] = ['pos' => $pos, 'type' => $t, 'q' => 1.0];
             }
         }
 
@@ -81,7 +82,8 @@ function choose_mediatype($mediatypes) {
 //----------------------------------------------------------------
 // Produce HTTP response with a JSON representation of the $data.
 
-function respond_with_json($data) {
+function respond_with_json($data)
+{
     header("Content-Type: application/json");
     echo json_encode($data);
 }
@@ -89,7 +91,8 @@ function respond_with_json($data) {
 //----------------------------------------------------------------
 // Produce HTTP response with a HTML page containing the $title and $html.
 
-function html_begin($title) {
+function html_begin($title)
+{
 
     $depth = count(explode('/', $_SERVER['PATH_INFO']));
     $rpath = str_repeat('../', $depth);
@@ -123,7 +126,8 @@ function html_begin($title) {
 END;
 }
 
-function html_end() {
+function html_end()
+{
     echo <<<END
         </div>
     </div>
@@ -143,7 +147,8 @@ END;
 //
 // This function does not return.
 
-function abort_with_error($status, $message) {
+function abort_with_error($status, $message)
+{
     global $argv;
 
     if (PHP_SAPI != 'cli') {
@@ -168,10 +173,11 @@ function abort_with_error($status, $message) {
 // If any are found HTTP error page is produced and this function
 // does not return.
 
-function expected_query_parameters($expected_params) {
+function expected_query_parameters($expected_params)
+{
 
     foreach (array_keys($_GET) as $param) {
-        if (! in_array($param, $expected_params)) {
+        if (!in_array($param, $expected_params)) {
             abort_with_error(400, "Unexpected query parameter: $param");
         }
     }

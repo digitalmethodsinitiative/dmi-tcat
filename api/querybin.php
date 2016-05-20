@@ -17,7 +17,8 @@ require_once __DIR__ . '/_common.php';
 //
 // Returns variable for JSON output or title+html for HTML output.
 
-function do_list($response_mediatype) {
+function do_list($response_mediatype)
+{
     global $datasets;
 
     switch ($response_mediatype) {
@@ -55,7 +56,8 @@ function do_list($response_mediatype) {
 //
 // Returns variable for JSON output or title+html for HTML output.
 
-function do_view($querybin, $response_mediatype) {
+function do_view($querybin, $response_mediatype)
+{
 
     switch ($response_mediatype) {
         case 'application/json':
@@ -110,7 +112,8 @@ function do_view($querybin, $response_mediatype) {
 //----------------------------------------------------------------
 // View tweets from a specific query bin.
 
-function do_view_tweets($querybin) {
+function do_view_tweets($querybin)
+{
 
     $response_mediatype = choose_mediatype(['text/html',
         'text/csv', 'text/tab-separated-values']);
@@ -146,7 +149,8 @@ function do_view_tweets($querybin) {
 
 //----------------------------------------------------------------
 
-function do_purge_tweets($querybin, $response_mediatype) {
+function do_purge_tweets($querybin, $response_mediatype)
+{
 
     // TODO
 
@@ -176,7 +180,7 @@ function do_purge_tweets($querybin, $response_mediatype) {
 if (PHP_SAPI != 'cli') {
     // Invoked by Web server
 
-    expected_query_parameters([ 'action' ]);
+    expected_query_parameters(['action']);
 
     //----------------
     // Determine mode of operation ($querybin_name will be set or not)
@@ -215,12 +219,17 @@ if (PHP_SAPI != 'cli') {
     } else {
         // Use default action for mode
         switch ($mode) {
-            case 'all': $action = 'list'; break;
-            case 'querybin': $action = 'view'; break;
+            case 'all':
+                $action = 'list';
+                break;
+            case 'querybin':
+                $action = 'view';
+                break;
             case 'querybin/tweets':
                 $action = ($method == 'DELETE') ? 'purge-tweets' : 'view-tweets';
                 break;
-            default: abort_with_error(500, "Internal error: bad mode: $mode");
+            default:
+                abort_with_error(500, "Internal error: bad mode: $mode");
         }
     }
 
@@ -235,20 +244,22 @@ if (PHP_SAPI != 'cli') {
 
     switch ($mode) {
         case 'all':
-            if (! ($action == 'list' && $method == 'GET')) {
+            if (!($action == 'list' && $method == 'GET')) {
                 $bad_combination = true;
             }
             break;
         case 'querybin':
-            if (! (($action == 'view' && $method == 'GET') ||
-                ($action == 'purge-tweets' && $method == 'DELETE'))) {
+            if (!(($action == 'view' && $method == 'GET') ||
+                ($action == 'purge-tweets' && $method == 'DELETE'))
+            ) {
                 $bad_combination = true;
             }
             break;
         case 'querybin/tweets':
-            if (! (($action == 'view-tweets' && $method == 'GET') ||
+            if (!(($action == 'view-tweets' && $method == 'GET') ||
                 ($action == 'purge-tweets' && $method == 'DELETE') ||
-                ($action == 'purge-tweets' && $method == 'POST')  )) {
+                ($action == 'purge-tweets' && $method == 'POST'))
+            ) {
                 $bad_combination = true;
             }
             break;
@@ -331,7 +342,7 @@ END;
         $action = 'list';
     } else if (count($args) == 1) {
         $querybin_name = $args[0];
-        if (! isset($action)) {
+        if (!isset($action)) {
             $action = 'view';
         }
     } else {
@@ -344,7 +355,7 @@ END;
 // Check parameters and set $querybin if needed
 
 if (isset($querybin_name)) {
-    if (! isset($datasets[$querybin_name])) {
+    if (!isset($datasets[$querybin_name])) {
         abort_with_error(404, "Unknown query bin: $querybin_name");
     }
     $querybin = $datasets[$querybin_name];
