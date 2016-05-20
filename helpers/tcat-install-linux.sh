@@ -365,12 +365,14 @@ if [ "$DISTRIBUTION_ID" = 'Ubuntu' ]; then
 elif [ "$DISTRIBUTION_ID" = 'Debian' ]; then
     DEBIAN_VERSION=`lsb_release -r -s`
     UBUNTU_VERSION=
+    DEBIAN_VERSION_MAJOR=$(echo $DEBIAN_VERSION |
+	awk -F . '{if (match($1, /^[0-9]+$/)) print $1}')
 
     if [ -z "$DEBIAN_VERSION" ]; then
 	echo "$PROG: error: unexpected Debian version: $DEBIAN_VERSION" >&2
 	exit 1
     fi
-    if [ "$DEBIAN_VERSION" != '8.1' ]; then
+    if [ "$DEBIAN_VERSION_MAJOR" != '8' ]; then
 	if [ -z "$FORCE_INSTALL" ]; then
 	    echo "$PROG: error: unsupported distribution: Debian $DEBIAN_VERSION" >&2
 	    exit 1
