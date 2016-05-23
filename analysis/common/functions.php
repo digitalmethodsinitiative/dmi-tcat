@@ -4,16 +4,21 @@ $connection = false;
 
 db_connect($hostname, $dbuser, $dbpass, $database);
 
+$datasets = get_all_datasets();
+
 // catch parameters
 if (isset($_GET['dataset']) && !empty($_GET['dataset']))
     $dataset = urldecode($_GET['dataset']);
-else {
+else if (count($datasets) != 0) {
+    // Default to earliest created not-deleted query bin
     $sql = "SELECT querybin FROM tcat_query_bins ORDER BY id LIMIT 1";
     $rec = mysql_query($sql);
     if ($res = mysql_fetch_assoc($rec))
         $dataset = $res['querybin'];
+} else {
+    $dataset = NULL; // No query bins exist
 }
-$datasets = get_all_datasets();
+
 if (isset($_GET['query']) && !empty($_GET['query']))
     $query = urldecode($_GET['query']);
 else
@@ -786,6 +791,7 @@ function get_all_datasets() {
     $dbh = pdo_connect();
     $rec = $dbh->prepare("SELECT id, querybin, type, active, comments FROM tcat_query_bins WHERE visible = TRUE ORDER BY LOWER(querybin)");
     $datasets = array();
+    try {
     if ($rec->execute() && $rec->rowCount() > 0) {
         while ($res = $rec->fetch()) {
             $row = array();
@@ -821,6 +827,16 @@ function get_all_datasets() {
             $datasets[$row['bin']] = $row;
         }
     }
+
+    } catch (PDOException $e) {
+        if ($e->errorInfo[0] == '42S02') {
+            // Base table or view not found
+            // Tables not yet created: just return empty $datasets
+        } else {
+            throw $e;
+        }
+    }
+
     return $datasets;
 }
 
