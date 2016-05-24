@@ -90,6 +90,13 @@ set -u # fail on attempts to expand undefined variables
 #----------------------------------------------------------------
 # Other constants (these should not need changing)
 
+# Release of DMI-TCAT to install
+# These can be changed using the -R and -B command line options
+
+TCAT_GIT_REPOSITORY=https://github.com/digitalmethodsinitiative/dmi-tcat.git
+TCAT_GIT_BRANCH= # empty string means use shallow clone of 'master' branch
+                 # non-empty string means use a full clone of the named branch
+
 # Where the MySQL defaults files are written
 
 MYSQL_CNF_PREFIX='/etc/mysql/conf.d/tcat-'
@@ -240,7 +247,7 @@ promptPassword() {
 #----------------------------------------------------------------
 # Process command line
 
-SHORT_OPTS="bc:DfGhls:U"
+SHORT_OPTS="B:bc:fGhlR:s:U"
 if ! getopt $SHORT_OPTS "$@" >/dev/null; then
     echo "$PROG: usage error (use -h for help)" >&2
     exit 2
@@ -257,17 +264,17 @@ CMD_SERVERNAME=
 DO_UPDATE_UPGRADE=y
 DO_SAVE_TCAT_LOGINS=
 FORCE_INSTALL=
-DEBUG_MODE=
 HELP=
 
 while [ $# -gt 0 ]; do
     case "$1" in
+        -B) TCAT_GIT_BRANCH="$2"; shift;;
         -b) BATCH_MODE=y;;
 	-c) CONFIG_FILE="$2"; shift;;
-        -D) DEBUG_MODE=y;; # undocumented option for testing
 	-f) FORCE_INSTALL=y;;
 	-G) GEO_SEARCH=n;;
 	-l) DO_SAVE_TCAT_LOGINS=y;;
+        -R) TCAT_GIT_REPOSITORY="$2"; shift;;
         -s) CMD_SERVERNAME="$2"; shift;;
 	-U) DO_UPDATE_UPGRADE=n;;
         -h) HELP='y';;
@@ -283,11 +290,18 @@ Options:
   -b             run in batch mode
   -c configFile  load parameters from file
   -s server      the name or IP address of this machine
-  -G             install without geographical search (for Ubuntu < 15.x)
+
   -l             save a copy of TCAT login username and passwords in plain text
+
+  -G             install without geographical search (for Ubuntu < 15.x)
   -U             do not run apt-get update and apt-get upgrade
-  -f             force install on unsupported distributions (for testing only)
+
   -h             show this help message
+
+  -R repoURL     GIT repository for TCAT (default: official DMI-TCAT on GitHub)
+  -B branch      GIT branch in repository to install (default: master)
+  -f             force install attempt on unsupported distributions
+                 (for developers only: install or TCAT will probably not work)
 EOF
     exit 0
 fi
@@ -995,22 +1009,11 @@ echo ""
 
 apt-get -qq install -y git
 
-# Release of DMI-TCAT to use
-
-TCAT_GIT_REPOSITORY=https://github.com/digitalmethodsinitiative/dmi-tcat.git
-TCAT_GIT_BRANCH=master
-
-# To deploy a differnt branch or tagged release, change the above two variables
-# e.g. testing change from BASE_FILE to __DIR__: run in debug mode
-if [ "$DEBUG_MODE" = 'y' ]; then
-    TCAT_GIT_REPOSITORY=https://github.com/hoylen/dmi-tcat.git
-    TCAT_GIT_BRANCH=BASE_FILE
-fi
-
-if [ "$TCAT_GIT_BRANCH" == 'master' ]; then
+if [ -z "$TCAT_GIT_BRANCH" ]; then
     # Can do a shallow clone to minimize the data download
     # Can be changed later with "git fetch --depth" or "git fetch --unshallow"
     GIT_DEPTH="--depth 1"
+    TCAT_GIT_BRANCH=master
 else
     # TODO: work out how to checkout another branch from a shallow clone
     # Workaround: do not do a shallow clone
@@ -1136,7 +1139,11 @@ cp "$TCAT_DIR/config.php.example" "$CFG"
 
 VAR=ADMIN_USER
 VALUE="'$TCATADMINUSER'"
-sed -i "s/^define('$VAR',[^)]*);/define('$VAR', $VALUE);/g" "$CFG"
+sed -i "s|^define('$VAR',[^)]*);|define('$VAR', $VALUE);|" "$CFG"
+
+VAR=REPOSITORY_URL
+VALUE="'$TCAT_GIT_REPOSITORY'"
+sed -i "s|^define('$VAR',[^)]*);|define('$VAR', $VALUE);|" "$CFG"
 
 # Create TCAT login credentials file for Apache Basic Authentication
 

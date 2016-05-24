@@ -3,35 +3,13 @@ require_once __DIR__ . '/common/config.php';
 require_once __DIR__ . '/common/functions.php';
 require_once __DIR__ . '/common/CSV.class.php';
 
-?>
-
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
-<html xmlns="http://www.w3.org/1999/xhtml">
-    <head>
-        <title>TCAT :: Export mentions</title>
-
-        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-
-        <link rel="stylesheet" href="css/main.css" type="text/css" />
-
-        <script type="text/javascript" language="javascript">
-	
-	
-	
-        </script>
-
-    </head>
-
-    <body>
-
-        <h1>TCAT :: Export mentions</h1>
-
-        <?php
         validate_all_variables();
+        dataset_must_exist();
 
         $filename = get_filename_for_export('mentionExport');
-        $csv = new CSV($filename, $outputformat);
+        $stream_to_open = export_start($filename, $outputformat);
+
+        $csv = new CSV($stream_to_open, $outputformat);
 
         $csv->writeheader(array('tweet_id', 'user_from_id', 'user_from_name', 'user_to_id', 'user_to_name', 'mention_type'));
 
@@ -56,6 +34,34 @@ require_once __DIR__ . '/common/CSV.class.php';
 
         $csv->close();
 
+    if (! $use_cache_file) {
+        exit(0);
+    }
+    // Rest of script is the HTML page with a link to the cached CSV/TSV file.
+?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <title>TCAT :: Export mentions</title>
+
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+        <link rel="stylesheet" href="css/main.css" type="text/css" />
+
+        <script type="text/javascript" language="javascript">
+	
+	
+	
+        </script>
+
+    </head>
+
+    <body>
+
+        <h1>TCAT :: Export mentions</h1>
+
+        <?php
         echo '<fieldset class="if_parameters">';
         echo '<legend>Your File</legend>';
         echo '<p><a href="' . filename_to_url($filename) . '">' . $filename . '</a></p>';
