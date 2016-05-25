@@ -586,7 +586,52 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
         }
     }
 
+    // 24/05/2016 Fix index of tweet_id on withheld tables
 
+    $query = "SHOW TABLES";
+    $rec = $dbh->prepare($query);
+    $rec->execute();
+    $results = $rec->fetchAll(PDO::FETCH_COLUMN);
+    $ans = '';
+    if ($interactive == false) {
+        // require auto-upgrade level 0
+        if ($aulevel >= 0) {
+            $ans = 'a';
+        } else {
+            $ans = 'SKIP';
+        }
+    }
+    if ($ans !== 'SKIP') {
+        foreach ($results as $k => $v) {
+            if (!preg_match("/_withheld$/", $v)) continue; 
+            if ($single && $v !== $single . '_withheld') { continue; }
+            $query = "SHOW INDEXES FROM $v";
+            $rec = $dbh->prepare($query);
+            $rec->execute();
+            $indexes = $rec->fetchAll();
+            $update = FALSE;
+            foreach ($indexes as $index) {
+                if ($index['Key_name'] == 'tweet_id' && $index['Column_name'] == 'user_id') {
+                    $update = TRUE;
+                    break;
+                }
+            }
+            if ($update && $dry_run) {
+                $suggested = true;
+            }
+            if ($update) {
+                if ($ans !== 'a') {
+                    $ans = cli_yesnoall("Fixing index of tweet_id on table $v", 0, '2f1c585fac9e2646951bb44f61e864f4488a37e6');
+                }
+                if ($ans == 'a' || $ans == 'y') {
+                    logit($logtarget, "Fixing index of tweet_id on table $v");
+                    $query = "ALTER TABLE " . quoteIdent($v) .  " DROP KEY `tweet_id`, ADD KEY `tweet_id` (`tweet_id`)";
+                    $rec = $dbh->prepare($query);
+                    $rec->execute();
+                }
+            }
+        }
+    }
 
     // End of upgrades
 
