@@ -871,7 +871,7 @@ if [ -z "$TCATADMINPASS" ]; then
     TCATADMINPASS=`openssl rand -base64 32 | tr -c -d 0-9A-Za-z | tr -d O01iIl`
     TCATADMINPASS_GENERATED=y
 else
-    TCATPASS_GENERATED=
+    TCATADMINPASS_GENERATED=
 fi
 
 if [ -z "$TCATPASS" ]; then
