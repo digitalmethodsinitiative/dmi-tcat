@@ -140,7 +140,7 @@ define('RATELIMIT_MAIL_HOURS', 24);
 /*
  * Time zone
  */
-date_default_timezone_set("Europe/London");
+date_default_timezone_set('UTC'); // Warning: must be 'UTC'. Do not change!
 
 /*
  * Error reporting verbosity
