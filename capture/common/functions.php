@@ -85,7 +85,7 @@ function create_bin($bin_name, $dbh = false) {
             `country` char(5),
             PRIMARY KEY (`id`),
                     KEY `user_id` (`user_id`),
-                    KEY `tweet_id` (`user_id`),
+                    KEY `tweet_id` (`tweet_id`),
                     KEY `country` (`country`)
             ) ENGINE=MyISAM  DEFAULT CHARSET=utf8mb4";
 
@@ -504,22 +504,50 @@ function getGitLocal() {
  * If compare_local_commit is set, we will not walk back the tree to count remarks about upgrades, etc.
  */
 function getGitRemote($compare_local_commit = '', $branch = 'master') {
+
     if (!function_exists('curl_init')) return false;
+
     if (!defined('REPOSITORY_URL')) {
-        $repository_url = 'https://api.github.com/repos/digitalmethodsinitiative/dmi-tcat/commits';
+        $repository_url = 'https://github.com/digitalmethodsinitiative/dmi-tcat';
     } else {
         $repository_url = REPOSITORY_URL;
     }
-    $repository_url .= '?sha=' . $branch;
-    $ch = curl_init($repository_url);
+
+    // Convert repository URL into a GitHub API URL
+
+    $rep_prefix = 'https://github.com/';
+    $api_prefix = 'https://api.github.com/repos/';
+
+    if (substr($repository_url, 0, strlen($rep_prefix)) != $rep_prefix) {
+        return false; // not a GitHub repository URL
+    }
+    $api_url = $api_prefix . substr($repository_url, strlen($rep_prefix));
+    if (substr($api_url, -4) == '.git') {
+        $api_url = substr($api_url, 0, strlen($api_url) - 4); // remove '.git'
+    }
+    $api_url .= '/commits?sha=' . urlencode($branch);
+
+    // Request it
+
+    $ch = curl_init($api_url);
     curl_setopt($ch, CURLOPT_USERAGENT, 'DMI-TCAT GIT remote version checker (contact us at https://github.com/digitalmethodsinitiative/dmi-tcat)');
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     $output = curl_exec($ch);
     curl_close($ch);
+
+    // Decode it
+
     $data = json_decode($output, true);
+    if (! is_array($data)) {
+        return false;
+    }
+
     $commit = $mesg = $url = $date = null;
     $required = false;
     foreach ($data as $ent) {
+        if (! is_array($ent)) {
+            return false;
+        }
         if ($commit === null) {
             $commit = $ent['sha'];
             $mesg = $ent['commit']['message'];

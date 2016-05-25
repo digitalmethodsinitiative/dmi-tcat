@@ -155,12 +155,12 @@ if (defined('ANALYSIS_URL'))
             <h1 id="if_title">DMI Twitter Capturing and Analysis Toolset (DMI-TCAT)</h1>
 
             <div id="if_links">
-                &raquo; <a href="https://github.com/digitalmethodsinitiative/dmi-tcat" target="_blank" class="if_toplinks">github</a>&nbsp;&nbsp;&nbsp;
-                &raquo; <a href="https://github.com/digitalmethodsinitiative/dmi-tcat/issues?state=open" target="_blank" class="if_toplinks">issues</a>&nbsp;&nbsp;&nbsp;
-                &raquo; <a href="https://github.com/digitalmethodsinitiative/dmi-tcat/wiki" target="_blank" class="if_toplinks">FAQ</a>
+                <a href="https://github.com/digitalmethodsinitiative/dmi-tcat" target="_blank" class="if_toplinks">github</a>
+                <a href="https://github.com/digitalmethodsinitiative/dmi-tcat/issues?state=open" target="_blank" class="if_toplinks">issues</a>
+                <a href="https://github.com/digitalmethodsinitiative/dmi-tcat/wiki" target="_blank" class="if_toplinks">FAQ</a>
                 <?php
                 if (defined("ADMIN_USER") && ADMIN_USER != "" && isset($_SERVER['PHP_AUTH_USER']) && $_SERVER['PHP_AUTH_USER'] == ADMIN_USER)
-                    print '&nbsp;&nbsp;&nbsp; &raquo; <a href="../capture/index.php" target="_blank" class="if_toplinks">admin</a>';
+                    print '<a href="../capture/index.php" class="if_toplinks">admin</a>';
                 ?>
             </div>
 

@@ -37,6 +37,17 @@ $lastRateLimitHit = getLastRateLimitHit();
             td { background-color: #eee; padding:5px; }
             .keywords { width:400px; }
 
+            #if_fullpage { width:1000px; }
+
+            h1 { font-size:16px; margin:20px 0px 15px 0px; }
+
+            #if_title { float:left; }
+            #if_links { float:right; padding-top:22px; margin-right:-20px; }
+
+            .if_toplinks { display: inline-block; margin-left: 1em; font-size:12px; text-decoration:none; color: #000; }
+            .if_toplinks:before { content: "» "; }
+            .if_toplinks:hover { text-decoration:underline; }
+
             .if_row { padding:2px; position: relative; width: 1024px; clear: both;}
             .if_row_header{ width: 100px; height: 20px; float: left; padding-top: 5px;}
             .if_row_content input { width: 320px; }
@@ -71,8 +82,17 @@ $lastRateLimitHit = getLastRateLimitHit();
     </head>
 
     <body>
+        <div id="if_fullpage">
+        <h1 id="if_title">DMI-TCAT query manager</h1>
+        <div id="if_links">
+            <a href="https://github.com/digitalmethodsinitiative/dmi-tcat" target="_blank" class="if_toplinks">github</a>
+            <a href="https://github.com/digitalmethodsinitiative/dmi-tcat/issues?state=open" target="_blank" class="if_toplinks">issues</a>
+            <a href="https://github.com/digitalmethodsinitiative/dmi-tcat/wiki" target="_blank" class="if_toplinks">FAQ</a>
+            <a href="../analysis/index.php" class="if_toplinks">analysis</a>
+        </div>
+        <div style="clear:both;"></div>
+        </div>
 
-        <h1>DMI-TCAT query manager</h1>
         <?php
         if (!dbserver_has_utf8mb4_support()) {
             print "<br /><font color='red'>Your MySQL version is too old, please upgrade to at least MySQL 5.5.3 to use DMI-TCAT.</font><br>";
@@ -163,12 +183,13 @@ $lastRateLimitHit = getLastRateLimitHit();
                                         <option value="onepercent">one percent sample</option>
                         <?php } ?>
                                 </select>
+                                <span>(cannot be changed later on)</span>
                             </div>
                         </div>
                         <div class="if_row">
                             <div class='if_row_header'>Bin name:</div>
                             <div class='if_row_content'>
-                                <input id="newbin_name" name="newbin_name" type="text"/> (cannot be changed later on)
+                                <input id="newbin_name" name="newbin_name" type="text"/>
                             </div>
                         </div>
 <?php if (array_search('track', $captureroles) !== false) { ?>
