@@ -18,9 +18,9 @@
 //
 // If the script is not invoked by a Web server, NULL is returned.
 
-function choose_mediatype($mediatypes)
+function choose_mediatype(array $mediatypes)
 {
-    if (PHP_SAPI == 'cli') {
+    if (PHP_SAPI === 'cli') {
         return NULL;
     }
 
@@ -91,11 +91,14 @@ function respond_with_json($data)
 //----------------------------------------------------------------
 // Produce HTTP response with a HTML page containing the $title and $html.
 
-function html_begin($title)
+function html_begin($title, array $breadcrumbs)
 {
-
-    $depth = count(explode('/', $_SERVER['PATH_INFO']));
-    $rpath = str_repeat('../', $depth);
+    if (isset($_SERVER['PATH_INFO'])) {
+        $depth = count(explode('/', $_SERVER['PATH_INFO']));
+        $rpath = str_repeat('../', $depth - 1);
+    } else {
+        $rpath = './';
+    }
 
     $title = htmlspecialchars("TCAT: $title");
     $charset = mb_internal_encoding();
@@ -106,30 +109,60 @@ function html_begin($title)
 <head>
     <title>$title</title>
     <meta http-equiv="Content-Type" content="text/html; charset=$charset"/>
-    <link rel="stylesheet" href="$rpath/analysis/css/main.css" type="text/css"/>
+    <link rel="stylesheet" href="{$rpath}api.css" type="text/css"/>
 </head>
+
 <body>
-    <div id="if_fullpage">
-        <h1 id="if_title">$title</h1>
+    <h1>$title</h1>
 
-        <div id="if_links">
-	    &raquo; <a href="https://github.com/digitalmethodsinitiative/dmi-tcat"
-	       target="_blank" class="if_toplinks">github</a>&nbsp;&nbsp;&nbsp;
-	    &raquo; <a href="https://github.com/digitalmethodsinitiative/dmi-tcat/issues?state=open"
-	       target="_blank" class="if_toplinks">issues</a>&nbsp;&nbsp;&nbsp;
-	    &raquo; <a href="https://github.com/digitalmethodsinitiative/dmi-tcat/wiki"
-	       target="_blank" class="if_toplinks">FAQ</a>&nbsp;&nbsp;&nbsp;
-            &raquo; <a href="/analysis/" class="if_toplinks">analysis</a>
-        </div>
-
-        <div style="clear:both; padding-top: 5ex;">
+    <div id="if_links">
+	    <a href="https://github.com/digitalmethodsinitiative/dmi-tcat"
+  	       target="_blank">github</a>
+   	    <a href="https://github.com/digitalmethodsinitiative/dmi-tcat/issues?state=open"
+   	       target="_blank">issues</a>
+   	    <a href="https://github.com/digitalmethodsinitiative/dmi-tcat/wiki"
+   	       target="_blank">FAQ</a>
+        <a href="/capture/">capture</a>
+        <a href="/analysis/">analysis</a>
+     </div>
 END;
+
+    // Breadcrumb navigation links
+
+    if (isset($breadcrumbs)) {
+        echo "<ul class=\"breadcrumbs\">\n";
+
+        foreach ($breadcrumbs as $crumb) {
+            $label = $crumb[0];
+
+            echo "<li>";
+
+            if (isset($crumb[1])) {
+                // Hyperlink
+                $url = $crumb[1];
+                echo "<a href=\"";
+                echo htmlspecialchars($url);
+                echo "\">";
+                echo htmlspecialchars($label);
+                echo "</a>";
+            } else {
+                // Text label only
+                echo htmlspecialchars($label);
+            }
+
+            echo "</li>\n";
+        }
+
+        echo "</ul>\n";
+    }
+
+    echo "<div id=\"content\">\n";
 }
 
 function html_end()
 {
     echo <<<END
-        </div>
+
     </div>
 </body>
 </html>
@@ -151,10 +184,10 @@ function abort_with_error($status, $message)
 {
     global $argv;
 
-    if (PHP_SAPI != 'cli') {
+    if (PHP_SAPI !== 'cli') {
         // Invoked by Web server
         http_response_code($status);
-        html_begin("Error");
+        html_begin("Error", []);
         print("<p style=\"color: red;\">");
         print(htmlspecialchars($message));
         print("</p>");
@@ -173,14 +206,11 @@ function abort_with_error($status, $message)
 // If any are found HTTP error page is produced and this function
 // does not return.
 
-function expected_query_parameters($expected_params)
+function expected_query_parameters(array $expected_params)
 {
-
     foreach (array_keys($_GET) as $param) {
         if (!in_array($param, $expected_params)) {
             abort_with_error(400, "Unexpected query parameter: $param");
         }
     }
 }
-
-?>
