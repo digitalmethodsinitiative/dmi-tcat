@@ -455,13 +455,12 @@ function do_purge_tweets(array $querybin, $dt_start, $dt_end)
                 }
             }
 
-            $remaining_num = $querybin['notweets'];
-
             echo <<<END
+
 <p>Purged {$dt_desc_html}.</p>
 
 <p>Number of tweets deleted: {$num_del['tweets']}</p>
-<p>Remaining number of tweets: {$remaining_num}</p>
+
 END;
 
             html_end();
