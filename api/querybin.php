@@ -175,10 +175,6 @@ function do_view_tweets(array $querybin, $dt_start, $dt_end)
 {
     global $api_timezone;
 
-    // Name of default timezone, for display to user
-
-    $default_timezone_name = (isset($api_timezone)) ? $api_timezone : "UTC";
-
     // Get information about tweets from the query bin
 
     $info = tweet_info($querybin, $dt_start, $dt_end);
@@ -269,14 +265,32 @@ from {$t1_html} to {$t2_html}.</p>
 <td></td>
 <td>
 
-<p>Start and end times can be entered with or without a timezone.
+<p>
+END;
+
+                if (isset($api_timezone) && $api_timezone !== '') {
+                    // Default timezone available
+                    echo <<<END
+Start and end times may include an explicit timezone.
+If there is no timezone, the time will be interpreted to be in
+the <em>{$api_timezone}</em> timezone.
+END;
+                } else {
+                    // No default timezone
+                    echo <<<END
+Start and end times must include an explicit timezone.
+END;
+                }
+
+                echo <<<END
+
 Acceptable timezone values are "Z", "UTC" or an offset in the form of
-[+-]HH:MM. If no timezone is entered, it will be interpreted to be in
-the <em>{$default_timezone_name}</em> timezone.  No entered values
-means the time of the first or last tweet.  Partial times are also
-permitted: only the year is mandatory, the remaining components will
-be automatically added. Times are inclusive (i.e. any tweets with
-timestamps equal to those times will be included in the
+[+-]HH:MM.
+
+No entered values means the time of the first or last tweet.  Partial
+times are also permitted: only the year is mandatory, the remaining
+components will be automatically added. Times are inclusive (i.e. any
+tweets with timestamps equal to those times will be included in the
 selection).</p>
 
 </td>

@@ -21,7 +21,9 @@ define('API_VERSION', '1.0');
 //
 // Examples:
 //   $api_timezone = date_default_timezone_get(); // PHP's default
+//   $api_timezone = 'UTC';
+//   $api_timezone = 'Europe/Amsterdam';
 //   $api_timezone = 'Australia/Brisbane';
 
-$api_timezone = NULL; // not set
-//$api_timezone = 'Australia/Brisbane';
+$api_timezone = NULL;
+
