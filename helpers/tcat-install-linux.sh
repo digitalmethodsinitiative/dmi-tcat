@@ -1267,7 +1267,7 @@ case "$CAPTURE_MODE" in
 esac
 
 echo "Using role: ${CAPTURE_MODE_VALUE}"
-sed -i -E "s/^(.*CAPTUREROLES.*\()[^\)]+(\).*)$/\1'${CAPTURE_MODE_VALUE}'\2/p" "$CFG"
+sed -i -E "s/^(.*CAPTUREROLES.*\()[^\)]+(\).*)$/\1'${CAPTURE_MODE_VALUE}'\2/" "$CFG"
 
 # Edit config file to contain Twitter API credentials
 
