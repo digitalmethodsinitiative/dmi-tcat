@@ -338,9 +338,6 @@ END;
     <tr><th>Hashtags</th><td>{$info['hashtags']}</td></tr>
     <tr><th>Mentions</th><td>{$info['mentions']}</td></tr>
     <tr><th>URLs</th><td>{$info['urls']}</td></tr>
-    <tr><th>Media</th><td>{$info['media']}</td></tr>
-    <tr><th>Places</th><td>{$info['places']}</td></tr>
-    <tr><th>Withheld</th><td>{$info['withheld']}</td></tr>
   </table>
 END;
 

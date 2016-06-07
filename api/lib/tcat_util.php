@@ -68,24 +68,32 @@ function tweet_info($query_bin, $dt_start, $dt_end)
 
     $bin_name = $query_bin['bin'];
 
-    // Tables without a 'created_at' column
-    // Must join with *_tweets table to get the 'created_at' timestamp
+    /* This join is too slow when there is a large number of tweets
 
-    foreach (["media", "places", "withheld"] as $tbl) {
-        $table_name = $bin_name . '_' . $tbl;
-        $rec = $dbh->prepare("SELECT * FROM `{$table_name}` X" .
-            " INNER JOIN `{$bin_name}_tweets` T ON T.id=X.tweet_id $where");
-        $rec->execute();
-        $result[$tbl] = $rec->rowCount();
-    }
+        // Tables without a 'created_at' column
+        // Must join with *_tweets table to get the 'created_at' timestamp
+
+        foreach (["media", "places", "withheld"] as $tbl) {
+            $table_name = $bin_name . '_' . $tbl;
+            if ($where !== '') {
+                $sql = "SELECT count(*) FROM `{$table_name}` X" .
+                       " INNER JOIN `{$bin_name}_tweets` T ON T.id=X.tweet_id $where";
+            } else {
+                $sql = "SELECT count(*) FROM `{$table_name}`";
+            }
+            $rec = $dbh->prepare($sql);
+            $rec->execute();
+            $result[$tbl] = $rec->fetchColumn(0);
+        }
+    */
 
     // Tables with a 'created_at' column
 
     foreach (["tweets", "hashtags", "mentions", "urls"] as $tbl) {
         $table_name = $bin_name . '_' . $tbl;
-        $rec = $dbh->prepare("SELECT * FROM `{$table_name}` $where");
+        $rec = $dbh->prepare("SELECT count(*) FROM `{$table_name}` $where");
         $rec->execute();
-        $result[$tbl] = $rec->rowCount();
+        $result[$tbl] = $rec->fetchColumn(0);
     }
 
     return $result;
