@@ -53,6 +53,13 @@ class DtException extends Exception
 }
 
 //----------------------------------------------------------------
+// Globals
+
+// Timezone for UTC
+
+$utc_tz = new DateTimeZone('UTC');
+
+//----------------------------------------------------------------
 // Parses a string into a DateTime object.
 //
 // Expected format: YYYY-MM-DD HH:MM:SS [Z|UTC|[+-]HH:MM].  Multiple
@@ -271,6 +278,8 @@ define('DT_FORMAT_PATTERN', 'Y-m-d H:i:s');
 
 function dt_format_text(DateTime $dt, $tz_name = NULL)
 {
+    global $utc_tz;
+    
     if (isset($tz_name)) {
         if (preg_match('/^\s*[+-]?\d+(:\d+)?/', $tz_name)) {
             // Bug in PHP's DateTimeZone class or DateTime->setTimezone method.
@@ -284,7 +293,7 @@ function dt_format_text(DateTime $dt, $tz_name = NULL)
         $dt = $dt->setTimezone(new DateTimeZone($tz_name));
         return $dt->format(DT_FORMAT_PATTERN . ' P'); // P = +hh:mm
     } else {
-        $dt = $dt->setTimezone(new DateTimeZone('UTC'));
+        $dt = $dt->setTimezone($utc_tz);
         return ($dt->format(DT_FORMAT_PATTERN) . ' UTC');
     }
 }

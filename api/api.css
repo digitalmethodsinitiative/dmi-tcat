@@ -93,7 +93,12 @@ td { padding: 0.5ex; }
 input#startdate, input#enddate {
     min-width: 16em; /* to accommodate "YYYY-MM-DD HH:MM:SS +hh:mm" */
 }
-#purge-button {
+#export-tweets-form {
+    float: left;
+    margin-top: 2ex;
+}
+#purge-tweets-form {
+    float: right;
     margin-top: 2ex;
     text-align: center;
 }

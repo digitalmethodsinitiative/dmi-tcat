@@ -75,7 +75,7 @@ function do_list_bins()
 //
 // Returns variable for JSON output or title+html for HTML output.
 
-function do_info_bin(array $querybin)
+function do_bin_info(array $querybin)
 {
     global $api_timezone;
 
@@ -171,9 +171,12 @@ function do_info_bin(array $querybin)
 //----------------------------------------------------------------
 // View tweets from a specific query bin.
 
-function do_view_tweets(array $querybin, $dt_start, $dt_end)
+define('DT_PARAM_PATTERN', 'Y-m-d H:i:s');
+
+function do_view_or_export_tweets(array $querybin, $dt_start, $dt_end, $export)
 {
     global $api_timezone;
+    global $utc_tz;
 
     // Get information about tweets from the query bin
 
@@ -184,17 +187,50 @@ function do_view_tweets(array $querybin, $dt_start, $dt_end)
     $response_mediatype = choose_mediatype(['text/html',
         'text/csv', 'text/tab-separated-values']);
 
+    if (isset($export)) {
+        // Force exporting of tweets when viewed in a Web browser
+	// that cannot set the accepted mediatypes header.
+        if ($export === 'tsv') {
+	    $response_mediatype = 'text/tab-separated-values';
+	    } else {
+    	    $response_mediatype = 'text/csv';
+         }
+    }
+    
     switch ($response_mediatype) {
 
         case 'text/csv':
         case 'text/tab-separated-values':
-            // TODO: experimental feature: needs fixing
             $ds = $querybin['bin'];
 
             $depth = count(explode('/', $_SERVER['PATH_INFO']));
             $rel = str_repeat('../', $depth);
 
-            header("Location: {$rel}analysis/mod.export_tweets.php?dataset=$ds");
+            $qparams = 'dataset=' . urlencode($ds);
+
+            # Note: the export URL expected the times to be in UTC
+	    # and formatted as 'YYYY-MM-DD HH:MM:SS'
+	    
+	    if (isset($dt_start)) {
+	        $dt_start->setTimezone($utc_tz);
+	        $qparams .= '&startdate=';
+		$qparams .= urlencode($dt_start->format(DT_PARAM_PATTERN));
+            }
+	    if (isset($dt_end)) {
+    	        $dt_end->setTimezone($utc_tz);
+	        $qparams .= '&enddate=';
+		$qparams .= urlencode($dt_end->format(DT_PARAM_PATTERN));
+            }
+	    if ($response_mediatype == 'text/tab-separated-values') {
+	        $qparams .= '&outputformat=tsv';
+	    } else {
+	        $qparams .= '&outputformat=csv';
+	    }
+
+            // Redirect to existing export function
+	    
+            header("Location: {$rel}analysis/mod.export_tweets.php?$qparams");
+
             exit(0);
             break;
 
@@ -344,7 +380,20 @@ END;
             if (0 < $total_num) {
                 // Has tweets: show button to purge tweets
                 echo <<<END
-    <div id="purge-button">
+    <div id="export-tweets-form">
+    <form method="GET">
+        <input type="hidden" name="action" value="export-tweets"/>
+        <input type="hidden" name="startdate" value="$val_A"/>
+        <input type="hidden" name="enddate" value="$val_B"/>
+        <input type="submit" value="Export tweets"/>
+
+        <input type="radio" name="format" value="csv" id="csv" checked="checked"/>
+        <label for="csv">CSV</label>
+        <input type="radio" name="format" value="tsv" id="tsv"/>
+        <label for="tsv">TSV</label>
+    </form>
+    </div>
+    <div id="purge-tweets-form">
     <form method="POST">
         <input type="hidden" name="action" value="purge-tweets"/>
         <input type="hidden" name="startdate" value="$val_A"/>
@@ -402,9 +451,6 @@ Query bin: {$querybin['bin']}
     Hashtags: {$info['hashtags']}
     Mentions: {$info['mentions']}
     URLs: {$info['urls']}
-    Media: {$info['media']}
-    Places: {$info['places']}
-    Withheld: {$info['withheld']}
 
 END;
             } else {
@@ -504,7 +550,7 @@ function main()
     if (PHP_SAPI != 'cli') {
         // Invoked by Web server
 
-        expected_query_parameters(['action', 'startdate', 'enddate']);
+        expected_query_parameters(['action', 'startdate', 'enddate', 'format']);
 
         // Determine resource ($querybin_name will be set or not)
 
@@ -553,10 +599,10 @@ function main()
                     $action = 'list';
                     break;
                 case 'querybin':
-                    $action = 'info-bin';
+                    $action = 'bin-info';
                     break;
                 case 'querybin/tweets':
-                    $action = 'view-tweets';
+                    $action = 'tweet-info';
                     break;
                 default:
                     $action = NULL;
@@ -580,12 +626,13 @@ function main()
                 }
                 break;
             case 'querybin':
-                if (!($action === 'info-bin' && $method === 'GET')) {
+                if (!($action === 'bin-info' && $method === 'GET')) {
                     $bad_combination = true;
                 }
                 break;
             case 'querybin/tweets':
-                if (!(($action === 'view-tweets' && $method === 'GET') ||
+                if (!(($action === 'tweet-info' && $method === 'GET') ||
+                    ($action === 'export-tweets' && $method === 'GET') ||
                     ($action === 'purge-tweets' && $method === 'DELETE') ||
                     ($action === 'purge-tweets' && $method === 'POST'))
                 ) {
@@ -605,16 +652,25 @@ function main()
         $str_start = $_REQUEST['startdate'];
         $str_end = $_REQUEST['enddate'];
 
+        if (isset($_REQUEST['format']) && $_REQUEST['format'] !== '') {
+            $format = $_REQUEST['format'];
+            if ($format != 'csv' && $format != 'tsv') {
+                abort_with_error(400, "Invalid format: $format");
+            }
+        } else {
+            $format = 'csv'; // default
+        }
+
     } else {
         // Invoked from command line
 
         // PHP's getopt is terrible, but it is always available.
         $skip_num = 1;
-        $options = getopt("hlitps:e:",
+        $options = getopt("hlbtps:e:",
             ['help',
                 'list',
-                'info',
-                'view-tweets', 'purge-tweets', 'start:', 'end:']);
+                'bin-info',
+                'tweet-info', 'purge-tweets', 'start:', 'end:']);
         if ($options != false) {
 
             foreach ($options as $opt => $optarg) {
@@ -634,8 +690,8 @@ function main()
 Usage: php $script_name [options] [queryBinName]
 Options:
   -l | --list            list names of all query bins (default without name)
-  -i | --info            show information about query bin (default with name)
-  -t | --view-tweets     view information about tweets in named query bin
+  -b | --bin-info        show information about query bin (default with name)
+  -t | --tweet-info      show information about tweets in named query bin
   -p | --purge-tweets    purge tweets in named query bin
 
   -s | --start tm        start time for tweet viewing/purging
@@ -653,34 +709,34 @@ END;
                     case 'l':
                     case 'list':
                         if (isset($action)) {
-                            fwrite(STDERR, "Usage error: multipe actions\n");
+                            fwrite(STDERR, "Usage error: multiple actions\n");
                             exit(2);
                         }
                         $action = 'list';
                         break;
 
-                    case 'i':
-                    case 'info':
+                    case 'b':
+                    case 'bin-info':
                         if (isset($action)) {
-                            fwrite(STDERR, "Usage error: multipe actions\n");
+                            fwrite(STDERR, "Usage error: multiple actions\n");
                             exit(2);
                         }
-                        $action = 'info-bin';
+                        $action = 'bin-info';
                         break;
 
                     case 't':
-                    case 'view-tweets':
+                    case 'tweet-info':
                         if (isset($action)) {
-                            fwrite(STDERR, "Usage error: multipe actions\n");
+                            fwrite(STDERR, "Usage error: multiple actions\n");
                             exit(2);
                         }
-                        $action = 'view-tweets';
+                        $action = 'tweet-info';
                         break;
 
                     case 'p':
                     case 'purge-tweets':
                         if (isset($action)) {
-                            fwrite(STDERR, "Usage error: multipe actions\n");
+                            fwrite(STDERR, "Usage error: multiple actions\n");
                             exit(2);
                         }
                         $action = 'purge-tweets';
@@ -729,7 +785,7 @@ END;
 
         if (!isset($action)) {
             if (isset($querybin_name)) {
-                $action = 'info-bin';
+                $action = 'bin-info';
             } else {
                 $action = 'list';
             }
@@ -750,7 +806,7 @@ END;
             }
         }
 
-        if ($action === 'list' || $action === 'info-bin') {
+        if ($action === 'list' || $action === 'bin-info') {
             // These actions do not use start/end time
             if (isset($str_start) || isset($str_end)) {
                 fwrite(STDERR, "Usage error: start/end time not required\n");
@@ -812,11 +868,15 @@ END;
         case 'list':
             do_list_bins();
             break;
-        case 'info-bin':
-            do_info_bin($querybin);
+        case 'bin-info':
+            do_bin_info($querybin);
             break;
-        case 'view-tweets':
-            do_view_tweets($querybin, $dt_start, $dt_end);
+        case 'tweet-info':
+            do_view_or_export_tweets($querybin, $dt_start, $dt_end, NULL);
+            break;
+        case 'export-tweets':
+            assert(isset($format));
+            do_view_or_export_tweets($querybin, $dt_start, $dt_end, $format);
             break;
         case 'purge-tweets':
             do_purge_tweets($querybin, $dt_start, $dt_end);
