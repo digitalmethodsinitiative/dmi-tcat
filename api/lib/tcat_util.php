@@ -89,7 +89,10 @@ function tweet_info($query_bin, $dt_start, $dt_end)
 
     // Tables with a 'created_at' column
 
-    foreach (["tweets", "hashtags", "mentions", "urls"] as $tbl) {
+    // Only do tweets, otherwise it takes a long time if there are many tweets
+    //foreach (["tweets", "hashtags", "mentions", "urls"] as $tbl) {
+
+    foreach (["tweets"] as $tbl) {
         $table_name = $bin_name . '_' . $tbl;
         $rec = $dbh->prepare("SELECT count(*) FROM `{$table_name}` $where");
         $rec->execute();
@@ -132,7 +135,7 @@ function tweet_purge($query_bin, $dt_start, $dt_end)
 
     // Tables without a 'created_at' column
     // Must join with *_tweets table to get the 'created_at' timestamp
-
+/*
     foreach (["media", "places", "withheld"] as $tbl) {
         $table_name = $bin_name . '_' . $tbl;
         if ($where !== '') {
@@ -147,7 +150,7 @@ function tweet_purge($query_bin, $dt_start, $dt_end)
         $rec->execute();
         $result[$tbl] = $rec->rowCount();
     }
-
+*/
     // Tables with a 'created_at' column
 
     foreach (["tweets", "hashtags", "mentions", "urls"] as $tbl) {

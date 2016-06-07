@@ -371,9 +371,6 @@ END;
   <table>
     <tr><th>Selected range</th><td>$dt_desc_html</td></tr>
     <tr><th>Number of tweets</th><td>{$info['tweets']} of $total_num</td></tr>
-    <tr><th>Hashtags</th><td>{$info['hashtags']}</td></tr>
-    <tr><th>Mentions</th><td>{$info['mentions']}</td></tr>
-    <tr><th>URLs</th><td>{$info['urls']}</td></tr>
   </table>
 END;
 
@@ -385,7 +382,7 @@ END;
         <input type="hidden" name="action" value="export-tweets"/>
         <input type="hidden" name="startdate" value="$val_A"/>
         <input type="hidden" name="enddate" value="$val_B"/>
-        <input type="submit" value="Export tweets"/>
+        <input type="submit" value="Export selected tweets"/>
 
         <input type="radio" name="format" value="csv" id="csv" checked="checked"/>
         <label for="csv">CSV</label>
@@ -398,10 +395,18 @@ END;
         <input type="hidden" name="action" value="purge-tweets"/>
         <input type="hidden" name="startdate" value="$val_A"/>
         <input type="hidden" name="enddate" value="$val_B"/>
-        <input type="submit" value="Purge tweets"/>
+        <input type="submit" value="Purge selected tweets"/>
     </form>
     </div>
 END;
+
+                if (100000 < $total_num && (isset($dt_start) || isset($dt_end))) {
+                    // Time period specified and there are many tweets
+                    echo <<<END
+<p style="clear:both;margin-top:1ex;text-align:center;">
+Warning: exporting or purging could take a very long time.</p>
+END;
+                }
             }
 
             // End of view of tweets
@@ -448,9 +453,6 @@ Query bin: {$querybin['bin']}
     Latest tweet: {$t2_text}
   Tweets: ($dt_desc)
     Number of tweets: {$info['tweets']} of {$querybin['notweets']}
-    Hashtags: {$info['hashtags']}
-    Mentions: {$info['mentions']}
-    URLs: {$info['urls']}
 
 END;
             } else {
