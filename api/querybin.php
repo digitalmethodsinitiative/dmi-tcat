@@ -181,6 +181,8 @@ function do_view_or_export_tweets(array $querybin, $dt_start, $dt_end, $export)
     // Get information about tweets from the query bin
 
     $info = tweet_info($querybin, $dt_start, $dt_end);
+    $time_to_purge = est_time_to_purge($querybin['notweets'],
+                         $dt_start, $dt_end, $info['tweets']);
 
     // Show result
 
@@ -189,14 +191,14 @@ function do_view_or_export_tweets(array $querybin, $dt_start, $dt_end, $export)
 
     if (isset($export)) {
         // Force exporting of tweets when viewed in a Web browser
-	// that cannot set the accepted mediatypes header.
+        // that cannot set the accepted mediatypes header.
         if ($export === 'tsv') {
-	    $response_mediatype = 'text/tab-separated-values';
-	    } else {
-    	    $response_mediatype = 'text/csv';
-         }
+            $response_mediatype = 'text/tab-separated-values';
+        } else {
+            $response_mediatype = 'text/csv';
+        }
     }
-    
+
     switch ($response_mediatype) {
 
         case 'text/csv':
@@ -209,26 +211,26 @@ function do_view_or_export_tweets(array $querybin, $dt_start, $dt_end, $export)
             $qparams = 'dataset=' . urlencode($ds);
 
             # Note: the export URL expected the times to be in UTC
-	    # and formatted as 'YYYY-MM-DD HH:MM:SS'
-	    
-	    if (isset($dt_start)) {
-	        $dt_start->setTimezone($utc_tz);
-	        $qparams .= '&startdate=';
-		$qparams .= urlencode($dt_start->format(DT_PARAM_PATTERN));
+            # and formatted as 'YYYY-MM-DD HH:MM:SS'
+
+            if (isset($dt_start)) {
+                $dt_start->setTimezone($utc_tz);
+                $qparams .= '&startdate=';
+                $qparams .= urlencode($dt_start->format(DT_PARAM_PATTERN));
             }
-	    if (isset($dt_end)) {
-    	        $dt_end->setTimezone($utc_tz);
-	        $qparams .= '&enddate=';
-		$qparams .= urlencode($dt_end->format(DT_PARAM_PATTERN));
+            if (isset($dt_end)) {
+                $dt_end->setTimezone($utc_tz);
+                $qparams .= '&enddate=';
+                $qparams .= urlencode($dt_end->format(DT_PARAM_PATTERN));
             }
-	    if ($response_mediatype == 'text/tab-separated-values') {
-	        $qparams .= '&outputformat=tsv';
-	    } else {
-	        $qparams .= '&outputformat=csv';
-	    }
+            if ($response_mediatype == 'text/tab-separated-values') {
+                $qparams .= '&outputformat=tsv';
+            } else {
+                $qparams .= '&outputformat=csv';
+            }
 
             // Redirect to existing export function
-	    
+
             header("Location: {$rel}analysis/mod.export_tweets.php?$qparams");
 
             exit(0);
@@ -400,11 +402,11 @@ END;
     </div>
 END;
 
-                if (100000 < $total_num && (isset($dt_start) || isset($dt_end))) {
-                    // Time period specified and there are many tweets
-                    echo <<<END
-<p style="clear:both;margin-top:1ex;text-align:center;">
-Warning: exporting or purging could take a very long time.</p>
+
+            if (isset($time_to_purge)) {
+                echo <<<END
+<p id="purge-time-warning">
+Warning: purging could take a long time (~ $time_to_purge).</p>
 END;
                 }
             }
@@ -455,6 +457,10 @@ Query bin: {$querybin['bin']}
     Number of tweets: {$info['tweets']} of {$querybin['notweets']}
 
 END;
+
+                if (isset($time_to_purge)) {
+                    print("Warning: purging could take a long time (~ $time_to_purge).\n");
+                }
             } else {
                 // No tweets
                 echo "Query bin: {$querybin['bin']}\n";
@@ -462,6 +468,66 @@ END;
             }
 
             break;
+    }
+}
+
+// Estimate time to purge.
+//
+// Returns null if it is not going take very long, otherwise
+// returns a string describing how long it roughly will take.
+//
+// This is very rough, but it is better than having the user
+// wonder why nothing is happening for minutes/hours.
+
+function est_time_to_purge($total_num, $dt_start, $dt_end, $num_tweets) {
+
+    if ((! isset($dt_start)) && (! isset($dt_end))) {
+        // No time constraints: purging is very quick and independent of
+        // the number of tweets.
+        return NULL;
+    }
+
+    // Empirical times (this is very rough since it depends on many factors)
+
+    if ($total_num < 500000) {
+        $sec_per_tweet = 0; // under 0.5 million tweets: will be quick
+    } else if ($total_num < 1500000) {
+        $sec_per_tweet = 0.012; // approx 1 million total tweets
+    } else if ($total_num < 2500000) {
+        $sec_per_tweet = 0.035; // approx 2 million total tweets
+    } else {
+        $sec_per_tweet = 1; // a lot: untested, could be very slow
+    }
+
+    $minutes = ($sec_per_tweet * $num_tweets) / 60;
+    $minutes = round($minutes + 0.5);
+
+    // Return string description or null
+
+    if ($minutes < 50) {
+        if ($minutes <= 1) {
+            return NULL;
+        } else if ($minutes < 5) {
+            return "$minutes minutes";
+        } else {
+            $rounded = round($minutes / 5) * 5;
+            return "$rounded minutes";
+        }
+    } else {
+        $hours = round(0.5 + ($minutes / 60), 1);
+        if (72 < $hours) {
+            return "many days";
+        } else if (36 < $hours) {
+            return "several days";
+        } else if (12 < $hours) {
+            return "one day";
+        } else if (6 < $hours) {
+            return "many hours";
+        } else if (1 < $hours) {
+            return "$hours hours";
+        } else {
+            return "an hour";
+        }
     }
 }
 

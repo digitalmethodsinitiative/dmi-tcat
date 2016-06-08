@@ -103,4 +103,10 @@ input#startdate, input#enddate {
     text-align: center;
 }
 
+#purge-time-warning {
+    clear: both;
+    padding: 1ex 0;
+    text-align: right;
+    color: #666;
+}
 /* EOF */
