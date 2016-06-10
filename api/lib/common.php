@@ -3,6 +3,13 @@
 
 define('API_VERSION', '1.0');
 
+// Speed multiplier for estimating purge times.
+//
+// Set this to a number greater than 1.0 for slower machines.
+// Set this to a number less than 1.0 for faster machines.
+
+define('PURGE_TIME_FACTOR', 1.0);
+
 // Default timezone
 //
 // Set this to a string indicating the timezone to use for displaying

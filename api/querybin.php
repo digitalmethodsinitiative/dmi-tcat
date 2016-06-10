@@ -477,7 +477,7 @@ END;
 // returns a string describing how long it roughly will take.
 //
 // This is very rough, but it is better than having the user
-// wonder why nothing is happening for minutes/hours.
+// wonder why nothing is happening for minutes/hours/days.
 
 function est_time_to_purge($total_num, $dt_start, $dt_end, $num_tweets) {
 
@@ -489,44 +489,42 @@ function est_time_to_purge($total_num, $dt_start, $dt_end, $num_tweets) {
 
     // Empirical times (this is very rough since it depends on many factors)
 
-    if ($total_num < 500000) {
-        $sec_per_tweet = 0; // under 0.5 million tweets: will be quick
-    } else if ($total_num < 1500000) {
-        $sec_per_tweet = 0.012; // approx 1 million total tweets
-    } else if ($total_num < 2500000) {
-        $sec_per_tweet = 0.035; // approx 2 million total tweets
-    } else {
-        $sec_per_tweet = 1; // a lot: untested, could be very slow
-    }
+    $seconds = $total_num * $num_tweets * 0.0000000175 * PURGE_TIME_FACTOR;
 
-    $minutes = ($sec_per_tweet * $num_tweets) / 60;
-    $minutes = round($minutes + 0.5);
+    $minutes = round($seconds / 60);
 
     // Return string description or null
 
-    if ($minutes < 50) {
-        if ($minutes <= 1) {
-            return NULL;
-        } else if ($minutes < 5) {
-            return "$minutes minutes";
-        } else {
-            $rounded = round($minutes / 5) * 5;
-            return "$rounded minutes";
-        }
+    if ($minutes < 1) {
+        return NULL;
+    } else if ($minutes == 1) {
+        return "$minutes minute";
+    } else if ($minutes < 5) {
+        return "$minutes minutes";
+    } else if ($minutes <= 55) {
+        $round_to_5 = round($minutes / 5) * 5;
+        return "$round_to_5 minutes";
     } else {
-        $hours = round(0.5 + ($minutes / 60), 1);
-        if (72 < $hours) {
-            return "many days";
-        } else if (36 < $hours) {
-            return "several days";
-        } else if (12 < $hours) {
-            return "one day";
-        } else if (6 < $hours) {
-            return "many hours";
-        } else if (1 < $hours) {
+        $hours = round($minutes / 60, 1);
+        if ($hours <= 1) {
+            return "1 hour";
+        } else if ($hours < 4) {
             return "$hours hours";
+        } else if ($hours < 23) {
+            return round($hours) . " hours";
         } else {
-            return "an hour";
+            $days = round(0.5 + ($hours / 24));
+            if ($days <= 1) {
+                return "one day";
+            } else if ($days < 7) {
+                return "$days days";
+            } else if ($days < 30) {
+                return "weeks";
+            } else if ($days < 300) {
+                return "months";
+            } else {
+                return "years";
+            }
         }
     }
 }

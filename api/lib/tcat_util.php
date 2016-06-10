@@ -115,7 +115,6 @@ function tweet_info($query_bin, $dt_start, $dt_end)
 
 function tweet_purge($query_bin, $dt_start, $dt_end)
 {
-
     // Create WHERE clause to restrict to requested timestamp range
 
     $time_condition = created_at_condition($dt_start, $dt_end);
@@ -134,11 +133,11 @@ function tweet_purge($query_bin, $dt_start, $dt_end)
     $bin_name = $query_bin['bin'];
 
     // Tables without a 'created_at' column
-    // Must join with *_tweets table to get the 'created_at' timestamp
-/*
+
     foreach (["media", "places", "withheld"] as $tbl) {
         $table_name = $bin_name . '_' . $tbl;
         if ($where !== '') {
+            // Must join with *_tweets to get 'created_at' timestamp
             $sql = "DELETE FROM `{$table_name}`" .
                 " USING `{$table_name}` INNER JOIN `{$bin_name}_tweets`" .
                 " ON `{$bin_name}_tweets`.id=`{$table_name}`.tweet_id" .
@@ -150,7 +149,7 @@ function tweet_purge($query_bin, $dt_start, $dt_end)
         $rec->execute();
         $result[$tbl] = $rec->rowCount();
     }
-*/
+
     // Tables with a 'created_at' column
 
     foreach (["tweets", "hashtags", "mentions", "urls"] as $tbl) {
