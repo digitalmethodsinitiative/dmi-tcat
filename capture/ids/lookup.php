@@ -15,8 +15,8 @@ require __DIR__ . '/../../capture/common/tmhOAuth/tmhOAuth.php';
 
 // DEFINE LOOKUP PARAMETERS HERE
 
-$bin_name = '';            // name of the bin
-$idfile = '';              // path to the input file name. the file must contain only a tweet ID on every line
+$bin_name = '99inequality';            // name of the bin
+$idfile = 'ids';              // path to the input file name. the file must contain only a tweet ID on every line
 $type = 'lookup';          // specify 'lookup'
 
 if (empty($bin_name))
@@ -33,6 +33,11 @@ $idlist = preg_split('/\R/', file_get_contents($idfile));
 if (!is_array($idlist) || empty($idlist)) {
     die("idfile invalid\n");
 }
+if (file_exists($idfile . ".inaccessible")) {
+    print "A file called " . $idfile . ".inaccessible" . " already exists on disk. We need this file to store information. Please back up this file or remove it manually. Exiting.\n";
+    exit(1);
+}
+$count_fullset = count($idlist);
 
 $all_users = $all_tweet_ids = array();
 
@@ -45,7 +50,7 @@ $ids_in_db = array();
 for ($i = 0; $i < sizeof($idlist); $i += 3000) {
     $query = "select id from $bin_name" . '_tweets where id in ( ' . $idlist[$i];
     $n = $i + 1;
-    while ($n < $i + 100) {
+    while ($n < $i + 3000) {
         if (!isset($idlist[$n])) break;
         $query .= ", " . $idlist[$n];
         $n++;
@@ -62,8 +67,11 @@ $orig_size = count($idlist);
 $idlist = array_diff($idlist, $ids_in_db);
 $idlist = array_values($idlist);			// re-index is needed
 $new_size = count($idlist);
+$count_existed = 0;
+$count_missing = 0;
 if ($new_size < $orig_size) {
-    print "skipping " . ($orig_size - $new_size) . " tweets from id list because they are already in our database\n";
+    $count_existed = $orig_size - $new_size;
+    print "skipping $count_existed tweets from id list because they are already in our database\n";
 }
 
 $tweetQueue = new TweetQueue();
@@ -74,8 +82,19 @@ search($idlist);
 
 $retries = 0;
 
+print "\n" . str_repeat("=", 83) . "\n\n";
+
+printf("Total number of tweets in your ID file:                                    %8d\n", $count_fullset);
+printf("Number of new tweets inserted into the bin:                                %8d\n", $count_fullset - $count_existed - $count_missing);
+printf("Number of tweets skipped because they already existed in bin:              %8d\n", $count_existed);
+printf("Number of tweets skipped because they are no longer accessible:            %8d\n", $count_missing);
+
+if (file_exists($idfile . ".inaccessible")) {
+    printf("The ids of tweets who can not (or no longer) be accessed have been written to file: " . $idfile . ".inaccessible" . "\n");
+}
+
 function search($idlist) {
-    global $twitter_keys, $current_key, $all_users, $all_tweet_ids, $bin_name, $dbh, $tweetQueue;
+    global $twitter_keys, $current_key, $all_users, $all_tweet_ids, $bin_name, $idfile, $dbh, $tweetQueue, $count_missing;
 
     $keyinfo = getRESTKey(0);
     $current_key = $keyinfo['key'];
@@ -106,11 +125,14 @@ function search($idlist) {
             		));
 	    }
 
+        $verify = array();      // used to track missing tweets
         $q = $idlist[$i];
+        $verify[] = $q;
         $n = $i + 1;
         while ($n < $i + 100) {
             if (!isset($idlist[$n])) break;
             $q .= "," . $idlist[$n];
+            $verify[] = $idlist[$n];
             $n++;
         }
 
@@ -133,12 +155,18 @@ function search($idlist) {
 
             if (is_array($data) && empty($data)) {
                 // all tweets in set are deleted
+                $count_missing += count($verify);
+                if (file_exists($idfile . ".inaccessible")) {
+                    file_put_contents($idfile . ".inaccessible", "\n" . implode("\n", $verify), FILE_APPEND);
+                } else {
+                    file_put_contents($idfile . ".inaccessible", implode("\n", $verify), FILE_APPEND);
+                }
                 continue;
             }
 
             $tweets = $data;
-
             $tweet_ids = array();
+
             foreach ($tweets as $tweet) {
 
                 $t = new Tweet();
@@ -148,11 +176,20 @@ function search($idlist) {
                     $all_users[] = $t->from_user_id;
                     $all_tweet_ids[] = $t->id;
                     $tweet_ids[] = $t->id;
-
+                    
                     $tweetQueue->push($t, $bin_name);
-                }
 
+                }
                 print ".";
+            }
+            $diff = array_diff($verify, $tweet_ids);
+            $count_missing += count($diff);
+            if (count($diff) > 0) {
+                if (file_exists($idfile . ".inaccessible")) {
+                    file_put_contents($idfile . ".inaccessible", "\n" . implode("\n", $diff), FILE_APPEND);
+                } else {
+                    file_put_contents($idfile . ".inaccessible", implode("\n", $diff), FILE_APPEND);
+                }
             }
             sleep(1);
             $retries = 0;   // reset retry counter on success
