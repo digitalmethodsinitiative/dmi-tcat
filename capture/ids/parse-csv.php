@@ -64,6 +64,10 @@ for ($f = 0; $f < count($fields); $f++) {
         print "Found Twitter status links in data file, at column " . ($f+1) . "\n";
     }
 }
+if (is_null($suggested_column)) {
+    print "Your input file was not recognized as a valid CSV file containing references to tweets. Sorry.\n";
+    exit(1);
+}
 
 $ids = array();
 $ids[] = $first_id;
