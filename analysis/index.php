@@ -251,11 +251,11 @@ if (defined('ANALYSIS_URL'))
                             </tr>
                         <?php } ?>
                         <tr>
-                            <td class="tbl_head">Startdate:</td><td><input type="text" id="ipt_startdate" size="60" name="startdate" value="<?php echo $startdate; ?>" /> (YYYY-MM-DD or YYYY-MM-DD HH:MM:SS)</td>
+                            <td class="tbl_head">Startdate (UTC):</td><td><input type="text" id="ipt_startdate" size="60" name="startdate" value="<?php echo $startdate; ?>" /> (YYYY-MM-DD or YYYY-MM-DD HH:MM:SS)</td>
                         </tr>
 
                         <tr>
-                            <td class="tbl_head">Enddate:</td><td><input type="text" id="ipt_enddate" size="60" name="enddate" value="<?php echo $enddate; ?>" /> (YYYY-MM-DD or YYYY-MM-DD HH:MM:SS)</td>
+                            <td class="tbl_head">Enddate (UTC):</td><td><input type="text" id="ipt_enddate" size="60" name="enddate" value="<?php echo $enddate; ?>" /> (YYYY-MM-DD or YYYY-MM-DD HH:MM:SS)</td>
                         </tr>
                         <tr>
                             <td valign="middle" style='padding-top: 4px'><input type="submit" value="update overview" /></td>
@@ -326,6 +326,8 @@ if (defined('ANALYSIS_URL'))
                         $show_url_export = true;
                 }
             }
+            // see whether database is up-to-date to export ratelimit and gap tables
+            $show_ratelimit_and_gap_export = get_status('ratelimit_database_rebuild') == 2 ? true : false;
             // see whether the lang table exists
             $show_lang_export = FALSE;
             $sql = "SHOW TABLES LIKE '" . $esc['mysql']['dataset'] . "_lang'";
@@ -721,9 +723,24 @@ foreach ($linedata as $key => $value) {
                     <div class="txt_desc">Use: get a grasp of the most popular media.</div>
                     <div class="txt_link"> &raquo;  <a href="" onclick="var minf = askFrequency(); $('#whattodo').val('media_frequency&minf='+minf+getInterval());sendUrl('mod.media_frequency.php');return false;">launch</a></div>
 
+                    <?php if ($show_ratelimit_and_gap_export) { ?>
+                    <hr/>
+
+                    <h3>Export an estimation of the number of rate limited tweets in your data</h3>
+                    <div class="txt_desc">Exports a spreadsheet with an estimation of the ammount of non-captured tweets in your query due to ratelimit occurances.</div>
+                    <div class="txt_desc">Use: gain insight in possible missing data due to hitting the Twitter API rate limits.</div>
+                    <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('ratelimits'+getInterval());sendUrl('mod.ratelimits.php');return false;">launch</a></div>
+
+                    <hr/>
+
+                    <h3>Export table with potential gaps in your data</h3>
+                    <div class="txt_desc">Exports a spreadsheet with all known data gaps in your current query, during which TCAT was not running or capturing data for this bin.</div>
+                    <div class="txt_desc">Use: Gain insight in possible missing data due to outages</div>
+                    <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('gaps');sendUrl('mod.gaps.php');return false;">launch</a></div>
+
+                    <?php } ?>
 
                 </div>
-
 
                 <h2>Tweet exports</h2>
 
@@ -813,6 +830,8 @@ foreach ($linedata as $key => $value) {
                     <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('export_urls');sendUrl('mod.export_urls.php');return false;">launch</a></div>
 
                     <?php } ?>
+
+                    <hr/>
 
                 </div>
                 <h2>Networks</h2>

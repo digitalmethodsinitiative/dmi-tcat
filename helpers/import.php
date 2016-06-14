@@ -58,7 +58,7 @@ while ($line = fgets($fh)) {
     if (preg_match("/^-- Table structure for table `(.*)_tweets`/", $line, $matches)) {
         array_push($queryBins, $matches[1]);
     }
-    if (preg_match("/^INSERT INTO tcat_query_bins \( querybin, `type`, active, visible \) values \( '(.*?)',/", $line, $matches)) {
+    if (preg_match("/^INSERT INTO tcat_query_bins \( querybin, `type`, active, access \) values \( '(.*?)',/", $line, $matches)) {
         array_push($queryBins, $matches[1]);
     }
 }

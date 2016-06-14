@@ -1,6 +1,7 @@
 <?php
 
 include_once __DIR__ . '/../config.php';
+include_once __DIR__ . '/../common/constants.php';
 
 if (defined(ADMIN_USER) && ADMIN_USER != "" && (!isset($_SERVER['PHP_AUTH_USER']) || $_SERVER['PHP_AUTH_USER'] != ADMIN_USER))
     die("Go away, you evil hacker!");
@@ -771,8 +772,9 @@ function getBins() {
 }
 
 function getLastRateLimitHit() {
+    // For now, we report only about rate limit hits from the last 48 hours on the analysis panel (issue #83)
     $dbh = pdo_connect();
-    $rec = $dbh->prepare("SELECT end FROM tcat_error_ratelimit ORDER BY end DESC LIMIT 1");
+    $rec = $dbh->prepare("SELECT end FROM tcat_error_ratelimit WHERE tweets > 0 and end > date_sub(now(), interval 2 day) ORDER BY end DESC LIMIT 1");
     if ($rec->execute() && $rec->rowCount() > 0) {
         $res = $rec->fetch();
         return $res['end'];

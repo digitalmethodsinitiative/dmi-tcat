@@ -7,6 +7,7 @@ set_time_limit(0);
 error_reporting(E_ALL);
 
 include_once __DIR__ . '/../config.php';
+include_once __DIR__ . '/../common/constants.php';
 include __DIR__ . '/functions.php';
 include __DIR__ . '/../capture/common/functions.php';
 include __DIR__ . '/../capture/common/tmhOAuth/tmhOAuth.php';

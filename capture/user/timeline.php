@@ -6,6 +6,7 @@ if ($argc < 1)
 set_time_limit(0);
 error_reporting(E_ALL);
 include_once __DIR__ . '/../../config.php';
+include_once __DIR__ . '/../../common/constants.php';
 include_once __DIR__ . '/../../common/functions.php';
 include_once __DIR__ . '/../common/functions.php';
 

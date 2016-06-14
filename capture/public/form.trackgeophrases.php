@@ -1,5 +1,6 @@
 <?php
 include_once __DIR__ . '/../../config.php';
+include_once __DIR__ . '/../../common/constants.php';
 
 if (defined("ADMIN_USER") && ADMIN_USER != "" && (!isset($_SERVER['PHP_AUTH_USER']) || $_SERVER['PHP_AUTH_USER'] != ADMIN_USER))
     die("Go away, you evil hacker!");

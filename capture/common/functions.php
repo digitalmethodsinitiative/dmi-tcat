@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/geoPHP/geoPHP.inc'; // geoPHP library
+require_once __DIR__ . '/../../common/constants.php'; // include constants file
 
 error_reporting(E_ALL);
 ini_set("max_execution_time", 0);       // capture script want unlimited execution time
@@ -8,7 +9,8 @@ ini_set("max_execution_time", 0);       // capture script want unlimited executi
 function pdo_connect() {
     global $dbuser, $dbpass, $database, $hostname;
 
-    $dbh = new PDO("mysql:host=$hostname;dbname=$database;charset=utf8mb4", $dbuser, $dbpass, array(PDO::MYSQL_ATTR_INIT_COMMAND => "set sql_mode='ALLOW_INVALID_DATES'"));
+    $dbh = new PDO("mysql:host=$hostname;dbname=$database;charset=utf8mb4", $dbuser, $dbpass, array(PDO::MYSQL_ATTR_INIT_COMMAND => "set sql_mode='ALLOW_INVALID_DATES';set time_zone='+00:00'
+"));
     $dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
     return $dbh;
@@ -40,20 +42,76 @@ function geophp_sane() {
 }
 
 function create_error_logs() {
+    global $dbuser, $dbpass, $database, $hostname;
     $dbh = pdo_connect();
 
-    $sql = 'create table if not exists tcat_error_ratelimit ( id bigint auto_increment, type varchar(32), start datetime not null, end datetime not null, tweets bigint not null, primary key(id), index(type), index(start), index(end) )';
+    $creating_tables_for_fresh_install = false;
+    $sql = "SELECT * FROM information_schema.tables WHERE table_schema = '$database' AND table_name = 'tcat_error_gap'";
+    $test = $dbh->prepare($sql);
+    $test->execute();
+    if ($test->rowCount() == 0) {
+        $creating_tables_for_fresh_install = true;
+    }
+
+    $sql = 'create table if not exists tcat_error_ratelimit ( id bigint auto_increment, type varchar(32), start datetime not null, end datetime not null, tweets bigint not null, primary key(id), index(type), index(start), index(end) ) ENGINE=MyISAM';
     $h = $dbh->prepare($sql);
     $h->execute();
 
-    $sql = 'create table if not exists tcat_error_gap ( id bigint auto_increment, type varchar(32), start datetime not null, end datetime not null, primary key(id), index(type), index(start), index(end) )';
+    $sql = 'create table if not exists tcat_error_gap ( id bigint auto_increment, type varchar(32), start datetime not null, end datetime not null, primary key(id), index(type), index(start), index(end) ) ENGINE=MyISAM';
     $h = $dbh->prepare($sql);
     $h->execute();
+
+    /*
+     * The tcat_status variable is utilised as generic keystore to record and track aspects of this TCAT installation.
+     * This is not a configuration table. The configuration of TCAT is defined in config.php, though we may wish to allow dynamically configurable
+     * options in the future and this table would suit such a purpose.
+     * At the moment, this table is solely used by TCAT internally to store information such as wich upgrade steps have been executed, etc.
+     */
+
+    $sql = "CREATE TABLE IF NOT EXISTS tcat_status (
+    `variable` varchar(32),
+    `value` varchar(1024),
+    PRIMARY KEY `variable` (`variable`),
+            KEY `value` (`value`)
+    ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4";
+    $create = $dbh->prepare($sql);
+    $create->execute();
+
+
+    $sql = "select value from tcat_status where variable = 'ratelimit_format_modified_at'";
+    $test = $dbh->prepare($sql);
+    $test->execute();
+    if ($test->rowCount() == 0 && defined('CAPTURE')) {
+        // We are actively registering ratelimits in the new gauge-style and store the timestamp of the start of this new behaviour
+        // The purpose of this insert statemtn is for common/upgrade.php to know the exact time at which it can expect datetime insertion to be sane.
+        $sql = "insert into tcat_status ( variable, value ) values ( 'ratelimit_format_modified_at', now() )";
+        $insert = $dbh->prepare($sql);
+        $insert->execute();
+    }
+    
+    // When creating tables for a fresh install, set tcat_status variable to indicate we have up-to-date ratelimit, gap tables and are capturing in the proper timezone
+    // Practically, the purpose of this insert statement is for common/upgrade.php to know we do not need to upgrade the above table.
+
+    if ($creating_tables_for_fresh_install) {
+        $sql = "insert into tcat_status ( variable, value ) values ( 'ratelimit_database_rebuild', 2 )";
+        $insert = $dbh->prepare($sql);
+        $insert->execute();
+    }
+
 }
 
 // Enclose identifier in backticks; escape backticks inside by doubling them.
 function quoteIdent($field) {
     return "`" . str_replace("`", "``", $field) . "`";
+}
+
+// read the minute of the current hour without leading zero
+function get_current_minute() {
+    $minutes = ltrim(date("i", time()), '0');
+    if ($minutes == '') {
+        $minutes = '0';
+    }
+    return intval($minutes);
 }
 
 function create_bin($bin_name, $dbh = false) {
@@ -241,7 +299,7 @@ function create_admin() {
     `querybin` VARCHAR(45) NOT NULL,
     `type` VARCHAR(10) NOT NULL,
     `active` BOOLEAN NOT NULL,
-    `visible` BOOLEAN DEFAULT TRUE,
+    `access` INT DEFAULT 0,
     `comments` VARCHAR(2048) DEFAULT NULL,
     PRIMARY KEY (`id`),
     KEY `querybin` (`querybin`),
@@ -339,26 +397,151 @@ function create_admin() {
         $rec->execute();
     }
 
+    // 31/05/2016 Add access column, remove visibility column [fast auto-upgrade - reminder to remove]
+    $query = "SHOW COLUMNS FROM tcat_query_bins";
+    $rec = $dbh->prepare($query);
+    $rec->execute();
+    $columns = $rec->fetchAll(PDO::FETCH_COLUMN);
+    $update = FALSE;
+    foreach ($columns as $i => $c) {
+        if ($c == 'visible') {
+            $update = TRUE;
+            break;
+        }
+    }
+    if ($update) {
+        // Adding new columns to table tcat_query_bins
+        $query = "ALTER TABLE tcat_query_bins ADD COLUMN `access` INT DEFAULT 0";
+        $rec = $dbh->prepare($query);
+        $rec->execute();
+        $query = "UPDATE tcat_query_bins SET access = " . TCAT_QUERYBIN_ACCESS_OK . " where visible = TRUE";
+        $rec = $dbh->prepare($query);
+        $rec->execute();
+        $query = "UPDATE tcat_query_bins SET access = " . TCAT_QUERYBIN_ACCESS_INVISIBLE . " where visible = FALSE";
+        $rec = $dbh->prepare($query);
+        $rec->execute();
+        $query = "ALTER TABLE tcat_query_bins DROP COLUMN `visible`";
+        $rec = $dbh->prepare($query);
+        $rec->execute();
+
+    }
+
+    // 05/05/2016 Create a global lookup table to matching phrases to tweets
+    // Thanks to this table we know how many (unique or non-unique) tweets were the result of querying the phrase.
+    // This is used to estimate in (analysis/mod.ratelimits.php) how many tweets may have been ratelimited for bins associated with the phrase
+    $sql = "CREATE TABLE IF NOT EXISTS tcat_captured_phrases (
+    `tweet_id` BIGINT(20) NOT NULL,
+    `phrase_id` BIGINT(20) NOT NULL,
+    `created_at` DATETIME NOT NULL,
+    PRIMARY KEY (`tweet_id`, `phrase_id`),
+    KEY `created_at` (`created_at`) ) ENGINE = MyISAM DEFAULT CHARSET = utf8mb4";
+    $create = $dbh->prepare($sql);
+    $create->execute();
+
     $dbh = false;
 
 }
 
 /*
- * Record a ratelimit disturbance
+ * This function imports the MySQL timezone data neccessary to make the convert_tz() function work. On Debian/Ubuntu systems the timezone data is not
+ * loaded by default, as is evident from the result of the following query, which unexpectedly is NULL:
+ * SELECT convert_tz(now(), 'SYSTEM', 'UTC');
+ *
+ * Our function first tests (quickly) whether timezone data is available, and otherwise imports it.
+ *
+ * See also: http://stackoverflow.com/questions/9808160/mysql-time-zones
+ */
+function import_mysql_timezone_data() {
+    global $dbuser, $dbpass, $database, $hostname;
+
+    $dbh = pdo_connect();
+
+    $sql = "SELECT convert_tz(now(), 'SYSTEM', 'UTC') as available";
+    $test = $dbh->prepare($sql);
+    $test->execute();
+    if ($res = $test->fetch()) {
+        if (array_key_exists('available', $res) && is_string($res['available'])) {
+            return true;    // we already have the timezone data
+        }
+    }
+    if (!file_exists('/usr/share/zoneinfo') || !is_executable('/usr/bin/mysql_tzinfo_to_sql')) {
+        return false;       // we cannot import timezone data (unknown OS?)
+    }
+
+    // Connect to MySQL meta information database
+    try {
+        $dbh_mysql = new PDO("mysql:host=$hostname;dbname=mysql;charset=utf8mb4", $dbuser, $dbpass, array(PDO::MYSQL_ATTR_INIT_COMMAND => "set sql_mode='ALLOW_INVALID_DATES'"));
+    } catch (Exception $e) {
+        if ($e->getCode() == 1044) {
+            // Access denied (probably the connecting user does not have sufficient privileges)
+            return false;
+        }
+    }
+    $dbh_mysql->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    // Run the MySQL tool to convert Unix timezones into MySQL format, read its output using popen()
+    // and then execute its output as a query. We could opt for piping directly to the mysql command line tool,
+    // but this is probably a bit more secure (no need to transfer passwords to the command-line)
+    $cmdhandle = popen("/usr/bin/mysql_tzinfo_to_sql /usr/share/zoneinfo", "r");
+    $query = "";
+    while ($buf = fread($cmdhandle, 2048)) {
+        $query .= $buf;
+    }
+    pclose($cmdhandle);
+    $import = $dbh_mysql->prepare($query);
+    $import->execute();
+    return true;
+}
+
+/*
+ * Record any ratelimit disturbance as it happened in the last minute
  */
 
-function ratelimit_record($ratelimit, $ex_start) {
+function ratelimit_record($ratelimit) {
     $dbh = pdo_connect();
-    $sql = "insert into tcat_error_ratelimit ( type, start, end, tweets ) values ( :type, :start, :end, :ratelimit)";
+    $sql = "insert into tcat_error_ratelimit ( type, start, end, tweets ) values ( :type, date_sub(date_sub(now(), interval second(now()) second), interval 1 minute), date_sub(now(), interval second(now()) second), :ratelimit)";
     $h = $dbh->prepare($sql);
-    $ex_start = toDateTime($ex_start);
-    $ex_end = toDateTime(time());
     $type = CAPTURE;
     $h->bindParam(":type", $type, PDO::PARAM_STR);
-    $h->bindParam(":start", $ex_start, PDO::PARAM_STR);
-    $h->bindParam(":end", $ex_end, PDO::PARAM_STR);
     $h->bindParam(":ratelimit", $ratelimit, PDO::PARAM_INT);
     $h->execute();
+    $dbh = false;
+}
+
+/*
+ * Zero non-existing ratelimit table rows backwards-in-time
+ */
+
+function ratelimit_holefiller($minutes) {
+    if ($minutes <= 1) return;
+    $dbh = pdo_connect();
+    for ($i = 2; $i <= $minutes; $i++) {
+
+        // test if a rate limit record already exists in the database, and if so: break
+
+        $sql = "select count(*) as cnt from tcat_error_ratelimit where type = '" . CAPTURE . "' and 
+                        start >= date_sub(date_sub(date_sub(now(), interval $i minute), interval second(date_sub(now(), interval $i minute)) second), interval 1 minute) and
+                        end <= date_sub(date_sub(now(), interval " . ($i - 1) . " minute), interval second(date_sub(now(), interval " . ($i - 1) . " minute)) second)";
+        $h = $dbh->prepare($sql);
+        $h->execute();
+        while ($res = $h->fetch()) {
+            if (array_key_exists('cnt', $res) && $res['cnt'] > 0) {
+                // finished
+                $dbh = false;
+                return;
+            }
+        }
+
+        // fill in the hole
+
+        $sql = "insert into tcat_error_ratelimit ( type, start, end, tweets ) values ( :type, date_sub(date_sub(date_sub(now(), interval $i minute), interval second(date_sub(now(), interval $i minute)) second), interval 1 minute), date_sub(date_sub(now(), interval " . ($i - 1) . " minute), interval second(date_sub(now(), interval " . ($i - 1) . " minute)) second), 0)";
+        logit(CAPTURE . ".error.log", "$sql");
+        $h = $dbh->prepare($sql);
+        $type = CAPTURE;
+        $h->bindParam(":type", $type, PDO::PARAM_STR);
+        $h->execute();
+
+    }
     $dbh = false;
 }
 
@@ -368,18 +551,41 @@ function ratelimit_record($ratelimit, $ex_start) {
 
 function gap_record($role, $ustart, $uend) {
     if ($uend <= $ustart) {
-        return TRUE;
+        return FALSE;
     }
-    if (($uend - $ustart) < 15) {
-        // a less than 15 second gap is usually the result of a software restart/reload
-        // during that restart the tweet buffer is flushed and the gap is very tiny, therefore we ignore this
-        return TRUE;
+    // A less than IDLETIME gap doesn't make sense te record, because we assume IDLETIME seconds to be a legitimate timeframe
+    // up to which we don't expect data from Twitter
+    $gap_in_seconds = $uend - $ustart;
+    if (!defined('IDLETIME')) {
+        define('IDLETIME', 600);
+    }
+    if (!defined('IDLETIME_FOLLOW')) {
+        define('IDLETIME_FOLLOW', IDLETIME);
+    }
+    if ($role == 'follow') {
+        $idletime = IDLETIME_FOLLOW;
+    } else {
+        $idletime = IDLETIME;
+    }
+    if ($role == 'follow' && $gap_in_seconds < IDLETIME_FOLLOW ||
+        $role != 'follow' && $gap_in_seconds < IDLETIME) {
+        return FALSE;
     }
     $dbh = pdo_connect();
-    $sql = "insert into tcat_error_gap ( type, start, end ) values ( :role, :start, :end)";
+
+    $sql = "select 1 from tcat_error_gap where type = :role and start = FROM_UNIXTIME(:start)";
     $h = $dbh->prepare($sql);
-    $ustart = toDateTime($ustart);
-    $uend = toDateTime($uend);
+    $h->bindParam(":role", $role, PDO::PARAM_STR);
+    $h->bindParam(":start", $ustart, PDO::PARAM_STR);
+    $h->execute();
+    if ($h->execute() && $h->rowCount() > 0) {
+        // Extend an existing gap record
+        $sql = "update tcat_error_gap set end = FROM_UNIXTIME(:end) where type = :role and start = FROM_UNIXTIME(:start)";
+    } else {
+        // Insert a new gap record
+        $sql = "insert into tcat_error_gap ( type, start, end ) values ( :role, FROM_UNIXTIME(:start), FROM_UNIXTIME(:end) )";
+    }
+    $h = $dbh->prepare($sql);
     $h->bindParam(":role", $role, PDO::PARAM_STR);
     $h->bindParam(":start", $ustart, PDO::PARAM_STR);
     $h->bindParam(":end", $uend, PDO::PARAM_STR);
@@ -392,10 +598,15 @@ function gap_record($role, $ustart, $uend) {
 
 function ratelimit_report_problem() {
     if (defined('RATELIMIT_MAIL_HOURS') && RATELIMIT_MAIL_HOURS > 0) {
-        $sql = "select count(*) as cnt from tcat_error_ratelimit where start > (now() - interval " . RATELIMIT_MAIL_HOURS . " hour)";
+        $sql = "select count(*) as cnt from tcat_status where variable = 'email_ratelimit' and value > (now() - interval " . RATELIMIT_MAIL_HOURS . " hour);";
         $result = mysql_query($sql);
         if ($row = mysql_fetch_assoc($result)) {
-            if (isset($row['cnt']) && $row['cnt'] > 0) {
+            if (isset($row['cnt']) && $row['cnt'] == 0) {
+                /* send e-mail and register time of the action */
+                $sql = "delete from tcat_status where variable = 'email_ratelimit'";
+                $result = mysql_query($sql);
+                $sql = "insert into tcat_status ( variable, value ) values ( 'email_ratelimit', now() )";
+                $result = mysql_query($sql);
                 global $mail_to;
                 mail($mail_to, 'DMI-TCAT rate limit has been reached (server: ' . getHostName() . ')', 'The script running the ' . CAPTURE . ' query has hit a rate limit while talking to the Twitter API. Twitter is not allowing you to track more than 1% of its total traffic at any time. This means that the number of tweets exceeding the barrier are being dropped. Consider reducing the size of your query bins and reducing the number of terms and users you are tracking.' . "\n\n" .
                         'This may be a temporary or a structural problem. Please look at the webinterface for more details. Rate limit statistics on the website are historic, however. Consider this message indicative of a current issue. This e-mail will not be repeated for at least ' . RATELIMIT_MAIL_HOURS . ' hours.', 'From: no-reply@dmitcat');
@@ -405,7 +616,7 @@ function ratelimit_report_problem() {
 }
 
 function toDateTime($unixTimestamp) {
-    return date("Y-m-d H:i:s", $unixTimestamp);
+    return date("Y-m-d H:i:s", intval($unixTimestamp));
 }
 
 /*
@@ -576,7 +787,8 @@ function getActivePhrases() {
     $dbh = pdo_connect();
     $sql = "SELECT DISTINCT(p.phrase) FROM tcat_query_phrases p, tcat_query_bins_phrases bp, tcat_query_bins b
                                       WHERE bp.endtime = '0000-00-00 00:00:00' AND p.id = bp.phrase_id
-                                            AND bp.querybin_id = b.id AND b.type != 'geotrack' AND b.active = 1";
+                                            AND bp.querybin_id = b.id AND b.type != 'geotrack' AND b.active = 1
+                                            AND ( b.access = " . TCAT_QUERYBIN_ACCESS_OK . " or b.access = " . TCAT_QUERYBIN_ACCESS_WRITEONLY . " or b.access = " . TCAT_QUERYBIN_ACCESS_INVISIBLE . ")";
     $rec = $dbh->prepare($sql);
     $rec->execute();
     $results = $rec->fetchAll(PDO::FETCH_COLUMN);
@@ -591,8 +803,11 @@ function getActivePhrases() {
  * What type is a bin (track, geotrack, follow, onepercent)
  */
 
-function getBinType($binname) {
-    $dbh = pdo_connect();
+function getBinType($binname, $dbh = null) {
+    $dbh_parm = is_null($dbh) ? false : true;
+    if (!$dbh_parm) {
+        $dbh = pdo_connect();
+    }
     $sql = "SELECT querybin, `type` FROM tcat_query_bins WHERE querybin = :querybin";
     $rec = $dbh->prepare($sql);
     $rec->bindParam(':querybin', $binname);
@@ -605,7 +820,9 @@ function getBinType($binname) {
             }
         }
     }
-    $dbh = false;
+    if (!$dbh_parm) {
+        $dbh = false;
+    }
     return false;
 }
 
@@ -615,7 +832,7 @@ function getBinType($binname) {
 
 function geobinsActive() {
     $dbh = pdo_connect();
-    $sql = "SELECT COUNT(*) AS cnt FROM tcat_query_bins WHERE `type` = 'geotrack' and active = 1";
+    $sql = "SELECT COUNT(*) AS cnt FROM tcat_query_bins WHERE `type` = 'geotrack' and active = 1 and ( access = " . TCAT_QUERYBIN_ACCESS_OK . " or access = " . TCAT_QUERYBIN_ACCESS_WRITEONLY . " or access = " . TCAT_QUERYBIN_ACCESS_INVISIBLE . " )";
     $rec = $dbh->prepare($sql);
     $rec->execute();
     $results = $rec->fetchAll(PDO::FETCH_COLUMN);
@@ -652,7 +869,8 @@ function getActiveLocationsImploded() {
     $dbh = pdo_connect();
     $sql = "SELECT phrase FROM tcat_query_phrases p, tcat_query_bins_phrases bp, tcat_query_bins b
                                       WHERE bp.endtime = '0000-00-00 00:00:00' AND p.id = bp.phrase_id
-                                            AND bp.querybin_id = b.id AND b.type = 'geotrack' AND b.active = 1";
+                                            AND bp.querybin_id = b.id AND b.type = 'geotrack' AND b.active = 1
+                                            AND ( b.access = " . TCAT_QUERYBIN_ACCESS_OK . " or b.access = " . TCAT_QUERYBIN_ACCESS_WRITEONLY . " or b.access = " . TCAT_QUERYBIN_ACCESS_INVISIBLE . ")";
     $rec = $dbh->prepare($sql);
     $rec->execute();
     $results = $rec->fetchAll(PDO::FETCH_COLUMN);
@@ -718,7 +936,7 @@ function getActiveUsers() {
 
 function getActiveTrackBins() {
     $dbh = pdo_connect();
-    $sql = "SELECT b.querybin, p.phrase FROM tcat_query_bins b, tcat_query_phrases p, tcat_query_bins_phrases bp WHERE b.active = 1 AND bp.querybin_id = b.id AND bp.phrase_id = p.id AND bp.endtime = '0000-00-00 00:00:00'";
+    $sql = "SELECT b.querybin, p.phrase FROM tcat_query_bins b, tcat_query_phrases p, tcat_query_bins_phrases bp WHERE b.active = 1 AND bp.querybin_id = b.id AND bp.phrase_id = p.id AND bp.endtime = '0000-00-00 00:00:00' and ( b.access = " . TCAT_QUERYBIN_ACCESS_OK . " or b.access = " . TCAT_QUERYBIN_ACCESS_WRITEONLY . " or b.access = " . TCAT_QUERYBIN_ACCESS_INVISIBLE . " )";
     $rec = $dbh->prepare($sql);
     $querybins = array();
     if ($rec->execute() && $rec->rowCount() > 0) {
@@ -730,9 +948,25 @@ function getActiveTrackBins() {
     return $querybins;
 }
 
+// This function returns a phrase_string:phrase_id associative array.
+
+function getActivePhraseIds() {
+    $dbh = pdo_connect();
+    $sql = "SELECT p.phrase as phrase, p.id as id FROM tcat_query_bins b, tcat_query_phrases p, tcat_query_bins_phrases bp WHERE b.active = 1 AND bp.querybin_id = b.id AND bp.phrase_id = p.id AND bp.endtime = '0000-00-00 00:00:00' and ( b.access = " . TCAT_QUERYBIN_ACCESS_OK . " or b.access = " . TCAT_QUERYBIN_ACCESS_WRITEONLY . " or b.access = " . TCAT_QUERYBIN_ACCESS_INVISIBLE . " )";
+    $rec = $dbh->prepare($sql);
+    $phrase_ids = array();
+    if ($rec->execute() && $rec->rowCount() > 0) {
+        while ($res = $rec->fetch()) {
+            $phrase_ids[trim(preg_replace("/'/", "", $res['phrase']))] = $res['id'];
+        }
+    }
+    $dbh = false;
+    return $phrase_ids;
+}
+
 function getActiveFollowBins() {
     $dbh = pdo_connect();
-    $sql = "SELECT b.querybin, u.id AS uid FROM tcat_query_bins b, tcat_query_users u, tcat_query_bins_users bu WHERE b.active = 1 AND bu.querybin_id = b.id AND bu.user_id = u.id AND bu.endtime = '0000-00-00 00:00:00'";
+    $sql = "SELECT b.querybin, u.id AS uid FROM tcat_query_bins b, tcat_query_users u, tcat_query_bins_users bu WHERE b.active = 1 AND bu.querybin_id = b.id AND bu.user_id = u.id AND bu.endtime = '0000-00-00 00:00:00' and ( b.access = " . TCAT_QUERYBIN_ACCESS_OK . " or b.access = " . TCAT_QUERYBIN_ACCESS_WRITEONLY . " or b.access = " . TCAT_QUERYBIN_ACCESS_INVISIBLE . " )";
     $rec = $dbh->prepare($sql);
     $querybins = array();
     if ($rec->execute() && $rec->rowCount() > 0) {
@@ -746,7 +980,7 @@ function getActiveFollowBins() {
 
 function getActiveOnepercentBin() {
     $dbh = pdo_connect();
-    $sql = "select querybin from tcat_query_bins where type = 'onepercent' and active = 1";
+    $sql = "select querybin from tcat_query_bins where type = 'onepercent' and active = 1 and ( access = " . TCAT_QUERYBIN_ACCESS_OK . " or access = " . TCAT_QUERYBIN_ACCESS_WRITEONLY . " or access = " . TCAT_QUERYBIN_ACCESS_INVISIBLE . " )";
     $rec = $dbh->prepare($sql);
     $querybins = array();
     if ($rec->execute() && $rec->rowCount() > 0) {
@@ -929,17 +1163,9 @@ function capture_flush_buffer() {
 
 function capture_signal_handler_term($signo) {
 
-    global $exceeding, $ratelimit, $ex_start;
-
     logit(CAPTURE . ".error.log", "received TERM signal");
 
     capture_flush_buffer();
-
-    logit(CAPTURE . ".error.log", "writing rate limit information to database");
-
-    if (isset($exceeding) && $exceeding == 1) {
-        ratelimit_record($ratelimit, $ex_start);
-    }
 
     logit(CAPTURE . ".error.log", "exiting now on TERM signal");
 
@@ -1761,13 +1987,50 @@ class UrlCollection implements IteratorAggregate {
 
 }
 
+// This function takes a one-dimensional array with sets of the following data: tweet_id, phrase_id, created_at
+// It inserts this data into the MySQL database using a multi-insert statement
+function insert_captured_phrase_ids($captured_phrase_ids) {
+    global $dbuser, $dbpass, $database, $hostname;
+    if (empty($captured_phrase_ids)) return;
+    $dbh = pdo_connect();
+
+    // construct insert SQL
+
+    $moresets = 0;
+    if (count($captured_phrase_ids) > 3) {
+        $moresets = count($captured_phrase_ids) / 3 - 1;
+    }
+    $sql = "INSERT DELAYED IGNORE INTO tcat_captured_phrases ( tweet_id, phrase_id, created_at ) VALUES ( ?, ?, ? )" . str_repeat(", (?, ?, ?)", $moresets);
+    $h = $dbh->prepare($sql);
+    for ($i = 0; $i < count($captured_phrase_ids); $i++) {
+        // bindParam() expects its first parameter ( index of the ? placeholder ) to start with 1
+        if ($i % 3 == 2)  {
+            $h->bindParam($i + 1, $captured_phrase_ids[$i], PDO::PARAM_STR);
+        } else {
+            $h->bindParam($i + 1, $captured_phrase_ids[$i], PDO::PARAM_INT);
+        }
+    }
+    $h->execute();
+
+    $dbh = false;
+
+}
+
 /*
  * Start a tracking process
  */
 
 function tracker_run() {
+    global $dbuser, $dbpass, $database, $hostname, $tweetQueue;
 
-    global $tweetQueue;
+    // We need the tcat_status table
+       
+    create_error_logs();
+
+    // We need the tcat_captured_phrases table
+
+    create_admin();
+
     $tweetQueue = new TweetQueue();
     $tweetQueue->setoption('replace', false);
     if (defined('USE_INSERT_DELAYED') && USE_INSERT_DELAYED) {
@@ -1836,12 +2099,14 @@ function tracker_run() {
         logit(CAPTURE . ".error.log", "geoPHP functions are not yet available, see documentation for instructions");
     }
 
-    global $ratelimit, $exceeding, $ex_start, $last_insert_id;
+    global $rl_current_record, $rl_registering_minute;
+    global $last_insert_id;
+    global $tracker_started_at;
 
-    $ratelimit = 0;     // rate limit counter since start of script
-    $exceeding = 0;     // are we exceeding the rate limit currently?
-    $ex_start = 0;      // time at which rate limit started being exceeded
-    $last_insert_id = -1;
+    $rl_current_record = 0;                                 // how many tweets have been ratelimited this MINUTE?
+    $rl_registering_minute = get_current_minute();          // what is the minute we are registering (as soon as the current minute differs from this, we insert our record in the database)
+    $last_insert_id = -1;                                   // needed to make INSERT DELAYED work, see the function database_activity()
+    $tracker_started_at = time();                           // the walltime when this script was started
 
     global $twitter_consumer_key, $twitter_consumer_secret, $twitter_user_token, $twitter_user_secret, $lastinsert;
 
@@ -1947,38 +2212,54 @@ function tracker_streamCallback($data, $length, $metrics) {
             }
         }
 
-        // handle rate limiting
-        if (array_key_exists('limit', $data)) {
-            global $ratelimit, $exceeding, $ex_start;
-            if (isset($data['limit'][CAPTURE])) {
-                $current = $data['limit'][CAPTURE];
-                if ($current > $ratelimit) {
-                    // currently exceeding rate limit
-                    if (!$exceeding) {
-                        // new disturbance!
-                        $ex_start = time();
-                        ratelimit_report_problem();
-                        // logit(CAPTURE . ".error.log", "you have hit a rate limit. consider reducing your query bin sizes");
-                    }
-                    $ratelimit = $current;
-                    $exceeding = 1;
+        // handle rate limiting at intervals of a single minute
 
-                    if (time() > ($ex_start + RATELIMIT_SILENCE * 6)) {
-                        // every half an hour (or: heartbeat x 6), record, but keep the exceeding flag set
-                        ratelimit_record($ratelimit, $ex_start);
-                        $ex_start = time();
-                    }
-                } elseif ($exceeding && time() < ($ex_start + RATELIMIT_SILENCE)) {
-                    // we are now no longer exceeding the rate limit
-                    // to avoid flip-flop we only reset our values after the minimal heartbeat has passed
-                    // store rate limit disturbance information in the database
-                    ratelimit_record($ratelimit, $ex_start);
-                    $ex_start = 0;
-                    $exceeding = 0;
-                }
+        global $rl_current_record, $rl_registering_minute;
+        global $tracker_started_at;
+
+        $current = 0;
+        $current_minute = get_current_minute();
+
+        // we keep a a counter of the nr. of tweets rate limited and reset it at intervals of one minute
+
+        // read possible rate limit information from Twitter
+
+        if (array_key_exists('limit', $data) && isset($data['limit']['track'])) {
+            $current = $data['limit'][CAPTURE];
+            // we have a new rate limit, grow the record
+            $rl_current_record += $current;
+        } else {
+            // when no new rate limits occur, sustain our current record
+            $current = $rl_current_record;
+        }
+
+        if ($rl_registering_minute != $current_minute) {
+
+            // the current minute is no longer our registering minute; we have to record our ratelimit information in the database
+
+            if ($current_minute == 0 && $rl_registering_minute < 59 ||
+                $current_minute > 0 && $current_minute < $rl_registering_minute ||
+                $current_minute > $rl_registering_minute + 1) {
+                // there was a more than 1 minute silence (i.e. a response from Curl took longer than our 1 minute interval, thus we need to fill in zeros backwards in time)
+                $tracker_running = round((time() - $tracker_started_at) / 60);
+                ratelimit_holefiller($tracker_running);
             }
+
+            $rl_registering_minute = $current_minute;
+
+            // we now have rate limit information for the last minute
+            ratelimit_record($rl_current_record);
+            if ($rl_current_record > 0) {
+                ratelimit_report_problem();
+                $rl_current_record = 0;
+            }
+
+        }
+
+        if (array_key_exists('limit', $data)) {
             unset($data['limit']);
         }
+
 
         if (empty($data))
             return;   // sometimes we only get rate limit info
@@ -2001,10 +2282,13 @@ function processtweets($capturebucket) {
     global $tweetQueue;
 
     $querybins = getActiveBins();
+    $phrase_ids = getActivePhraseIds();
 
     // cache bin types
     $bintypes = array();
     foreach ($querybins as $binname => $queries) $bintypes[$binname] = getBinType($binname);
+
+    $captured_phrase_ids = array();
 
     // running through every single tweet
     foreach ($capturebucket as $data) {
@@ -2145,7 +2429,12 @@ function processtweets($capturebucket) {
                         }
 
                         if ($found) {
-                            break;
+                            // found = true causes the tweet to be inserted into the database 
+                            // store phrase data (in this case a geobox definition) 
+                            $captured_phrase_ids[] = $data['id_str'];
+                            $captured_phrase_ids[] = $phrase_ids[$query];
+                            $captured_phrase_ids[] = date("Y-m-d H:i:s", strtotime($data["created_at"]));
+                            continue;
                         }
                     } else {
 
@@ -2180,10 +2469,13 @@ function processtweets($capturebucket) {
                             }
                         }
 
-                        // at the first fitting query, we break
+                        // at the first fitting query, we set found to true (to indicate we should insert the tweet into the database)
+                        // we also register the fact this keyword query has been matched
                         if ($pass == true) {
                             $found = true;
-                            break;
+                            $captured_phrase_ids[] = $data['id_str'];
+                            $captured_phrase_ids[] = $phrase_ids[$query];
+                            $captured_phrase_ids[] = date("Y-m-d H:i:s", strtotime($data["created_at"]));
                         }
                     }
                 }
@@ -2208,6 +2500,7 @@ function processtweets($capturebucket) {
         }
     }
     $tweetQueue->insertDB();
+    insert_captured_phrase_ids($captured_phrase_ids);
     return TRUE;
 }
 

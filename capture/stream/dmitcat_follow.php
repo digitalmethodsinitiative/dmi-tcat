@@ -16,6 +16,7 @@ define('CAPTURE', 'follow');
 
 // ----- includes -----
 include __DIR__ . '/../../config.php';                  // load base config file
+include __DIR__ . '/../../common/constants.php';               // load constants file
 include __DIR__ . '/../../common/functions.php';        // load base functions file
 include __DIR__ . '/../common/functions.php';           // load capture function file
 

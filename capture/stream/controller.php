@@ -9,6 +9,7 @@ if (!env_is_cli())
     die;
 
 include_once __DIR__ . '/../../config.php';
+include_once __DIR__ . '/../../common/constants.php';
 include __DIR__ . '/../../common/functions.php';
 include __DIR__ . '/../common/functions.php';
 
@@ -26,6 +27,14 @@ if (dbserver_has_utf8mb4_support() == false) {
 
 $dbh = pdo_connect();
 $roles = unserialize(CAPTUREROLES);
+
+// We need the tcat_status table
+   
+create_error_logs();
+
+// We need the tcat_captured_phrases table
+
+create_admin();
 
 // first gather all instructions sent by the webinterface to the controller (ie. the instruction queue)
 $upgrade_requested = false;
@@ -184,8 +193,12 @@ foreach ($roles as $role) {
 
         if ($reload || $idled) {
 
-            // record confirmed gap
-            gap_record($role, $last, time());
+            // record confirmed gap if we could measure it
+            if ($last && gap_record($role, $last, time())) {
+                logit("controller.log", "recording a data gap for script $role from '" . toDateTime($last) . "' to '" . toDateTime(time()) . "'");
+            } else {
+                logit("controller.log", "we have no information about previous running time of script $role - cannot record a gap");
+            }
 
             if ($running) {
 
@@ -255,8 +268,10 @@ foreach ($roles as $role) {
             logit("controller.log", "script $role was not running - starting");
 
             // record confirmed gap if we could measure it
-            if ($last) {
-                gap_record($role, $last, time());
+            if ($last && gap_record($role, $last, time())) {
+                logit("controller.log", "recording a data gap for script $role from '" . toDateTime($last) . "' to '" . toDateTime(time()) . "'");
+            } else {
+                logit("controller.log", "we have no information about previous running time of script $role - cannot record a gap");
             }
 
             // a forked process may inherit our lock, but we prevent this.

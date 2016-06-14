@@ -3,6 +3,7 @@
 if ($argc < 1)
     die(); // only access from command line
 include_once __DIR__ . '/../config.php';
+include_once __DIR__ . '/../common/constants.php';
 include_once __DIR__ . '/../common/functions.php';
 include_once __DIR__ . '/../capture/common/functions.php';
 

@@ -21,7 +21,7 @@
 # - Ubuntu 14.04
 # - Ubuntu 15.04
 # - Ubuntu 15.10
-# - Debian 8.1
+# - Debian 8.*
 #
 #----------------------------------------------------------------
 
@@ -1200,6 +1200,12 @@ user=$TCATMYSQLUSER
 password="${TCATMYSQLPASS}"
 EOF
 echo "$PROG: account details saved: $FILE"
+
+# Install MySQL server timezone data
+
+mysql_tzinfo_to_sql /usr/share/zoneinfo | mysql --defaults-file="$MYSQL_USER_ADMIN_CNF" mysql 
+
+# Create twittercapture database
 
 echo "CREATE DATABASE IF NOT EXISTS twittercapture DEFAULT CHARACTER SET utf8mb4 DEFAULT COLLATE utf8mb4_unicode_ci;" | mysql --defaults-file="$MYSQL_USER_ADMIN_CNF"
 echo "GRANT CREATE, DROP, LOCK TABLES, ALTER, DELETE, INDEX, INSERT, SELECT, UPDATE, CREATE TEMPORARY TABLES ON twittercapture.* TO '$TCATMYSQLUSER'@'localhost' IDENTIFIED BY '$TCATMYSQLPASS';" | mysql --defaults-file="$MYSQL_USER_ADMIN_CNF"

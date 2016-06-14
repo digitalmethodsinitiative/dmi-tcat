@@ -612,6 +612,12 @@ function validate($what, $how) {
             if (!preg_match("/^\d{4}-\d{2}-\d{2}$/", $what)) // TODO, should never be more than 'now'
                 $what = "2011-11-15";
             break;
+        case "interval":
+            // if an unsupported interval is specified, fallback to daily
+            if (!in_array($what, array('hourly', 'daily', 'weekly', 'monthly', 'yearly', 'overall', 'custom'))) {
+                $what = "daily";
+            }
+            break;
         // escape shell cmd chars
         case "shell":
             $what = preg_replace("/[\/ ]/", "_", $what);
@@ -651,7 +657,7 @@ function decodeAndFlatten($text) {
 // make sure that we have all the right types and values
 // also make sure one cannot do a mysql injection attack
 function validate_all_variables() {
-    global $esc, $query, $url_query, $geo_query, $dataset, $exclude, $from_user_name, $from_source, $startdate, $enddate, $databases, $connection, $keywords, $database, $minf, $topu, $from_user_lang, $outputformat;
+    global $esc, $query, $url_query, $geo_query, $dataset, $exclude, $from_user_name, $from_source, $startdate, $enddate, $interval, $databases, $connection, $keywords, $database, $minf, $topu, $from_user_lang, $outputformat;
 
     $esc['mysql']['dataset'] = validate($dataset, "mysql");
     $esc['mysql']['query'] = validate($query, "mysql");
@@ -679,6 +685,7 @@ function validate_all_variables() {
 
     $esc['date']['startdate'] = validate($startdate, "startdate");
     $esc['date']['enddate'] = validate($enddate, "enddate");
+    $esc['date']['interval'] = validate($interval, "interval");
 
     if (preg_match("/^\d{4}-\d{2}-\d{2}$/", $esc['date']['startdate']))
         $esc['datetime']['startdate'] = $esc['date']['startdate'] . " 00:00:00";
@@ -714,6 +721,22 @@ function current_collation() {
         mysql_query("SET NAMES utf8");
     }
     return $collation;
+}
+
+// This function accesses the tcat_status table (if it exists) and retrieves the value for a variable
+function get_status($variable) {
+	global $esc, $hostname, $dbuser, $dbpass, $database;
+    $sql = "SELECT table_name FROM information_schema.tables WHERE table_schema = '$database' AND table_name = 'tcat_status'";
+	db_connect($hostname, $dbuser, $dbpass, $database);
+    $sqlresults = mysql_query($sql);
+    if (mysql_num_rows($sqlresults) > 0) {
+        $sql = "SELECT value FROM tcat_status WHERE variable = '" . mysql_real_escape_string($variable) . "'";
+        $sqlresults = mysql_query($sql);
+        if ($res = mysql_fetch_assoc($sqlresults)) {
+            return $res['value'];
+        }
+    }
+    return null;
 }
 
 // Output format: {dataset}-{startdate}-{enddate}-{query}-{exclude}-{from_user_name}-{from_user_lang}-{url_query}-{module_name}-{module_settings}-{hash}.{filetype}
@@ -784,7 +807,7 @@ function get_hash_tags($msg) {
 function get_all_datasets() {
     global $dataset;
     $dbh = pdo_connect();
-    $rec = $dbh->prepare("SELECT id, querybin, type, active, comments FROM tcat_query_bins WHERE visible = TRUE ORDER BY LOWER(querybin)");
+    $rec = $dbh->prepare("SELECT id, querybin, type, active, comments FROM tcat_query_bins WHERE access = " . TCAT_QUERYBIN_ACCESS_OK . " OR access = " . TCAT_QUERYBIN_ACCESS_READONLY . " ORDER BY LOWER(querybin)");
     $datasets = array();
     if ($rec->execute() && $rec->rowCount() > 0) {
         while ($res = $rec->fetch()) {

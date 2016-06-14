@@ -128,11 +128,6 @@ define('AUTOUPDATE_LEVEL', 'trivial');
 define('IDLETIME', 600);
 
 /*
- * To avoid excessive verbosity, assume a minimal length of ratetime disturbance (heartbeat) in seconds
- */
-define('RATELIMIT_SILENCE', 300);
-
-/*
  * Report rate limit problems to the administrator every x hours ( 0 = no mail reporting )
  */
 define('RATELIMIT_MAIL_HOURS', 24);

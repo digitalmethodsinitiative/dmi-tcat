@@ -1,6 +1,7 @@
 <?php
 
 include_once(__DIR__ . '/../../config.php');
+include_once(__DIR__ . '/../../common/constants.php');
 
 /*
  * Whether to cache results
