@@ -50,8 +50,8 @@ $ids_in_db = array();
 for ($i = 0; $i < sizeof($idlist); $i += 3000) {
     $query = "select id from $bin_name" . '_tweets where id in ( ' . $idlist[$i];
     $n = $i + 1;
-    while ($n < $i + 3000) {
-        if (!isset($idlist[$n])) break;
+    while ($n < $i + 3000 && $n < sizeof($idlist)) {
+        if (!array_key_exists($n, $idlist) || !is_numeric($idlist[$n])) break;
         $query .= ", " . $idlist[$n];
         $n++;
     }
