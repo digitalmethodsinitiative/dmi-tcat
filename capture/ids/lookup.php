@@ -15,8 +15,8 @@ require __DIR__ . '/../../capture/common/tmhOAuth/tmhOAuth.php';
 
 // DEFINE LOOKUP PARAMETERS HERE
 
-$bin_name = '99inequality';            // name of the bin
-$idfile = 'ids';              // path to the input file name. the file must contain only a tweet ID on every line
+$bin_name = '';            // name of the bin
+$idfile = '';              // path to the input file name. the file must contain only a tweet ID on every line
 $type = 'lookup';          // specify 'lookup'
 
 if (empty($bin_name))
