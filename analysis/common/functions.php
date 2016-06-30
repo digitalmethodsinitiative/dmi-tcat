@@ -292,7 +292,16 @@ function sqlSubset($where = NULL) {
     }
 
     if (!empty($esc['mysql']['from_source'])) {
-        $sql .= "LOWER(t.source COLLATE $collation) LIKE LOWER('%" . $esc['mysql']['from_source'] . "%' COLLATE $collation) AND ";
+	if (strstr($esc['mysql']['from_source'], "OR") !== false) {
+            $subqueries = explode(" OR ", $esc['mysql']['from_source']);
+            $sql .= "(";
+            foreach ($subqueries as $subquery) {
+                $sql .= "LOWER(t.source COLLATE $collation) LIKE LOWER('%" . $subquery . "%' COLLATE $collation) OR ";
+            }
+            $sql = substr($sql, 0, -3) . ") AND ";
+        } else {
+            $sql .= "LOWER(t.source COLLATE $collation) LIKE LOWER('%" . $esc['mysql']['from_source'] . "%' COLLATE $collation) AND ";
+        }
     }
     if (!empty($esc['mysql']['exclude'])) {
         if (strstr($esc['mysql']['exclude'], "AND") !== false) {
