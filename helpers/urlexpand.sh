@@ -1,5 +1,9 @@
 #!/bin/bash
-if ! ps aux | grep  "[p]ython /var/www/dmi-tcat/helpers/urlexpand.py"
+
+SCRIPT=$(readlink -f "$0")
+SCRIPTPATH=$(dirname "$SCRIPT")
+
+if ! ps aux | grep  "[p]ython $SCRIPTPATH/urlexpand.py"
     then
-        timeout -s SIGKILL 3500 python /var/www/dmi-tcat/helpers/urlexpand.py
+        timeout -s SIGKILL 3500 python "$SCRIPTPATH"/urlexpand.py &>/dev/null
 fi
