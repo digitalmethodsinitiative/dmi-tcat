@@ -1,0 +1,112 @@
+/* TCAT API */
+
+/* COMMON */
+
+body {
+    font-family: sans-serif;
+    font-size: 12px;
+}
+
+h1 {
+    float: left;
+    margin: 0;
+    padding: 1em 0 1ex 0;
+    
+    font-size: 150%;
+}
+h2 { font-size: 130%; }
+h3 { font-size: 115%; }
+
+
+
+/* ids */
+
+#content {
+    max-width: 1000px;
+    padding: 1ex 0 1ex 0;
+}
+
+/* Top links */
+
+#if_links {
+    float: right;
+    margin: 2ex 0 1ex 0;
+}
+
+#if_links a {
+    display: inline-block;
+    margin-left: 1em;
+    text-decoration: none;
+    color: #000;
+}
+#if_links a:before { content: "» "; }
+#if_links a:hover { text-decoration: underline; }
+
+/* Breadcrumb navigation */
+
+ul.breadcrumbs {
+    display: block;
+    clear: both;
+    margin: 0;
+    padding: 1ex 0 1ex 0;
+}
+
+ul.breadcrumbs > li {
+    display: inline-block;
+    color: #999;
+}
+ul.breadcrumbs > li:first-child:before { content: ""; }
+ul.breadcrumbs > li:before { content: " » "; }
+
+ul.breadcrumbs > li > a {
+    display: inline-block;
+    color: #999;
+    text-decoration: none;
+}
+ul.breadcrumbs > li > a:hover {
+    color: #000;
+    text-decoration: underline;
+}
+
+/* Main contents of page */
+
+div#content { clear: both; }
+
+/* Tables */
+
+table {
+    border-collapse: collapse;
+}
+th {
+    padding-right: 0.5em;
+    text-align: right;
+}
+th:after {
+    content: ":";
+}
+td { padding: 0.5ex; }
+
+/* SPECIFIC */
+
+/* Text input fields on querybin tweet view page */
+
+input#startdate, input#enddate {
+    min-width: 16em; /* to accommodate "YYYY-MM-DD HH:MM:SS +hh:mm" */
+}
+#export-tweets-form {
+    float: left;
+    margin-top: 2ex;
+}
+#purge-tweets-form {
+    float: right;
+    margin-top: 2ex;
+    text-align: center;
+}
+
+#purge-time-warning {
+    clear: both;
+    padding: 1ex 0;
+    text-align: right;
+    color: #666;
+}
+/* EOF */

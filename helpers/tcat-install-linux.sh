@@ -1260,15 +1260,22 @@ $TCAT_DIR/logs/controller.log $TCAT_DIR/logs/track.error.log $TCAT_DIR/logs/foll
 }
 EOF
 
+# Edit config file to change:
+#     define('CAPTUREROLES', serialize(array('track')));
+# To contain desired value according to the capture mode.
+
 case "$CAPTURE_MODE" in
-    1)  echo "Using role: track" ;;
-    2)  echo "Using role: follow"
-        sed -i "s/array(\"track\")/array(\"follow\")/g" "$CFG" ;;
-    3)  echo "Using role: onepercent"
-        sed -i "s/array(\"track\")/array(\"onepercent\")/g" "$CFG" ;;
+    1)  CAPTURE_MODE_VALUE=track ;;
+    2)  CAPTURE_MODE_VALUE=follow ;;
+    3)  CAPTURE_MODE_VALUE=onepercent ;;
     *)  echo "$PROG: internal error: bad capture mode: $CAPTURE_MODE" >&2
 	exit 3 ;;
 esac
+
+echo "Using role: ${CAPTURE_MODE_VALUE}"
+sed -i -E "s/^(.*CAPTUREROLES.*\()[^\)]+(\).*)$/\1'${CAPTURE_MODE_VALUE}'\2/" "$CFG"
+
+# Edit config file to contain Twitter API credentials
 
 sed -i "s/^\$twitter_consumer_key = \"\";/\$twitter_consumer_key = \"$CONSUMERKEY\";/g" "$CFG"
 sed -i "s/^\$twitter_consumer_secret = \"\";/\$twitter_consumer_secret = \"$CONSUMERSECRET\";/g" "$CFG"
