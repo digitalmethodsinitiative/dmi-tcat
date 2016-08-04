@@ -4,19 +4,19 @@ $connection = false;
 
 db_connect($hostname, $dbuser, $dbpass, $database);
 
-$datasets = get_all_datasets();
-
 // catch parameters
-if (isset($_GET['dataset']) && !empty($_GET['dataset']))
+if (isset($_GET['dataset']) && !empty($_GET['dataset'])) {
     $dataset = urldecode($_GET['dataset']);
-else if (count($datasets) != 0) {
-    // Default to earliest created not-deleted query bin
+} else {
     $sql = "SELECT querybin FROM tcat_query_bins ORDER BY id LIMIT 1";
     $rec = mysql_query($sql);
-    if ($res = mysql_fetch_assoc($rec))
+    if ($res = mysql_fetch_assoc($rec)) {
         $dataset = $res['querybin'];
-} else {
-    $dataset = NULL; // No query bins exist
+    }
+}
+$datasets = get_all_datasets();
+if (count($datasets) == 0) {
+    $dataset = NULL;        // No query bins are available
 }
 
 if (isset($_GET['query']) && !empty($_GET['query']))
