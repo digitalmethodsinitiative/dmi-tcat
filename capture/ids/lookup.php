@@ -80,6 +80,8 @@ queryManagerCreateBinFromExistingTables($bin_name, $querybin_id, 'import tweetse
 
 search($idlist);
 
+queryManagerSetPeriodsOnCreation($bin_name);
+
 $retries = 0;
 
 print "\n" . str_repeat("=", 83) . "\n\n";

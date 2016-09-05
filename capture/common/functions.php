@@ -1102,7 +1102,7 @@ function queryManagerCreateBin($binname, $type, $starttime = "0000-00-00 00:00:0
  * Because we would later like to have the full period information (start and end time) available, we must call the queryManagerSetOnCreation() function
  * after having filled the bin with data.
  */
-function queryManagerSetPeriodsOnCreation($binname, $queries) {
+function queryManagerSetPeriodsOnCreation($binname, $queries = array()) {
     $dbh = pdo_connect();
     $querybin_id = queryManagerBinExists($binname, true);
     if ($querybin_id !== false) {

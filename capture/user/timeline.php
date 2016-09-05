@@ -64,6 +64,7 @@ foreach ($user_ids as $user_id) {
 
 if ($tweetQueue->length() > 0) {
     $tweetQueue->insertDB();
+    queryManagerSetPeriodsOnCreation($bin_name);
 }
 
 function get_timeline($user_id, $type, $max_id = null) {

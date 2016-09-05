@@ -195,4 +195,6 @@ while ($row = $query->fetch(PDO::FETCH_ASSOC)) {
     $q->execute();
 }
 
+queryManagerSetPeriodsOnCreation($bin_name);
+
 ?>
