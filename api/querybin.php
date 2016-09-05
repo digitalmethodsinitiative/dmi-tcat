@@ -186,7 +186,7 @@ function do_view_or_export_tweets(array $querybin, $dt_start, $dt_end, $export)
 
     // Show result
 
-    $response_mediatype = choose_mediatype(['text/html',
+    $response_mediatype = choose_mediatype(['application/json', 'text/html',
         'text/csv', 'text/tab-separated-values']);
 
     if (isset($export)) {
@@ -418,6 +418,13 @@ END;
             // End of page
 
             html_end();
+            break;
+
+        case 'application/json':
+            $data = [
+               "number-selected-tweets" => $info['tweets'],
+            ];
+            respond_with_json($data);
             break;
 
         default:

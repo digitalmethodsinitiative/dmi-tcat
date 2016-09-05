@@ -2,7 +2,12 @@
 require_once __DIR__ . '/lib/common.php';
 require_once __DIR__ . '/lib/http_util.php';
 
-switch (choose_mediatype(['text/html'])) {
+switch (choose_mediatype(['application/json', 'text/html'])) {
+    case 'application/json':
+        respond_with_json(['name' => 'DMI-TCAT API',
+                           'version' => API_VERSION]);
+        break;
+
     case 'text/html':
         html_begin("API", []);
         echo <<<END
