@@ -21,6 +21,7 @@
 # - Ubuntu 14.04
 # - Ubuntu 15.04
 # - Ubuntu 15.10
+# - Ubuntu 16.04
 # - Debian 8.*
 #
 #----------------------------------------------------------------
@@ -351,7 +352,8 @@ if [ "$DISTRIBUTION_ID" = 'Ubuntu' ]; then
     if [ \
 	"$UBUNTU_VERSION" != '14.04' -a \
 	"$UBUNTU_VERSION" != '15.04' -a \
-	"$UBUNTU_VERSION" != '15.10' \
+	"$UBUNTU_VERSION" != '15.10' -a \
+	"$UBUNTU_VERSION" != '16.04' \
 	]; then
 	if [ -z "$FORCE_INSTALL" ]; then
 	    echo "$PROG: error: unsupported distribution: Ubuntu $UBUNTU_VERSION" >&2
@@ -949,7 +951,7 @@ if [ -n "$UBUNTU_VERSION" ]; then
     apt-get -y install apache2 apache2-utils
 
     if [ "$UBUNTU_VERSION" = '16.04' ]; then
-        # This will install PHP 7 which is NOT supported by TCAT currently
+        # This will install PHP 7
 	PHP_PACKAGES="libapache2-mod-php php-mysql php-curl php-cli php-patchwork-utf8 php-mbstring"
     else
 	# 14.04, 15.04, 15.10 and untested
