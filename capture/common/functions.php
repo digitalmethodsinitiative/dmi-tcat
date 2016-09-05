@@ -535,7 +535,6 @@ function ratelimit_holefiller($minutes) {
         // fill in the hole
 
         $sql = "insert into tcat_error_ratelimit ( type, start, end, tweets ) values ( :type, date_sub(date_sub(date_sub(now(), interval $i minute), interval second(date_sub(now(), interval $i minute)) second), interval 1 minute), date_sub(date_sub(now(), interval " . ($i - 1) . " minute), interval second(date_sub(now(), interval " . ($i - 1) . " minute)) second), 0)";
-        logit(CAPTURE . ".error.log", "$sql");
         $h = $dbh->prepare($sql);
         $type = CAPTURE;
         $h->bindParam(":type", $type, PDO::PARAM_STR);
