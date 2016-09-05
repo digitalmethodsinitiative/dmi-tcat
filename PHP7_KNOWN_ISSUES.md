@@ -2,11 +2,11 @@
 
 ## Capture segment
 
-?
+No issues known at the moment, but little tested. Keyword tracking works, controller works.
 
 ## Analysis segment
 
-?
+Does not work at all.
 
 ## Other components
 
