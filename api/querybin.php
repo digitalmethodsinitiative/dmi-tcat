@@ -33,7 +33,8 @@ function do_list_bins()
         $datasets = []; // database tables not yet initialized
     }
 
-    $response_mediatype = choose_mediatype(['application/json', 'text/html']);
+    $response_mediatype = choose_mediatype(['application/json', 'text/html',
+                                            'text/plain']);
 
     switch ($response_mediatype) {
         case 'application/json':
@@ -62,6 +63,8 @@ function do_list_bins()
 
             html_end();
             break;
+
+        case 'text/plain':
         default:
             foreach (array_keys($datasets) as $name) {
                 print($name . "\n");
@@ -79,7 +82,7 @@ function do_bin_info(array $querybin)
 {
     global $api_timezone;
 
-    $response_mediatype = choose_mediatype(['application/json', 'text/html']);
+    $response_mediatype = choose_mediatype(['application/json', 'text/html', 'text/plain']);
 
     switch ($response_mediatype) {
         case 'application/json':
@@ -138,6 +141,7 @@ function do_bin_info(array $querybin)
             html_end();
             break;
 
+        case 'text/plain':
         default:
             print("Query bin: {$querybin['bin']}\n");
 
@@ -186,7 +190,8 @@ function do_view_or_export_tweets(array $querybin, $dt_start, $dt_end, $export)
 
     // Show result
 
-    $response_mediatype = choose_mediatype(['text/html',
+    $response_mediatype = choose_mediatype(['application/json', 'text/html',
+        'text/plain',
         'text/csv', 'text/tab-separated-values']);
 
     if (isset($export)) {
@@ -217,11 +222,28 @@ function do_view_or_export_tweets(array $querybin, $dt_start, $dt_end, $export)
                 $dt_start->setTimezone($utc_tz);
                 $qparams .= '&startdate=';
                 $qparams .= urlencode($dt_start->format(DT_PARAM_PATTERN));
+            } else {
+                // Explicitly set startdate when there is none.
+                // This is probably unnecessary, but is done to mirror
+                // setting enddate explicitly (see below).
+                $min_t = dt_from_utc($querybin['mintime']);
+                $min_t->setTimezone($utc_tz);
+                $qparams .= '&startdate=';
+                $qparams .= urlencode($min_t->format(DT_PARAM_PATTERN));
             }
             if (isset($dt_end)) {
                 $dt_end->setTimezone($utc_tz);
                 $qparams .= '&enddate=';
                 $qparams .= urlencode($dt_end->format(DT_PARAM_PATTERN));
+            } else {
+                // Explicitly set enddate to maximum captured tweet time.
+                // This is necessary, because the export feature does not
+                // correctly infer the enddate when none is supplied:
+                // resulting in less tweets exported than expected.
+                $max_t = dt_from_utc($querybin['maxtime']);
+                $max_t->setTimezone($utc_tz);
+                $qparams .= '&enddate=';
+                $qparams .= urlencode($max_t->format(DT_PARAM_PATTERN));
             }
             if ($response_mediatype == 'text/tab-separated-values') {
                 $qparams .= '&outputformat=tsv';
@@ -381,7 +403,7 @@ END;
                 echo <<<END
     <div id="export-tweets-form">
     <form method="GET">
-        <input type="hidden" name="action" value="export-tweets"/>
+        <input type="hidden" name="action" value="tweet-export"/>
         <input type="hidden" name="startdate" value="$val_A"/>
         <input type="hidden" name="enddate" value="$val_B"/>
         <input type="submit" value="Export selected tweets"/>
@@ -394,7 +416,7 @@ END;
     </div>
     <div id="purge-tweets-form">
     <form method="POST">
-        <input type="hidden" name="action" value="purge-tweets"/>
+        <input type="hidden" name="action" value="tweet-purge"/>
         <input type="hidden" name="startdate" value="$val_A"/>
         <input type="hidden" name="enddate" value="$val_B"/>
         <input type="submit" value="Purge selected tweets"/>
@@ -420,6 +442,14 @@ END;
             html_end();
             break;
 
+        case 'application/json':
+            $data = [
+               "number-selected-tweets" => $info['tweets'],
+            ];
+            respond_with_json($data);
+            break;
+
+        case 'text/plain':
         default:
 
             $from = (isset($dt_start)) ? dt_format_text($dt_start, $api_timezone) : "";
@@ -539,7 +569,7 @@ function do_purge_tweets(array $querybin, $dt_start, $dt_end)
 
     // Show result
 
-    $response_mediatype = choose_mediatype(['application/json', 'text/html']);
+    $response_mediatype = choose_mediatype(['application/json', 'text/html', 'text/plain']);
 
     switch ($response_mediatype) {
         case 'application/json':
@@ -589,6 +619,7 @@ END;
             html_end();
             break;
 
+        case 'text/plain':
         default:
             print("{$num_del['tweets']} tweets purged from {$querybin['bin']}\n");
             foreach ($num_del as $name => $num) {
@@ -698,9 +729,9 @@ function main()
                 break;
             case 'querybin/tweets':
                 if (!(($action === 'tweet-info' && $method === 'GET') ||
-                    ($action === 'export-tweets' && $method === 'GET') ||
-                    ($action === 'purge-tweets' && $method === 'DELETE') ||
-                    ($action === 'purge-tweets' && $method === 'POST'))
+                    ($action === 'tweet-export' && $method === 'GET') ||
+                    ($action === 'tweet-purge' && $method === 'DELETE') ||
+                    ($action === 'tweet-purge' && $method === 'POST'))
                 ) {
                     $bad_combination = true;
                 }
@@ -725,6 +756,18 @@ function main()
             }
         } else {
             $format = 'csv'; // default
+        }
+
+        if ($action !== 'tweet-info' &&
+            $action !== 'tweet-purge' &&
+            $action !== 'tweet-export') {
+            // Other actions do not use start/end time
+            if (isset($str_start)) {
+                abort_with_error(400, "Unexpected query parameter: startdate");
+            }
+            if (isset($str_end)) {
+                abort_with_error(400, "Unexpected query parameter: enddate");
+            }
         }
 
     } else {
@@ -805,7 +848,7 @@ END;
                             fwrite(STDERR, "Usage error: multiple actions\n");
                             exit(2);
                         }
-                        $action = 'purge-tweets';
+                        $action = 'tweet-purge';
                         break;
 
                     case 's':
@@ -872,8 +915,10 @@ END;
             }
         }
 
-        if ($action === 'list' || $action === 'bin-info') {
-            // These actions do not use start/end time
+        if ($action !== 'tweet-info' &&
+            $action !== 'tweet-purge' &&
+            $action !== 'tweet-export') {
+            // Other actions do not use start/end time
             if (isset($str_start) || isset($str_end)) {
                 fwrite(STDERR, "Usage error: start/end time not required\n");
                 exit(2);
@@ -940,11 +985,11 @@ END;
         case 'tweet-info':
             do_view_or_export_tweets($querybin, $dt_start, $dt_end, NULL);
             break;
-        case 'export-tweets':
+        case 'tweet-export':
             assert(isset($format));
             do_view_or_export_tweets($querybin, $dt_start, $dt_end, $format);
             break;
-        case 'purge-tweets':
+        case 'tweet-purge':
             do_purge_tweets($querybin, $dt_start, $dt_end);
             break;
         default:
