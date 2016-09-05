@@ -2449,7 +2449,7 @@ function processtweets($capturebucket) {
                             $all = true;
 
                             foreach ($tmplist as $tmp) {
-                                if (!preg_match("/" . $tmp . "/i", $data["text"])) {
+                                if (stripos($data["text"], $tmp) == FALSE) {
                                     $all = false;
                                     break;
                                 }
@@ -2463,8 +2463,7 @@ function processtweets($capturebucket) {
 
                             // treat quoted queries as single words
                             $query = preg_replace("/'/", "", $query);
-
-                            if (preg_match("/" . $query . "/i", $data["text"])) {
+                            if (stripos($data["text"], $query) !== FALSE) {
                                 $pass = true;
                             }
                         }
