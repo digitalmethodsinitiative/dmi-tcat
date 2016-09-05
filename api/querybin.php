@@ -222,11 +222,28 @@ function do_view_or_export_tweets(array $querybin, $dt_start, $dt_end, $export)
                 $dt_start->setTimezone($utc_tz);
                 $qparams .= '&startdate=';
                 $qparams .= urlencode($dt_start->format(DT_PARAM_PATTERN));
+            } else {
+                // Explicitly set startdate when there is none.
+                // This is probably unnecessary, but is done to mirror
+                // setting enddate explicitly (see below).
+                $min_t = dt_from_utc($querybin['mintime']);
+                $min_t->setTimezone($utc_tz);
+                $qparams .= '&startdate=';
+                $qparams .= urlencode($min_t->format(DT_PARAM_PATTERN));
             }
             if (isset($dt_end)) {
                 $dt_end->setTimezone($utc_tz);
                 $qparams .= '&enddate=';
                 $qparams .= urlencode($dt_end->format(DT_PARAM_PATTERN));
+            } else {
+                // Explicitly set enddate to maximum captured tweet time.
+                // This is necessary, because the export feature does not
+                // correctly infer the enddate when none is supplied:
+                // resulting in less tweets exported than expected.
+                $max_t = dt_from_utc($querybin['maxtime']);
+                $max_t->setTimezone($utc_tz);
+                $qparams .= '&enddate=';
+                $qparams .= urlencode($max_t->format(DT_PARAM_PATTERN));
             }
             if ($response_mediatype == 'text/tab-separated-values') {
                 $qparams .= '&outputformat=tsv';
