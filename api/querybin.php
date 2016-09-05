@@ -33,7 +33,8 @@ function do_list_bins()
         $datasets = []; // database tables not yet initialized
     }
 
-    $response_mediatype = choose_mediatype(['application/json', 'text/html']);
+    $response_mediatype = choose_mediatype(['application/json', 'text/html',
+                                            'text/plain']);
 
     switch ($response_mediatype) {
         case 'application/json':
@@ -62,6 +63,8 @@ function do_list_bins()
 
             html_end();
             break;
+
+        case 'text/plain':
         default:
             foreach (array_keys($datasets) as $name) {
                 print($name . "\n");
@@ -79,7 +82,7 @@ function do_bin_info(array $querybin)
 {
     global $api_timezone;
 
-    $response_mediatype = choose_mediatype(['application/json', 'text/html']);
+    $response_mediatype = choose_mediatype(['application/json', 'text/html', 'text/plain']);
 
     switch ($response_mediatype) {
         case 'application/json':
@@ -138,6 +141,7 @@ function do_bin_info(array $querybin)
             html_end();
             break;
 
+        case 'text/plain':
         default:
             print("Query bin: {$querybin['bin']}\n");
 
@@ -187,6 +191,7 @@ function do_view_or_export_tweets(array $querybin, $dt_start, $dt_end, $export)
     // Show result
 
     $response_mediatype = choose_mediatype(['application/json', 'text/html',
+        'text/plain',
         'text/csv', 'text/tab-separated-values']);
 
     if (isset($export)) {
@@ -427,6 +432,7 @@ END;
             respond_with_json($data);
             break;
 
+        case 'text/plain':
         default:
 
             $from = (isset($dt_start)) ? dt_format_text($dt_start, $api_timezone) : "";
@@ -546,7 +552,7 @@ function do_purge_tweets(array $querybin, $dt_start, $dt_end)
 
     // Show result
 
-    $response_mediatype = choose_mediatype(['application/json', 'text/html']);
+    $response_mediatype = choose_mediatype(['application/json', 'text/html', 'text/plain']);
 
     switch ($response_mediatype) {
         case 'application/json':
@@ -596,6 +602,7 @@ END;
             html_end();
             break;
 
+        case 'text/plain':
         default:
             print("{$num_del['tweets']} tweets purged from {$querybin['bin']}\n");
             foreach ($num_del as $name => $num) {

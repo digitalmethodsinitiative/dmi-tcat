@@ -2,7 +2,7 @@
 require_once __DIR__ . '/lib/common.php';
 require_once __DIR__ . '/lib/http_util.php';
 
-switch (choose_mediatype(['application/json', 'text/html'])) {
+switch (choose_mediatype(['application/json', 'text/html', 'text/plain'])) {
     case 'application/json':
         respond_with_json(['name' => 'DMI-TCAT API',
                            'version' => API_VERSION]);
@@ -20,6 +20,11 @@ END;
         echo "<p>Version: ", API_VERSION, "</p>\n";
         html_end();
         break;
+
+    case 'text/plain':
+        echo "DMI-TCAT API (version: ", API_VERSION, ")\n";
+        break;
+
     default:
         echo "DMI-TCAT API (version: ", API_VERSION, ")\n";
         echo "  Running this script from the command line does nothing useful!\n";
