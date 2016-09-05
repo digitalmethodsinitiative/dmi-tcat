@@ -21,9 +21,9 @@ if (!is_resource($thislockfp)) {
 
 // DEFINE SEARCH PARAMETERS HERE
 
-$cronjob = false;      // set to true, if running from cron
+$cronjob = false;     // set to true, if running from cron
 $bin_name = '';       // name of the bin
-$keywords = ''; // separate keywords by 'OR', limit your search to 10 keywords and operators, max 500 characters - https://dev.twitter.com/docs/using-search
+$keywords = '';       // separate keywords by 'OR', limit your search to 10 keywords and operators, max 500 characters - https://dev.twitter.com/docs/using-search
 $type = 'search';     // specify 'search' if you want this to be a standalone bin, or 'track' if you want to be able to continue tracking these keywords later on via BASE_URL/capture/index.php
 
 if (empty($bin_name))
@@ -53,6 +53,8 @@ search($keywords);
 if ($tweetQueue->length() > 0) {
     $tweetQueue->insertDB();
 }
+
+queryManagerSetPeriodsOnCreation($bin_name, explode("OR", $keywords));
 
 function search($keywords, $max_id = null) {
     global $twitter_keys, $current_key, $ratefree, $bin_name, $dbh, $tweetQueue;

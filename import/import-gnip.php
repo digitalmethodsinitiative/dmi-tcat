@@ -88,6 +88,7 @@ function process_json_file_timeline($filepath, $dbh) {
     }
 }
 
+queryManagerSetPeriodsOnCreation($bin_name);
 
 print "\n\n\n\n";
 print "Number of tweets: " . count($all_tweet_ids) . "\n";
