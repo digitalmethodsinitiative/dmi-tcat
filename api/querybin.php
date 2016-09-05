@@ -386,7 +386,7 @@ END;
                 echo <<<END
     <div id="export-tweets-form">
     <form method="GET">
-        <input type="hidden" name="action" value="export-tweets"/>
+        <input type="hidden" name="action" value="tweet-export"/>
         <input type="hidden" name="startdate" value="$val_A"/>
         <input type="hidden" name="enddate" value="$val_B"/>
         <input type="submit" value="Export selected tweets"/>
@@ -399,7 +399,7 @@ END;
     </div>
     <div id="purge-tweets-form">
     <form method="POST">
-        <input type="hidden" name="action" value="purge-tweets"/>
+        <input type="hidden" name="action" value="tweet-purge"/>
         <input type="hidden" name="startdate" value="$val_A"/>
         <input type="hidden" name="enddate" value="$val_B"/>
         <input type="submit" value="Purge selected tweets"/>
@@ -712,9 +712,9 @@ function main()
                 break;
             case 'querybin/tweets':
                 if (!(($action === 'tweet-info' && $method === 'GET') ||
-                    ($action === 'export-tweets' && $method === 'GET') ||
-                    ($action === 'purge-tweets' && $method === 'DELETE') ||
-                    ($action === 'purge-tweets' && $method === 'POST'))
+                    ($action === 'tweet-export' && $method === 'GET') ||
+                    ($action === 'tweet-purge' && $method === 'DELETE') ||
+                    ($action === 'tweet-purge' && $method === 'POST'))
                 ) {
                     $bad_combination = true;
                 }
@@ -739,6 +739,18 @@ function main()
             }
         } else {
             $format = 'csv'; // default
+        }
+
+        if ($action !== 'tweet-info' &&
+            $action !== 'tweet-purge' &&
+            $action !== 'tweet-export') {
+            // Other actions do not use start/end time
+            if (isset($str_start)) {
+                abort_with_error(400, "Unexpected query parameter: startdate");
+            }
+            if (isset($str_end)) {
+                abort_with_error(400, "Unexpected query parameter: enddate");
+            }
         }
 
     } else {
@@ -819,7 +831,7 @@ END;
                             fwrite(STDERR, "Usage error: multiple actions\n");
                             exit(2);
                         }
-                        $action = 'purge-tweets';
+                        $action = 'tweet-purge';
                         break;
 
                     case 's':
@@ -886,8 +898,10 @@ END;
             }
         }
 
-        if ($action === 'list' || $action === 'bin-info') {
-            // These actions do not use start/end time
+        if ($action !== 'tweet-info' &&
+            $action !== 'tweet-purge' &&
+            $action !== 'tweet-export') {
+            // Other actions do not use start/end time
             if (isset($str_start) || isset($str_end)) {
                 fwrite(STDERR, "Usage error: start/end time not required\n");
                 exit(2);
@@ -954,11 +968,11 @@ END;
         case 'tweet-info':
             do_view_or_export_tweets($querybin, $dt_start, $dt_end, NULL);
             break;
-        case 'export-tweets':
+        case 'tweet-export':
             assert(isset($format));
             do_view_or_export_tweets($querybin, $dt_start, $dt_end, $format);
             break;
-        case 'purge-tweets':
+        case 'tweet-purge':
             do_purge_tweets($querybin, $dt_start, $dt_end);
             break;
         default:

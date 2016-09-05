@@ -2,6 +2,8 @@
 require_once __DIR__ . '/lib/common.php';
 require_once __DIR__ . '/lib/http_util.php';
 
+expected_query_parameters([]); // no query parameters permitted
+
 switch (choose_mediatype(['application/json', 'text/html', 'text/plain'])) {
     case 'application/json':
         respond_with_json(['name' => 'DMI-TCAT API',
