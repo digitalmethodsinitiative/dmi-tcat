@@ -26,4 +26,12 @@ function dbserver_has_utf8mb4_support() {
     return false;
 }
 
+function is_admin(){
+    // Allow ADMIN_USER to be an array so multiple users can be "admin"
+    if(defined("ADMIN_USER") && is_array(ADMIN_USER) && sizeof(ADMIN_USER) > 0){
+        return (isset($_SERVER['PHP_AUTH_USER']) && in_array($_SERVER['PHP_AUTH_USER'], ADMIN_USER));
+    }
+    return (defined("ADMIN_USER") && ADMIN_USER != "" && isset($_SERVER['PHP_AUTH_USER']) && $_SERVER['PHP_AUTH_USER'] == ADMIN_USER);
+}
+
 ?>

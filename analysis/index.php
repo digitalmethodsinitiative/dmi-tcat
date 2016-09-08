@@ -159,7 +159,7 @@ if (defined('ANALYSIS_URL'))
                 <a href="https://github.com/digitalmethodsinitiative/dmi-tcat/issues?state=open" target="_blank" class="if_toplinks">issues</a>
                 <a href="https://github.com/digitalmethodsinitiative/dmi-tcat/wiki" target="_blank" class="if_toplinks">FAQ</a>
                 <?php
-                if (defined("ADMIN_USER") && ADMIN_USER != "" && isset($_SERVER['PHP_AUTH_USER']) && $_SERVER['PHP_AUTH_USER'] == ADMIN_USER)
+                if (is_admin())
                     print '<a href="../capture/index.php" class="if_toplinks">admin</a>';
                 ?>
             </div>

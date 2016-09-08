@@ -25,6 +25,14 @@ define('CAPTUREROLES', serialize(array('track')));
 define('ADMIN_USER', 'admin');
 
 /*
+ * Same as above, but allows you to define multiple Admin users
+ * This is an alternate to the define above and requires PHP >= 5.6.
+ * To use this, comment the define above and uncomment the const below
+ * The users listed below should exist in your htaccess authentication
+ */
+//const ADMIN_USER = array('admin', 'admin2');
+
+/*
  * *Super advanced and currently undocumented feature, leave settings as they are*
  * We have made it possible to tunnel Twitter API connections through other hosts (obtaining a different source IP address), and use multiple keysets for multiple streaming queries.
  * Each capture script should define its role, see define('CAPTUREROLES',serialize(array()))

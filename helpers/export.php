@@ -48,7 +48,7 @@ require_once __DIR__ . '/../capture/common/functions.php';
 global $dbuser, $dbpass, $database, $hostname;
 
 if (!env_is_cli()) {
-    if (defined("ADMIN_USER") && ADMIN_USER != "" && (!isset($_SERVER['PHP_AUTH_USER']) || $_SERVER['PHP_AUTH_USER'] != ADMIN_USER)) {
+    if (!is_admin()) {
         die("Go away, you evil hacker!\n");
     } else {
         die("Please run this script only from the command-line.\n");
