@@ -27,11 +27,26 @@ function dbserver_has_utf8mb4_support() {
 }
 
 function is_admin(){
-    // Allow ADMIN_USER to be an array so multiple users can be "admin"
-    if(defined("ADMIN_USER") && is_array(ADMIN_USER) && sizeof(ADMIN_USER) > 0){
-        return (isset($_SERVER['PHP_AUTH_USER']) && in_array($_SERVER['PHP_AUTH_USER'], ADMIN_USER));
+
+    if(defined("ADMIN_USER") && ADMIN_USER != "")
+    {
+        $admin_users = @unserialize(ADMIN_USER);
+
+        // Support the old config style where ADMIN_USER can be a single string
+        if($admin_users === false){
+            $admin_users = array(ADMIN_USER);
+        }
+
+        // If there are no users set in ADMIN_USER then everyone is an admin
+        if(count($admin_users) == 0 || count($admin_users) == 1 && $admin_users[0] == ''){
+          return true;
+        }
+
+        return (isset($_SERVER['PHP_AUTH_USER']) && in_array($_SERVER['PHP_AUTH_USER'], $admin_users));
     }
-    return (defined("ADMIN_USER") && ADMIN_USER != "" && isset($_SERVER['PHP_AUTH_USER']) && $_SERVER['PHP_AUTH_USER'] == ADMIN_USER);
+
+    // If ADMIN_USER is empty so everyone is an admin
+    return true;
 }
 
 ?>
