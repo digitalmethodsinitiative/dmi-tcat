@@ -6,7 +6,7 @@ No issues known at the moment, but little tested. Keyword tracking works, contro
 
 ## Analysis segment
 
-Does not work at all.
+Export modules do not use PDO yet.
 
 ## Other components
 

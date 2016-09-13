@@ -2,15 +2,16 @@
 
 $connection = false;
 
-db_connect($hostname, $dbuser, $dbpass, $database);
+// PHP7
+//db_connect($hostname, $dbuser, $dbpass, $database);
+$dbh = pdo_connect();
 
 // catch parameters
 if (isset($_GET['dataset']) && !empty($_GET['dataset'])) {
     $dataset = urldecode($_GET['dataset']);
 } else {
     $sql = "SELECT querybin FROM tcat_query_bins ORDER BY id LIMIT 1";
-    $rec = mysql_query($sql);
-    if ($res = mysql_fetch_assoc($rec)) {
+    if ($res = pdo_fastquery($sql, $dbh)) {
         $dataset = $res['querybin'];
     }
 }
@@ -184,6 +185,7 @@ function get_file($what) {
 
 function frequencyTable($table, $toget) {
     global $esc, $intervalDates;
+    $dbh = pdo_connect(); pdo_unbuffered($dbh);
     $results = array();
     $sql = "SELECT COUNT($table.$toget) AS count, $table.$toget AS toget, ";
     $sql .= sqlInterval();
@@ -191,9 +193,10 @@ function frequencyTable($table, $toget) {
     $where = "t.id = $table.tweet_id AND ";
     $sql .= sqlSubset($where);
     $sql .= " GROUP BY toget, datepart ORDER BY datepart ASC, count DESC";
-    $rec = mysql_unbuffered_query($sql);
+    $rec = $dbh->prepare($sql);
+    $rec->execute();
     $date = false;
-    while ($res = mysql_fetch_assoc($rec)) {
+    while ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
         if ($res['count'] > $esc['shell']['minf']) {
             if (!empty($intervalDates))
                 $date = groupByInterval($res['datepart']);
@@ -204,7 +207,7 @@ function frequencyTable($table, $toget) {
             $results[$date][$res['toget']] = $res['count'];
         }
     }
-    mysql_free_result($rec);
+    $dbh = null;
     return $results;
 }
 
@@ -645,7 +648,11 @@ function validate($what, $how) {
         // escape non-mysql chars
         case "mysql":
             $what = preg_replace("/[\[\]]/", "", $what);
-            $what = mysql_real_escape_string($what);
+            // TODO: verify if this PHP 7 compatibile variant is identical to the older:
+            // $what = mysql_real_escape_string($what);
+            //$dbh = pdo_connect();
+            //$what = $dbh->quote($what);
+            //$dbh = null;
             break;
         case "frequency":
             $what = preg_replace("/[^\d]/", "", $what);
@@ -714,14 +721,13 @@ function validate_all_variables() {
 // This function reads the current collation by using the hashtags table as a reference
 function current_collation() {
     global $esc;
+    $dbh = pdo_connect();
     $collation = 'utf8_bin';
     $is_utf8mb4 = false;
     $sql = "SHOW FULL COLUMNS FROM " . $esc['mysql']['dataset'] . "_hashtags";
-	global $hostname, $dbuser, $dbpass, $database;
-	db_connect($hostname, $dbuser, $dbpass, $database);
-
-    $sqlresults = mysql_query($sql);
-    while ($res = mysql_fetch_assoc($sqlresults)) {
+    $rec = $dbh->prepare($sql);
+    $rec->execute();
+    while ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
         if (array_key_exists('Collation', $res) && ($res['Collation'] == 'utf8mb4_unicode_ci' || $res['Collation'] == 'utf8mb4_general_ci')) {
             $is_utf8mb4 = true;
             break;
@@ -732,24 +738,28 @@ function current_collation() {
     if ($is_utf8mb4 == false) {
         // When the table has columns with collation of utf8 (as opposed to utf8mb4)
         // fall back the current connection character set to utf8 as well, otherwise queries with 'COLLATE utf8_bin' will fail.
-        mysql_query("SET NAMES utf8");
+        $dbh->exec("SET NAMES utf8");
     }
+    $dbh = false;
     return $collation;
 }
 
 // This function accesses the tcat_status table (if it exists) and retrieves the value for a variable
 function get_status($variable) {
-	global $esc, $hostname, $dbuser, $dbpass, $database;
+	global $database;
+    $dbh = pdo_connect();
     $sql = "SELECT table_name FROM information_schema.tables WHERE table_schema = '$database' AND table_name = 'tcat_status'";
-	db_connect($hostname, $dbuser, $dbpass, $database);
-    $sqlresults = mysql_query($sql);
-    if (mysql_num_rows($sqlresults) > 0) {
-        $sql = "SELECT value FROM tcat_status WHERE variable = '" . mysql_real_escape_string($variable) . "'";
-        $sqlresults = mysql_query($sql);
-        if ($res = mysql_fetch_assoc($sqlresults)) {
+    if ($sqlresults = pdo_fastquery($sql, $dbh)) {
+        $sql = "SELECT value FROM tcat_status WHERE variable = :variable";
+        $rec = $dbh->prepare($sql);
+        $rec->bindParam(':variable', $variable, PDO::PARAM_STR);
+        $rec->execute();
+        if ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
+            $dbh = null;
             return $res['value'];
         }
     }
+    $dbh = null;
     return null;
 }
 
@@ -873,17 +883,18 @@ function get_all_datasets() {
 }
 
 function get_total_nr_of_tweets() {
+    $dbh = pdo_connect();
     $select = "SHOW TABLES LIKE '%_tweets'";
-    $rec = mysql_query($select);
+    $rec = $dbh->prepare($select);
+    $rec->execute();
     $count = 0;
-    while ($res = mysql_fetch_row($rec)) {
-        $sql = "SELECT COUNT(id) FROM " . $res[0];
-        $rec2 = mysql_query($sql);
-        if ($rec2) {
-            $res2 = mysql_fetch_row($rec2);
-            $count += $res2[0];
+    while ($res = $rec->fetch(PDO::FETCH_NUM)) {
+        $sql = "SELECT COUNT(id) as total FROM " . $res[0];
+        if ($res2 = pdo_fastquery($sql, $dbh)) {
+            $count += $res2['total'];
         }
     }
+    $dbh = null;
     return $count;
 }
 
@@ -891,10 +902,10 @@ function xml_escape($stuff) {
     return str_replace("&", "&amp;", str_replace("'", "&quot;", str_replace('"', "'", strip_tags($stuff))));
 }
 
-// connect to the database
+/* (PHP7)
 function db_connect($db_host, $db_user, $db_pass, $db_name) {
-    global $connection;
-    $connection = mysql_connect($db_host, $db_user, $db_pass);
+    global $pdo;
+    $pdo = mysql_connect($db_host, $db_user, $db_pass);
     if (!mysql_select_db($db_name, $connection))
         die("could not connect");
     if (!mysql_set_charset('utf8mb4', $connection)) {
@@ -902,11 +913,14 @@ function db_connect($db_host, $db_user, $db_pass, $db_name) {
         exit;
     }
     mysql_query("set sql_mode='ALLOW_INVALID_DATES'");
+    return $pdo;
 }
+*/
 
 function dbserver_has_geo_functions() {
-    // the analysis frontend currently uses the mysql_* functions
-    $version = mysql_get_server_info();
+    $dbh = pdo_connect();
+    $version = $dbh->getAttribute(PDO::ATTR_SERVER_VERSION);
+    $dbh = null;
     if (preg_match("/([0-9]*)\.([0-9]*)\.([0-9]*)/", $version, $matches)) {
         $maj = $matches[1];
         $min = $matches[2];
@@ -925,6 +939,42 @@ function pdo_connect() {
     $dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
     return $dbh;
+}
+
+function pdo_error_report() {
+    error_log("Database access error occured. Code: " . $Exception->getCode() . " Msg: " . $Exception->getMessage());
+}
+
+/*
+ * This function enables query buffering for an existing database connection (the default behaviour is: buffering)
+ */
+function pdo_buffered($dbh) {
+    $dbh->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, true);
+}
+
+/*
+ * This function disables query buffering for an existing database connection (the default behaviour is: buffering)
+ */
+function pdo_unbuffered($dbh) {
+    $dbh->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
+}
+
+function pdo_fastquery($query, $dbh = null) {
+    if (is_null($dbh)) {
+        $dbh = pdo_connect();
+        $no_connection = true;     /* establish a one-time connection for this query */
+    } else {
+        $no_connection = false;
+    }
+    try {
+        $rec = $dbh->prepare($query);
+        $rec->execute();
+        $results = $rec->fetch(PDO::FETCH_ASSOC);
+        if ($no_connection) $dbh = null;
+        return $results;
+    } catch( PDOException $Exception ) {
+        pdo_error_report($Exception);
+    }
 }
 
 // number median ( number arg1, number arg2 [, number ...] )
@@ -1094,83 +1144,6 @@ function sentiment_graph() {
     $sent_html .= '<div class="txt_desc"><br /></div></fieldset>';
 
     echo $sent_html;
-}
-
-function sentiment_exists() {
-    global $esc;
-    $select = "SHOW TABLES LIKE '" . $esc['mysql']['dataset'] . '_sentiment' . "'";
-    $rec = mysql_query($select);
-    if (mysql_num_rows($rec) > 0)
-        return TRUE;
-    return FALSE;
-}
-
-function sentiment_avgs() {
-    global $esc, $period;
-    $avgs = array();
-
-    // all sentiments
-    $sql = "SELECT avg(s.positive) as pos, avg(s.negative) as neg, ";
-    if ($period == "day") // @todo
-        $sql .= "DATE_FORMAT(t.created_at,'%Y.%d.%m') datepart ";
-    else
-        $sql .= "DATE_FORMAT(t.created_at,'%d. %H:00h') datepart ";
-    $sql .= "FROM " . $esc['mysql']['dataset'] . "_tweets t, ";
-    $sql .= $esc['mysql']['dataset'] . "_sentiment s ";
-    $sql .= sqlSubset("t.id = s.tweet_id AND ");
-    $sql .= "GROUP BY datepart ORDER BY t.created_at";
-
-    $rec = mysql_unbuffered_query($sql);
-    while ($res = mysql_fetch_assoc($rec)) {
-        $neg = $res['neg'];
-        $pos = $res['pos'];
-        $avgs[$res['datepart']][0] = (float) $pos;
-        $avgs[$res['datepart']][1] = (float) abs($neg);
-    }
-    mysql_free_result($rec);
-
-    // only subjective
-    $sql = "SELECT avg(s.positive) as pos, avg(s.negative) as neg, ";
-    if ($period == "day") // @todo
-        $sql .= "DATE_FORMAT(t.created_at,'%Y.%d.%m') datepart ";
-    else
-        $sql .= "DATE_FORMAT(t.created_at,'%d. %H:00h') datepart ";
-    $sql .= "FROM " . $esc['mysql']['dataset'] . "_tweets t, ";
-    $sql .= $esc['mysql']['dataset'] . "_sentiment s ";
-    $sql .= sqlSubset("t.id = s.tweet_id AND (s.positive != 1 AND s.negative != 1) AND ");
-    $sql .= "GROUP BY datepart ORDER BY t.created_at";
-
-    $rec = mysql_unbuffered_query($sql);
-    while ($res = mysql_fetch_assoc($rec)) {
-        $neg = $res['neg'];
-        $pos = $res['pos'];
-        $avgs[$res['datepart']][2] = (float) $pos;
-        $avgs[$res['datepart']][3] = (float) abs($neg);
-    }
-    mysql_free_result($rec);
-
-    // only dateparts
-    $sql = "SELECT ";
-    if ($period == "day") // @todo
-        $sql .= "DATE_FORMAT(t.created_at,'%Y.%d.%m') datepart ";
-    else
-        $sql .= "DATE_FORMAT(t.created_at,'%d. %H:00h') datepart ";
-    $sql .= "FROM " . $esc['mysql']['dataset'] . "_tweets t ";
-    $sql .= sqlSubset();
-    $sql .= "GROUP BY datepart";
-
-    // initialize with empty dates
-    $curdate = strtotime($esc['datetime']['startdate']);
-    while ($curdate < strtotime($esc['datetime']['enddate'])) {
-        $thendate = ($period == "day") ? $curdate + 86400 : $curdate + 3600;
-        $tmp = ($period == "day") ? strftime("%Y.%d.%m", $curdate) : strftime("%d. %H:%M", $curdate) . "h";
-        if (!isset($avgs[$tmp])) {
-            $avgs[$tmp] = array();
-        }
-        $curdate = $thendate;
-    }
-
-    return $avgs;
 }
 
 // Check if $dataset is the name of an existing query bin in $datasets.

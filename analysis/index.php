@@ -283,30 +283,24 @@ if (defined('ANALYSIS_URL'))
             <?php
             validate_all_variables();
 
+            $dbh = pdo_connect();
+
             // count current subsample
             $sql = "SELECT count(distinct(t.id)) as count FROM " . $esc['mysql']['dataset'] . "_tweets t ";
             $sql .= sqlSubset();
-            $sqlresults = mysql_query($sql);
-            $data = mysql_fetch_assoc($sqlresults);
-            $numtweets = $data["count"];
+            if ($data = pdo_fastquery($sql, $dbh)) $numtweets = $data["count"];
 
             // count tweets containing links
             $sql = "SELECT count(distinct(t.id)) AS count FROM " . $esc['mysql']['dataset'] . "_urls u, " . $esc['mysql']['dataset'] . "_tweets t ";
             $where = "u.tweet_id = t.id AND ";
             $sql .= sqlSubset($where);
-            $sqlresults = mysql_query($sql);
             $numlinktweets = 0;
-            if ($sqlresults && mysql_num_rows($sqlresults) > 0) {
-                $res = mysql_fetch_assoc($sqlresults);
-                $numlinktweets = $res['count'];
-            }
+            if ($data = pdo_fastquery($sql, $dbh)) $numlinktweets = $data["count"];
 
             // number of users
             $sql = "SELECT count(distinct(t.from_user_id)) as count FROM " . $esc['mysql']['dataset'] . "_tweets t ";
             $sql .= sqlSubset();
-            $sqlresults = mysql_query($sql);
-            $data = mysql_fetch_assoc($sqlresults);
-            $numusers = $data["count"];
+            if ($data = pdo_fastquery($sql, $dbh)) $numusers = $data["count"];
 
             // see whether the relations table exists
             $show_relations_export = FALSE;
@@ -319,20 +313,14 @@ if (defined('ANALYSIS_URL'))
                 $sql = "SELECT count(u.id) as count FROM " . $esc['mysql']['dataset'] . "_urls u, " . $esc['mysql']['dataset'] . "_tweets t ";
                 $where = "u.tweet_id = t.id AND u.error_code != '' AND ";
                 $sql .= sqlSubset($where);
-                $rec = mysql_query($sql);
-                if ($rec && mysql_num_rows($rec) > 0) {
-                    $res = mysql_fetch_assoc($rec);
-                    if (($res['count'] / $numlinktweets) > 0.5)
-                        $show_url_export = true;
-                }
+                if ($data = pdo_fastquery($sql, $dbh) && $data['count'] / $numlinktweets > 0.5) $show_url_export = true;
             }
             // see whether database is up-to-date to export ratelimit and gap tables
             $show_ratelimit_and_gap_export = get_status('ratelimit_database_rebuild') == 2 ? true : false;
             // see whether the lang table exists
             $show_lang_export = FALSE;
             $sql = "SHOW TABLES LIKE '" . $esc['mysql']['dataset'] . "_lang'";
-            if (mysql_num_rows(mysql_query($sql)) == 1)
-                $show_lang_export = TRUE;
+            if ($data = pdo_fastquery($sql, $dbh)) $show_lang_export = TRUE;
 
             // get data for the line graph
             $linedata = array();
@@ -371,6 +359,8 @@ if (defined('ANALYSIS_URL'))
                 $curdate = $thendate;
             }
 
+            pdo_unbuffered($dbh);
+
             // overwrite zeroed dates
             $sql = "SELECT COUNT(t.text) as count, COUNT(DISTINCT(t.from_user_name)) as usercount, COUNT(DISTINCT(t.location)) as loccount, SUM(if(t.geo_lat != '0.000000', 1, 0)) AS geocount, ";
             if ($period == "day")
@@ -383,14 +373,14 @@ if (defined('ANALYSIS_URL'))
             $sql .= sqlSubset();
             $sql .= "GROUP BY datepart ORDER BY datepart";
 
-            $rec = mysql_unbuffered_query($sql);
-            while ($res = mysql_fetch_assoc($rec)) {
+            $rec = $dbh->prepare($sql);
+            $rec->execute();
+            while ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
                 $linedata[$res['datepart']]["tweets"] = $res['count'];
                 $linedata[$res['datepart']]["users"] = $res['usercount'];
                 $linedata[$res['datepart']]["locations"] = $res['loccount'];
                 $linedata[$res['datepart']]["geolocs"] = $res['geocount'];
             }
-            mysql_free_result($rec);	
 
             if (isset($_GET['query']) && $_GET["query"] != "") {
 
@@ -404,13 +394,15 @@ if (defined('ANALYSIS_URL'))
                 $sql .= "FROM " . $esc['mysql']['dataset'] . "_tweets t ";
                 $sql .= "WHERE t.created_at >= '" . $esc['datetime']['startdate'] . "' AND t.created_at <= '" . $esc['datetime']['enddate'] . "' ";
                 $sql .= "GROUP BY datepart ORDER BY datepart";
-                $rec = mysql_unbuffered_query($sql);
-
-                while ($res = mysql_fetch_assoc($rec)) {
+                $rec = $dbh->prepare($sql);
+                $rec->execute();
+                while ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
                     $linedata[$res['datepart']]["full"] = $res['count'];
                 }
-            	mysql_free_result($rec);	
             }
+
+            $dbh = null;
+
             ?>
 
             <fieldset class="if_parameters">
@@ -586,10 +578,6 @@ foreach ($linedata as $key => $value) {
                 </form>
 
             </fieldset>
-
-            <?php
-            sentiment_graph();
-            ?>
 
             <fieldset class="if_parameters">
 
@@ -965,40 +953,6 @@ foreach ($linedata as $key => $value) {
                         <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('trending'+getInterval());sendUrl('mod.trending.php');return false;">launch</a></div>
                     <?php } ?>
 
-                    <?php if (sentiment_exists()) { ?>
-                    </div><h2> Sentiment analysis</h2>
-                    <div class='if_export_block'>
-                        <h3>Export all tweets from selection, with sentiments</h3>
-                        <div class="txt_desc">Contains all tweets and information about them (user, date created, ...).</div>
-                        <div class="txt_desc">Use: spend time with your data.</div>
-                        <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('export_tweets_sentiment');sendUrl('mod.export_tweets_sentiment.php');return false;">export</a></div>
-                        <?php if ($show_url_export) { ?>
-                            <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('export_tweets_sentiment&includeUrls=1');sendUrl('mod.export_tweets_sentiment.php');return false;">export with URLs</a> (much slower)</div>
-                        <?php } ?>
-                        <hr />
-                        <h3>Social graph by mentions, with sentiments</h3>
-                        <div class="txt_desc">Produces a <a href="http://en.wikipedia.org/wiki/Directed_graph">directed graph</a> based on interactions between users. If a users mentions another one, a directed link is created.
-                            The more often a user mentions another, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>").
-                            <br>The "count" value contains the number of tweets for each user in the specified period.<br>
-                                    Usernames will contain attributes conveying statistics about the sentiment of the tweets they appear in.
-                                    </div>
-                                    <div class="txt_desc">Use: analyze patterns in communication, find "hubs" and "communities", categorize user accounts.</div>
-                                    <div class="txt_link"> &raquo; <a href="" onclick="var topu = askMentions(); $('#whattodo').val('mention_graph_sentiment&topu='+topu);sendUrl('mod.mention_graph_sentiment.php');return false;">launch</a></div>
-
-                                    <hr />
-
-                                    <h3>Co-hashtag graph, with sentiments</h3>
-                                    <div class="txt_desc">Produces an <a href="http://en.wikipedia.org/wiki/Graph_%28mathematics%29#Undirected_graph">undirected graph</a> based on co-word analysis of hashtags. If two hashtags appear in the same tweet, they are linked.
-                                        The more often they appear together, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>").<br>
-                                            Hashtags will contain attributes conveying statistics about the sentiment of the tweets they appear in.
-                                    </div>
-                                    <div class="txt_desc">Use: explore the relations between hashtags, find and analyze sub-issues, distinguish between different types of hashtags (event related, qualifiers, etc.).</div>
-                                    <div class="txt_link"> &raquo; <a href="" onclick="var minf = askFrequency(); if(minf != false) { $('#whattodo').val('hashtag_cooc_sentiment&minf='+minf);sendUrl('mod.hashtag_cooc_sentiment.php'); } return false;">launch</a> (set minimum frequency)</div><!-- with absolute weighting of cooccurrences</a></div>-->
-                                    <div class="txt_link"> &raquo; <a href="" onclick="var topu = askTopht(); if(topu != false) { $('#whattodo').val('hashtag_cooc_sentiment&topu='+topu);sendUrl('mod.hashtag_cooc_sentiment.php'); } return false;">launch</a> (get top hashtags)</div>
-                                    </div>
-                                <?php } ?>
-
-                                </div>
                                 </fieldset>
 
                                 <div style="display:none" id="whattodo" />
