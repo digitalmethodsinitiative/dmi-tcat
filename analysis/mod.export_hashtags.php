@@ -5,6 +5,8 @@ require_once __DIR__ . '/common/CSV.class.php';
 
         validate_all_variables();
         dataset_must_exist();
+        $dbh = pdo_connect();
+        pdo_unbuffered($dbh);
 
         $filename = get_filename_for_export('hashtagExport');
         $stream_to_open = export_start($filename, $outputformat);
@@ -16,16 +18,16 @@ require_once __DIR__ . '/common/CSV.class.php';
         $sql = "SELECT t.id as id, h.text as hashtag FROM " . $esc['mysql']['dataset'] . "_tweets t, " . $esc['mysql']['dataset'] . "_hashtags h ";
         $sql .= sqlSubset();
         $sql .= " AND h.tweet_id = t.id ORDER BY id";
-        $sqlresults = mysql_unbuffered_query($sql);
+
         $out = "";
-        if ($sqlresults) {
-            while ($data = mysql_fetch_assoc($sqlresults)) {
-                $csv->newrow();    
-                $csv->addfield($data['id'], 'integer');
-                $csv->addfield($data['hashtag'], 'string');
-                $csv->writerow();
-            }
-            mysql_free_result($sqlresults);
+
+        $rec = $dbh->prepare($sql);
+        $rec->execute();
+        while ($data = $rec->fetch(PDO::FETCH_ASSOC)) {
+            $csv->newrow();    
+            $csv->addfield($data['id'], 'integer');
+            $csv->addfield($data['hashtag'], 'string');
+            $csv->writerow();
         }
 
         $csv->close();

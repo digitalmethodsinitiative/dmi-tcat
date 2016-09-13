@@ -28,6 +28,8 @@ require_once __DIR__ . '/common/CSV.class.php';
 
         <?php
         validate_all_variables();
+        $dbh = pdo_connect();
+        pdo_unbuffered($dbh);
 
         $filename = get_filename_for_export('urlsExport');
         $csv = new CSV($filename, $outputformat);
@@ -37,26 +39,26 @@ require_once __DIR__ . '/common/CSV.class.php';
         $sql = "SELECT t.id as id, u.url as url, u.url_expanded as url_expanded, u.url_followed as url_followed FROM " . $esc['mysql']['dataset'] . "_tweets t, " . $esc['mysql']['dataset'] . "_urls u ";
         $sql .= sqlSubset();
         $sql .= " AND u.tweet_id = t.id ORDER BY id";
-        $sqlresults = mysql_unbuffered_query($sql);
-        $out = "";
-        if ($sqlresults) {
-            while ($data = mysql_fetch_assoc($sqlresults)) {
-                $csv->newrow();    
-                $csv->addfield($data['id'], 'integer');
+
+        $out = ""
+
+        $rec = $dbh->prepare($sql);
+        $rec->execute();
+        while ($data = $rec->fetch(PDO::FETCH_ASSOC)) {
+            $csv->newrow();    
+            $csv->addfield($data['id'], 'integer');
+            $csv->addfield($data['url'], 'string');
+            if (isset($data['url_followed']) && strlen($data['url_followed']) > 1) {
                 $csv->addfield($data['url'], 'string');
-                if (isset($data['url_followed']) && strlen($data['url_followed']) > 1) {
-                    $csv->addfield($data['url'], 'string');
-                } else {
-                    $csv->addfield('', 'string');
-                }
-                if (isset($data['url_expanded']) && strlen($data['url_expanded']) > 1) {
-                    $csv->addfield($data['url_expanded'], 'string');
-                } else {
-                    $csv->addfield('', 'string');
-                }
-                $csv->writerow();
+            } else {
+                $csv->addfield('', 'string');
             }
-            mysql_free_result($sqlresults);
+            if (isset($data['url_expanded']) && strlen($data['url_expanded']) > 1) {
+                $csv->addfield($data['url_expanded'], 'string');
+            } else {
+                $csv->addfield('', 'string');
+            }
+            $csv->writerow();
         }
 
         $csv->close();

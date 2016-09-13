@@ -28,6 +28,9 @@ require_once __DIR__ . '/common/CSV.class.php';
 
         <?php
         validate_all_variables();
+        $dbh = pdo_connect();
+        pdo_unbuffered($dbh);
+
         $filename = get_filename_for_export("tweetStats");
         $csv = new CSV($filename, $outputformat);
 
@@ -39,11 +42,12 @@ require_once __DIR__ . '/common/CSV.class.php';
         $sql .= " FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
         $sql .= " GROUP BY datepart ORDER BY datepart ASC";
-        $sqlresults = mysql_unbuffered_query($sql);
-        while ($data = mysql_fetch_assoc($sqlresults)) {
+
+        $rec = $dbh->prepare($sql);
+        $rec->execute();
+        while ($data = $rec->fetch(PDO::FETCH_ASSOC)) {
             $numtweets[$data['datepart']] = $data["count"];
         }
-        mysql_free_result($sqlresults);
 
         // tweet containing links
         $sql = "SELECT count(distinct(t.id)) AS count, ";
@@ -52,12 +56,11 @@ require_once __DIR__ . '/common/CSV.class.php';
         $where = "u.tweet_id = t.id AND ";
         $sql .= sqlSubset($where);
         $sql .= " GROUP BY datepart ORDER BY datepart ASC";
-        //print $sql."<Br>";
-        $sqlresults = mysql_query($sql);
-        if ($sqlresults && mysql_num_rows($sqlresults) > 0) {
-            while ($res = mysql_fetch_assoc($sqlresults)) {
-                $numlinktweets[$res['datepart']] = $res['count'];
-            }
+
+        $rec = $dbh->prepare($sql);
+        $rec->execute();
+        while ($data = $rec->fetch(PDO::FETCH_ASSOC)) {
+            $numlinktweets[$res['datepart']] = $res['count'];
         }
 
         // number of tweets with hashtags
@@ -67,12 +70,10 @@ require_once __DIR__ . '/common/CSV.class.php';
         $sql .= sqlSubset();
         $sql .= " AND t.id = h.tweet_id ";
         $sql .= " GROUP BY datepart ORDER BY datepart ASC";
-        //print $sql . "<br>";
-        $sqlresults = mysql_query($sql);
-        if ($sqlresults && mysql_num_rows($sqlresults) > 0) {
-            while ($data = mysql_fetch_assoc($sqlresults)) {
-                $numTweetsWithHashtag[$data['datepart']] = $data["count"];
-            }
+        $rec = $dbh->prepare($sql);
+        $rec->execute();
+        while ($data = $rec->fetch(PDO::FETCH_ASSOC)) {
+            $numTweetsWithHashtag[$data['datepart']] = $data["count"];
         }
 
         // number of tweets with mentions
@@ -82,12 +83,10 @@ require_once __DIR__ . '/common/CSV.class.php';
         $sql .= sqlSubset();
         $sql .= " AND t.id = m.tweet_id ";
         $sql .= " GROUP BY datepart ORDER BY datepart ASC";
-        //print $sql . "<br>";
-        $sqlresults = mysql_query($sql);
-        if ($sqlresults && mysql_num_rows($sqlresults) > 0) {
-            while ($data = mysql_fetch_assoc($sqlresults)) {
-                $numTweetsWithMentions[$data['datepart']] = $data["count"];
-            }
+        $rec = $dbh->prepare($sql);
+        $rec->execute();
+        while ($data = $rec->fetch(PDO::FETCH_ASSOC)) {
+            $numTweetsWithMentions[$data['datepart']] = $data["count"];
         }
 
         // number of tweets with media uploads
@@ -97,12 +96,10 @@ require_once __DIR__ . '/common/CSV.class.php';
         $sql .= sqlSubset();
         $sql .= " AND t.id = m.tweet_id ";
         $sql .= " GROUP BY datepart ORDER BY datepart ASC";
-        //print $sql . "<br>";
-        $sqlresults = mysql_query($sql);
-        if ($sqlresults && mysql_num_rows($sqlresults) > 0) {
-            while ($data = mysql_fetch_assoc($sqlresults)) {
-                $numTweetsWithMedia[$data['datepart']] = $data["count"];
-            }
+        $rec = $dbh->prepare($sql);
+        $rec->execute();
+        while ($data = $rec->fetch(PDO::FETCH_ASSOC)) {
+            $numTweetsWithMedia[$data['datepart']] = $data["count"];
         }
 
         // number of retweets 
@@ -112,12 +109,10 @@ require_once __DIR__ . '/common/CSV.class.php';
         $sql .= sqlSubset();
         $sql .= " AND retweet_id != '' AND retweet_id != '0'";
         $sql .= " GROUP BY datepart ORDER BY datepart ASC";
-        //print $sql."<br>";
-        $sqlresults = mysql_query($sql);
-        if ($sqlresults && mysql_num_rows($sqlresults) > 0) {
-            while ($data = mysql_fetch_assoc($sqlresults)) {
-                $numretweets[$data['datepart']] = $data["count"];
-            }
+        $rec = $dbh->prepare($sql);
+        $rec->execute();
+        while ($data = $rec->fetch(PDO::FETCH_ASSOC)) {
+            $numretweets[$data['datepart']] = $data["count"];
         }
 
         // number of replies 
@@ -127,12 +122,10 @@ require_once __DIR__ . '/common/CSV.class.php';
         $sql .= sqlSubset();
         $sql .= " AND in_reply_to_status_id != ''";
         $sql .= " GROUP BY datepart ORDER BY datepart ASC";
-        //print $sql."<br>";
-        $sqlresults = mysql_query($sql);
-        if ($sqlresults && mysql_num_rows($sqlresults) > 0) {
-            while ($data = mysql_fetch_assoc($sqlresults)) {
-                $numReplies[$data['datepart']] = $data["count"];
-            }
+        $rec = $dbh->prepare($sql);
+        $rec->execute();
+        while ($data = $rec->fetch(PDO::FETCH_ASSOC)) {
+            $numReplies[$data['datepart']] = $data["count"];
         }
         
         $csv->writeheader(array("Date", "Number of tweets", "Number of tweets with links", "Number of tweets with hashtags", "Number of tweets with mentions", "Number of tweets with media uploads", "Number of retweets", "Number of replies"));

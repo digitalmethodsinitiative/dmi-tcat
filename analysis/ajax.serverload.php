@@ -20,29 +20,30 @@ if (TCAT_SYSLOAD_CHECKING == false) {
 $exts = array ( 'tweets', 'mentions', 'urls', 'hashtags', 'media', 'places', 'withheld' );
 
 $sql = "SHOW FULL PROCESSLIST";
-$rec = mysql_query($sql);
 $selects = 0; $working = array();
 $selecttimes = 0;
-if (mysql_num_rows($rec) > 0) {
-    while ($res = mysql_fetch_assoc($rec)) {
-        if ($res['db'] !== $database) { continue; }
-        if ($res['Command'] !== 'Query') { continue; }
-        if (preg_match("/^SELECT/i", $res['Info']) && $res['Time'] > 3) {
-            foreach ($exts as $e) {
-                $search = '_' . $e;
-                if (preg_match("/ ([^ ]*?)$search /i", $res['Info'], $matches)) {
-                    $working[] = $matches[1];
-                    break;
-                }
+$dbh = pdo_connect();
+$rec = $dbh->prepare($sql);
+$rec->execute();
+while ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
+    if ($res['db'] !== $database) { continue; }
+    if ($res['Command'] !== 'Query') { continue; }
+    if (preg_match("/^SELECT/i", $res['Info']) && $res['Time'] > 3) {
+        foreach ($exts as $e) {
+            $search = '_' . $e;
+            if (preg_match("/ ([^ ]*?)$search /i", $res['Info'], $matches)) {
+                $working[] = $matches[1];
+                break;
             }
-            $selects++;
-            $selecttimes += $res['Time'];
         }
+        $selects++;
+        $selecttimes += $res['Time'];
     }
 }
 $working = array_unique($working);
 
 // we accept two long running queries, otherwise we may block depending on the configured thresholds
+$load = 0;
 if ($selects > 2 && $selecttimes >= TCAT_SYSLOAD_MAXIMUM) {
     $load = 2;
 } else if ($selecttimes >= TCAT_SYSLOAD_WARNING) {

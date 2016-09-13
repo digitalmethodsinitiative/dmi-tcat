@@ -4,23 +4,25 @@ require_once __DIR__ . '/common/functions.php';
 
         validate_all_variables();
         dataset_must_exist();
+        $dbh = pdo_connect();
+        pdo_unbuffered($dbh);
 
         $filename = get_filename_for_export("ids");
         $stream_to_open = export_start($filename, $outputformat);
 
         $sql = "SELECT id FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
-        $sqlresults = mysql_unbuffered_query($sql);
+
         $out = "";
-        if ($sqlresults) {
-            while ($data = mysql_fetch_assoc($sqlresults)) {
-                if (preg_match("/_urls/", $sql))
-                    $id = $data['tweet_id'];
-                else
-                    $id = $data['id'];
-                $out .= $id . "\n";
-            }
-            mysql_free_result($sqlresults);
+
+        $rec = $dbh->prepare($sql);
+        $rec->execute();
+        while ($data = $rec->fetch(PDO::FETCH_ASSOC)) {
+            if (preg_match("/_urls/", $sql))
+                $id = $data['tweet_id'];
+            else
+                $id = $data['id'];
+            $out .= $id . "\n";
         }
 
         $fp = fopen($stream_to_open, 'w');

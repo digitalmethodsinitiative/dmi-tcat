@@ -5,6 +5,8 @@ require_once __DIR__ . '/common/CSV.class.php';
 
         validate_all_variables();
         dataset_must_exist();
+        $dbh = pdo_connect();
+        pdo_unbuffered($dbh);
 
         $filename = get_filename_for_export('mentionExport');
         $stream_to_open = export_start($filename, $outputformat);
@@ -16,20 +18,20 @@ require_once __DIR__ . '/common/CSV.class.php';
         $sql = "SELECT t.id as id, t.text as text, m.from_user_id as user_from_id, m.from_user_name as user_from_name, m.to_user_id as user_to_id, m.to_user as user_to_name FROM " . $esc['mysql']['dataset'] . "_tweets t, " . $esc['mysql']['dataset'] . "_mentions m ";
         $sql .= sqlSubset();
         $sql .= " AND m.tweet_id = t.id ORDER BY id";
-        $sqlresults = mysql_unbuffered_query($sql);
+
         $out = "";
-        if ($sqlresults) {
-            while ($data = mysql_fetch_assoc($sqlresults)) {
-                $csv->newrow();    
-                $csv->addfield($data['id'], 'integer');
-                $csv->addfield($data['user_from_id'], 'integer');
-                $csv->addfield($data['user_from_name'], 'string');
-                $csv->addfield($data['user_to_id'], 'integer');
-                $csv->addfield($data['user_to_name'], 'string');
-                $csv->addfield(detect_mention_type($data['text'], $data['user_to_name']), 'string');
-                $csv->writerow();
-            }
-            mysql_free_result($sqlresults);
+
+        $rec = $dbh->prepare($sql);
+        $rec->execute();
+        while ($data = $rec->fetch(PDO::FETCH_ASSOC)) {
+            $csv->newrow();    
+            $csv->addfield($data['id'], 'integer');
+            $csv->addfield($data['user_from_id'], 'integer');
+            $csv->addfield($data['user_from_name'], 'string');
+            $csv->addfield($data['user_to_id'], 'integer');
+            $csv->addfield($data['user_to_name'], 'string');
+            $csv->addfield(detect_mention_type($data['text'], $data['user_to_name']), 'string');
+            $csv->writerow();
         }
 
         $csv->close();
