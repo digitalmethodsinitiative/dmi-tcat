@@ -1,8 +1,9 @@
 <?php
 include_once __DIR__ . '/../../config.php';
 include_once __DIR__ . '/../../common/constants.php';
+include_once __DIR__ . '/../../common/functions.php';
 
-if (defined("ADMIN_USER") && ADMIN_USER != "" && (!isset($_SERVER['PHP_AUTH_USER']) || $_SERVER['PHP_AUTH_USER'] != ADMIN_USER))
+if (!is_admin())
     die("Go away, you evil hacker!");
 ?>
 
@@ -24,4 +25,3 @@ if (defined("ADMIN_USER") && ADMIN_USER != "" && (!isset($_SERVER['PHP_AUTH_USER
     <br/><br/>
     Example bounding box for San Francisco: -122.75,36.8,-121.75,37.8
 </div>
-

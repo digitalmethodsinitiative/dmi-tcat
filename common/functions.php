@@ -34,4 +34,27 @@ function dbserver_has_utf8mb4_support() {
     return false;
 }
 
+function is_admin(){
+
+    if(defined("ADMIN_USER") && ADMIN_USER != "")
+    {
+        $admin_users = @unserialize(ADMIN_USER);
+
+        // Support the old config style where ADMIN_USER can be a single string
+        if($admin_users === false){
+            $admin_users = array(ADMIN_USER);
+        }
+
+        // If there are no users set in ADMIN_USER then everyone is an admin
+        if(count($admin_users) == 0 || count($admin_users) == 1 && $admin_users[0] == ''){
+          return true;
+        }
+
+        return (isset($_SERVER['PHP_AUTH_USER']) && in_array($_SERVER['PHP_AUTH_USER'], $admin_users));
+    }
+
+    // If ADMIN_USER is empty so everyone is an admin
+    return true;
+}
+
 ?>

@@ -1141,7 +1141,7 @@ cp "$TCAT_DIR/config.php.example" "$CFG"
 
 VAR=ADMIN_USER
 VALUE="'$TCATADMINUSER'"
-sed -i "s|^define('$VAR',[^)]*);|define('$VAR', $VALUE);|" "$CFG"
+sed -i "s|^define('$VAR'.*;$|define('$VAR', serialize(array($VALUE)));|" "$CFG"
 
 VAR=REPOSITORY_URL
 VALUE="'$TCAT_GIT_REPOSITORY'"
