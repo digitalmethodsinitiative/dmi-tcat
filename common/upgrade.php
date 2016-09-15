@@ -1358,6 +1358,34 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
         }
     }
 
+    // 09/09/2016 Set start end endtime for search bins
+
+    foreach ($all_bins as $bin) {
+
+        // Filter to only consider bins with the type search
+
+        $bintype = getBinType($bin, $dbh);
+        if ($bintype != 'search') { 
+            continue;
+        }
+
+        $ans = '';
+        if ($interactive == false) {
+            // require auto-upgrade level 0
+            if ($aulevel >= 0) {
+                $ans = 'a';
+            } else {
+                $ans = 'SKIP';
+            }
+        } else {
+            $ans = cli_yesnoall("Set starttime and endtime for bin $bin", 0, '');
+        }
+        if ($ans !== 'SKIP') {
+            queryManagerSetPeriodsOnCreation($bin);
+        }
+    }
+    
+
     // End of upgrades
 
     if ($required == true && $suggested == true) {
