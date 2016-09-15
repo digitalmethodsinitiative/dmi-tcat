@@ -19,10 +19,10 @@ define('CAPTUREROLES', serialize(array('track')));
 
 /*
  * The user(s) who can add and modify query bins. 
- * This user should exist in your htaccess authentication
- * Leave empty if you do not want to restrict access to the query manager - which, of course, is a security risk
+ * All users should exist in your htaccess authentication configuration.
+ * Leave the array empty if you do not want to restrict access to the query manager - which, of course, is a security risk.
  */
- define('ADMIN_USER', serialize(array('admin', 'admin2')));
+define('ADMIN_USER', serialize(array('admin', 'admin2')));
 
 /*
  * *Super advanced and currently undocumented feature, leave settings as they are*
