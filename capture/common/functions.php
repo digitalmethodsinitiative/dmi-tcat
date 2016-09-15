@@ -1098,7 +1098,7 @@ function queryManagerCreateBin($binname, $type, $starttime = "0000-00-00 00:00:0
 /*
  * In CLI scripts such as search.php, we typically create the query bin and their associated phrases before we start capturing.
  * This has become neccessary because we want to fill the tcat_captured_phrases table as we progress (matching a captured tweet id to a specific phrase id).
- * Because we would later like to have the full period information (start and end time) available, we must call the queryManagerSetOnCreation() function
+ * Because we would later like to have the full period information (start and end time) available, we must call the queryManagerSetPeriodsOnCreation() function
  * after having filled the bin with data.
  */
 function queryManagerSetPeriodsOnCreation($binname, $queries = array()) {
