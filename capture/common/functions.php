@@ -1364,7 +1364,7 @@ class Tweet {
         /*
          * Truncated tweets are tweets with more than 140 characters; the full text being stored in an extended tweet segment.
          * The truncated boolean is set to true in the API when this occurs.
-         * We repurpose this truncated boolean to set it to true when the tweet text exceeds our own internal storage limit of 255 characters.
+         * We repurpose this truncated boolean to set it to true when the tweet text exceeds our own internal storage limit of 254 bytes.
          */
 
         $full_text = "";
@@ -1391,23 +1391,16 @@ class Tweet {
              */
             $store_text = "RT @" . $data["retweeted_status"]["user"]["screen_name"] . ": " . $data["retweeted_status"]["text"];
         }
-        if (mb_strlen($store_text) > 255) {
+        /* calculate string length as it will be seen by MySQL */
+        if (mb_strlen($store_text, '8bit') > 254) {
+            /* the effective storage limit of 254 bytes is being exceeded */
             $this->truncated = 1;
-
-            /* This debugging message seems excessively verbose, but this situation is not supposed to occur at all! */
-            $printMessage = "Warning. We received a tweet with more than 255 characters. Truncating. Tweet ID is " . $data["id_str"];
-            if (defined('CAPTURE')) {
-                logit(CAPTURE . ".error.log", $printMessage);
-            } else {
-                logit("cli", $printMessage);
-            }
-
             if (array_key_exists('extended_tweet', $data)) {
                 /* We only retain the displayable text */
-                $store_text = mb_substr($data['extended_tweet']['full_text'], $data['extended_tweet']['display_text_range'][0], $data['extended_tweet']['display_text_range'][1] - $data['extended_tweet']['display_text_range'][0]);
+                $store_text = mb_substr($data['extended_tweet']['full_text'], $data['extended_tweet']['display_text_range'][0], $data['extended_tweet']['display_text_range'][1] - $data['extended_tweet']['display_text_range'][0], '8bit');
             } else {
                 /* We truncate the string manually */
-                $store_text = mb_substr($store_text, 0, 255);
+                $store_text = mb_substr($store_text, 0, 254, '8bit');
             }
 
         }
