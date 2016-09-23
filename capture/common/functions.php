@@ -1360,11 +1360,59 @@ class Tweet {
             $this->geo_lat = $data["geo"]["coordinates"][0];
             $this->geo_lng = $data["geo"]["coordinates"][1];
         }
-        if (isset($data["retweeted_status"])) {
-            $this->text = "RT @" . $data["retweeted_status"]["user"]["screen_name"] . ": " . $data["retweeted_status"]["text"];
+
+        /*
+         * Truncated tweets are tweets with more than 140 characters; the full text being stored in an extended tweet segment.
+         * The truncated boolean is set to true in the API when this occurs.
+         * We repurpose this truncated boolean to set it to true when the tweet text exceeds our own internal storage limit of 255 characters.
+         */
+
+        $full_text = "";
+        $this->truncated = 0;
+
+        if (!isset($data["text"])) {
+            /* running in extended context, text field does not exist in JSON response (default for REST API) */
+            $full_text = $data["full_text"];
+        } else if (!array_key_exists('extended_tweet', $data)) {
+            /* running in compatibility mode, we have no full text available (this should not happen) */
+            $full_text = $data["text"];
         } else {
-            $this->text = $data["text"];
+            /* running in compatibility mode with full text in extra structure (default for streaming API) */
+            $full_text = $data["extended_tweet"]["full_text"];
         }
+        
+        $store_text = $full_text;
+        if (isset($data["retweeted_status"])) {
+            /*
+             * Incorporate full retweet text from retweeted_status to cope with possible truncated due to character limit.
+             * This fix makes the stored text more closely resemble the tweet a shown to the end-user.
+             * See the discussion here: https://github.com/digitalmethodsinitiative/dmi-tcat/issues/74
+             * TODO INVESTIGATE: How will the new JSON character limit effect this? Is this still neccessary?
+             */
+            $store_text = "RT @" . $data["retweeted_status"]["user"]["screen_name"] . ": " . $data["retweeted_status"]["text"];
+        }
+        if (mb_strlen($store_text) > 255) {
+            $this->truncated = 1;
+
+            /* This debugging message seems excessively verbose, but this situation is not supposed to occur at all! */
+            $printMessage = "Warning. We received a tweet with more than 255 characters. Truncating. Tweet ID is " . $data["id_str"];
+            if (defined('CAPTURE')) {
+                logit(CAPTURE . ".error.log", $printMessage);
+            } else {
+                logit("cli", $printMessage);
+            }
+
+            if (array_key_exists('extended_tweet', $data)) {
+                /* We only retain the displayable text */
+                $store_text = mb_substr($data['extended_tweet']['full_text'], $data['extended_tweet']['display_text_range'][0], $data['extended_tweet']['display_text_range'][1] - $data['extended_tweet']['display_text_range'][0]);
+            } else {
+                /* We truncate the string manually */
+                $store_text = mb_substr($store_text, 0, 255);
+            }
+
+        }
+        $this->text = $store_text;
+
         $this->retweet_id = null;
         if (isset($data["retweeted_status"])) {
             $this->retweet_id = $data["retweeted_status"]["id_str"];
@@ -1385,9 +1433,6 @@ class Tweet {
         } else {
             $this->possibly_sensitive = null;
         }
-        /* Truncated Tweets are a historical attribute. Tweets send (through the API) which exceeded 140 characters got the truncated flag set.
-           This attribute is no longer set true for any new tweets. */
-        $this->truncated = $data["truncated"];
         $this->place_ids = array();
         $this->places = array();
         if (isset($data["place"]) && isset($data["place"]["id"])) {

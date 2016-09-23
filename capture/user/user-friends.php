@@ -68,7 +68,8 @@ function get_friends($screen_name, $cursor = -1) {
         'skip_status' => true,
         'count' => 200,
         'include_user_entities' => false,
-        'screen_name' => $screen_name
+        'tweet_mode' => 'extended',
+        'screen_name' => $screen_name,
     );
 
     $tmhOAuth->user_request(array(

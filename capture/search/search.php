@@ -73,6 +73,7 @@ function search($keywords, $max_id = null) {
     $params = array(
         'q' => $keywords,
         'count' => 100,
+        'tweet_mode' => 'extended',
     );
     if (isset($max_id))
         $params['max_id'] = $max_id;
