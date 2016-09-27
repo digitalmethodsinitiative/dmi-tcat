@@ -89,7 +89,8 @@ function get_timeline($user_id, $type, $max_id = null) {
         'trim_user' => false,
         'exclude_replies' => false,
         'contributor_details' => true,
-        'include_rts' => 1
+        'include_rts' => 1,
+        'tweet_mode' => 'extended',
     );
 
     if ($type == "user_id")

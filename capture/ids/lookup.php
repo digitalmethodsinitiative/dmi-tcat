@@ -140,6 +140,7 @@ function search($idlist) {
 
         $params = array(
             'id' => $q,
+            'tweet_mode' => 'extended',
         );
 
         $code = $tmhOAuth->user_request(array(
