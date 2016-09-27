@@ -1387,7 +1387,9 @@ class Tweet {
              * Incorporate full retweet text from retweeted_status to cope with possible truncated due to character limit.
              * This fix makes the stored text more closely resemble the tweet a shown to the end-user.
              * See the discussion here: https://github.com/digitalmethodsinitiative/dmi-tcat/issues/74
-             * TODO INVESTIGATE: How will the new JSON character limit effect this? Is this still neccessary?
+             *
+             * NOTE: this fix will probably not be neccessary in the near future, because Twitter has announced
+             * mentions in tweets will no longer count for the character limit.
              */
             $store_text = "RT @" . $data["retweeted_status"]["user"]["screen_name"] . ": " . $data["retweeted_status"]["text"];
         }
