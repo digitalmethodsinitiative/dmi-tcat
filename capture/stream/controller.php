@@ -1,17 +1,13 @@
 <?php
 
-function env_is_cli() {
-    return (!isset($_SERVER['SERVER_SOFTWARE']) && (php_sapi_name() == 'cli' || (is_numeric($_SERVER['argc']) && $_SERVER['argc'] > 0)));
-}
-
-// ----- only run from command line -----
-if (!env_is_cli())
-    die;
-
 include_once __DIR__ . '/../../config.php';
 include_once __DIR__ . '/../../common/constants.php';
 include __DIR__ . '/../../common/functions.php';
 include __DIR__ . '/../common/functions.php';
+
+// ----- only run from command line -----
+if (!env_is_cli())
+    die;
 
 // make sure only one controller script is running
 $thislockfp = script_lock('controller');

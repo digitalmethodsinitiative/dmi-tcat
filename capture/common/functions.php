@@ -1472,7 +1472,11 @@ class Tweet {
              * NOTE: this fix will probably not be neccessary in the near future, because Twitter has announced
              * mentions in tweets will no longer count for the character limit.
              */
-            $store_text = "RT @" . $data["retweeted_status"]["user"]["screen_name"] . ": " . $data["retweeted_status"]["text"];
+            if (array_key_exists('full_text', $data["retweeted_status"])) {
+                $store_text = "RT @" . $data["retweeted_status"]["user"]["screen_name"] . ": " . $data["retweeted_status"]["full_text"];
+            } else {
+                $store_text = "RT @" . $data["retweeted_status"]["user"]["screen_name"] . ": " . $data["retweeted_status"]["text"];
+            }
         }
         /* calculate string length as it will be seen by MySQL */
         if (mb_strlen($store_text, '8bit') > 254) {
