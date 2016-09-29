@@ -18,11 +18,11 @@
  * @package dmitcat
  */
 
-function env_is_cli() {
+function upg_env_is_cli() {
     return (!isset($_SERVER['SERVER_SOFTWARE']) && (php_sapi_name() == 'cli' || (is_numeric($_SERVER['argc']) && $_SERVER['argc'] > 0)));
 }
 
-if (env_is_cli()) {
+if (upg_env_is_cli()) {
     include_once __DIR__ . '/../config.php';
     include_once __DIR__ . '/../common/constants.php';
     include __DIR__ . '/functions.php';
