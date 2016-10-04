@@ -81,7 +81,7 @@ while ($fields = fgetcsv($input_file, 0, $delimiter)) {
         print "Malformed data file at line $line. Column " . ($f+1) . " cannot be found. Exiting.\n";
         exit(1);
     }
-    if (preg_match("#https?://twitter.com/.*?/status/([[:digit:]]*)#", $fields[$suggested_column], $matches)) {
+    if (preg_match("#https?://[w.]*?twitter.com/.*?/status/([[:digit:]]*)#", $fields[$suggested_column], $matches)) {
         $ids[] = $matches[1];
     } else {
         print "Warning: missing tweet link URL at line $line.\n";
