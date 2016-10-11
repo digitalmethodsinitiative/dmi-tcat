@@ -1,13 +1,5 @@
 <?php
 
-function env_is_cli() {
-    return (!isset($_SERVER['SERVER_SOFTWARE']) && (php_sapi_name() == 'cli' || (is_numeric($_SERVER['argc']) && $_SERVER['argc'] > 0)));
-}
-
-// ----- only run from command line -----
-if (!env_is_cli())
-    die;
-
 // ----- params -----
 set_time_limit(0);
 error_reporting(E_ALL);
@@ -21,6 +13,10 @@ include __DIR__ . '/../../common/functions.php';        // load base functions f
 include __DIR__ . '/../common/functions.php';           // load capture function file
 
 require __DIR__ . '/../common/tmhOAuth/tmhOAuth.php';
+
+// ----- only run from command line -----
+if (!env_is_cli())
+    die;
 
 $thislockfp = script_lock(CAPTURE);
 if (!is_resource($thislockfp)) {

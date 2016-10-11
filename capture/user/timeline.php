@@ -20,6 +20,23 @@ $list_name = "";
 $type = 'timeline'; // specify 'timeline' if you want this to be a standalone bin, or 'follow' if you want to be able to continue tracking these users later on via BASE_URL/capture/index.php
 
 
+///
+
+$all_ints = true;
+foreach ($user_ids as $user_id) {
+    if (!is_int($user_id)) {
+        $all_ints = false;
+        break;
+    }
+}
+
+if ($type == 'follow' && !empty($user_ids)) {
+    if (!$all_ints) {
+        echo "To lookup user tweets and keep following those users, you will need to use numeric ids in the \$user_ids array.\n";
+        exit(0);
+    }
+}
+
 if (!empty($list_name)) { // instead of specying usernames, you can also fetch usernames from a specific list in the database
     $q = $dbh->prepare("SELECT list_id FROM " . $bin_name . "_lists WHERE list_name = :list_name");
     $q->bindParam(":list_name", trim($list_name), PDO::PARAM_STR);
@@ -51,7 +68,11 @@ $querybin_id = queryManagerBinExists($bin_name);
 $ratefree = $current_key = $looped = 0;
 
 create_bin($bin_name, $dbh);
-queryManagerCreateBinFromExistingTables($bin_name, $querybin_id, $type);
+if ($all_ints) {
+    queryManagerCreateBinFromExistingTables($bin_name, $querybin_id, $type, $user_ids);
+} else {
+    queryManagerCreateBinFromExistingTables($bin_name, $querybin_id, $type);
+}
 
 $tweetQueue = new TweetQueue();
 
@@ -89,7 +110,8 @@ function get_timeline($user_id, $type, $max_id = null) {
         'trim_user' => false,
         'exclude_replies' => false,
         'contributor_details' => true,
-        'include_rts' => 1
+        'include_rts' => 1,
+        'tweet_mode' => 'extended',
     );
 
     if ($type == "user_id")
