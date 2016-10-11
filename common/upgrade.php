@@ -1369,19 +1369,37 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
             continue;
         }
 
-        $ans = '';
-        if ($interactive == false) {
-            // require auto-upgrade level 0
-            if ($aulevel >= 0) {
-                $ans = 'a';
-            } else {
-                $ans = 'SKIP';
+        $sql = "SELECT id FROM tcat_query_bins WHERE querybin = :querybin";
+        $rec = $dbh->prepare($sql);
+        $rec->bindParam(":querybin", $bin, PDO::PARAM_STR);
+        $rec->execute();
+        if ($rec->execute()) {
+            $res = $rec->fetch();
+            $bin_id = $res['id'];
+            $sql2 = "SELECT starttime, endtime FROM tcat_query_bins_periods WHERE starttime is not null and endtime is not null and querybin_id = :id";
+            $rec2 = $dbh->prepare($sql2);
+            $rec2->bindParam(":id", $bin_id, PDO::PARAM_INT);
+            $rec2->execute();
+            if ($rec2->rowcount() == 0) {
+
+                // This particular search bin does not have a start or endtime set
+
+                $ans = '';
+                if ($interactive == false) {
+                    // require auto-upgrade level 0
+                    if ($aulevel >= 0) {
+                        $ans = 'a';
+                    } else {
+                        $ans = 'SKIP';
+                    }
+                } else {
+                    $ans = cli_yesnoall("Set starttime and endtime for bin $bin", 0, '');
+                }
+                if ($ans !== 'SKIP') {
+                    queryManagerSetPeriodsOnCreation($bin);
+                }
+
             }
-        } else {
-            $ans = cli_yesnoall("Set starttime and endtime for bin $bin", 0, '');
-        }
-        if ($ans !== 'SKIP') {
-            queryManagerSetPeriodsOnCreation($bin);
         }
     }
     
