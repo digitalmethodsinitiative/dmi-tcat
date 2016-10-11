@@ -26,7 +26,16 @@ function dbserver_has_utf8mb4_support() {
     return false;
 }
 
+function env_is_cli() {
+    return (!isset($_SERVER['SERVER_SOFTWARE']) && (php_sapi_name() == 'cli' || (is_numeric($_SERVER['argc']) && $_SERVER['argc'] > 0)));
+}
+
 function is_admin(){
+
+    if (env_is_cli()) {
+        // On the command-line, there is no notion of admin
+        return true;
+    }
 
     if(defined("ADMIN_USER") && ADMIN_USER != "")
     {

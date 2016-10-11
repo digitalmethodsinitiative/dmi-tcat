@@ -36,8 +36,12 @@ class CSV {
     }
 
     public function writeheader($header) {
-        // null-character as escape character is neccessary due to PHP bug https://bugs.php.net/bug.php?id=43225
-        fputcsv($this->fp, $header, $this->delimiter, $this->enclosure, "\0");
+        if (defined('PHP_VERSION_ID') && PHP_VERSION_ID >= 50504) {
+            // null-character as escape character is neccessary due to PHP bug https://bugs.php.net/bug.php?id=43225
+            fputcsv($this->fp, $header, $this->delimiter, $this->enclosure, "\0");
+        } else {
+            fputcsv($this->fp, $header, $this->delimiter, $this->enclosure);
+        }
     }
 
     public function addfield($value, $type = 'string') {
@@ -53,8 +57,12 @@ class CSV {
     }
 
     public function writerow() {
-        // null-character as escape character is neccessary due to PHP bug https://bugs.php.net/bug.php?id=43225
-        fputcsv($this->fp, $this->row, $this->delimiter, $this->enclosure, "\0");
+        if (defined('PHP_VERSION_ID') && PHP_VERSION_ID >= 50504) {
+            // null-character as escape character is neccessary due to PHP bug https://bugs.php.net/bug.php?id=43225
+            fputcsv($this->fp, $this->row, $this->delimiter, $this->enclosure, "\0");
+        } else {
+            fputcsv($this->fp, $this->row, $this->delimiter, $this->enclosure);
+        }
     }
 
     public function close() {

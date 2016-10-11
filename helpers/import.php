@@ -7,10 +7,6 @@
 // Usage: import.php filename.sql.gz
 //
 
-function env_is_cli() {
-    return (!isset($_SERVER['SERVER_SOFTWARE']) && (php_sapi_name() == 'cli' || (is_numeric($_SERVER['argc']) && $_SERVER['argc'] > 0)));
-}
-
 require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../capture/query_manager.php';
 require_once __DIR__ . '/../analysis/common/config.php';      /* to get global variable $resultsdir */
@@ -20,11 +16,7 @@ require_once __DIR__ . '/../capture/common/functions.php';
 global $dbuser, $dbpass, $database, $hostname;
 
 if (!env_is_cli()) {
-    if (!is_admin()) {
-        die("Go away, you evil hacker!\n");
-    } else {
-        die("Please run this script only from the command-line.\n");
-    }
+    die("Please run this script only from the command-line.\n");
 }
 
 if ($argc !== 2) {
