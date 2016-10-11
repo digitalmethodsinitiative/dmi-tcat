@@ -1122,50 +1122,86 @@ function queryManagerSetPeriodsOnCreation($binname, $queries = array()) {
             $rec->bindParam(":endtime", $endtime, PDO::PARAM_STR);
             $rec->execute();
         }
+        $bin_type = getBinType($binname);
+        /* now set start and endtime for phrases, or users */
         if ($starttime !== false && $endtime !== false) {
-            foreach ($queries as $query) {
-                $trimquery = trim($query);
-                /* get the phrase id for this query */
-                $phrase_id = false;
-                $sql = "SELECT TQBP.phrase_id as phrase_id FROM tcat_query_bins_phrases TQBP INNER JOIN tcat_query_phrases TQP ON TQP.id = TQBP.phrase_id WHERE TQBP.querybin_id = :querybin_id AND TQP.phrase = :phrase";
-                print "[debug] $sql ($querybin_id, $query)\n";
-                $rec = $dbh->prepare($sql);
-                $rec->bindParam(":querybin_id", $querybin_id, PDO::PARAM_INT);
-                $rec->bindParam(":phrase", $trimquery, PDO::PARAM_STR);
-                if ($rec->execute() && $rec->rowCount() > 0) {
-                    if ($res = $rec->fetch()) {
-                        $phrase_id = $res['phrase_id'];
-                    }
-                } else {
-                    // DEBUG
-                    print "[debug] NO RESULTS!\n";
-                }
-                /* lookup the specific starttime and endtime inside tcat_captured_phrases table */
-                $p_starttime = $p_endtime = false;
-                if ($phrase_id !== false) {
-                    $sql = "SELECT min(created_at) as starttime, max(created_at) as endtime from tcat_captured_phrases where phrase_id = :phrase_id";
-                    print "[debug] $sql ($phrase_id)\n";
+            if ($bin_type == 'follow' || $bin_type == 'timeline') {
+                print "[debug] this is a user bin\n";
+                /* this is a user bin */
+                foreach ($queries as $query) {
+                    print "[debug] now handling user $query\n";
+                    $sql = "SELECT MIN(created_at) AS mindate, MAX(created_at) AS maxdate FROM " . quoteIdent($binname . "_tweets") . " WHERE from_user_id = :user_id";
+                    print "[debug] $sql\n";
                     $rec = $dbh->prepare($sql);
-                    $rec->bindParam(":phrase_id", $phrase_id, PDO::PARAM_INT);
+                    $rec->bindParam(":user_id", $query, PDO::PARAM_STR);      // STR = BIGINT
+                    $starttime = $endtime = false;
+                    $updated = false;
                     if ($rec->execute() && $rec->rowCount() > 0) {
                         if ($res = $rec->fetch()) {
-                            $p_starttime = $res['starttime'];
-                            $p_endtime = $res['endtime'];
+                            $sql2 = "UPDATE tcat_query_bins_users SET starttime = :starttime, endtime = :endtime WHERE user_id = :user_id AND querybin_id = :querybin_id"; 
+                            print "[debug] $sql2 (" . $res['mindate'] . "," . $res['maxdate'] . "," . $query . "," . $querybin_id  . ")\n";
+                            $rec2 = $dbh->prepare($sql2);
+                            $rec2->bindParam(":querybin_id", $querybin_id, PDO::PARAM_INT);
+                            $rec2->bindParam(":user_id", $query, PDO::PARAM_STR);      // STR = BIGINT
+                            $rec2->bindParam(":starttime", $res['mindate'], PDO::PARAM_STR);
+//                            $rec2->bindParam(":endtime", $res['maxdate'], PDO::PARAM_STR);
+                            if ($bin_type == 'timeline') {
+                                $rec2->bindParam(":endtime", $endtime, PDO::PARAM_STR);          // use bin endtime as user capture endtime for 'timeline' bins
+                            } else {
+                                $null = null;
+                                $rec2->bindParam(":endtime", $null, PDO::PARAM_STR);              // do not specify an endtime for a 'follow' bin (because it will be tracking onwards)
+                            }
+                            $rec2->execute();
+                            $updated = true;
                         }
                     }
                 }
-                /* If we do not have fine-granularity period information from the tcat_captured_phrases table, use information from entire bin */
-                $use_starttime = (is_string($p_starttime) && strlen($p_starttime) > 0) ? $p_starttime : $starttime;
-                $use_endtime = (is_string($p_endtime) && strlen($p_endtime) > 0) ? $p_endtime : $endtime;
-                /* update the period information for this phrase */
-                $sql = "UPDATE tcat_query_bins_phrases SET starttime = :starttime, endtime = :endtime WHERE querybin_id = :querybin_id AND phrase_id = :phrase_id";
-                print "[debug] $sql ($use_starttime, $use_endtime, $querybin_id, $phrase_id)\n";
-                $rec = $dbh->prepare($sql);
-                $rec->bindParam(":querybin_id", $querybin_id, PDO::PARAM_INT);
-                $rec->bindParam(":phrase_id", $phrase_id, PDO::PARAM_INT);
-                $rec->bindParam(":starttime", $use_starttime, PDO::PARAM_STR);
-                $rec->bindParam(":endtime", $use_endtime, PDO::PARAM_STR);
-                $rec->execute();
+            } else {
+                foreach ($queries as $query) {
+                    $trimquery = trim($query);
+                    /* get the phrase id for this query */
+                    $phrase_id = false;
+                    $sql = "SELECT TQBP.phrase_id as phrase_id FROM tcat_query_bins_phrases TQBP INNER JOIN tcat_query_phrases TQP ON TQP.id = TQBP.phrase_id WHERE TQBP.querybin_id = :querybin_id AND TQP.phrase = :phrase";
+                    print "[debug] $sql ($querybin_id, $query)\n";
+                    $rec = $dbh->prepare($sql);
+                    $rec->bindParam(":querybin_id", $querybin_id, PDO::PARAM_INT);
+                    $rec->bindParam(":phrase", $trimquery, PDO::PARAM_STR);
+                    if ($rec->execute() && $rec->rowCount() > 0) {
+                        if ($res = $rec->fetch()) {
+                            $phrase_id = $res['phrase_id'];
+                        }
+                    } else {
+                        // DEBUG
+                        print "[debug] NO RESULTS!\n";
+                    }
+                    /* lookup the specific starttime and endtime inside tcat_captured_phrases table */
+                    $p_starttime = $p_endtime = false;
+                    if ($phrase_id !== false) {
+                        $sql = "SELECT min(created_at) as starttime, max(created_at) as endtime from tcat_captured_phrases where phrase_id = :phrase_id";
+                        print "[debug] $sql ($phrase_id)\n";
+                        $rec = $dbh->prepare($sql);
+                        $rec->bindParam(":phrase_id", $phrase_id, PDO::PARAM_INT);
+                        if ($rec->execute() && $rec->rowCount() > 0) {
+                            if ($res = $rec->fetch()) {
+                                $p_starttime = $res['starttime'];
+                                $p_endtime = $res['endtime'];
+                            }
+                        }
+                    }
+                    /* If we do not have fine-granularity period information from the tcat_captured_phrases table, use information from entire bin */
+                    $use_starttime = (is_string($p_starttime) && strlen($p_starttime) > 0) ? $p_starttime : $starttime;
+                    $use_endtime = (is_string($p_endtime) && strlen($p_endtime) > 0) ? $p_endtime : $endtime;
+                    /* update the period information for this phrase */
+                    $sql = "UPDATE tcat_query_bins_phrases SET starttime = :starttime, endtime = :endtime WHERE querybin_id = :querybin_id AND phrase_id = :phrase_id";
+                    print "[debug] $sql ($use_starttime, $use_endtime, $querybin_id, $phrase_id)\n";
+                    $rec = $dbh->prepare($sql);
+                    $rec->bindParam(":querybin_id", $querybin_id, PDO::PARAM_INT);
+                    $rec->bindParam(":phrase_id", $phrase_id, PDO::PARAM_INT);
+                    $rec->bindParam(":starttime", $use_starttime, PDO::PARAM_STR);
+//                    $rec->bindParam(":endtime", $use_endtime, PDO::PARAM_STR);
+                    $rec->bindParam(":endtime", $endtime, PDO::PARAM_STR);          // use bin endtime as phrase endtime
+                    $rec->execute();
+                }
             }
         }
     }

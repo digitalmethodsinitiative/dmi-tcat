@@ -1362,10 +1362,10 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
 
     foreach ($all_bins as $bin) {
 
-        // Filter to only consider bins with the type search
+        // Filter to only consider bins with the type search or timeline
 
         $bintype = getBinType($bin, $dbh);
-        if ($bintype != 'search') { 
+        if ($bintype != 'search' && $bintype != 'timeline') { 
             continue;
         }
 
