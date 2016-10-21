@@ -285,14 +285,14 @@ if (defined('ANALYSIS_URL'))
             validate_all_variables();
 
             // count current subsample
-            $sql = "SELECT count(distinct(t.id)) as count FROM " . $esc['mysql']['dataset'] . "_tweets t ";
+            $sql = "SELECT count(t.id) as count FROM " . $esc['mysql']['dataset'] . "_tweets t ";
             $sql .= sqlSubset();
             $sqlresults = mysql_query($sql);
             $data = mysql_fetch_assoc($sqlresults);
             $numtweets = $data["count"];
 
             // count tweets containing links
-            $sql = "SELECT count(distinct(t.id)) AS count FROM " . $esc['mysql']['dataset'] . "_urls u, " . $esc['mysql']['dataset'] . "_tweets t ";
+            $sql = "SELECT count(t.id) AS count FROM " . $esc['mysql']['dataset'] . "_urls u, " . $esc['mysql']['dataset'] . "_tweets t ";
             $where = "u.tweet_id = t.id AND ";
             $sql .= sqlSubset($where);
             $sqlresults = mysql_query($sql);
