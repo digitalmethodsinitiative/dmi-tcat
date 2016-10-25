@@ -34,7 +34,7 @@ require_once __DIR__ . '/common/CSV.class.php';
         $numtweets = $numlinktweets = $numTweetsWithHashtag = $numTweetsWithMentions = $numTweetsWithMedia = $numRetweets = $numReplies = array();
 
         // tweets in subset
-        $sql = "SELECT count(distinct(t.id)) as count, ";
+        $sql = "SELECT count(t.id) as count, ";
         $sql .= sqlInterval();
         $sql .= " FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
@@ -106,7 +106,7 @@ require_once __DIR__ . '/common/CSV.class.php';
         }
 
         // number of retweets 
-        $sql = "SELECT count(distinct(id)) as count, ";
+        $sql = "SELECT count(id) as count, ";
         $sql .= sqlInterval();
         $sql .= " FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
@@ -121,7 +121,7 @@ require_once __DIR__ . '/common/CSV.class.php';
         }
 
         // number of replies 
-        $sql = "SELECT count(distinct(id)) as count, ";
+        $sql = "SELECT count(id) as count, ";
         $sql .= sqlInterval();
         $sql .= " FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();

@@ -285,7 +285,7 @@ if (defined('ANALYSIS_URL'))
             validate_all_variables();
 
             // count current subsample
-            $sql = "SELECT count(distinct(t.id)) as count FROM " . $esc['mysql']['dataset'] . "_tweets t ";
+            $sql = "SELECT count(t.id) as count FROM " . $esc['mysql']['dataset'] . "_tweets t ";
             $sql .= sqlSubset();
             $sqlresults = mysql_query($sql);
             $data = mysql_fetch_assoc($sqlresults);
