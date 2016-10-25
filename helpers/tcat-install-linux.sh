@@ -952,10 +952,10 @@ if [ -n "$UBUNTU_VERSION" ]; then
 
     if [ "$UBUNTU_VERSION" = '16.04' ]; then
         # This will install PHP 7
-	PHP_PACKAGES="libapache2-mod-php php-mysql php-curl php-cli php-patchwork-utf8 php-mbstring"
+	    PHP_PACKAGES="libapache2-mod-php php-mysql php-curl php-cli php-patchwork-utf8 php-mbstring"
     else
-	# 14.04, 15.04, 15.10 and untested
-	PHP_PACKAGES="libapache2-mod-php5 php5-mysql php5-curl php5-cli php-patchwork-utf8"
+	    # 14.04, 15.04, 15.10 and untested
+	    PHP_PACKAGES="libapache2-mod-php5 php5-mysql php5-curl php5-cli php-patchwork-utf8"
     fi
     echo "$PROG: installing PHP packages:"
     echo "  $PHP_PACKAGES"

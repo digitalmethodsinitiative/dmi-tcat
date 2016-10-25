@@ -27,6 +27,9 @@ require_once __DIR__ . '/common/functions.php';
 
         <?php
         validate_all_variables();
+        dataset_must_exist();
+        $dbh = pdo_connect();
+        pdo_unbuffered($dbh);
         $collation = current_collation();
 
         $users = array();
@@ -47,9 +50,13 @@ require_once __DIR__ . '/common/functions.php';
 
 			//print $sql."<br>";
 
-            $sqlresults = mysql_query($sql);
+            $numresults = 0;
 
-            while ($data = mysql_fetch_assoc($sqlresults)) {
+            $rec = $dbh->prepare($sql);
+            $rec->execute();
+            while ($data = $rec->fetch(PDO::FETCH_ASSOC)) {
+            
+                $numresults++;
 
                 $data["from_user_name"] = strtolower($data["from_user_name"]);
                 $data["to_user"] = strtolower($data["to_user"]);
@@ -77,8 +84,8 @@ require_once __DIR__ . '/common/functions.php';
                 }
             }
 
-            $numresults = mysql_num_rows($sqlresults);
             $cur = $cur + $numresults;
+
         }
 
 		//print_r($users);

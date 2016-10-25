@@ -34,10 +34,15 @@ require_once __DIR__ . '/common/CSV.class.php';
          * 2) be mindful of the fact that a single tweet (with a unique tweet id) may end up in multiple query bins
          */
         validate_all_variables();
+        dataset_must_exist();
+        $dbh = pdo_connect();
+        // NOTICE: this script does buffered queries, due to the use of temporary tables and parallel queries
 
-        $sql = "SELECT id, `type` FROM tcat_query_bins WHERE querybin = '" . mysql_real_escape_string($esc['mysql']['dataset']) . "'";
-        $sqlresults = mysql_query($sql);
-        if ($res = mysql_fetch_assoc($sqlresults)) {
+        $sql = "SELECT id, `type` FROM tcat_query_bins WHERE querybin = :querybin";
+        $rec = $dbh->prepare($sql);
+        $rec->bindParam(":querybin", $esc['mysql']['dataset'], PDO::PARAM_STR);
+        $rec->execute();
+        if ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
             $bin_id = $res['id'];
             $bin_type = $res['type'];
         } else {
@@ -53,9 +58,10 @@ require_once __DIR__ . '/common/CSV.class.php';
             // therefore we decide to not allow this export function for earlier timeframes.
             $accept = false;
             $sql = "select min(created_at) as earliest from tcat_captured_phrases tcp inner join tcat_query_bins_phrases bp on tcp.phrase_id=bp.phrase_id inner join tcat_query_bins tqb on bp.querybin_id = tqb.id where tqb.type = 'geotrack' and earliest > '" . $esc['datetime']['startdate'] . "'";
-            $sqlresults2 = mysql_query($sql);
-            if ($res2 = mysql_fetch_assoc($sqlresults)) {
-                if (array_key_exists('earliest', $res2) && is_string($res2['earliest'])) {
+            $rec = $dbh->prepare($sql);
+            $rec->execute();
+            if ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
+                if (array_key_exists('earliest', $res) && is_string($res['earliest'])) {
                     $accept = true;
                 }
             }
@@ -100,16 +106,17 @@ require_once __DIR__ . '/common/CSV.class.php';
             case "yearly": { $mysqlNativeInterval = "year"; break; }
         }
         $query = "CREATE TEMPORARY TABLE temp_dates ( date DATETIME )";
-        mysql_query($query);
+        $dbh->query($query);
         $query = "SET @date = '" . $esc['datetime']['startdate'] . "'";
-        mysql_query($query);
+        $dbh->query($query);
         for (;;) {
             $query = "INSERT INTO temp_dates SELECT @date := date_add(@date, interval 1 $mysqlNativeInterval)";
-            mysql_query($query);
+            $dbh->query($query);
             // Are we finished?
             $query = "SELECT @date > '" . $esc['datetime']['enddate']  . "' as finished";
-            $rec = mysql_query($query);
-            if ($res = mysql_fetch_assoc($rec)) {
+            $rec = $dbh->prepare($query);
+            $rec->execute();
+            if ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
                 if ($res['finished'] == '1') {
                     break;
                 }
@@ -118,8 +125,9 @@ require_once __DIR__ . '/common/CSV.class.php';
         $dateparts = array();
         $sqlIntervalForDateparts = str_replace("t.created_at", "date", $sqlInterval);
         $query = "SELECT $sqlIntervalForDateparts FROM temp_dates";
-        $rec = mysql_query($query);
-        while ($res = mysql_fetch_assoc($rec)) {
+        $rec = $dbh->prepare($query);
+        $rec->execute();
+        while ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
             $dateparts[] = $res['datepart'];
         }
 
@@ -142,8 +150,9 @@ require_once __DIR__ . '/common/CSV.class.php';
 
         // Get ratelimits (query A)
 
-        $rec = mysql_query($sql_query_a);
-        while ($res = mysql_fetch_assoc($rec)) {
+        $rec = $dbh->prepare($sql_query_a);
+        $rec->execute();
+        while ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
             if (!array_key_exists($res['datepart'], $fullresults)) {
                 $fullresults[$res['datepart']] = array();
             }
@@ -152,8 +161,9 @@ require_once __DIR__ . '/common/CSV.class.php';
 
         // Get the total unique phrases with matches (query B)
 
-        $rec = mysql_query($sql_query_b);
-        while ($res = mysql_fetch_assoc($rec)) {
+        $rec = $dbh->prepare($sql_query_b);
+        $rec->execute();
+        while ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
             if (!array_key_exists($res['datepart'], $fullresults)) {
                 $fullresults[$res['datepart']] = array();
             }
@@ -162,8 +172,9 @@ require_once __DIR__ . '/common/CSV.class.php';
         
         // Get the measured phrases per bin (query C)
 
-        $rec = mysql_query($sql_query_c);
-        while ($res = mysql_fetch_assoc($rec)) {
+        $rec = $dbh->prepare($sql_query_c);
+        $rec->execute();
+        while ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
             if (!array_key_exists($res['datepart'], $fullresults)) {
                 $fullresults[$res['datepart']] = array();
             }

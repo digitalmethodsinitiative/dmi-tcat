@@ -59,7 +59,7 @@ require_once __DIR__ . '/common/CSV.class.php';
 
         $rec = $dbh->prepare($sql);
         $rec->execute();
-        while ($data = $rec->fetch(PDO::FETCH_ASSOC)) {
+        while ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
             $numlinktweets[$res['datepart']] = $res['count'];
         }
 

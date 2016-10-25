@@ -308,7 +308,7 @@ if (defined('ANALYSIS_URL'))
             //$sql = "SHOW TABLES LIKE '" . $esc['mysql']['dataset'] . "_relations'";
             //if (mysql_num_rows(mysql_query($sql)) == 1)
             //    $show_relations_export = TRUE;
-            // see whether URLs are expanded @todo
+            // see whether URLs are expanded
             $show_url_export = false;
             if ($numlinktweets) {
                 $sql = "SELECT count(u.id) as count FROM " . $esc['mysql']['dataset'] . "_urls u, " . $esc['mysql']['dataset'] . "_tweets t ";
@@ -936,23 +936,28 @@ foreach ($linedata as $key => $value) {
                     <div class="txt_desc">Use: explore shifts in hashtags associations.</div>
                     <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('hashtag_variability');sendUrl('mod.hashtag_variability.php');return false;">launch</a></div>
 
-                    <?php if (isset($_GET['dataset']) && $_GET['dataset'] == "privacy") { ?>
+                    <?php
+                            // The next two experimental modules are currently in archived mode. They may be resurrected in the future, or should be removed from the source tree.
+
+                            /*
+                        ?>
                         <hr />
 
                         <h3>Associational profile (words)</h3>
                         <div class="txt_desc">Produces an associational profile as well as a time-encoded co-word network. Nouns etc are extracted via <a href='http://www.ark.cs.cmu.edu/TweetNLP/' target="_blank">TweetNLP</a></div>
                         <div class="txt_desc">Use: explore shifts in word associations.</div>
                         <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('word_variability');sendUrl('mod.word_variability.php');return false;">launch</a></div>
-                    <?php } ?>
 
-                    <?php if (isset($_GET['dataset']) && $_GET['dataset'] == "iranelection2013") { ?>
                         <hr/>
 
                         <h3>Bursty keywords</h3>
                         <div class="txt_desc">Insert a word to see a table with frequencies and burstiness scores per interval. (You can specify the interval under the 'Tweet Statistics and Activity Metrics' heading above.)</div>
                         <div class="txt_desc">Use: find out whether certain words are bursty.</div>
                         <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('trending'+getInterval());sendUrl('mod.trending.php');return false;">launch</a></div>
-                    <?php } ?>
+                    <?php
+
+                           */
+                     ?>
 
                                 </fieldset>
 

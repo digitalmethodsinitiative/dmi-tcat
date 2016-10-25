@@ -28,12 +28,17 @@ require_once __DIR__ . '/common/CSV.class.php';
 
         <?php
         validate_all_variables();
+        dataset_must_exist();
+        $dbh = pdo_connect();
+        pdo_unbuffered($dbh);
 
         // make filename and open file for write
         $module = "gapData";
-        $sql = "SELECT id, `type` FROM tcat_query_bins WHERE querybin = '" . mysql_real_escape_string($esc['mysql']['dataset']) . "'";
-        $sqlresults = mysql_query($sql);
-        if ($res = mysql_fetch_assoc($sqlresults)) {
+        $sql = "SELECT id, `type` FROM tcat_query_bins WHERE querybin = :querybin";
+        $rec = $dbh->prepare($sql);
+        $rec->bindParam(":querybin", $esc['mysql']['dataset'], PDO::PARAM_STR);
+        $rec->execute();
+        if ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
             $bin_id = $res['id'];
             $bin_type = $res['type'];
         } else {
@@ -49,25 +54,28 @@ require_once __DIR__ . '/common/CSV.class.php';
         $csv->writeheader(explode(',', $header));
 
         // make query
-        $sql = "SELECT * FROM tcat_error_gap WHERE type = '" . mysql_real_escape_string($bin_type) . "' and
-                                                   start >= '" . mysql_real_escape_string($_GET['startdate']) . "' and end <= '" . mysql_real_escape_string($_GET['enddate']) . "'";
+        $sql = "SELECT * FROM tcat_error_gap WHERE type = :type and
+                                                   start >= :start and end <= :end";
+        $rec = $dbh->prepare($sql);
+        $rec->bindParam(":type", $bin_type, PDO::PARAM_STR);
+        $rec->bindParam(":start", $_GET['startdate'], PDO::PARAM_STR);
+        $rec->bindParam(":end", $_GET['enddate'], PDO::PARAM_STR);
+        $rec->execute();
+
         // loop over results and write to file
-        $sqlresults = mysql_query($sql);
-        if ($sqlresults) {
-            while ($data = mysql_fetch_assoc($sqlresults)) {
-                // the query bin must have been active during the gap period, if we want to report it as a possible gap
-                $sql2 = "SELECT count(*) as cnt FROM tcat_query_bins_phrases WHERE querybin_id = $bin_id and
-                                                            starttime <= '" . $data["end"] . "' and (endtime >= '" . $data["start"] . "' or endtime is null or endtime = '0000-00-00 00:00:00')";
-                $sqlresults2 = mysql_query($sql2);
-                if ($sqlresults2) {
-                    if ($data2 = mysql_fetch_assoc($sqlresults2)) {
-                        if ($data2['cnt'] > 0) {
-                            $csv->newrow();
-                            $csv->addfield($data["start"]);
-                            $csv->addfield($data["end"]);
-                            $csv->writerow();
-                        }
-                    }
+        while ($data = $rec->fetch(PDO::FETCH_ASSOC)) {
+            // the query bin must have been active during the gap period, if we want to report it as a possible gap
+            $sql2 = "SELECT count(*) as cnt FROM tcat_query_bins_phrases WHERE querybin_id = $bin_id and
+                                                        starttime <= '" . $data["end"] . "' and (endtime >= '" . $data["start"] . "' or endtime is null or endtime = '0000-00-00 00:00:00')";
+            $rec2 = $dbh->prepare($sql2);
+            $rec2->execute();
+            while ($data2 = $rec2->fetch(PDO::FETCH_ASSOC)) {
+                if ($data2['cnt'] > 0) {
+                    $csv->newrow();
+                    $csv->addfield($data["start"]);
+                    $csv->addfield($data["end"]);
+                    $csv->writerow();
+                    break;
                 }
             }
         }

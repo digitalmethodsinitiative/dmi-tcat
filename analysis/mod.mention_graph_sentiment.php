@@ -27,13 +27,17 @@ require_once __DIR__ . '/common/functions.php';
 
         <?php
         validate_all_variables();
-
+        dataset_must_exist();
+        $dbh = pdo_connect();
+        pdo_unbuffered($dbh);
 
         // calculate sentiments per hashtag
         $sql = "SELECT s.positive, s.negative, t.from_user_name as user, t.id as tid FROM ".$esc['mysql']['dataset']."_sentiment s, ".$esc['mysql']['dataset']."_tweets t WHERE t.id = s.tweet_id";
         //print $sql."<br>";
-        $rec = mysql_query($sql);
-        while ($res = mysql_fetch_assoc($rec)) {
+        $rec = $dbh->prepare($sql);
+        $rec->execute();
+        while ($data = $rec->fetch(PDO::FETCH_ASSOC)) {
+
             $word = $res['user'];
             $sn = $res['negative'];
             $sp = $res['positive'];
@@ -76,11 +80,14 @@ require_once __DIR__ . '/common/functions.php';
             $sql .= sqlSubset($where);
             $sql .= " LIMIT " . $cur . "," . $numresults;
 
+            $numresults = 0;
+
             //print $sql."<br>";
 
-            $sqlresults = mysql_query($sql);
-
-            while ($data = mysql_fetch_assoc($sqlresults)) {
+            $rec = $dbh->prepare($sql);
+            $rec->execute();
+            while ($data = $rec->fetch(PDO::FETCH_ASSOC)) {
+                $numresults++;
 
                 $data["from_user_name"] = strtolower($data["from_user_name"]);
                 $data["to_user"] = strtolower($data["to_user"]);
@@ -108,7 +115,6 @@ require_once __DIR__ . '/common/functions.php';
                 }
             }
 
-            $numresults = mysql_num_rows($sqlresults);
             $cur = $cur + $numresults;
         }
 

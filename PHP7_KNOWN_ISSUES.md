@@ -1,4 +1,4 @@
-# PHP 7.0 compatibility - known issues
+# PHP 7.0 compatibility branch - known issues
 
 ## Capture segment
 
@@ -6,12 +6,8 @@ No issues known at the moment, but little tested. Keyword tracking works, contro
 
 ## Analysis segment
 
-Export modules do not use PDO yet.
+Paramater validation for element 'mysql' is now critically weak, see validate() function for details.
 
 ## Other components
 
- - Auto-installer does not install the GEOS PHP 7 module
-
-## Work in progress
-
- - common/functions.php disabled dbconnect() and dbclose() completely
+Auto-installer does not install the GEOS PHP 7 module, because it simply is not supported by PHP 7.

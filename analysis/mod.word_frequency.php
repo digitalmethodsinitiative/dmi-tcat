@@ -31,28 +31,29 @@ $minf = isset($_GET['minf']) ? $minf = $_GET['minf'] : 1;
 
         <?php
         validate_all_variables();
+        dataset_must_exist();
+        $dbh = pdo_connect();
+        pdo_unbuffered($dbh);
 
         $tempfile = tmpfile();
         fputs($tempfile, chr(239) . chr(187) . chr(191));
 
-        mysql_query("set names utf8");
         $sql = "SELECT text, " . sqlInterval() . " FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
         //$sql .= " GROUP BY datepart ORDER BY datepart ASC";
         $sql .= " ORDER BY datepart ASC";
-        $sqlresults = mysql_unbuffered_query($sql);
-        if ($sqlresults) {
-            while ($data = mysql_fetch_assoc($sqlresults)) {
-                $text = $data["text"];
-                $datepart = str_replace(' ', '_', $data["datepart"]);
-                preg_match_all('/(https?:\/\/[^\s]+)|([@#\p{L}][\p{L}]+)/u', $text, $matches, PREG_PATTERN_ORDER);
-                foreach ($matches[0] as $word) {
-                    if (preg_match('/(https?:\/\/)/u', $word)) continue;
-                    if ($lowercase !== 0) $word = mb_strtolower($word);
-                    fputs($tempfile, "\"$datepart\" \"$word\"\n");
-                }
+
+        $rec = $dbh->prepare($sql);
+        $rec->execute();
+        while ($data = $rec->fetch(PDO::FETCH_ASSOC)) {
+            $text = $data["text"];
+            $datepart = str_replace(' ', '_', $data["datepart"]);
+            preg_match_all('/(https?:\/\/[^\s]+)|([@#\p{L}][\p{L}]+)/u', $text, $matches, PREG_PATTERN_ORDER);
+            foreach ($matches[0] as $word) {
+                if (preg_match('/(https?:\/\/)/u', $word)) continue;
+                if ($lowercase !== 0) $word = mb_strtolower($word);
+                fputs($tempfile, "\"$datepart\" \"$word\"\n");
             }
-            mysql_free_result($sqlresults);
         }
 
         if (function_exists('eio_fsync')) { eio_fsync($tempfile); }

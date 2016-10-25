@@ -22,6 +22,9 @@ require_once __DIR__ . '/common/Gexf.class.php';
 
         <?php
         validate_all_variables();
+        dataset_must_exist();
+        $dbh = pdo_connect();
+        pdo_unbuffered($dbh);
 
         $filename = get_filename_for_export("hashtagUser", (isset($_GET['probabilityOfAssociation']) ? "_normalizedAssociationWeight" : ""), "gexf");
 
@@ -38,9 +41,10 @@ require_once __DIR__ . '/common/Gexf.class.php';
         $sql .= "LENGTH(A.text)>1 AND ";
         $sql .= "A.tweet_id = t.id ";
 
-        $sqlresults = mysql_unbuffered_query($sql);
         $languages = $locations = array();
-        while ($res = mysql_fetch_assoc($sqlresults)) {
+        $rec = $dbh->prepare($sql);
+        $rec->execute();
+        while ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
             if (!isset($userHashtags[$res['user']][$res['h1']]))
                 $userHashtags[$res['user']][$res['h1']] = 0;
             $userHashtags[$res['user']][$res['h1']]++;
@@ -55,7 +59,6 @@ require_once __DIR__ . '/common/Gexf.class.php';
             $from_user_timezone[$res['user']] = $res['timezone'];
             $from_user_utcoffset[$res['user']] = $res['utcoffset'];
         }
-        mysql_free_result($sqlresults);
 
         $gexf = new Gexf();
         $gexf->setTitle("Hashtag - user " . $filename);

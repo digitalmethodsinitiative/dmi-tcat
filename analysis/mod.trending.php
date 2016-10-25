@@ -3,6 +3,12 @@ require_once __DIR__ . '/common/config.php';
 require_once __DIR__ . '/../config.separate.php';
 require_once __DIR__ . '/common/functions.php';
 
+/*
+ * PLEASE NOTE: This script references (configuration) files not present in mainline TCAT.
+ * It also not up-to-date with PHP 7 set. It is only here for archival purposes unless it will be revived.
+ */
+die();
+
 $bootstrap = 14;
 if (isset($_GET['bootstrap']))
     $bootstrap = $_GET['bootstrap'];

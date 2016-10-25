@@ -28,6 +28,9 @@ require_once __DIR__ . '/common/Gexf.class.php';
 
         <?php
         validate_all_variables();
+        dataset_must_exist();
+        $dbh = pdo_connect();
+        pdo_unbuffered($dbh);
         $collation = current_collation();
 
         $filename = get_filename_for_export("mentionHashtags", "", "gexf");
@@ -38,8 +41,9 @@ require_once __DIR__ . '/common/Gexf.class.php';
         $sql .= sqlSubset($where);
         //print $sql."<Br>";
 
-        $sqlresults = mysql_unbuffered_query($sql);
-        while ($res = mysql_fetch_assoc($sqlresults)) {
+        $rec = $dbh->prepare($sql);
+        $rec->execute();
+        while ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
             if (!isset($userHashtags[$res['user']][$res['hashtag']]))
                 $userHashtags[$res['user']][$res['hashtag']] = 0;
             $userHashtags[$res['user']][$res['hashtag']]++;
@@ -50,7 +54,6 @@ require_once __DIR__ . '/common/Gexf.class.php';
                 $hashtagCount[$res['hashtag']] = 0;
             $hashtagCount[$res['hashtag']]++;
         }
-        mysql_free_result($sqlresults);
 
         $gexf = new Gexf();
         $gexf->setTitle("Hashtag - mentions " . $filename);

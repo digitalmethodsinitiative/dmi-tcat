@@ -3,6 +3,13 @@ require_once __DIR__ . '/common/config.php';
 require_once __DIR__ . '/common/functions.php';
 require_once __DIR__ . '/common/Coword.class.php';
 require_once __DIR__ . '/common/CSV.class.php';
+
+/*
+ * PLEASE NOTE: This script references (configuration) files not present in mainline TCAT.
+ * It also not up-to-date with PHP 7 set. It is only here for archival purposes unless it will be revived.
+ */
+die();
+
 validate_all_variables();
 $collation = current_collation();
 $method = "word";

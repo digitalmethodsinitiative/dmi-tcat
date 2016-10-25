@@ -395,6 +395,7 @@ function groupByInterval($date) {
 // generates the datafiles, only used if the file does not exist yet
 function generate($what, $filename) {
     global $tsv, $network, $esc, $titles, $database, $interval, $outputformat;
+    $dbh = pdo_connect();
 
     require_once __DIR__ . '/CSV.class.php';
 
@@ -407,8 +408,9 @@ function generate($what, $filename) {
     $sql = "SELECT MIN(t.created_at) AS min, MAX(t.created_at) AS max FROM " . $esc['mysql']['dataset'] . "_tweets t ";
     $sql .= sqlSubset();
     //print $sql . "<bR>";
-    $rec = mysql_query($sql);
-    $res = mysql_fetch_assoc($rec);
+    $rec = $dbh->prepare($sql);
+    $rec->execute();
+    $res = $rec->fetch(PDO::FETCH_ASSOC);
 
     // get frequencies
     if ($what == "hashtag") {
@@ -426,15 +428,13 @@ function generate($what, $filename) {
         $sql .= sqlSubset();
 
         // get slice and its min and max time
-        $rec = mysql_query($sql);
-
-        if ($rec && mysql_num_rows($rec) > 0) {
-            while ($res = mysql_fetch_assoc($rec)) {
-                $tweets[] = $res['text'];
-                $ids[] = $res['id'];
-                $times[] = $res['created_at'];
-                $from_user_names[] = strtolower($res['from_user_name']);
-            }
+        $rec = $dbh->prepare($sql);
+        $rec->execute();
+        while ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
+            $tweets[] = $res['text'];
+            $ids[] = $res['id'];
+            $times[] = $res['created_at'];
+            $from_user_names[] = strtolower($res['from_user_name']);
         }
 
         // extract desired things ($what) and group per interval
@@ -601,6 +601,7 @@ function generate($what, $filename) {
 
 // does some cleanup of data types
 function validate($what, $how) {
+    global $dbh;
     $what = trim($what);
     switch ($how) {
         case "database":
@@ -647,12 +648,19 @@ function validate($what, $how) {
             break;
         // escape non-mysql chars
         case "mysql":
+            // WARNING (TODO)! Currently this validation is weak, as we *cannot* translate mysql_real_escape_string into PDO functionality without issues.
+            // We should use prepared statements at all critical junctions in the source code.
             $what = preg_replace("/[\[\]]/", "", $what);
-            // TODO: verify if this PHP 7 compatibile variant is identical to the older:
-            // $what = mysql_real_escape_string($what);
-            //$dbh = pdo_connect();
-            //$what = $dbh->quote($what);
-            //$dbh = null;
+            // New code, looks similar, but we run into problems when we mix these quoted strings with prepared statements (we end up inserting quotes in the database).
+            /*
+            $quoted = $dbh->quote($what);
+            $what = mb_substr(mb_substr($quoted, 1), 0, -1);
+            */
+            // Old code for reference:
+            /*
+            $what = preg_replace("/[\[\]]/", "", $what);
+            $what = mysql_real_escape_string($what);
+            */
             break;
         case "frequency":
             $what = preg_replace("/[^\d]/", "", $what);
@@ -901,21 +909,6 @@ function get_total_nr_of_tweets() {
 function xml_escape($stuff) {
     return str_replace("&", "&amp;", str_replace("'", "&quot;", str_replace('"', "'", strip_tags($stuff))));
 }
-
-/* (PHP7)
-function db_connect($db_host, $db_user, $db_pass, $db_name) {
-    global $pdo;
-    $pdo = mysql_connect($db_host, $db_user, $db_pass);
-    if (!mysql_select_db($db_name, $connection))
-        die("could not connect");
-    if (!mysql_set_charset('utf8mb4', $connection)) {
-        echo "Error: Unable to set the character set.\n";
-        exit;
-    }
-    mysql_query("set sql_mode='ALLOW_INVALID_DATES'");
-    return $pdo;
-}
-*/
 
 function dbserver_has_geo_functions() {
     $dbh = pdo_connect();

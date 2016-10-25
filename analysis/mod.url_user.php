@@ -29,6 +29,9 @@ require_once __DIR__ . '/common/CSV.class.php';
 
         <?php
         validate_all_variables();
+        dataset_must_exist();
+        $dbh = pdo_connect();
+        pdo_unbuffered($dbh);
         $collation = current_collation();
         $filename = get_filename_for_export("urlUser");
         $csv = new CSV($filename, $outputformat);
@@ -38,10 +41,10 @@ require_once __DIR__ . '/common/CSV.class.php';
         $where = "t.id = u.tweet_id AND u.url_followed !='' AND ";
         $sql .= sqlSubset($where);
         $sql .= " GROUP BY u.url_followed, LOWER(t.from_user_name) ORDER BY frequency DESC";
-        $sqlresults = mysql_unbuffered_query($sql);
-
         $csv->writeheader(array("frequency", "user", "url", "domain", "status_code"));
-        while ($res = mysql_fetch_assoc($sqlresults)) {
+        $rec = $dbh->prepare($sql);
+        $rec->execute();
+        while ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
             $csv->newrow();
             $csv->addfield($res['frequency']);
             $csv->addfield($res['username']);
@@ -53,7 +56,6 @@ require_once __DIR__ . '/common/CSV.class.php';
             $urlDomain[$res['url']] = $res['domain'];
             $urlStatusCode[$res['url']] = $res['status_code'];
         }
-        mysql_free_result($sqlresults);
         $csv->close();
 
         echo '<fieldset class="if_parameters">';

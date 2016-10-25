@@ -131,6 +131,9 @@ require_once __DIR__ . '/common/Gexf.class.php';
         <?php
 
         validate_all_variables();
+        dataset_must_exist();
+        $dbh = pdo_connect();
+        // NOTICE: we do not do unbuffered queries, because we execute SQL queries in parallel in this script
         global $collation;
         $collation = current_collation();
 
@@ -144,10 +147,10 @@ require_once __DIR__ . '/common/Gexf.class.php';
 		// get the full tweet count
 		$sql = "SELECT count(t.id) as count FROM " . $esc['mysql']['dataset'] . "_tweets t ";
 		$sql .= sqlSubset();
-		$sqlresults = mysql_query($sql);
-		$data = mysql_fetch_assoc($sqlresults);
+        $rec = $dbh->prepare($sql);
+        $rec->execute();
+        $data = $rec->fetch(PDO::FETCH_ASSOC);
 		$fulltweetcount = $data["count"];
-
 
 		// process colums
 		getFlow($_GET["col1_type"],$_GET["col1_cutoff"],$_GET["col2_type"],$_GET["col2_cutoff"],$_GET["discard_other"],0);
@@ -166,6 +169,7 @@ require_once __DIR__ . '/common/Gexf.class.php';
 		function getFlow($col1_type,$col1_cutoff,$col2_type,$col2_cutoff,$discard_other,$runcounter) {
 
 			global $esc,$network,$oldtoplists,$collation;
+            global $dbh;
 
 	        $sql = "SELECT LOWER(" . $col1_type . ") AS col1, LOWER(t." . $col2_type . ") AS col2 FROM ";
 	        $sql .= $esc['mysql']['dataset'] . "_tweets t ";
@@ -201,16 +205,15 @@ require_once __DIR__ . '/common/Gexf.class.php';
 			// voting for keeping the SQL output, nice way to trace results for expert users
 	        echo "sql query " . ($runcounter + 1) . ": " . $sql . "<br />";
 
-
-	        $sqlresults = mysql_unbuffered_query($sql);
-
 	        // run through the data once to create item counts for cutting and fusing
 	        $data = array();
 	        $toplists = array();
 	        $toplists["col1"] = array();
 	        $toplists["col2"] = array();
-	        while ($res = mysql_fetch_assoc($sqlresults)) {
 
+            $rec = $dbh->prepare($sql);
+            $rec->execute();
+            while ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
 
 				// ---------------------
 				// some cleaning
@@ -253,8 +256,6 @@ require_once __DIR__ . '/common/Gexf.class.php';
 
 	            $data[] = $res;
 	        }
-
-            mysql_free_result($sqlresults);
 
 			// ---------------------
 			// cut off elements for the sankey column

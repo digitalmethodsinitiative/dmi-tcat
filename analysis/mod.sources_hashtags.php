@@ -29,6 +29,9 @@ require_once __DIR__ . '/common/Gexf.class.php';
         <?php
 
         validate_all_variables();
+        dataset_must_exist();
+        $dbh = pdo_connect();
+        pdo_unbuffered($dbh);
         $filename = get_filename_for_export("sourceHashtag", '', 'gexf');
         $collation = current_collation();
 
@@ -39,9 +42,9 @@ require_once __DIR__ . '/common/Gexf.class.php';
         $where = "t.id = h.tweet_id AND ";
         $sql .= sqlSubset($where);
 
-        $sqlresults = mysql_unbuffered_query($sql);
-
-		while ($res = mysql_fetch_assoc($sqlresults)) {
+        $rec = $dbh->prepare($sql);
+        $rec->execute();
+        while ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
 
 			$res['source'] = preg_replace("/<.+>/U", "", $res['source']);
 			$res['source'] = preg_replace("/[ \s\t]+/", " ", $res['source']);
@@ -52,8 +55,6 @@ require_once __DIR__ . '/common/Gexf.class.php';
 			}
 			$sourcesHashtags[$res['source']][$res['hashtag']]++;
         }
-
-        mysql_free_result($sqlresults);
 
         $gexf = new Gexf();
         $gexf->setTitle("source-hashtag " . $filename);

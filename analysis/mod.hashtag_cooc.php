@@ -25,6 +25,8 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
 
         <?php
         validate_all_variables();
+        $dbh = pdo_connect();
+        pdo_unbuffered($dbh);
         if (empty($esc['shell']['minf']))
             $esc['shell']['minf'] = 4;
         if (empty($esc['shell']['topu']))
@@ -43,8 +45,10 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
         $sql .= sqlSubset($where);
         $sql .= "GROUP BY h1";
         //print $sql . "<bR>";
-        $sqlresults = mysql_unbuffered_query($sql);
-        while ($res = mysql_fetch_assoc($sqlresults)) {
+        $rec = $dbh->prepare($sql);
+        $rec->execute();
+        while ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
+
             $word = $res['h1'];
             $coword->distinctUsersForWord[$word] = $res['d'];
             $coword->userDiversity[$word] = round(($res['d'] / $res['c']) * 100, 2);
@@ -52,7 +56,6 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
             $coword->wordFrequencyDividedByUniqueUsers[$word] = round($res['c'] / $res['d'], 2);
             $coword->wordFrequencyMultipliedByUniqueUsers[$word] = $res['c'] * $res['d'];
         }
-        mysql_free_result($sqlresults);
 
         // do the actual job
         // get cowords
@@ -63,8 +66,9 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
         $sql .= "LOWER(A.text COLLATE $collation) < LOWER(B.text COLLATE $collation) AND A.tweet_id = t.id AND A.tweet_id = B.tweet_id ";
         $sql .= "ORDER BY h1,h2";
 //print $sql."<br>";
-        $sqlresults = mysql_query($sql);
-        while ($res = mysql_fetch_assoc($sqlresults)) {
+        $rec = $dbh->prepare($sql);
+        $rec->execute();
+        while ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
             $coword->addWord($res['h1']);
             $coword->addWord($res['h2']);
             $coword->addCoword($res['h1'], $res['h2'], 1);

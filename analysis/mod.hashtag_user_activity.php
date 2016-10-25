@@ -23,30 +23,37 @@ require_once __DIR__ . '/common/CSV.class.php';
 
         <?php
         validate_all_variables();
+        dataset_must_exist();
+        $dbh = pdo_connect();
+        pdo_unbuffered($dbh);
         $filename = get_filename_for_export("hashtagUserActivity", (isset($_GET['probabilityOfAssociation']) ? "_normalizedAssociationWeight" : ""));
         $csv = new CSV($filename, $outputformat);
 
         // select nr of users in subset
         $sql = "SELECT count(id) AS count FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
-        $rec = mysql_query($sql);
-        if (mysql_num_rows($rec) > 0)
-            $res = mysql_fetch_assoc($rec);
-        else
+
+        $rec = $dbh->prepare($sql);
+        $rec->execute();
+        if ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
+            $nrOfTweets = $res['count'];
+        } else {
             die('no data in selection');
-        $nrOfTweets = $res['count'];
+        }
 
         $collation = current_collation();
 
         // select nr of users in subset
         $sql = "SELECT count(distinct(from_user_name COLLATE $collation)) AS count FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
-        $rec = mysql_query($sql);
-        if (mysql_num_rows($rec) > 0)
-            $res = mysql_fetch_assoc($rec);
-        else
+
+        $rec = $dbh->prepare($sql);
+        $rec->execute();
+        if ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
+            $nrOfUsers = $res['count'];
+        } else {
             die('no data in selection');
-        $nrOfUsers = $res['count'];
+        }
 
         // get hashtag-user relations
         $sql = "SELECT LOWER(A.text COLLATE $collation) AS h1, LOWER(A.from_user_name COLLATE $collation) AS user ";
@@ -56,9 +63,9 @@ require_once __DIR__ . '/common/CSV.class.php';
         $sql .= "A.tweet_id = t.id ";
 
         $hashtagUsers = $hashtagCount = $hashtagMentions = $hashtagDistinctMentions = $hashtagUsers = $hashtagDistinctUsers = array();
-
-        $sqlresults = mysql_unbuffered_query($sql);
-        while ($res = mysql_fetch_assoc($sqlresults)) {
+        $rec = $dbh->prepare($sql);
+        $rec->execute();
+        while ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
             if (!isset($hashtagUsers[$res['h1']][$res['user']]))
                 $hashtagUsers[$res['h1']][$res['user']] = 0;
             $hashtagUsers[$res['h1']][$res['user']]++;
@@ -66,7 +73,6 @@ require_once __DIR__ . '/common/CSV.class.php';
                 $hashtagCount[$res['h1']] = 0;
             $hashtagCount[$res['h1']]++;
         }
-        mysql_free_result($sqlresults);
         foreach ($hashtagUsers as $hashtag => $users)
             $hashtagDistinctUsers[$hashtag] = count($users);
 
@@ -74,13 +80,13 @@ require_once __DIR__ . '/common/CSV.class.php';
         $sql = "SELECT m.to_user COLLATE $collation AS u, h.text COLLATE $collation AS h1 FROM " . $esc['mysql']['dataset'] . "_hashtags h, " . $esc['mysql']['dataset'] . "_mentions m, " . $esc['mysql']['dataset'] . "_tweets t";
         $sql .= sqlSubset() . " AND ";
         $sql .= "h.tweet_id = m.tweet_id AND h.tweet_id = t.id";
-        $rec = mysql_unbuffered_query($sql);
-        while ($res = mysql_fetch_assoc($rec)) {
+        $rec = $dbh->prepare($sql);
+        $rec->execute();
+        while ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
             if (!isset($hashtagMentions[$res['h1']][$res['u']]))
                 $hashtagMentions[$res['h1']][$res['u']] = 0;
             $hashtagMentions[$res['h1']][$res['u']]++;
         }
-        mysql_free_result($rec);
         foreach ($hashtagMentions as $hashtag => $mentions) {
             $hashtagDistinctMentions[$hashtag] = count($mentions);
             $hashtagMentions[$hashtag] = array_sum($mentions);

@@ -28,6 +28,9 @@ require_once __DIR__ . '/common/CSV.class.php';
 
         <?php
         validate_all_variables();
+        dataset_must_exist();
+        $dbh = pdo_connect();
+        pdo_unbuffered($dbh);
 
         $filename = get_filename_for_export("sourceStats");
 
@@ -43,9 +46,10 @@ require_once __DIR__ . '/common/CSV.class.php';
         //print $sql . "<br>"; exit;
 
 
-        $sqlresults = mysql_unbuffered_query($sql);
         $array = array();
-        while ($res = mysql_fetch_assoc($sqlresults)) {
+        $rec = $dbh->prepare($sql);
+        $rec->execute();
+        while ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
 
 			$res['source'] = preg_replace("/<.+>/U", "", $res['source']);
 			$res['source'] = preg_replace("/,/", "_", $res['source']);
@@ -57,7 +61,6 @@ require_once __DIR__ . '/common/CSV.class.php';
 			}
             $array[$res['datepart']][$res['source']] += $res['count'];
         }
-        mysql_free_result($sqlresults);
 
         $csv->writeheader(array("date", "source", "count"));
 

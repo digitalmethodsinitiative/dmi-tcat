@@ -102,21 +102,24 @@ require_once __DIR__ . '/common/functions.php';
 
         <?php
         validate_all_variables();
+        dataset_must_exist();
+        $dbh = pdo_connect();
+        pdo_unbuffered($dbh);
         $collation = current_collation();
 
         $sql = "SELECT t.id, t.text COLLATE $collation as text, t.created_at, t.from_user_name COLLATE $collation as from_user_name, t.source COLLATE $collation as source FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
         $sql .= " ORDER BY ID";
         //print $sql; die;
-        $rec = mysql_unbuffered_query($sql);
-        while ($res = mysql_fetch_assoc($rec)) {
+        $rec = $dbh->prepare($sql);
+        $rec->execute();
+        while ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
             $tweets[$res['id']] = $res['text'];
             $dates[$res['id']] = $res['created_at'];
             $tweets_short[$res['id']] = trim(preg_replace("/:\s*$/", "", preg_replace("/[\"'“]/", "", preg_replace("/\.\.\./", "", preg_replace("/[\[]*https?:[^\s]*[\]]*/", "", preg_replace("/@[^\s]*/", "", preg_replace("/RT @.*?:\s*/", "", $res['text'])))))));
             $users[$res['id']] = $res['from_user_name'];
             $sources[$res['id']] = preg_replace("/<a href=.*>(.+?)<.*/","\\1",$res['source']);
         }
-        mysql_free_result($rec);
 
         $tweets_short_count = array_count_values($tweets_short);
         foreach ($tweets_short_count as $short => $count) {

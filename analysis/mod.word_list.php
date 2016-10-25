@@ -31,31 +31,32 @@ $minf = isset($_GET['minf']) ? $minf = $_GET['minf'] : 1;
 
         <?php
         validate_all_variables();
+        dataset_must_exist();
+        $dbh = pdo_connect();
+        pdo_unbuffered($dbh);
 
         $filename = get_filename_for_export("wordList");
         $csv = new CSV($filename, $outputformat);
         
-        mysql_query("set names utf8");
         $sql = "SELECT id, text FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
-        
-        $sqlresults = mysql_unbuffered_query($sql);
+
         $debug = '';
-        if ($sqlresults) {
-            while ($data = mysql_fetch_assoc($sqlresults)) {
-                $text = $data["text"];
-                preg_match_all('/(https?:\/\/[^\s]+)|([\p{L}][\p{L}]+)/u', $text, $matches, PREG_PATTERN_ORDER);
-                foreach ($matches[0] as $word) {
-                    if (preg_match('/(https?:\/\/)/u', $word))
-                        continue;
-                    $word = strtolower($word);
-                    $csv->newrow();
-                    $csv->addfield(trim($word));
-                    $csv->addfield("{'ids': [" . $data['id'] . "]}");
-                    $csv->writerow();
-                }
+
+        $rec = $dbh->prepare($sql);
+        $rec->execute();
+        while ($data = $rec->fetch(PDO::FETCH_ASSOC)) {
+            $text = $data["text"];
+            preg_match_all('/(https?:\/\/[^\s]+)|([\p{L}][\p{L}]+)/u', $text, $matches, PREG_PATTERN_ORDER);
+            foreach ($matches[0] as $word) {
+                if (preg_match('/(https?:\/\/)/u', $word))
+                    continue;
+                $word = strtolower($word);
+                $csv->newrow();
+                $csv->addfield(trim($word));
+                $csv->addfield("{'ids': [" . $data['id'] . "]}");
+                $csv->writerow();
             }
-            mysql_free_result($sqlresults);
         }
 
         $csv->close();

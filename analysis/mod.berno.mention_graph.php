@@ -30,6 +30,9 @@ require_once __DIR__ . '/common/functions.php';
         <?php
 
         validate_all_variables();
+        dataset_must_exist();
+        $dbh = pdo_connect();
+        pdo_unbuffered($dbh);
 
         $users = array();
         $usersinv = array();
@@ -37,7 +40,6 @@ require_once __DIR__ . '/common/functions.php';
 
         $cur = 0;
         $numresults = 10000;
-		$counter = 0;
 
         while ($numresults == 10000) {
 
@@ -46,14 +48,14 @@ require_once __DIR__ . '/common/functions.php';
             $sql .= sqlSubset($where);
             $sql .= " LIMIT " . $cur . "," . $numresults;
 			//print $sql."<br>";
-            $sqlresults = mysql_query($sql);
 
-            while ($data = mysql_fetch_assoc($sqlresults)) {
+            $numresults = 0;
 
-            	$counter++;
+            $rec = $dbh->prepare($sql);
+            $rec->execute();
+            while ($data = $rec->fetch(PDO::FETCH_ASSOC)) {
 
-            	//if($counter > 10) { exit; }
-				//print_r($data);
+            	$numresults++;
 
                 $data["from_user_name"] = strtolower($data["from_user_name"]);
                 $data["to_user"] = strtolower($data["to_user"]);
@@ -93,7 +95,6 @@ require_once __DIR__ . '/common/functions.php';
                 }
             }
 
-            $numresults = mysql_num_rows($sqlresults);
             $cur = $cur + $numresults;
         }
 
@@ -105,11 +106,11 @@ require_once __DIR__ . '/common/functions.php';
 
 		//echo $sql; exit;
 
-		$sqlresults = mysql_query($sql);
-
 		$tmpusers = array();
-		while($data = mysql_fetch_assoc($sqlresults)) {
 
+        $rec = $dbh->prepare($sql);
+        $rec->execute();
+        while ($data = $rec->fetch(PDO::FETCH_ASSOC)) {
 			$data["from_user_name"] = strtolower($data["from_user_name"]);
 
 			$users[$data["from_user_name"]]["notweets"]++;
@@ -130,10 +131,11 @@ require_once __DIR__ . '/common/functions.php';
 
 		//echo $sql;
 
-		$sqlresults = mysql_query($sql);
-
 		$tmpusers = array();
-		while($data = mysql_fetch_assoc($sqlresults)) {
+
+        $rec = $dbh->prepare($sql);
+        $rec->execute();
+        while ($data = $rec->fetch(PDO::FETCH_ASSOC)) {
 
 			$data["from_user_name"] = strtolower($data["from_user_name"]);
 

@@ -31,34 +31,35 @@ $minf = isset($_GET['minf']) ? $minf = $_GET['minf'] : 1;
 
         <?php
         validate_all_variables();
+        dataset_must_exist();
+        $dbh = pdo_connect();
+        pdo_unbuffered($dbh);
 
         $media_url_count = array();
 
         $tempfile = tmpfile();
         fputs($tempfile, chr(239) . chr(187) . chr(191));
 
-        mysql_query("set names utf8");
         $sql = "SELECT m.media_url_https as url, " . sqlInterval() . " FROM " . $esc['mysql']['dataset'] . "_tweets t, " .
                 $esc['mysql']['dataset'] . "_media m ";
         $sql .= sqlSubset();
         $sql .= " AND m.tweet_id = t.id ";
         $sql .= " ORDER BY datepart ASC";
-        $sqlresults = mysql_unbuffered_query($sql);
         $debug = '';
-        if ($sqlresults) {
-            while ($data = mysql_fetch_assoc($sqlresults)) {
-                $datepart = $data["datepart"];
-                $url = $data["url"];
-                if (!array_key_exists($datepart, $media_url_count)) {
-                    $media_url_count[$datepart] = array();
-                }
-                if (!array_key_exists($url, $media_url_count[$datepart])) {
-                    $media_url_count[$datepart][$url] = 1;
-                } else {
-                    $media_url_count[$datepart][$url]++;
-                }
+        $rec = $dbh->prepare($sql);
+        $rec->execute();
+        while ($data = $rec->fetch(PDO::FETCH_ASSOC)) {
+
+            $datepart = $data["datepart"];
+            $url = $data["url"];
+            if (!array_key_exists($datepart, $media_url_count)) {
+                $media_url_count[$datepart] = array();
             }
-            mysql_free_result($sqlresults);
+            if (!array_key_exists($url, $media_url_count[$datepart])) {
+                $media_url_count[$datepart][$url] = 1;
+            } else {
+                $media_url_count[$datepart][$url]++;
+            }
         }
 
         // write csv results
