@@ -646,21 +646,16 @@ function validate($what, $how) {
                 $what = escapeshellcmd($what);
             }
             break;
-        // escape non-mysql chars
-        case "mysql":
-            // WARNING (TODO)! Currently this validation is weak, as we *cannot* translate mysql_real_escape_string into PDO functionality without issues.
-            // We should use prepared statements at all critical junctions in the source code.
+        // escape non-mysql chars where we must use literal string in SQL queries (for example: table names cannot become placeholders in PDO)
+        case "mysql-literal":
             $what = preg_replace("/[\[\]]/", "", $what);
-            // New code, looks similar, but we run into problems when we mix these quoted strings with prepared statements (we end up inserting quotes in the database).
-            /*
             $quoted = $dbh->quote($what);
             $what = mb_substr(mb_substr($quoted, 1), 0, -1);
-            */
-            // Old code for reference:
-            /*
+            break;
+        // the mysql-placeholder type means the variable will not be used literally in a SQL query, but passed through a placeholder
+        // TODO: turn as much user-passed variables as possible into the mysql-placeholder type, but when we do, make sure to commit everything in a single go
+        case "mysql-placeholder":
             $what = preg_replace("/[\[\]]/", "", $what);
-            $what = mysql_real_escape_string($what);
-            */
             break;
         case "frequency":
             $what = preg_replace("/[^\d]/", "", $what);
@@ -688,14 +683,14 @@ function decodeAndFlatten($text) {
 function validate_all_variables() {
     global $esc, $query, $url_query, $geo_query, $dataset, $exclude, $from_user_name, $from_source, $startdate, $enddate, $interval, $databases, $connection, $keywords, $database, $minf, $topu, $from_user_lang, $outputformat;
 
-    $esc['mysql']['dataset'] = validate($dataset, "mysql");
-    $esc['mysql']['query'] = validate($query, "mysql");
-    $esc['mysql']['url_query'] = validate($url_query, "mysql");
-    $esc['mysql']['geo_query'] = validate($geo_query, "mysql");
-    $esc['mysql']['exclude'] = validate($exclude, "mysql");
-    $esc['mysql']['from_source'] = validate($from_source, "mysql");
-    $esc['mysql']['from_user_name'] = validate($from_user_name, "mysql");
-    $esc['mysql']['from_user_lang'] = validate($from_user_lang, "mysql");
+    $esc['mysql']['dataset'] = validate($dataset, "mysql-literal");
+    $esc['mysql']['query'] = validate($query, "mysql-literal");
+    $esc['mysql']['url_query'] = validate($url_query, "mysql-literal");
+    $esc['mysql']['geo_query'] = validate($geo_query, "mysql-literal");
+    $esc['mysql']['exclude'] = validate($exclude, "mysql-literal");
+    $esc['mysql']['from_source'] = validate($from_source, "mysql-literal");
+    $esc['mysql']['from_user_name'] = validate($from_user_name, "mysql-literal");
+    $esc['mysql']['from_user_lang'] = validate($from_user_lang, "mysql-literal");
 
     $esc['shell']['dataset'] = validate($dataset, "shell");
     $esc['shell']['query'] = validate($query, "shell");

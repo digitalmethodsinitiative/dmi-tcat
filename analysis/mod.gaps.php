@@ -34,9 +34,8 @@ require_once __DIR__ . '/common/CSV.class.php';
 
         // make filename and open file for write
         $module = "gapData";
-        $sql = "SELECT id, `type` FROM tcat_query_bins WHERE querybin = :querybin";
+        $sql = "SELECT id, `type` FROM tcat_query_bins WHERE querybin = '" . $esc['mysql']['dataset'] . "'";
         $rec = $dbh->prepare($sql);
-        $rec->bindParam(":querybin", $esc['mysql']['dataset'], PDO::PARAM_STR);
         $rec->execute();
         if ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
             $bin_id = $res['id'];

@@ -6,7 +6,7 @@ No issues known at the moment, but little tested. Keyword tracking works, contro
 
 ## Analysis segment
 
-Paramater validation for element 'mysql' is now critically weak, see validate() function for details.
+No issues known at the moment.
 
 ## Other components
 
