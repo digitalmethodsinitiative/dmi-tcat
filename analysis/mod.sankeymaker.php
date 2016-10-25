@@ -142,7 +142,7 @@ require_once __DIR__ . '/common/Gexf.class.php';
 
 
 		// get the full tweet count
-		$sql = "SELECT count(distinct(t.id)) as count FROM " . $esc['mysql']['dataset'] . "_tweets t ";
+		$sql = "SELECT count(t.id) as count FROM " . $esc['mysql']['dataset'] . "_tweets t ";
 		$sql .= sqlSubset();
 		$sqlresults = mysql_query($sql);
 		$data = mysql_fetch_assoc($sqlresults);

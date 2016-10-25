@@ -853,7 +853,7 @@ function get_all_datasets() {
                 $row['mintime'] = $res3['min'];
             }
             $row['keywords'] = "";
-            if ($dataset == $row['bin']) {
+            if ($row['type'] == "track") {
                 $rec2 = $dbh->prepare("SELECT distinct(p.phrase) FROM tcat_query_bins_phrases bp, tcat_query_phrases p WHERE bp.querybin_id = " . $res['id'] . " AND bp.phrase_id = p.id ORDER BY LOWER(p.phrase)");
                 if ($rec2->execute() && $rec2->rowCount() > 0) {
                     $res2 = $rec2->fetchAll(PDO::FETCH_COLUMN);

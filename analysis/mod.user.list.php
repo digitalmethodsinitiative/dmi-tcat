@@ -34,7 +34,7 @@ require_once __DIR__ . '/common/CSV.class.php';
         $csv = new CSV($filename, $outputformat);
 
         // tweets per user
-        $sql = "SELECT t.from_user_id,t.from_user_name COLLATE $collation as from_user_name,t.from_user_lang,t.from_user_tweetcount,t.from_user_followercount,t.from_user_friendcount,t.from_user_listed,t.from_user_utcoffset,t.from_user_verified,count(distinct(t.id)) as tweetcount, ";
+        $sql = "SELECT t.from_user_id,t.from_user_name COLLATE $collation as from_user_name,t.from_user_lang,t.from_user_tweetcount,t.from_user_followercount,t.from_user_friendcount,t.from_user_listed,t.from_user_utcoffset,t.from_user_verified,count(t.id) as tweetcount, ";
         $sql .= sqlInterval();
         $sql .= " FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();

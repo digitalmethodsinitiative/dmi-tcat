@@ -56,7 +56,7 @@ for ($f = 0; $f < count($fields); $f++) {
     $value = $fields[$f];
     // Look for something like this: http://twitter.com/sunit/status/129951691670949888
     // We are using the . (any) character here to match the username non-greedy, as it may contain non-alphanumeric UTF-8 symbols
-    if (preg_match("#https?://twitter.com/.*?/status/([[:digit:]]*)#", $value, $matches)) {
+    if (preg_match("#https?://[w.]*?twitter.com/.*?/status/([[:digit:]]*)#", $value, $matches)) {
         $first_id = $matches[1];
         $suggested_column = $f;
         print "Found Twitter status links in data file, at column " . ($f+1) . "\n";
@@ -81,7 +81,7 @@ while ($fields = fgetcsv($input_file, 0, $delimiter)) {
         print "Malformed data file at line $line. Column " . ($f+1) . " cannot be found. Exiting.\n";
         exit(1);
     }
-    if (preg_match("#https?://twitter.com/.*?/status/([[:digit:]]*)#", $fields[$suggested_column], $matches)) {
+    if (preg_match("#https?://[w.]*?twitter.com/.*?/status/([[:digit:]]*)#", $fields[$suggested_column], $matches)) {
         $ids[] = $matches[1];
     } else {
         print "Warning: missing tweet link URL at line $line.\n";

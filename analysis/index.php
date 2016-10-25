@@ -287,7 +287,7 @@ if (defined('ANALYSIS_URL'))
             $dbh = pdo_connect();
 
             // count current subsample
-            $sql = "SELECT count(distinct(t.id)) as count FROM " . $esc['mysql']['dataset'] . "_tweets t ";
+            $sql = "SELECT count(t.id) as count FROM " . $esc['mysql']['dataset'] . "_tweets t ";
             $sql .= sqlSubset();
             if ($data = pdo_fastquery($sql, $dbh)) $numtweets = $data["count"];
 

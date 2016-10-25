@@ -34,7 +34,7 @@ require_once __DIR__ . '/common/CSV.class.php'
         $csv = new CSV($filename, $outputformat);
 
         // tweets per user
-        $sql = "SELECT count(distinct(t.id)) AS count, t.from_user_id, ";
+        $sql = "SELECT count(t.id) AS count, t.from_user_id, ";
         $sql .= sqlInterval();
         $sql .= " FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
