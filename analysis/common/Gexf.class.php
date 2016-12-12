@@ -114,13 +114,13 @@ class Gexf {
 		$nodeAttributes = $this->renderNodeAttributes();
 		$edgeAttributes = $this->renderEdgeAttributes();
 		
-		$this->gexfFile = chr(239) . chr(187) . chr(191) . '<?xml version="1.0" encoding="UTF-8"?>
-		<gexf xmlns="http://www.gexf.net/1.2draft"
-			xmlns:xsi="http://wwww.w3.org/2001/XMLSchema-instance"
-			xsi:schemaLocation="http://www.gexf.net/1.2draft 
-			http://www.gexf.net/1.2draft/gexf.xds"
-			xmlns:viz="http://www.gexf.net/1.2draft/viz"
-			version="1.2">
+		$this->gexfFile = chr(239) . chr(187) . chr(191) . '<?xml version="1.1" encoding="UTF-8"?>
+        <gexf xmlns="http://www.gexf.net/1.3draft"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://www.gexf.net/1.3draft
+            http://www.gexf.net/1.3draft/gexf.xsd"
+            xmlns:viz="http://www.gexf.net/1.2draft/viz"
+            version="1.3">
 			<meta>
 				<creator>'.$this->creator.'</creator>
 				<description>'.$this->title.'</description>

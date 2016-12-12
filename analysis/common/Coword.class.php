@@ -231,7 +231,7 @@ class Coword {
         $toplist = $this->wordFrequency;
         arsort($toplist);
         // getting the frequency of the top n word to solve cutoff problem when two words have the same frequency
-        $toplist = array_slice($toplist, $topu, 1);
+        $toplist = array_slice($toplist, $topu - 1, 1);
         $topvalues = array_values($toplist);
         $minfreq = array_shift($topvalues);
 
@@ -239,7 +239,7 @@ class Coword {
             foreach ($connections as $coword => $freq) {
                 if (isset($this->wordFrequency[$coword]) && $this->wordFrequency[$coword] < $minfreq) { // @todo, utf-8 encoded chars don't exist as keys
                     unset($this->cowords[$word][$coword]);
-                }
+                } 
             }
             if (isset($this->wordFrequency[$word]) && $this->wordFrequency[$word] < $minfreq) {
                 foreach ($connections as $coword => $freq) {
@@ -249,7 +249,7 @@ class Coword {
                     }
                 }
                 unset($this->cowords[$word]);
-            }
+            } 
         }
     }
 
