@@ -50,6 +50,7 @@ if (defined('ANALYSIS_URL'))
 <?php } ?>
         "&exclude=" + $("#ipt_exclude").val().replace(/#/g,"%23") +
             "&from_user_name=" + $("#ipt_from_user").val() +
+            "&from_user_description=" + $("#ipt_user_bio").val() +
             "&from_source=" + $("#ipt_from_source").val() +
             "&startdate=" + $("#ipt_startdate").val() +
             "&enddate=" + $("#ipt_enddate").val() +
@@ -240,6 +241,11 @@ if (defined('ANALYSIS_URL'))
                         <tr>
                             <td class="tbl_head">From user: </td><td><input type="text" id="ipt_from_user" size="60" name="from_user_name"  value="<?php echo $from_user_name; ?>" /> (empty: from any user*)</td>
                         </tr>
+
+                        <tr>
+                            <td class="tbl_head">User bio: </td><td><input type="text" id="ipt_user_bio" size="60" name="from_user_description"  value="<?php echo $from_user_description; ?>" /> (empty: from any user*)</td>
+                        </tr>
+
                         <tr>
                             <td class="tbl_head">From twitter client: </td><td><input type="text" id="ipt_from_source" size="60" name="from_source"  value="<?php echo $from_source; ?>" /> (empty: from any client*)</td>
                         </tr>

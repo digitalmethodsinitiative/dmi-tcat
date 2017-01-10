@@ -48,6 +48,10 @@ if (isset($_GET['from_user_name']) && !empty($_GET['from_user_name']))
     $from_user_name = urldecode($_GET['from_user_name']);
 else
     $from_user_name = "";
+if (isset($_GET['from_user_description']) && !empty($_GET['from_user_description']))
+    $from_user_description = urldecode($_GET['from_user_description']);
+else
+    $from_user_description = "";
 if (isset($_GET['samplesize']) && !empty($_GET['samplesize']))
     $samplesize = $_GET['samplesize'];
 else
@@ -237,6 +241,23 @@ function sqlSubset($where = NULL) {
             $sql = substr($sql, 0, -3) . ") AND ";
         } else {
             $sql .= "LOWER(t.from_user_name COLLATE $collation) = LOWER('" . $esc['mysql']['from_user_name'] . "' COLLATE $collation) AND ";
+        }
+    }
+    if (!empty($esc['mysql']['from_user_description'])) {
+        if (strstr($esc['mysql']['from_user_description'], "AND") !== false) {
+            $subqueries = explode(" AND ", $esc['mysql']['from_user_description']);
+            foreach ($subqueries as $subquery) {
+                $sql .= "LOWER(t.from_user_description COLLATE $collation) LIKE LOWER('%" . $subquery . "%' COLLATE $collation) AND ";
+            }
+        } elseif (strstr($esc['mysql']['from_user_description'], "OR") !== false) {
+            $subqueries = explode(" OR ", $esc['mysql']['from_user_description']);
+            $sql .= "(";
+            foreach ($subqueries as $subquery) {
+                $sql .= "LOWER(t.from_user_description COLLATE $collation) LIKE LOWER('%" . $subquery . "%' COLLATE $collation) OR ";
+            }
+            $sql = substr($sql, 0, -3) . ") AND ";
+        } else {
+            $sql .= "LOWER(t.from_user_description COLLATE $collation) LIKE LOWER('%" . $esc['mysql']['from_user_description'] . "%' COLLATE $collation) AND ";
         }
     }
     if (!empty($esc['mysql']['query'])) {
@@ -681,7 +702,7 @@ function decodeAndFlatten($text) {
 // make sure that we have all the right types and values
 // also make sure one cannot do a mysql injection attack
 function validate_all_variables() {
-    global $esc, $query, $url_query, $geo_query, $dataset, $exclude, $from_user_name, $from_source, $startdate, $enddate, $interval, $databases, $connection, $keywords, $database, $minf, $topu, $from_user_lang, $outputformat;
+    global $esc, $query, $url_query, $geo_query, $dataset, $exclude, $from_user_name, $from_user_description, $from_source, $startdate, $enddate, $interval, $databases, $connection, $keywords, $database, $minf, $topu, $from_user_lang, $outputformat;
 
     $esc['mysql']['dataset'] = validate($dataset, "mysql-literal");
     $esc['mysql']['query'] = validate($query, "mysql-literal");
@@ -690,6 +711,7 @@ function validate_all_variables() {
     $esc['mysql']['exclude'] = validate($exclude, "mysql-literal");
     $esc['mysql']['from_source'] = validate($from_source, "mysql-literal");
     $esc['mysql']['from_user_name'] = validate($from_user_name, "mysql-literal");
+    $esc['mysql']['from_user_description'] = validate($from_user_description, "mysql-literal");
     $esc['mysql']['from_user_lang'] = validate($from_user_lang, "mysql-literal");
 
     $esc['shell']['dataset'] = validate($dataset, "shell");
@@ -699,6 +721,7 @@ function validate_all_variables() {
     $esc['shell']['exclude'] = validate($exclude, "shell");
     $esc['shell']['from_source'] = validate($from_source, "shell");
     $esc['shell']['from_user_name'] = validate($from_user_name, "shell");
+    $esc['shell']['from_user_description'] = validate($from_user_description, "shell");
     $esc['shell']['from_user_lang'] = validate($from_user_lang, "shell");
     $esc['shell']['datasetname'] = validate($dataset, "shell");
 
@@ -766,7 +789,7 @@ function get_status($variable) {
     return null;
 }
 
-// Output format: {dataset}-{startdate}-{enddate}-{query}-{exclude}-{from_user_name}-{from_user_lang}-{url_query}-{module_name}-{module_settings}-{hash}.{filetype}
+// Output format: {dataset}-{startdate}-{enddate}-{query}-{exclude}-{from_user_name}-{from_user_description}-{from_user_lang}-{url_query}-{module_name}-{module_settings}-{hash}.{filetype}
 function get_filename_for_export($module, $settings = "", $filetype = "csv") {
     global $resultsdir, $esc;
 
@@ -787,6 +810,7 @@ function get_filename_for_export($module, $settings = "", $filetype = "csv") {
     $filename .= "-" . $esc['shell']["exclude"];
     $filename .= "-" . $esc['shell']["from_source"];
     $filename .= "-" . $esc['shell']["from_user_name"];
+    $filename .= "-" . $esc['shell']["from_user_description"];
     $filename .= "-" . $esc['shell']["from_user_lang"];
     $filename .= "-" . $esc['shell']["url_query"];
     $filename .= "-" . str_replace(",", "_", str_replace(" ", "x", $esc['shell']["geo_query"]));
