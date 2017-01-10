@@ -107,7 +107,7 @@ if (isset($_GET['graph_resolution']) && !empty($_GET['graph_resolution'])) {
 }
 $interval = "daily";
 if (isset($_REQUEST['interval'])) {
-    if (in_array($_REQUEST['interval'], array('hourly', 'daily', 'weekly', 'monthly', 'yearly', 'overall', 'custom')))
+    if (in_array($_REQUEST['interval'], array('minute', 'hourly', 'daily', 'weekly', 'monthly', 'yearly', 'overall', 'custom')))
         $interval = $_REQUEST['interval'];
 }
 $outputformat = "csv";
@@ -373,6 +373,9 @@ function sqlSubset($where = NULL) {
 function sqlInterval() {
     global $interval;
     switch ($interval) {
+        case "minute":
+            return "DATE_FORMAT(t.created_at,'%Y-%m-%d %Hh %im') datepart ";
+            break;
         case "hourly":
             return "DATE_FORMAT(t.created_at,'%Y-%m-%d %Hh') datepart ";
             break;
@@ -460,6 +463,9 @@ function generate($what, $filename) {
             $time = $times[$key];
 
             switch ($interval) {
+                case "minute":
+                    $group = strftime("%Y-%m-%d %Hh %Mm", strtotime($time));
+                    break;
                 case "hourly":
                     $group = strftime("%Y-%m-%d %Hh", strtotime($time));
                     break;
@@ -649,7 +655,7 @@ function validate($what, $how) {
             break;
         case "interval":
             // if an unsupported interval is specified, fallback to daily
-            if (!in_array($what, array('hourly', 'daily', 'weekly', 'monthly', 'yearly', 'overall', 'custom'))) {
+            if (!in_array($what, array('minute', 'hourly', 'daily', 'weekly', 'monthly', 'yearly', 'overall', 'custom'))) {
                 $what = "daily";
             }
             break;

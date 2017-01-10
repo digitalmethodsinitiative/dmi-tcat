@@ -622,6 +622,7 @@ foreach ($linedata as $key => $value) {
                     <div class='txt_desc' style='background-color: #eee; padding: 5px;'>Here you can select how the statistics should be grouped:
                         <form>
                             <input type='radio' name="interval" value="overall"<?php if ($interval == 'overall') print " CHECKED"; ?> id="tsam1"> <label for="tsam1">overall</label>
+                            <input type='radio' name="interval" value="minute"<?php if ($interval == 'minute') print " CHECKED"; ?> id="tsam8"> <label for="tsam8">per minute</label>
                             <input type='radio' name="interval" value="hourly"<?php if ($interval == 'hourly') print " CHECKED"; ?> id="tsam2"> <label for="tsam2">per hour</label>
                             <input type='radio' name="interval" value="daily"<?php if ($interval == 'daily') print " CHECKED"; ?> id="tsam3"> <label for="tsam3">per day</label>
                             <input type='radio' name="interval" value="weekly"<?php if ($interval == 'weekly') print " CHECKED"; ?> id="tsam4"> <label for="tsam4">per week</label>
