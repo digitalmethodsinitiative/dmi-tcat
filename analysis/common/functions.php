@@ -929,6 +929,19 @@ function xml_escape($stuff) {
     return str_replace("&", "&amp;", str_replace("'", "&quot;", str_replace('"', "'", strip_tags($stuff))));
 }
 
+// connect to the database
+function db_connect($db_host, $db_user, $db_pass, $db_name) {
+    global $connection;
+    $connection = mysql_connect($db_host, $db_user, $db_pass);
+    if (!mysql_select_db($db_name, $connection))
+        die("could not connect");
+    if (!mysql_set_charset('utf8mb4', $connection)) {
+        echo "Error: Unable to set the character set.\n";
+        exit;
+    }
+    mysql_query("set sql_mode='ALLOW_INVALID_DATES'");
+}
+
 function dbserver_has_geo_functions() {
     $dbh = pdo_connect();
     $version = $dbh->getAttribute(PDO::ATTR_SERVER_VERSION);
@@ -1156,6 +1169,83 @@ function sentiment_graph() {
     $sent_html .= '<div class="txt_desc"><br /></div></fieldset>';
 
     echo $sent_html;
+}
+
+function sentiment_exists() {
+    global $esc;
+    $select = "SHOW TABLES LIKE '" . $esc['mysql']['dataset'] . '_sentiment' . "'";
+    $rec = mysql_query($select);
+    if (mysql_num_rows($rec) > 0)
+        return TRUE;
+    return FALSE;
+}
+
+function sentiment_avgs() {
+    global $esc, $period;
+    $avgs = array();
+
+    // all sentiments
+    $sql = "SELECT avg(s.positive) as pos, avg(s.negative) as neg, ";
+    if ($period == "day") // @todo
+        $sql .= "DATE_FORMAT(t.created_at,'%Y.%d.%m') datepart ";
+    else
+        $sql .= "DATE_FORMAT(t.created_at,'%d. %H:00h') datepart ";
+    $sql .= "FROM " . $esc['mysql']['dataset'] . "_tweets t, ";
+    $sql .= $esc['mysql']['dataset'] . "_sentiment s ";
+    $sql .= sqlSubset("t.id = s.tweet_id AND ");
+    $sql .= "GROUP BY datepart ORDER BY t.created_at";
+
+    $rec = mysql_unbuffered_query($sql);
+    while ($res = mysql_fetch_assoc($rec)) {
+        $neg = $res['neg'];
+        $pos = $res['pos'];
+        $avgs[$res['datepart']][0] = (float) $pos;
+        $avgs[$res['datepart']][1] = (float) abs($neg);
+    }
+    mysql_free_result($rec);
+
+    // only subjective
+    $sql = "SELECT avg(s.positive) as pos, avg(s.negative) as neg, ";
+    if ($period == "day") // @todo
+        $sql .= "DATE_FORMAT(t.created_at,'%Y.%d.%m') datepart ";
+    else
+        $sql .= "DATE_FORMAT(t.created_at,'%d. %H:00h') datepart ";
+    $sql .= "FROM " . $esc['mysql']['dataset'] . "_tweets t, ";
+    $sql .= $esc['mysql']['dataset'] . "_sentiment s ";
+    $sql .= sqlSubset("t.id = s.tweet_id AND (s.positive != 1 AND s.negative != 1) AND ");
+    $sql .= "GROUP BY datepart ORDER BY t.created_at";
+
+    $rec = mysql_unbuffered_query($sql);
+    while ($res = mysql_fetch_assoc($rec)) {
+        $neg = $res['neg'];
+        $pos = $res['pos'];
+        $avgs[$res['datepart']][2] = (float) $pos;
+        $avgs[$res['datepart']][3] = (float) abs($neg);
+    }
+    mysql_free_result($rec);
+
+    // only dateparts
+    $sql = "SELECT ";
+    if ($period == "day") // @todo
+        $sql .= "DATE_FORMAT(t.created_at,'%Y.%d.%m') datepart ";
+    else
+        $sql .= "DATE_FORMAT(t.created_at,'%d. %H:00h') datepart ";
+    $sql .= "FROM " . $esc['mysql']['dataset'] . "_tweets t ";
+    $sql .= sqlSubset();
+    $sql .= "GROUP BY datepart";
+
+    // initialize with empty dates
+    $curdate = strtotime($esc['datetime']['startdate']);
+    while ($curdate < strtotime($esc['datetime']['enddate'])) {
+        $thendate = ($period == "day") ? $curdate + 86400 : $curdate + 3600;
+        $tmp = ($period == "day") ? strftime("%Y.%d.%m", $curdate) : strftime("%d. %H:%M", $curdate) . "h";
+        if (!isset($avgs[$tmp])) {
+            $avgs[$tmp] = array();
+        }
+        $curdate = $thendate;
+    }
+
+    return $avgs;
 }
 
 // Check if $dataset is the name of an existing query bin in $datasets.
