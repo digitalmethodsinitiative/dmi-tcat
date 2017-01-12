@@ -6,7 +6,7 @@ require_once __DIR__ . '/common/CSV.class.php';
         validate_all_variables();
         dataset_must_exist();
         $dbh = pdo_connect();
-        pdo_unbuffered($dbh);
+//        pdo_unbuffered($dbh);
 
         // make filename and open file for write
         $module = "fullExport";
@@ -77,7 +77,7 @@ require_once __DIR__ . '/common/CSV.class.php';
                     $sql2 = "SELECT * FROM " . $esc['mysql']['dataset'] . "_urls WHERE tweet_id = " . $id;
                     $rec2 = $dbh->prepare($sql2);
                     $rec2->execute();
-                    while ($res2 = $rec->fetch(PDO::FETCH_ASSOC)) {
+                    while ($res2 = $rec2->fetch(PDO::FETCH_ASSOC)) {
                         $urls[] = $res2['url'];
                         $expanded[] = $res2['url_expanded'];
                         $followed[] = $res2['url_followed'];
@@ -90,7 +90,7 @@ require_once __DIR__ . '/common/CSV.class.php';
                     $sql3 = "SELECT * FROM " . $esc['mysql']['dataset'] . "_media WHERE tweet_id = " . $id;
                     $rec3 = $dbh->prepare($sql2);
                     $rec3->execute();
-                    while ($res3 = $rec->fetch(PDO::FETCH_ASSOC)) {
+                    while ($res3 = $rec3->fetch(PDO::FETCH_ASSOC)) {
                         $urls[] = $res3['url'];
                         $expanded[] = $res3['url_expanded'];
                         $followed[] = '';
@@ -148,7 +148,7 @@ require_once __DIR__ . '/common/CSV.class.php';
                 $sql2 = "SELECT * FROM " . $esc['mysql']['dataset'] . "_mentions WHERE tweet_id = " . $id;
                 $rec2 = $dbh->prepare($sql2);
                 $rec2->execute();
-                while ($res2 = $rec->fetch(PDO::FETCH_ASSOC)) {
+                while ($res2 = $rec2->fetch(PDO::FETCH_ASSOC)) {
                     $mentions[] = $res2['to_user'];
                 }
                 $csv->addfield(implode("; ", $mentions));
@@ -158,7 +158,7 @@ require_once __DIR__ . '/common/CSV.class.php';
                 $sql2 = "SELECT * FROM " . $esc['mysql']['dataset'] . "_hashtags WHERE tweet_id = " . $id;
                 $rec2 = $dbh->prepare($sql2);
                 $rec2->execute();
-                while ($res2 = $rec->fetch(PDO::FETCH_ASSOC)) {
+                while ($res2 = $rec2->fetch(PDO::FETCH_ASSOC)) {
                     $hashtags[] = $res2['text'];
                 }
                 $csv->addfield(implode("; ", $hashtags));
