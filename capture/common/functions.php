@@ -1119,6 +1119,7 @@ function queryManagerSetPeriodsOnCreation($binname, $queries = array()) {
             $res = $rec->fetch();
             $starttime = $res['starttime'];
             $endtime = $res['endtime'];
+            if (gettype($starttime) == "NULL" || gettype($endtime) == "NULL") { return; }
             $sql = "UPDATE tcat_query_bins_periods SET starttime = :starttime, endtime = :endtime WHERE querybin_id = :querybin_id";
             print "[debug] $sql ($querybin_id, $starttime, $endtime)\n";
             $rec = $dbh->prepare($sql);
@@ -1182,12 +1183,47 @@ function queryManagerInsertPhrases($querybin_id, $phrases, $starttime = "0000-00
         $phrase = trim($phrase);
         if (empty($phrase))
             continue;
-        $sql = "INSERT IGNORE INTO tcat_query_phrases (phrase) VALUES (:phrase)";
+
+        // Check if the phrase is known in the tables; in which case we will re-use the id.
+
+        $phrase_id = null;
+        $sql = "SELECT * FROM tcat_query_phrases WHERE phrase = :phrase";
         $rec = $dbh->prepare($sql);
-        $rec->bindParam(':phrase', $phrase, PDO::PARAM_STR); //
-        if (!$rec->execute() || !$rec->rowCount())
-            die("failed to insert phrase $phrase\n");
-        $phrase_id = $dbh->lastInsertId();
+        $rec->bindParam(":phrase", $phrase, PDO::PARAM_STR);
+        if (!$rec->execute()) 
+            die("failed to read from tcat_query_phrases (phrase '$phrase': $sql)\n");
+        if ($rec->rowCount() > 0) {
+            $result = $rec->fetch(PDO::FETCH_OBJ);
+            if ($result) {
+                $phrase_id = $result->id;
+            }
+        }
+        if (is_null($phrase_id)) {
+            $sql = "INSERT IGNORE INTO tcat_query_phrases (phrase) VALUES (:phrase)";
+            $rec = $dbh->prepare($sql);
+            $rec->bindParam(':phrase', $phrase, PDO::PARAM_STR); //
+            if (!$rec->execute() || !$rec->rowCount())
+                die("failed to insert phrase $phrase\n");
+            $phrase_id = $dbh->lastInsertId();
+        }
+
+        /*
+         * We do not insert data into the tcat_query_bins_phrases table if an entry for this user and querybin already exists. 
+         * TODO: a future improvement could be to parse $starttime and $endtime, and, if they don't overlap, create a whole new entry in the table
+         */
+
+        $sql = "SELECT * FROM tcat_query_bins_phrases WHERE querybin_id = :querybin_id and phrase_id = :phrase_id";
+        $rec = $dbh->prepare($sql);
+        $rec->bindParam(":phrase_id", $phrase_id, PDO::PARAM_INT);
+        $rec->bindParam(":querybin_id", $querybin_id, PDO::PARAM_INT);
+        if (!$rec->execute())
+            die("failed to read from tcat_query_bins_phrases (phrase_id $phrase_id, querybin_id $querybin_id: $sql)\n");
+        if ($rec->rowCount() > 0) {
+            // DEBUG
+            print "SKIPPING (DEBUG)\n";
+            continue;
+        }
+
         $sql = "INSERT INTO tcat_query_bins_phrases (phrase_id,querybin_id,starttime,endtime) VALUES (:phrase_id, :querybin_id, :starttime, :endtime)";
         $rec = $dbh->prepare($sql);
         $rec->bindParam(":phrase_id", $phrase_id, PDO::PARAM_INT);
@@ -1206,6 +1242,19 @@ function queryManagerInsertUsers($querybin_id, $users, $starttime = "0000-00-00 
         $user_id = trim($user_id);
         if (empty($user_id))
             continue;
+        /*
+         * We do not insert data into the table if an entry for this user and querybin already exists. 
+         * TODO: a future improvement could be to parse $starttime and $endtime, and, if they don't overlap, create a whole new entry in the table
+         */
+        $sql = "SELECT * FROM tcat_query_bins_users WHERE querybin_id = :querybin_id and user_id = :user_id";
+        $rec = $dbh->prepare($sql);
+        $rec->bindParam(":user_id", $user_id, PDO::PARAM_INT);
+        $rec->bindParam(":querybin_id", $querybin_id, PDO::PARAM_INT);
+        if (!$rec->execute())
+            die("failed to read from tcat_query_bins_users (user_id $user_id, querybin_id $querybin_id: $sql)\n");
+        if ($rec->rowCount() > 0) {
+            continue;
+        }
         $sql = "INSERT IGNORE INTO tcat_query_users (id) VALUES (:user_id)";
         $rec = $dbh->prepare($sql);
         $rec->bindParam(':user_id', $user_id, PDO::PARAM_INT);
