@@ -1129,49 +1129,91 @@ function queryManagerSetPeriodsOnCreation($binname, $queries = array()) {
             $rec->execute();
         }
         if ($starttime !== false && $endtime !== false) {
-            foreach ($queries as $query) {
-                $trimquery = trim($query);
-                /* get the phrase id for this query */
-                $phrase_id = false;
-                $sql = "SELECT TQBP.phrase_id as phrase_id FROM tcat_query_bins_phrases TQBP INNER JOIN tcat_query_phrases TQP ON TQP.id = TQBP.phrase_id WHERE TQBP.querybin_id = :querybin_id AND TQP.phrase = :phrase";
-                print "[debug] $sql ($querybin_id, $query)\n";
-                $rec = $dbh->prepare($sql);
-                $rec->bindParam(":querybin_id", $querybin_id, PDO::PARAM_INT);
-                $rec->bindParam(":phrase", $trimquery, PDO::PARAM_STR);
-                if ($rec->execute() && $rec->rowCount() > 0) {
-                    if ($res = $rec->fetch()) {
-                        $phrase_id = $res['phrase_id'];
-                    }
-                } else {
-                    // DEBUG
-                    print "[debug] NO RESULTS!\n";
-                }
-                /* lookup the specific starttime and endtime inside tcat_captured_phrases table */
-                $p_starttime = $p_endtime = false;
-                if ($phrase_id !== false) {
-                    $sql = "SELECT min(created_at) as starttime, max(created_at) as endtime from tcat_captured_phrases where phrase_id = :phrase_id";
-                    print "[debug] $sql ($phrase_id)\n";
+
+            if (is_array($queries) && count($queries) > 0) {
+
+                // This is a bin of type search or track
+
+                foreach ($queries as $query) {
+                    $trimquery = trim($query);
+                    /* get the phrase id for this query */
+                    $phrase_id = false;
+                    $sql = "SELECT TQBP.phrase_id as phrase_id FROM tcat_query_bins_phrases TQBP INNER JOIN tcat_query_phrases TQP ON TQP.id = TQBP.phrase_id WHERE TQBP.querybin_id = :querybin_id AND TQP.phrase = :phrase";
+                    print "[debug] $sql ($querybin_id, $query)\n";
                     $rec = $dbh->prepare($sql);
-                    $rec->bindParam(":phrase_id", $phrase_id, PDO::PARAM_INT);
+                    $rec->bindParam(":querybin_id", $querybin_id, PDO::PARAM_INT);
+                    $rec->bindParam(":phrase", $trimquery, PDO::PARAM_STR);
                     if ($rec->execute() && $rec->rowCount() > 0) {
                         if ($res = $rec->fetch()) {
-                            $p_starttime = $res['starttime'];
-                            $p_endtime = $res['endtime'];
+                            $phrase_id = $res['phrase_id'];
+                        }
+                    } else {
+                        // DEBUG
+                        print "[debug] NO RESULTS!\n";
+                    }
+                    /* lookup the specific starttime and endtime inside tcat_captured_phrases table */
+                    $p_starttime = $p_endtime = false;
+                    if ($phrase_id !== false) {
+                        $sql = "SELECT min(created_at) as starttime, max(created_at) as endtime from tcat_captured_phrases where phrase_id = :phrase_id";
+                        print "[debug] $sql ($phrase_id)\n";
+                        $rec = $dbh->prepare($sql);
+                        $rec->bindParam(":phrase_id", $phrase_id, PDO::PARAM_INT);
+                        if ($rec->execute() && $rec->rowCount() > 0) {
+                            if ($res = $rec->fetch()) {
+                                $p_starttime = $res['starttime'];
+                                $p_endtime = $res['endtime'];
+                            }
+                        }
+                    }
+                    /* If we do not have fine-granularity period information from the tcat_captured_phrases table, use information from entire bin */
+                    $use_starttime = (is_string($p_starttime) && strlen($p_starttime) > 0) ? $p_starttime : $starttime;
+                    $use_endtime = (is_string($p_endtime) && strlen($p_endtime) > 0) ? $p_endtime : $endtime;
+                    /* update the period information for this phrase */
+                    $sql = "UPDATE tcat_query_bins_phrases SET starttime = :starttime, endtime = :endtime WHERE querybin_id = :querybin_id AND phrase_id = :phrase_id";
+                    print "[debug] $sql ($use_starttime, $use_endtime, $querybin_id, $phrase_id)\n";
+                    $rec = $dbh->prepare($sql);
+                    $rec->bindParam(":querybin_id", $querybin_id, PDO::PARAM_INT);
+                    $rec->bindParam(":phrase_id", $phrase_id, PDO::PARAM_INT);
+                    $rec->bindParam(":starttime", $use_starttime, PDO::PARAM_STR);
+                    $rec->bindParam(":endtime", $use_endtime, PDO::PARAM_STR);
+                    $rec->execute();
+                }
+
+            } else {
+
+                $type = getBinType($binname);
+                if ($type == 'follow' || $type == 'timeline') {
+    
+                    // This is a bin of type search or track
+
+                    $user_ids = array();
+                    $sql = "SELECT DISTINCT(user_id) AS user_id FROM tcat_query_bins_users WHERE querybin_id = :querybin_id AND user_id IS NOT NULL";
+                    $rec = $dbh->prepare($sql);
+                    $rec->bindParam(":querybin_id", $querybin_id, PDO::PARAM_INT);
+                    if ($rec->execute()) {
+                        while ($res = $rec->fetch()) {
+                               $user_ids[] = $res['user_id'];
+                        }
+                    }
+                    foreach ($user_ids as $user_id) {
+                        $sql = "SELECT min(created_at) AS starttime, max(created_at) AS endtime FROM " . quoteIdent($binname . "_tweets") . " WHERE from_user_id = :user_id";
+                        $rec = $dbh->prepare($sql);
+$rec->bindParam(":user_id", $user_id, PDO::PARAM_INT);
+                        $starttime = $endtime = false;
+                        if ($rec->execute() && $rec->rowCount()) {
+                            $res = $rec->fetch();
+                            $starttime = $res['starttime'];
+                            $endtime = $res['endtime'];
+                            $sql = "UPDATE tcat_query_bins_users SET starttime = :starttime, endtime = :endtime WHERE querybin_id = :querybin_id AND user_id = :user_id";
+                            $rec = $dbh->prepare($sql);
+                            $rec->bindParam(":querybin_id", $querybin_id, PDO::PARAM_INT);
+                            $rec->bindParam(":user_id", $user_id, PDO::PARAM_INT);
+                            $rec->bindParam(":starttime", $starttime, PDO::PARAM_STR);
+                            $rec->bindParam(":endtime", $endtime, PDO::PARAM_STR);
+                            $rec->execute();
                         }
                     }
                 }
-                /* If we do not have fine-granularity period information from the tcat_captured_phrases table, use information from entire bin */
-                $use_starttime = (is_string($p_starttime) && strlen($p_starttime) > 0) ? $p_starttime : $starttime;
-                $use_endtime = (is_string($p_endtime) && strlen($p_endtime) > 0) ? $p_endtime : $endtime;
-                /* update the period information for this phrase */
-                $sql = "UPDATE tcat_query_bins_phrases SET starttime = :starttime, endtime = :endtime WHERE querybin_id = :querybin_id AND phrase_id = :phrase_id";
-                print "[debug] $sql ($use_starttime, $use_endtime, $querybin_id, $phrase_id)\n";
-                $rec = $dbh->prepare($sql);
-                $rec->bindParam(":querybin_id", $querybin_id, PDO::PARAM_INT);
-                $rec->bindParam(":phrase_id", $phrase_id, PDO::PARAM_INT);
-                $rec->bindParam(":starttime", $use_starttime, PDO::PARAM_STR);
-                $rec->bindParam(":endtime", $use_endtime, PDO::PARAM_STR);
-                $rec->execute();
             }
         }
     }
@@ -1300,6 +1342,86 @@ function capture_signal_handler_term($signo) {
     logit(CAPTURE . ".error.log", "exiting now on TERM signal");
 
     exit(0);
+}
+
+function map_screen_names_to_ids($screen_names = array()) {
+    global $twitter_keys;
+    $map = array();
+    // We must do the lookups in chunks of 100 screen names
+    $limit = 100;
+    for ($i = 0; $i < count($screen_names); $i += $limit) {
+        $request = count($screen_names) - $i;
+        if ($request > 100) { $request = 100; }
+        $subset = array_slice($screen_names, $i, $request);
+        $query = implode(",", $subset);
+        $keyinfo = getRESTKey(0, 'users', 'lookup');
+        $current_key = $keyinfo['key'];
+        $ratefree = $keyinfo['remaining'];
+
+        $tmhOAuth = new tmhOAuth(array(
+                                'consumer_key' => $twitter_keys[$current_key]['twitter_consumer_key'],
+                                'consumer_secret' => $twitter_keys[$current_key]['twitter_consumer_secret'],
+                                'token' => $twitter_keys[$current_key]['twitter_user_token'],
+                                'secret' => $twitter_keys[$current_key]['twitter_user_secret'],
+                        ));
+        $params = array(
+                'screen_name' => $query,
+        );
+
+        $tmhOAuth->user_request(array(
+                'method' => 'GET',
+                'url' => $tmhOAuth->url('1.1/users/lookup'),
+                'params' => $params
+        ));
+
+        if ($tmhOAuth->response['code'] == 200) {
+                $users = json_decode($tmhOAuth->response['response'], true);
+                foreach ($users as $user) {
+                        $map[$user['screen_name']] = $user['id_str'];
+                }
+        }
+    }
+    return $map;
+}
+
+function map_ids_to_screen_names($ids = array()) {
+    global $twitter_keys;
+    $map = array();
+    // We must do the lookups in chunks of 100 ids
+    $limit = 100;
+    for ($i = 0; $i < count($ids); $i += $limit) {
+        $request = count($ids) - $i;
+        if ($request > 100) { $request = 100; }
+        $subset = array_slice($ids, $i, $request);
+        $query = implode(",", $subset);
+        $keyinfo = getRESTKey(0, 'users', 'lookup');
+        $current_key = $keyinfo['key'];
+        $ratefree = $keyinfo['remaining'];
+
+        $tmhOAuth = new tmhOAuth(array(
+                                'consumer_key' => $twitter_keys[$current_key]['twitter_consumer_key'],
+                                'consumer_secret' => $twitter_keys[$current_key]['twitter_consumer_secret'],
+                                'token' => $twitter_keys[$current_key]['twitter_user_token'],
+                                'secret' => $twitter_keys[$current_key]['twitter_user_secret'],
+                        ));
+        $params = array(
+                'user_id' => $query,
+        );
+
+        $tmhOAuth->user_request(array(
+                'method' => 'GET',
+                'url' => $tmhOAuth->url('1.1/users/lookup'),
+                'params' => $params
+        ));
+
+        if ($tmhOAuth->response['code'] == 200) {
+                $users = json_decode($tmhOAuth->response['response'], true);
+                foreach ($users as $user) {
+                        $map[$user['id_str']] = $user['screen_name'];
+                }
+        }
+    }
+    return $map;
 }
 
 /**
