@@ -56,6 +56,8 @@ if ($tweetQueue->length() > 0) {
 
 queryManagerSetPeriodsOnCreation($bin_name, explode("OR", $keywords));
 
+// TODO: see timeline.php for an improvement making it easier for users to start a bin immediatly after running a CLU script, and adept the method for this script
+
 function search($keywords, $max_id = null) {
     global $twitter_keys, $current_key, $ratefree, $bin_name, $dbh, $tweetQueue;
 

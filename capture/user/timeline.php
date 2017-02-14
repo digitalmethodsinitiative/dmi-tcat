@@ -88,6 +88,26 @@ if ($tweetQueue->length() > 0) {
     queryManagerSetPeriodsOnCreation($bin_name);
 }
 
+if ($type == 'follow') {
+    /*
+     * We want to be able to track our user ids in the future; therefore we must set the endtimes to NOW() for this particular set.
+     * The reason: when TCAT is asked to start a bin via the User Interface, it starts those users who share a maximum endtime (i.e. the most recently used set).
+     */
+    $sql = "SELECT id FROM tcat_query_bins WHERE querybin = :bin_name";
+    $rec = $dbh->prepare($sql);
+    $rec->bindParam(":bin_name", $bin_name, PDO::PARAM_STR);
+    if ($rec->execute() && $rec->rowCount() > 0) {
+        if ($res = $rec->fetch()) {
+            $querybin_id = $res['id'];
+            $ids_as_string = implode(",", $user_ids);
+            $sql = "UPDATE tcat_query_bins_users SET endtime = NOW() WHERE querybin_id = :querybin_id AND user_id in ( $ids_as_string );";
+            $rec = $dbh->prepare($sql);
+            $rec->bindParam(":querybin_id", $querybin_id, PDO::PARAM_INT);
+            $rec->execute();
+        }
+    }
+}
+
 function get_timeline($user_id, $type, $max_id = null) {
     print "doing $user_id\n";
     global $twitter_keys, $current_key, $ratefree, $looped, $bin_name, $dbh, $tweetQueue;
