@@ -17,6 +17,17 @@ create_error_logs();
 $captureroles = unserialize(CAPTUREROLES);
 
 $querybins = getBins();
+/*
+echo "<pre>";
+foreach ($querybins as $bin) {
+    if ($bin->type == 'follow') {
+        print "queryManagerSetPeriodsOnCreation($bin->name);\n";
+        queryManagerSetPeriodsOnCreation($bin->name);
+    }
+}
+echo "</pre>";
+exit();
+*/
 $activePhrases = getNrOfActivePhrases();
 $activeGeoboxes = getNrOfActiveGeoboxes();
 $activeUsers = getNrOfActiveUsers();
@@ -258,6 +269,7 @@ $lastRateLimitHit = getLastRateLimitHit();
         echo '<th></th>';
         echo '<th></th>';
         echo '<th></th>';
+        echo '<th></th>';
         echo '</tr>';
         echo '</thead>';
         echo '<tbody>';
@@ -277,7 +289,7 @@ $lastRateLimitHit = getLastRateLimitHit();
             } elseif (strstr($bin->type, "follow") !== false || strstr($bin->type, "timeline") !== false) {
                 foreach ($bin->users as $user) {
                     $phrasePeriodsList[$user->id] = array_unique($user->periods);
-                    $phraseList[$user->id] = $user->id;
+                    $phraseList[$user->id] = empty($user->user_name) ? $user->id : $user->user_name;
                     if ($user->active) {
                         $activePhraselist[$user->id] = $user->id;
                     }
