@@ -17,17 +17,6 @@ create_error_logs();
 $captureroles = unserialize(CAPTUREROLES);
 
 $querybins = getBins();
-/*
-echo "<pre>";
-foreach ($querybins as $bin) {
-    if ($bin->type == 'follow') {
-        print "queryManagerSetPeriodsOnCreation($bin->name);\n";
-        queryManagerSetPeriodsOnCreation($bin->name);
-    }
-}
-echo "</pre>";
-exit();
-*/
 $activePhrases = getNrOfActivePhrases();
 $activeGeoboxes = getNrOfActiveGeoboxes();
 $activeUsers = getNrOfActiveUsers();
