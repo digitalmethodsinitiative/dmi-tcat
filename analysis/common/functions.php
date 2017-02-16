@@ -189,7 +189,8 @@ function get_file($what) {
 
 function frequencyTable($table, $toget) {
     global $esc, $intervalDates;
-    $dbh = pdo_connect(); pdo_unbuffered($dbh);
+    $dbh = pdo_connect();
+    pdo_unbuffered($dbh);
     $results = array();
     $sql = "SELECT COUNT($table.$toget) AS count, $table.$toget AS toget, ";
     $sql .= sqlInterval();
@@ -321,7 +322,7 @@ function sqlSubset($where = NULL) {
     }
 
     if (!empty($esc['mysql']['from_source'])) {
-	if (strstr($esc['mysql']['from_source'], "OR") !== false) {
+        if (strstr($esc['mysql']['from_source'], "OR") !== false) {
             $subqueries = explode(" OR ", $esc['mysql']['from_source']);
             $sql .= "(";
             foreach ($subqueries as $subquery) {
@@ -778,7 +779,7 @@ function current_collation() {
 
 // This function accesses the tcat_status table (if it exists) and retrieves the value for a variable
 function get_status($variable) {
-	global $database;
+    global $database;
     $dbh = pdo_connect();
     $sql = "SELECT table_name FROM information_schema.tables WHERE table_schema = '$database' AND table_name = 'tcat_status'";
     if ($sqlresults = pdo_fastquery($sql, $dbh)) {
@@ -867,42 +868,41 @@ function get_all_datasets() {
     $rec = $dbh->prepare("SELECT id, querybin, type, active, comments FROM tcat_query_bins WHERE access = " . TCAT_QUERYBIN_ACCESS_OK . " OR access = " . TCAT_QUERYBIN_ACCESS_READONLY . " ORDER BY LOWER(querybin)");
     $datasets = array();
     try {
-    if ($rec->execute() && $rec->rowCount() > 0) {
-        while ($res = $rec->fetch()) {
-            $row = array();
-            $row['bin'] = $res['querybin'];
-            $row['type'] = $res['type'];
-            $row['active'] = $res['active'];
-            $row['comments'] = $res['comments'];
-            $rec2 = $dbh->prepare("SELECT count(t.id) AS notweets, MAX(t.created_at) AS max  FROM " . $res['querybin'] . "_tweets t ");
-            if ($rec2->execute() && $rec2->rowCount() > 0) {
-                $res2 = $rec2->fetch();
-                $row['notweets'] = $res2['notweets'];
-                $row['maxtime'] = $res2['max'];
-            }
-            $rec3 = $dbh->prepare("SELECT starttime AS min FROM tcat_query_bins b, tcat_query_bins_periods bp WHERE b.querybin = '" . $res['querybin'] . "' AND b.id = bp.querybin_id");
-            if ($rec3->execute() && $rec3->rowCount() > 0) {
-                $res3 = $rec3->fetch();
-                $row['mintime'] = $res3['min'];
-            }
-            $row['keywords'] = "";
-            if ($row['type'] == "track") {
-                $rec2 = $dbh->prepare("SELECT distinct(p.phrase) FROM tcat_query_bins_phrases bp, tcat_query_phrases p WHERE bp.querybin_id = " . $res['id'] . " AND bp.phrase_id = p.id ORDER BY LOWER(p.phrase)");
+        if ($rec->execute() && $rec->rowCount() > 0) {
+            while ($res = $rec->fetch()) {
+                $row = array();
+                $row['bin'] = $res['querybin'];
+                $row['type'] = $res['type'];
+                $row['active'] = $res['active'];
+                $row['comments'] = $res['comments'];
+                $rec2 = $dbh->prepare("SELECT count(t.id) AS notweets, MAX(t.created_at) AS max  FROM " . $res['querybin'] . "_tweets t ");
                 if ($rec2->execute() && $rec2->rowCount() > 0) {
-                    $res2 = $rec2->fetchAll(PDO::FETCH_COLUMN);
-                    $row['keywords'] = implode(", ", $res2);
+                    $res2 = $rec2->fetch();
+                    $row['notweets'] = $res2['notweets'];
+                    $row['maxtime'] = $res2['max'];
+                }
+                $rec3 = $dbh->prepare("SELECT starttime AS min FROM tcat_query_bins b, tcat_query_bins_periods bp WHERE b.querybin = '" . $res['querybin'] . "' AND b.id = bp.querybin_id");
+                if ($rec3->execute() && $rec3->rowCount() > 0) {
+                    $res3 = $rec3->fetch();
+                    $row['mintime'] = $res3['min'];
+                }
+                $row['keywords'] = "";
+                if ($row['type'] == "track") {
+                    $rec2 = $dbh->prepare("SELECT distinct(p.phrase) FROM tcat_query_bins_phrases bp, tcat_query_phrases p WHERE bp.querybin_id = " . $res['id'] . " AND bp.phrase_id = p.id ORDER BY LOWER(p.phrase)");
+                    if ($rec2->execute() && $rec2->rowCount() > 0) {
+                        $res2 = $rec2->fetchAll(PDO::FETCH_COLUMN);
+                        $row['keywords'] = implode(", ", $res2);
+                    }
                 } elseif (in_array($row['type'], array("follow", "timeline"))) {
-                    $rec2 = $dbh->prepare("SELECT distinct(t.from_user_name) FROM tcat_query_bins_users bu, " . $res['querybin'] . "_tweets t WHERE bu.querybin_id = " . $res['id'] . " AND bu.user_id = t.from_user_id ORDER BY LOWER(t.from_user_name)");
+                    $rec2 = $dbh->prepare("SELECT u.user_name FROM tcat_query_users u, tcat_query_bins_users bu WHERE bu.querybin_id = " . $res['id'] . " AND bu.user_id = u.id AND u.user_name is not null");
                     if ($rec2->execute() && $rec2->rowCount() > 0) {
                         $res2 = $rec2->fetchAll(PDO::FETCH_COLUMN);
                         $row['keywords'] = implode(", ", $res2);
                     }
                 }
+                $datasets[$row['bin']] = $row;
             }
-            $datasets[$row['bin']] = $row;
         }
-    }
-
     } catch (PDOException $e) {
         if ($e->errorInfo[0] == '42S02') {
             // Base table or view not found
@@ -979,6 +979,7 @@ function pdo_error_report() {
 /*
  * This function enables query buffering for an existing database connection (the default behaviour is: buffering)
  */
+
 function pdo_buffered($dbh) {
     $dbh->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, true);
 }
@@ -986,6 +987,7 @@ function pdo_buffered($dbh) {
 /*
  * This function disables query buffering for an existing database connection (the default behaviour is: buffering)
  */
+
 function pdo_unbuffered($dbh) {
     $dbh->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
 }
@@ -1001,9 +1003,10 @@ function pdo_fastquery($query, $dbh = null) {
         $rec = $dbh->prepare($query);
         $rec->execute();
         $results = $rec->fetch(PDO::FETCH_ASSOC);
-        if ($no_connection) $dbh = null;
+        if ($no_connection)
+            $dbh = null;
         return $results;
-    } catch( PDOException $Exception ) {
+    } catch (PDOException $Exception) {
         pdo_error_report($Exception);
     }
 }
@@ -1260,15 +1263,15 @@ function sentiment_avgs() {
 // If it does not exist, an error page is produced and execution stops.
 
 function dataset_must_exist() {
-  global $dataset;
-  global $datasets;
+    global $dataset;
+    global $datasets;
 
-  if (! isset($datasets[$dataset])) {
-    http_response_code(404);
-    header("Content-Type: text/plain");
-    echo "Error: unknown query bin: $dataset";
-    exit(0);
-  }
+    if (!isset($datasets[$dataset])) {
+        http_response_code(404);
+        header("Content-Type: text/plain");
+        echo "Error: unknown query bin: $dataset";
+        exit(0);
+    }
 }
 
 // Prepare for data export.
@@ -1302,30 +1305,30 @@ function export_start($filename, $outputformat) {
     $use_cache_file = DEFAULT_USE_CACHE_FILE;
 
     if (isset($_GET['cache'])) {
-    switch ($_GET['cache']) {
-        case 'n':
-            $use_cache_file = false;
-            break;
-	case 'y':
-	    $use_cache_file = true;
-	    break;
-	default:
-            die("Invalid query parameter: cache=" . $_GET['cache']);
-	}
+        switch ($_GET['cache']) {
+            case 'n':
+                $use_cache_file = false;
+                break;
+            case 'y':
+                $use_cache_file = true;
+                break;
+            default:
+                die("Invalid query parameter: cache=" . $_GET['cache']);
+        }
     }
 
     // Determine the MIME type
 
     switch ($outputformat) {
-    case 'csv':
-        $mimetype = 'text/csv; charset=utf-8';
-        break;
-    case 'tsv':
-        $mimetype = 'text/tab-separated-values; charset=utf-8';
-        break;
-    default:
-        $mimetype = 'application/octet-stream';
-        break;
+        case 'csv':
+            $mimetype = 'text/csv; charset=utf-8';
+            break;
+        case 'tsv':
+            $mimetype = 'text/tab-separated-values; charset=utf-8';
+            break;
+        default:
+            $mimetype = 'application/octet-stream';
+            break;
     }
 
     // Use cache file or return results as an attachment
@@ -1333,7 +1336,6 @@ function export_start($filename, $outputformat) {
     if ($use_cache_file) {
         // Write data to cache file
         return $filename;
-
     } else {
         // Write into HTTP response
         $suggest = 'tcat_' . basename($filename);
@@ -1346,6 +1348,6 @@ function export_start($filename, $outputformat) {
 
         return 'php://output';
     }
-}    
+}
 
 ?>
