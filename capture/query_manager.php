@@ -733,7 +733,7 @@ function getBins() {
                 $bin->phrases[$result['phrase_id']] = $phrase;
             }
         } elseif ($bin->type == "follow" || $bin->type == "timeline") {
-            $sql = "SELECT u.id AS user_id, bu.starttime AS user_starttime, bu.endtime AS user_endtime FROM tcat_query_users u, tcat_query_bins_users bu WHERE u.id = bu.user_id AND bu.querybin_id = " . $bin->id;
+            $sql = "SELECT u.id AS user_id, u.user_name, bu.starttime AS user_starttime, bu.endtime AS user_endtime FROM tcat_query_users u, tcat_query_bins_users bu WHERE u.id = bu.user_id AND bu.querybin_id = " . $bin->id;
             $rec = $dbh->prepare($sql);
             $rec->execute();
             $user_results = $rec->fetchAll();
@@ -741,6 +741,7 @@ function getBins() {
                 if (!isset($bin->users[$result['user_id']])) {
                     $user = new stdClass();
                     $user->id = $result['user_id'];
+                    $user->user_name = $result['user_name'];
                     $user->periods = array();
                     $user->active = false;
                 } else {
