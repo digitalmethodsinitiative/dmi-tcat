@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/../common/functions.php';
 require_once __DIR__ . '/../analysis/common/config.php';
 try {
     require_once __DIR__ . '/../analysis/common/functions.php';
@@ -185,8 +186,10 @@ function do_view_or_export_tweets(array $querybin, $dt_start, $dt_end, $export)
     // Get information about tweets from the query bin
 
     $info = tweet_info($querybin, $dt_start, $dt_end);
-    $time_to_purge = est_time_to_purge($querybin['notweets'],
-                         $dt_start, $dt_end, $info['tweets']);
+    if (is_admin()) {
+        $time_to_purge = est_time_to_purge($querybin['notweets'],
+                             $dt_start, $dt_end, $info['tweets']);
+    }
 
     // Show result
 
@@ -414,6 +417,9 @@ END;
         <label for="tsv">TSV</label>
     </form>
     </div>
+END;
+                if (is_admin()) {
+                    echo <<<END
     <div id="purge-tweets-form">
     <form method="POST">
         <input type="hidden" name="action" value="tweet-purge"/>
@@ -425,11 +431,12 @@ END;
 END;
 
 
-            if (isset($time_to_purge)) {
-                echo <<<END
+                    if (isset($time_to_purge)) {
+                        echo <<<END
 <p id="purge-time-warning">
 Warning: purging could take a long time (~ $time_to_purge).</p>
 END;
+                    }
                 }
             }
 

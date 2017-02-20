@@ -116,6 +116,11 @@ function tweet_info($query_bin, $dt_start, $dt_end, $tables = array("tweets"))
 
 function tweet_purge($query_bin, $dt_start, $dt_end)
 {
+
+    if (!is_admin()) {
+        die("Access denied.");
+    }
+
     // Create WHERE clause to restrict to requested timestamp range
 
     $time_condition = created_at_condition($dt_start, $dt_end);
