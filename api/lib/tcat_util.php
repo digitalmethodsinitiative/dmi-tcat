@@ -199,9 +199,9 @@ function hashtags_top($query_bin, $dt_start, $dt_end, $limit = NULL) {
     // NOTICE: This query does not define a cut-off point
 
     if (is_null($limit)) {
-        $sql = 'select text, count(text) as cnt from ' . $bin_name . '_hashtags group by text order by count(text) desc';
+        $sql = 'select text, count(text) as cnt from ' . $bin_name . '_hashtags ' . $where . ' group by text order by count(text) desc';
     } else {
-        $sql = 'select text, count(text) as cnt from ' . $bin_name . '_hashtags group by text order by count(text) desc limit ' . $limit;
+        $sql = 'select text, count(text) as cnt from ' . $bin_name . '_hashtags ' . $where . ' group by text order by count(text) desc limit ' . $limit;
     }
     $rec = $dbh->prepare($sql);
     $rec->execute();
@@ -214,6 +214,131 @@ function hashtags_top($query_bin, $dt_start, $dt_end, $limit = NULL) {
         $element = array ( 'hashtag' => $hashtag,
                            'count' => $count );
         $list[] = $element;
+    }
+
+    return $list;
+
+}
+
+//----------------------------------------------------------------
+// Top mentions
+//
+// Retrieve information about the top mentions in the time period
+// between $dt_start and $dt_end (inclusive).
+//
+// $query_bin - the array produced by ~/analysis/common/functions.php
+// $dt_start - must either be a DateTime object or NULL.
+// $dt_end - must either be a DateTime object or NULL.
+
+function mentions_top($query_bin, $dt_start, $dt_end, $limit = NULL) {
+
+    // Create WHERE clause to restrict to requested timestamp range
+
+    $time_condition = created_at_condition($dt_start, $dt_end);
+    if (isset($time_condition)) {
+        $where = 'WHERE ' . $time_condition;
+    } else {
+        $where = '';
+    }
+
+    // Query database
+
+    $dbh = pdo_connect();
+
+    $bin_name = $query_bin['bin'];
+
+    // NOTICE: This query does not define a cut-off point
+
+    if (is_null($limit)) {
+        $sql = 'select to_user, count(to_user) as cnt from ' . $bin_name . '_mentions ' . $where . ' group by to_user order by count(to_user) desc';
+    } else {
+        $sql = 'select to_user, count(to_user) as cnt from ' . $bin_name . '_mentions ' . $where . ' group by to_user order by count(to_user) desc limit ' . $limit;
+    }
+    $rec = $dbh->prepare($sql);
+    $rec->execute();
+
+    $list = array();
+
+    while ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
+        $mention = $res['to_user'];
+        $count = $res['cnt'];
+        $element = array ( 'mention' => $mention,
+                           'count' => $count );
+        $list[] = $element;
+    }
+
+    return $list;
+
+}
+
+//----------------------------------------------------------------
+// Top retweets
+//
+// Retrieve information about the top mentions in the time period
+// between $dt_start and $dt_end (inclusive).
+//
+// $query_bin - the array produced by ~/analysis/common/functions.php
+// $dt_start - must either be a DateTime object or NULL.
+// $dt_end - must either be a DateTime object or NULL.
+
+function retweets_top($query_bin, $dt_start, $dt_end, $limit = NULL) {
+
+    // Create WHERE clause to restrict to requested timestamp range
+
+    $time_condition = created_at_condition($dt_start, $dt_end);
+    if (isset($time_condition)) {
+        $where = str_replace('created_at', 'T1.created_at', 'AND ' . $time_condition);
+    } else {
+        $where = '';
+    }
+
+    // Query database
+
+    $dbh = pdo_connect();
+
+    $bin_name = $query_bin['bin'];
+
+    // NOTICE: This query does not define a cut-off point
+
+    if (is_null($limit)) {
+        $sql = 'select T2.from_user_name as user, T2.text as text, T1.text as rt_text, T1.retweet_id as id, count(T1.retweet_id) as cnt from ' . $bin_name . '_tweets T1 left join ' . $bin_name . '_tweets T2 on T1.retweet_id = T2.id where T1.retweet_id is not null ' . $where . ' group by T1.retweet_id order by count(T1.retweet_id) desc';
+    } else {
+        $sql = 'select T2.from_user_name as user, T2.text as text, T1.text as rt_text, T1.retweet_id as id, count(T1.retweet_id) as cnt from ' . $bin_name . '_tweets T1 left join ' . $bin_name . '_tweets T2 on T1.retweet_id = T2.id where T1.retweet_id is not null ' . $where . ' group by T1.retweet_id order by count(T1.retweet_id) desc limit ' . $limit;
+    }
+    $rec = $dbh->prepare($sql);
+    $rec->execute();
+
+    $list = array();
+
+    while ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
+        $id = $res['id'];
+        $user = $res['user'];
+        $count = $res['cnt'];
+        $text = $res['text'];
+        $rt_text = $res['rt_text'];
+        $element = array ( 'id' => $id,
+                           'user' => $user,
+                           'text' => $text,
+                           'rt_text' => $rt_text,
+                           'count' => $count );
+        $list[] = $element;
+    }
+
+    // We can now have tweets with user = NULL and text = NULL, if the original tweets was not in the dataset
+
+    for ($n = 0; $n < count($list); $n++) {
+        if (is_null($list[$n]['user'])) {
+            // As Twitter user names cannot contain a ':' character, this regular expression should match the original username
+            if (preg_match("/^RT @(.*?): (.*)$/", $list[$n]['rt_text'], $matches)) {
+                if (isset($matches[1])) {
+                   $list[$n]['user'] = $matches[1];
+                }
+                if (isset($matches[2])) {
+                    $list[$n]['text'] = $matches[2];
+                }
+            }
+        }
+        unset($list[$n]['rt_text']);
     }
 
     return $list;
