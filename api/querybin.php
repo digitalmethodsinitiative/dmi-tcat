@@ -501,6 +501,352 @@ END;
     }
 }
 
+//----------------------------------------------------------------
+// View (top) hashtags for a specific bin.
+
+function do_view_or_export_hashtags(array $querybin, $dt_start, $dt_end, $export)
+
+{
+    global $api_timezone;
+    global $utc_tz;
+
+    // Get information about tweets from the query bin
+
+    $info = tweet_info($querybin, $dt_start, $dt_end, array("hashtags"));
+
+    // Show result
+
+    $response_mediatype = choose_mediatype(['application/json', 'text/html',
+        'text/plain',
+        'text/csv', 'text/tab-separated-values']);
+
+    if (isset($export)) {
+        // Force exporting of tweets when viewed in a Web browser
+        // that cannot set the accepted mediatypes header.
+        if ($export === 'tsv') {
+            $response_mediatype = 'text/tab-separated-values';
+            $data = [
+               "number-selected-hashtags" => $info['hashtags'],
+            ];
+        } else {
+            $response_mediatype = 'text/csv';
+        }
+    }
+
+    switch ($response_mediatype) {
+
+        case 'text/csv':
+        case 'text/tab-separated-values':
+            $ds = $querybin['bin'];
+
+            $depth = count(explode('/', $_SERVER['PATH_INFO']));
+            $rel = str_repeat('../', $depth);
+
+            $qparams = 'dataset=' . urlencode($ds);
+
+            # Note: the export URL expected the times to be in UTC
+            # and formatted as 'YYYY-MM-DD HH:MM:SS'
+
+            if (isset($dt_start)) {
+                $dt_start->setTimezone($utc_tz);
+                $qparams .= '&startdate=';
+                $qparams .= urlencode($dt_start->format(DT_PARAM_PATTERN));
+            } else {
+                // Explicitly set startdate when there is none.
+                // This is probably unnecessary, but is done to mirror
+                // setting enddate explicitly (see below).
+                $min_t = dt_from_utc($querybin['mintime']);
+                $min_t->setTimezone($utc_tz);
+                $qparams .= '&startdate=';
+                $qparams .= urlencode($min_t->format(DT_PARAM_PATTERN));
+            }
+            if (isset($dt_end)) {
+                $dt_end->setTimezone($utc_tz);
+                $qparams .= '&enddate=';
+                $qparams .= urlencode($dt_end->format(DT_PARAM_PATTERN));
+            } else {
+                // Explicitly set enddate to maximum captured tweet time.
+                // This is necessary, because the export feature does not
+                // correctly infer the enddate when none is supplied:
+                // resulting in less tweets exported than expected.
+                $max_t = dt_from_utc($querybin['maxtime']);
+                $max_t->setTimezone($utc_tz);
+                $qparams .= '&enddate=';
+                $qparams .= urlencode($max_t->format(DT_PARAM_PATTERN));
+            }
+            if ($response_mediatype == 'text/tab-separated-values') {
+                $qparams .= '&outputformat=tsv';
+            } else {
+                $qparams .= '&outputformat=csv';
+            }
+
+            // Redirect to existing export function
+
+            header("Location: {$rel}analysis/mod.export_hashtags.php?$qparams");
+
+            exit(0);
+            break;
+
+        case 'text/html':
+
+            $script_url = $_SERVER['SCRIPT_URL'];
+            $components = explode('/', $script_url);
+            array_pop($components);
+            $query_bin_info = implode('/', $components);
+            array_pop($components);
+            $query_bin_list = implode('/', $components);
+
+            html_begin("Query bin hashtags: {$querybin['bin']}",
+                [
+                    ["Query Bins", $query_bin_list],
+                    [$querybin['bin'], $query_bin_info],
+                    ["View Hashtags"]
+                ]);
+
+            $total_num = $querybin['nohashtags'];
+
+            // Selection times as text for start/end text field values
+
+            $val_A = (isset($dt_start)) ? dt_format_text($dt_start, $api_timezone) : "";
+            $val_B = (isset($dt_end)) ? dt_format_text($dt_end, $api_timezone) : "";
+
+            if (0 < $total_num) {
+                // Has tweets: show form to select tweets
+
+                $min_t = dt_from_utc($querybin['mintime']);
+                $max_t = dt_from_utc($querybin['maxtime']);
+
+                // First/last tweet times as text for placeholders
+
+                $t1_text = dt_format_text($min_t, $api_timezone);
+                $t2_text = dt_format_text($max_t, $api_timezone);
+
+                // First/last tweet times as HTML for description
+
+                $t1_html = dt_format_html($min_t, $api_timezone);
+                $t2_html = dt_format_html($max_t, $api_timezone);
+
+                echo <<<END
+
+<p>This query bin contains a total of {$total_num} tweets
+from {$t1_html} to {$t2_html}.</p>
+
+<form method="GET">
+  <table>
+    <tr>
+      <th style="white-space: nowrap">
+        <label for="startdate">Start time</label></th>
+      <td><input type="text" id="startdate" name="startdate"
+           placeholder="$t1_text" value="$val_A"/></td>
+    </tr>
+    <tr>
+      <th style="white-space: nowrap">
+        <label for="enddate">End time</label></th>
+      <td><input type="text" id="enddate" name="enddate"
+          placeholder="$t2_text" value="$val_B"/></td>
+    </tr>
+    <tr>
+      <td></td>
+      <td><input type="submit" value="Update selection"/></td>
+    <tr>
+
+<tr>
+<td></td>
+<td>
+
+<p>
+END;
+
+                if (isset($api_timezone) && $api_timezone !== '') {
+                    // Default timezone available
+                    echo <<<END
+Start and end times may include an explicit timezone.
+If there is no timezone, the time will be interpreted to be in
+the <em>{$api_timezone}</em> timezone.
+END;
+                } else {
+                    // No default timezone
+                    echo <<<END
+Start and end times must include an explicit timezone.
+END;
+                }
+
+                echo <<<END
+
+Acceptable timezone values are "Z", "UTC" or an offset in the form of
+[+-]HH:MM.
+
+No entered values means the time of the first or last tweet.  Partial
+times are also permitted: only the year is mandatory, the remaining
+components will be automatically added. Times are inclusive (i.e. any
+hashtags with timestamps equal to those times will be included in the
+selection).</p>
+
+</td>
+</tr>
+
+  </table>
+</form>
+END;
+                $title = "Selected hashtags";
+            } else {
+                // No tweets: do not show form to select tweets
+                echo '<p>This query bin contains no tweets.</p>';
+                $title = "Tweets";
+            }
+
+            // Show view of selected tweets (or no tweets)
+
+            // Selection times as HTML for display
+
+            $hB = (isset($dt_end)) ? dt_format_html($dt_end, $api_timezone) : "";
+
+            if (isset($dt_start)) {
+                $hA = dt_format_html($dt_start, $api_timezone);
+
+                if (isset($dt_end)) {
+                    $dt_desc_html = "From $hA to $hB";
+                } else {
+                    $dt_desc_html = "From $hA to last hashtag";
+                }
+            } else {
+                if (isset($dt_end)) {
+                    $dt_desc_html = "From first hashtag to $hB";
+                } else {
+                    $dt_desc_html = "All hashtags from first to last";
+                }
+            }
+
+            echo <<<END
+<fieldset>
+  <legend>$title</legend>
+
+  <table>
+    <tr><th>Selected range</th><td>$dt_desc_html</td></tr>
+    <tr><th>Number of hashtagss</th><td>{$info['hashtags']} of $total_num</td></tr>
+  </table>
+END;
+
+            if (0 < $total_num) {
+                // Has tweets: show button to purge tweets
+                echo <<<END
+    <div id="export-tweets-form">
+    <form method="GET">
+        <input type="hidden" name="action" value="hashtag-export"/>
+        <input type="hidden" name="startdate" value="$val_A"/>
+        <input type="hidden" name="enddate" value="$val_B"/>
+        <input type="submit" value="Export selected hashtags"/>
+
+        <input type="radio" name="format" value="csv" id="csv" checked="checked"/>
+        <label for="csv">CSV</label>
+        <input type="radio" name="format" value="tsv" id="tsv"/>
+        <label for="tsv">TSV</label>
+    </form>
+    </div>
+END;
+
+
+            if (isset($time_to_purge)) {
+                echo <<<END
+<p id="purge-time-warning">
+Warning: purging could take a long time (~ $time_to_purge).</p>
+END;
+                }
+            }
+
+            // End of view of tweets
+
+            echo "</fieldset>\n";
+
+            // End of page
+
+            html_end();
+            break;
+
+        case 'application/json':
+
+            $data = [
+               "number-selected-hashtags" => $info['hashtags'],
+            ];
+
+            // Process any additional information requests
+
+            if ($_SERVER['REQUEST_METHOD'] === 'GET' && array_key_exists('request', $_GET)) {
+                $request = $_GET['request'];
+            } else if ($_SERVER['REQUEST_METHOD'] === 'POST' && array_key_exists('request', $_POST)) {
+                $request = $_POST['request']; 
+            } else {
+                $request = '';
+            }
+
+            if ($request == 'top') {
+
+                // Get top hashtags
+
+                if ($_SERVER['REQUEST_METHOD'] === 'GET' && array_key_exists('request', $_GET)) {
+                    $limit = $_GET['request'];
+                } else if ($_SERVER['REQUEST_METHOD'] === 'POST' && array_key_exists('request', $_POST)) {
+                    $limit = $_POST['request']; 
+                } else {
+                    $limit = null;
+                }
+
+                $data['top'] => hashtags_top($querybin, $dt_start, $dt_end, $limit);
+                
+            }
+
+            respond_with_json($data);
+            break;
+
+        case 'text/plain':
+        default:
+
+            $from = (isset($dt_start)) ? dt_format_text($dt_start, $api_timezone) : "";
+            $to = (isset($dt_end)) ? dt_format_text($dt_end, $api_timezone) : "";
+
+            if (isset($dt_start)) {
+                if (isset($dt_end)) {
+                    $dt_desc = "from $from to $to";
+                } else {
+                    $dt_desc = "from $from to last hashtag";
+                }
+            } else {
+                if (isset($dt_end)) {
+                    $dt_desc = "first hashtag up to $to";
+                } else {
+                    $dt_desc = "all hashtags";
+                }
+            }
+
+            $total_num = $querybin['nohashtags'];
+
+            if (0 < $total_num) {
+                // Has tweets
+                $min_t = dt_from_utc($querybin['mintime']);
+                $max_t = dt_from_utc($querybin['maxtime']);
+
+                $t1_text = dt_format_text($min_t, $api_timezone);
+                $t2_text = dt_format_text($max_t, $api_timezone);
+
+                echo <<<END
+Query bin: {$querybin['bin']}
+  Earliest hashtag: {$t1_text}
+    Latest hashtag: {$t2_text}
+  Hashtags: ($dt_desc)
+    Number of hashtags: {$info['hashtags']} of {$querybin['nohashtags']}
+
+END;
+
+            } else {
+                // No hashtags
+                echo "Query bin: {$querybin['bin']}\n";
+                echo "  No hashtags\n";
+            }
+
+            break;
+    }
+}
+
 // Estimate time to purge.
 //
 // Returns null if it is not going take very long, otherwise
@@ -667,11 +1013,29 @@ function main()
                 $querybin_name = $components[0];
                 break;
             case 2:
-                // Query bin's tweets (e.g. /api/querybin.php/foobar/tweets)
-                if ($components[1] != 'tweets') {
-                    abort_with_error(404, "Not found: " . $_SERVER['PATH_INFO']);
+                // Query bin's tweets, mentions, or hashtags (e.g. /api/querybin.php/foobar/tweets)
+                switch($components[1]) {
+                    case 'tweets': {
+                        $resource = 'querybin/tweets';
+                        break;
+                    }
+                    case 'hashtags': {
+                        $resource = 'querybin/hashtags';
+                        break;
+                    }
+                    case 'mentions': {
+                        $resource = 'querybin/mentions';
+                        break;
+                    }
+                    case 'retweets': {
+                        $resource = 'querybin/retweets';
+                        break;
+                    }
+                    default: {
+                        abort_with_error(404, "Not found: " . $_SERVER['PATH_INFO']);
+                        break;
+                    }
                 }
-                $resource = 'querybin/tweets';
                 $querybin_name = $components[0];
                 break;
             default:
@@ -701,6 +1065,15 @@ function main()
                 case 'querybin/tweets':
                     $action = 'tweet-info';
                     break;
+                case 'querybin/hashtags':
+                    $action = 'hashtag-info';
+                    break;
+                case 'querybin/mentions':
+                    $action = 'mention-info';
+                    break;
+                case 'querybin/retweets':
+                    $action = 'retweet-info';
+                    break;
                 default:
                     $action = NULL;
                     abort_with_error(500, "Internal error: bad rsrc: $resource");
@@ -715,6 +1088,8 @@ function main()
         }
 
         $bad_combination = false;
+
+        // TODO: bad combinations for hashtags, mentions, retweets?
 
         switch ($resource) {
             case 'all':
@@ -732,6 +1107,27 @@ function main()
                     ($action === 'tweet-export' && $method === 'GET') ||
                     ($action === 'tweet-purge' && $method === 'DELETE') ||
                     ($action === 'tweet-purge' && $method === 'POST'))
+                ) {
+                    $bad_combination = true;
+                }
+                break;
+            case 'querybin/hashtags':
+                if (!(($action === 'hashtag-info' && $method === 'GET') ||
+                    ($action === 'hashtag-export' && $method === 'GET'))
+                ) {
+                    $bad_combination = true;
+                }
+                break;
+            case 'querybin/mentions':
+                if (!(($action === 'mention-info' && $method === 'GET') ||
+                    ($action === 'mention-export' && $method === 'GET'))
+                ) {
+                    $bad_combination = true;
+                }
+                break;
+            case 'querybin/retweets':
+                if (!(($action === 'retweet-info' && $method === 'GET') ||
+                    ($action === 'retweet-export' && $method === 'GET'))
                 ) {
                     $bad_combination = true;
                 }
@@ -760,7 +1156,11 @@ function main()
 
         if ($action !== 'tweet-info' &&
             $action !== 'tweet-purge' &&
-            $action !== 'tweet-export') {
+            $action !== 'tweet-export' &&
+            $action !== 'hashtag-info' &&
+            $action !== 'mention-info' &&
+            $action !== 'retweet-info'
+            ) {
             // Other actions do not use start/end time
             if (isset($str_start)) {
                 abort_with_error(400, "Unexpected query parameter: startdate");
@@ -772,6 +1172,8 @@ function main()
 
     } else {
         // Invoked from command line
+
+        // TODO: implement options for hashtags, mentions, retweets
 
         // PHP's getopt is terrible, but it is always available.
         $skip_num = 1;
@@ -992,6 +1394,32 @@ END;
         case 'tweet-purge':
             do_purge_tweets($querybin, $dt_start, $dt_end);
             break;
+        case 'hashtag-info':
+            do_view_or_export_hashtags($querybin, $dt_start, $dt_end, NULL);
+            break;
+        case 'hashtag-export':
+            assert(isset($format));
+            do_view_or_export_hashtags($querybin, $dt_start, $dt_end, $format);
+            break;
+
+//        case 'mention-info':
+//            do_view_or_export_mentions($querybin, $dt_start, $dt_end, NULL);
+//            break;
+//        case 'mention-export':
+//            assert(isset($format));
+//            do_view_or_export_mentions($querybin, $dt_start, $dt_end, $format);
+//            break;
+
+//        case 'retweet-info':
+//            do_view_or_export_retweets($querybin, $dt_start, $dt_end, NULL);
+//            break;
+//        case 'retweet-export':
+//            assert(isset($format));
+//            do_view_or_export_retweets($querybin, $dt_start, $dt_end, $format);
+//            break;
+
+
+
         default:
             abort_with_error(500, "Internal error: unexpected action: $action");
     }

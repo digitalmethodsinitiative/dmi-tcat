@@ -881,6 +881,16 @@ function get_all_datasets() {
                     $row['notweets'] = $res2['notweets'];
                     $row['maxtime'] = $res2['max'];
                 }
+                $rec3 = $dbh->prepare("SELECT count(h.id) AS nohashtags FROM " . $res['querybin'] . "_hashtags h ");
+                if ($rec3->execute() && $rec3->rowCount() > 0) {
+                    $res3 = $rec3->fetch();
+                    $row['nohashtags'] = $res3['nohashtags'];
+                }
+                $rec3 = $dbh->prepare("SELECT count(m.id) AS nomentions FROM " . $res['querybin'] . "_mentions m ");
+                if ($rec3->execute() && $rec3->rowCount() > 0) {
+                    $res3 = $rec3->fetch();
+                    $row['nomentions'] = $res3['nomentions'];
+                }
                 $rec3 = $dbh->prepare("SELECT starttime AS min FROM tcat_query_bins b, tcat_query_bins_periods bp WHERE b.querybin = '" . $res['querybin'] . "' AND b.id = bp.querybin_id");
                 if ($rec3->execute() && $rec3->rowCount() > 0) {
                     $res3 = $rec3->fetch();

@@ -48,7 +48,7 @@ function created_at_condition($dt_start, $dt_end)
 // $dt_start - must either be a DateTime object or NULL.
 // $dt_end - must either be a DateTime object or NULL.
 
-function tweet_info($query_bin, $dt_start, $dt_end)
+function tweet_info($query_bin, $dt_start, $dt_end, $tables = array("tweets"))
 {
 
     // Create WHERE clause to restrict to requested timestamp range
@@ -92,7 +92,8 @@ function tweet_info($query_bin, $dt_start, $dt_end)
     // Only do tweets, otherwise it takes a long time if there are many tweets
     //foreach (["tweets", "hashtags", "mentions", "urls"] as $tbl) {
 
-    foreach (["tweets"] as $tbl) {
+//    foreach (["tweets"] as $tbl) {
+    foreach ($tables as $tbl) {
         $table_name = $bin_name . '_' . $tbl;
         $rec = $dbh->prepare("SELECT count(*) FROM `{$table_name}` $where");
         $rec->execute();
@@ -162,3 +163,56 @@ function tweet_purge($query_bin, $dt_start, $dt_end)
 
     return $result;
 }
+
+//----------------------------------------------------------------
+// Top hashtags
+//
+// Retrieve information about the top hashtags in the time period
+// between $dt_start and $dt_end (inclusive).
+//
+// $query_bin - the array produced by ~/analysis/common/functions.php
+// $dt_start - must either be a DateTime object or NULL.
+// $dt_end - must either be a DateTime object or NULL.
+
+function hashtags_top($query_bin, $dt_start, $dt_end, $limit = NULL) {)
+{
+
+    // Create WHERE clause to restrict to requested timestamp range
+
+    $time_condition = created_at_condition($dt_start, $dt_end);
+    if (isset($time_condition)) {
+        $where = 'WHERE ' . $time_condition;
+    } else {
+        $where = '';
+    }
+
+    // Query database
+
+    $dbh = pdo_connect();
+
+    $bin_name = $query_bin['bin'];
+
+    // NOTICE: This query does not define a cut-off point
+
+    if (is_null($limit)) {
+        $sql = 'select text, count(text) as cnt from ' . $bin_name . '_hashtags group by text order by count(text) desc';
+    } else {
+        $sql = 'select text, count(text) as cnt from ' . $bin_name . '_hashtags group by text order by count(text) desc limit ' . $limit;
+    }
+    $rec = $dbh->prepare($sql);
+    $rec->execute();
+
+    $list = array();
+
+    while ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
+        $hashtag = $res['text'];
+        $count = $res['cnt'];
+        $element = array ( 'hashtag' => $hashtag,
+                           'count' => $count );
+        $list[] = $element;
+    }
+
+    return $list;
+
+}
+
