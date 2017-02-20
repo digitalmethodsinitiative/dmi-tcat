@@ -179,8 +179,7 @@ function tweet_purge($query_bin, $dt_start, $dt_end)
 // $dt_start - must either be a DateTime object or NULL.
 // $dt_end - must either be a DateTime object or NULL.
 
-function hashtags_top($query_bin, $dt_start, $dt_end, $limit = NULL) {)
-{
+function hashtags_top($query_bin, $dt_start, $dt_end, $limit = NULL) {
 
     // Create WHERE clause to restrict to requested timestamp range
 

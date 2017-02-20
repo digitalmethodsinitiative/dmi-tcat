@@ -798,7 +798,7 @@ END;
                     $limit = null;
                 }
 
-                $data['top'] => hashtags_top($querybin, $dt_start, $dt_end, $limit);
+                $data['top'] = hashtags_top($querybin, $dt_start, $dt_end, $limit);
                 
             }
 
