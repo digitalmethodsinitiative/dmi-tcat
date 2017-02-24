@@ -1560,7 +1560,7 @@ function do_view_or_export_tweeters(array $querybin, $dt_start, $dt_end, $export
 
     $time_condition = created_at_condition($dt_start, $dt_end);
     if (isset($time_condition)) {
-        $where = $time_condition;
+        $where = ' WHERE ' . $time_condition;
     } else {
         $where = '';
     }
@@ -1570,11 +1570,8 @@ function do_view_or_export_tweeters(array $querybin, $dt_start, $dt_end, $export
     $dbh = pdo_connect();
     $bin_name = $querybin['bin'];
 
-    $sql = 'select count(distinct(from_user_name)) as cnt from ' . $bin_name . '_tweets WHERE ' . $where;
+    $sql = 'select count(distinct(from_user_name)) as cnt from ' . $bin_name . '_tweets ' . $where;
     $rec = $dbh->prepare($sql);
-    // DEBUG BEGIN
-    file_put_contents("/tmp/debug.sql", $sql);
-    // DEBUG END
     $rec->execute();
 
     if ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
