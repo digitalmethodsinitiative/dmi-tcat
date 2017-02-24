@@ -84,6 +84,15 @@ function choose_mediatype(array $mediatypes)
 
 function respond_with_json($data)
 {
+    global $esc;
+
+    $data['original_request'] = array(
+        'URI' => $_SERVER['PATH_INFO'],
+        'GET' => $_GET,
+        'POST' => $_POST,
+        'esc' => $esc,
+    );
+
     header("Content-Type: application/json");
     echo json_encode($data);
 }
