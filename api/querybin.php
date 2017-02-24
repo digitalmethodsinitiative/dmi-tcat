@@ -781,7 +781,7 @@ END;
             if ($_SERVER['REQUEST_METHOD'] === 'GET' && array_key_exists('request', $_GET)) {
                 $request = $_GET['request'];
             } else if ($_SERVER['REQUEST_METHOD'] === 'POST' && array_key_exists('request', $_POST)) {
-                $request = $_POST['request']; 
+                $request = $_POST['request'];
             } else {
                 $request = '';
             }
@@ -790,10 +790,10 @@ END;
 
                 // Get top hashtags
 
-                if ($_SERVER['REQUEST_METHOD'] === 'GET' && array_key_exists('request', $_GET)) {
-                    $limit = $_GET['request'];
-                } else if ($_SERVER['REQUEST_METHOD'] === 'POST' && array_key_exists('request', $_POST)) {
-                    $limit = $_POST['request']; 
+                if ($_SERVER['REQUEST_METHOD'] === 'GET' && array_key_exists('limit', $_GET)) {
+                    $limit = $_GET['limit'];
+                } else if ($_SERVER['REQUEST_METHOD'] === 'POST' && array_key_exists('limit', $_POST)) {
+                    $limit = $_POST['limit'];
                 } else {
                     $limit = null;
                 }
@@ -1127,7 +1127,7 @@ END;
             if ($_SERVER['REQUEST_METHOD'] === 'GET' && array_key_exists('request', $_GET)) {
                 $request = $_GET['request'];
             } else if ($_SERVER['REQUEST_METHOD'] === 'POST' && array_key_exists('request', $_POST)) {
-                $request = $_POST['request']; 
+                $request = $_POST['request'];
             } else {
                 $request = '';
             }
@@ -1474,7 +1474,7 @@ END;
             if ($_SERVER['REQUEST_METHOD'] === 'GET' && array_key_exists('request', $_GET)) {
                 $request = $_GET['request'];
             } else if ($_SERVER['REQUEST_METHOD'] === 'POST' && array_key_exists('request', $_POST)) {
-                $request = $_POST['request']; 
+                $request = $_POST['request'];
             } else {
                 $request = '';
             }
@@ -1483,10 +1483,10 @@ END;
 
                 // Get top retweets
 
-                if ($_SERVER['REQUEST_METHOD'] === 'GET' && array_key_exists('request', $_GET)) {
-                    $limit = $_GET['request'];
-                } else if ($_SERVER['REQUEST_METHOD'] === 'POST' && array_key_exists('request', $_POST)) {
-                    $limit = $_POST['request']; 
+                if ($_SERVER['REQUEST_METHOD'] === 'GET' && array_key_exists('limit', $_GET)) {
+                    $limit = $_GET['limit'];
+                } else if ($_SERVER['REQUEST_METHOD'] === 'POST' && array_key_exists('limit', $_POST)) {
+                    $limit = $_POST['limit'];
                 } else {
                     $limit = null;
                 }
@@ -1541,6 +1541,354 @@ END;
                 // No retweets
                 echo "Query bin: {$querybin['bin']}\n";
                 echo "  No retweets\n";
+            }
+
+            break;
+    }
+}
+
+//----------------------------------------------------------------
+// View (top) tweetsers for a specific bin.
+
+function do_view_or_export_tweeters(array $querybin, $dt_start, $dt_end, $export)
+
+{
+    global $api_timezone;
+    global $utc_tz;
+
+    // Get information about tweets from the query bin
+
+    $time_condition = created_at_condition($dt_start, $dt_end);
+    if (isset($time_condition)) {
+        $where = $time_condition;
+    } else {
+        $where = '';
+    }
+
+    // Query database
+
+    $dbh = pdo_connect();
+    $bin_name = $querybin['bin'];
+
+    $sql = 'select count(distinct(from_user_name)) as cnt from ' . $bin_name . '_tweets WHERE ' . $where;
+    $rec = $dbh->prepare($sql);
+    // DEBUG BEGIN
+    file_put_contents("/tmp/debug.sql", $sql);
+    // DEBUG END
+    $rec->execute();
+
+    if ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
+        $select_num = $res['cnt'];
+    } else {
+        $select_num = 0;
+    }
+
+    $sql = 'select count(distinct(from_user_name)) as cnt from ' . $bin_name . '_tweets';
+    $rec = $dbh->prepare($sql);
+    $rec->execute();
+
+    if ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
+        $total_num = $res['cnt'];
+    } else {
+        $total_num = 0;
+    }
+
+    // Show result
+
+    $response_mediatype = choose_mediatype(['application/json', 'text/html',
+        'text/plain',
+        'text/csv', 'text/tab-separated-values']);
+
+    if (isset($export)) {
+        // Force exporting of tweets when viewed in a Web browser
+        // that cannot set the accepted mediatypes header.
+        if ($export === 'tsv') {
+            $response_mediatype = 'text/tab-separated-values';
+            $data = [
+               "number-selected-tweeters" => $select_num,
+            ];
+        } else {
+            $response_mediatype = 'text/csv';
+        }
+    }
+
+    switch ($response_mediatype) {
+
+        case 'text/csv':
+        case 'text/tab-separated-values':
+            $ds = $querybin['bin'];
+
+            $depth = count(explode('/', $_SERVER['PATH_INFO']));
+            $rel = str_repeat('../', $depth);
+
+            $qparams = 'dataset=' . urlencode($ds);
+
+            # Note: the export URL expected the times to be in UTC
+            # and formatted as 'YYYY-MM-DD HH:MM:SS'
+
+            if (isset($dt_start)) {
+                $dt_start->setTimezone($utc_tz);
+                $qparams .= '&startdate=';
+                $qparams .= urlencode($dt_start->format(DT_PARAM_PATTERN));
+            } else {
+                // Explicitly set startdate when there is none.
+                // This is probably unnecessary, but is done to mirror
+                // setting enddate explicitly (see below).
+                $min_t = dt_from_utc($querybin['mintime']);
+                $min_t->setTimezone($utc_tz);
+                $qparams .= '&startdate=';
+                $qparams .= urlencode($min_t->format(DT_PARAM_PATTERN));
+            }
+            if (isset($dt_end)) {
+                $dt_end->setTimezone($utc_tz);
+                $qparams .= '&enddate=';
+                $qparams .= urlencode($dt_end->format(DT_PARAM_PATTERN));
+            } else {
+                // Explicitly set enddate to maximum captured tweet time.
+                // This is necessary, because the export feature does not
+                // correctly infer the enddate when none is supplied:
+                // resulting in less tweets exported than expected.
+                $max_t = dt_from_utc($querybin['maxtime']);
+                $max_t->setTimezone($utc_tz);
+                $qparams .= '&enddate=';
+                $qparams .= urlencode($max_t->format(DT_PARAM_PATTERN));
+            }
+            if ($response_mediatype == 'text/tab-separated-values') {
+                $qparams .= '&outputformat=tsv';
+            } else {
+                $qparams .= '&outputformat=csv';
+            }
+
+            // Redirect to existing export function
+            // TODO: where to?
+//            header("Location: {$rel}analysis/mod.export_retweets.php?$qparams");
+
+            exit(0);
+            break;
+
+        case 'text/html':
+
+            $script_url = $_SERVER['SCRIPT_URL'];
+            $components = explode('/', $script_url);
+            array_pop($components);
+            $query_bin_info = implode('/', $components);
+            array_pop($components);
+            $query_bin_list = implode('/', $components);
+
+            html_begin("Query bin tweeters: {$querybin['bin']}",
+                [
+                    ["Query Bins", $query_bin_list],
+                    [$querybin['bin'], $query_bin_info],
+                    ["View Retweets"]
+                ]);
+
+            // Selection times as text for start/end text field values
+
+            $val_A = (isset($dt_start)) ? dt_format_text($dt_start, $api_timezone) : "";
+            $val_B = (isset($dt_end)) ? dt_format_text($dt_end, $api_timezone) : "";
+
+            if (0 < $total_num) {
+                // Has tweets: show form to select tweets
+
+                $min_t = dt_from_utc($querybin['mintime']);
+                $max_t = dt_from_utc($querybin['maxtime']);
+
+                // First/last tweet times as text for placeholders
+
+                $t1_text = dt_format_text($min_t, $api_timezone);
+                $t2_text = dt_format_text($max_t, $api_timezone);
+
+                // First/last tweet times as HTML for description
+
+                $t1_html = dt_format_html($min_t, $api_timezone);
+                $t2_html = dt_format_html($max_t, $api_timezone);
+
+                echo <<<END
+
+<p>This query bin contains a total of {$total_num} twitter users
+from {$t1_html} to {$t2_html}.</p>
+
+<form method="GET">
+  <table>
+    <tr>
+      <th style="white-space: nowrap">
+        <label for="startdate">Start time</label></th>
+      <td><input type="text" id="startdate" name="startdate"
+           placeholder="$t1_text" value="$val_A"/></td>
+    </tr>
+    <tr>
+      <th style="white-space: nowrap">
+        <label for="enddate">End time</label></th>
+      <td><input type="text" id="enddate" name="enddate"
+          placeholder="$t2_text" value="$val_B"/></td>
+    </tr>
+    <tr>
+      <td></td>
+      <td><input type="submit" value="Update selection"/></td>
+    <tr>
+
+<tr>
+<td></td>
+<td>
+
+<p>
+END;
+
+                if (isset($api_timezone) && $api_timezone !== '') {
+                    // Default timezone available
+                    echo <<<END
+Start and end times may include an explicit timezone.
+If there is no timezone, the time will be interpreted to be in
+the <em>{$api_timezone}</em> timezone.
+END;
+                } else {
+                    // No default timezone
+                    echo <<<END
+Start and end times must include an explicit timezone.
+END;
+                }
+
+                echo <<<END
+
+Acceptable timezone values are "Z", "UTC" or an offset in the form of
+[+-]HH:MM.
+
+No entered values means the time of the first or last tweet.  Partial
+times are also permitted: only the year is mandatory, the remaining
+components will be automatically added. Times are inclusive (i.e. any
+tweets with timestamps equal to those times will be included in the
+selection).</p>
+
+</td>
+</tr>
+
+  </table>
+</form>
+END;
+                $title = "Selected tweeters over period";
+            } else {
+                // No tweets: do not show form to select tweets
+                echo '<p>This query bin contains no tweets.</p>';
+                $title = "Tweets";
+            }
+
+            // Show view of selected tweets (or no tweets)
+
+            // Selection times as HTML for display
+
+            $hB = (isset($dt_end)) ? dt_format_html($dt_end, $api_timezone) : "";
+
+            if (isset($dt_start)) {
+                $hA = dt_format_html($dt_start, $api_timezone);
+
+                if (isset($dt_end)) {
+                    $dt_desc_html = "From $hA to $hB";
+                } else {
+                    $dt_desc_html = "From $hA to last tweet";
+                }
+            } else {
+                if (isset($dt_end)) {
+                    $dt_desc_html = "From first tweet to $hB";
+                } else {
+                    $dt_desc_html = "All tweets from first to last";
+                }
+            }
+
+            echo <<<END
+<fieldset>
+  <legend>$title</legend>
+
+  <table>
+    <tr><th>Selected range</th><td>$dt_desc_html</td></tr>
+    <tr><th>Number of twitter users</th><td>{$select_num} of $total_num</td></tr>
+  </table>
+END;
+
+            // End of view of tweets
+
+            echo "</fieldset>\n";
+
+            // End of page
+
+            html_end();
+            break;
+
+        case 'application/json':
+
+            $data = [
+               "number-selected-tweeters" => $select_num,
+            ];
+
+            // Process any additional information requests
+
+            if ($_SERVER['REQUEST_METHOD'] === 'GET' && array_key_exists('request', $_GET)) {
+                $request = $_GET['request'];
+            } else if ($_SERVER['REQUEST_METHOD'] === 'POST' && array_key_exists('request', $_POST)) {
+                $request = $_POST['request'];
+            } else {
+                $request = '';
+            }
+
+            if ($request == 'top') {
+
+                // Get top tweeters
+
+                if ($_SERVER['REQUEST_METHOD'] === 'GET' && array_key_exists('limit', $_GET)) {
+                    $limit = $_GET['limit'];
+                } else if ($_SERVER['REQUEST_METHOD'] === 'POST' && array_key_exists('limit', $_POST)) {
+                    $limit = $_POST['limit'];
+                } else {
+                    $limit = null;
+                }
+
+                $data['top'] = tweeters_top($querybin, $dt_start, $dt_end, $limit);
+
+            }
+
+            respond_with_json($data);
+            break;
+
+        case 'text/plain':
+        default:
+
+            $from = (isset($dt_start)) ? dt_format_text($dt_start, $api_timezone) : "";
+            $to = (isset($dt_end)) ? dt_format_text($dt_end, $api_timezone) : "";
+
+            if (isset($dt_start)) {
+                if (isset($dt_end)) {
+                    $dt_desc = "from $from to $to";
+                } else {
+                    $dt_desc = "from $from to last tweet";
+                }
+            } else {
+                if (isset($dt_end)) {
+                    $dt_desc = "first tweet up to $to";
+                } else {
+                    $dt_desc = "all tweets";
+                }
+            }
+
+            if (0 < $total_num) {
+                // Has tweets
+                $min_t = dt_from_utc($querybin['mintime']);
+                $max_t = dt_from_utc($querybin['maxtime']);
+
+                $t1_text = dt_format_text($min_t, $api_timezone);
+                $t2_text = dt_format_text($max_t, $api_timezone);
+
+                echo <<<END
+Query bin: {$querybin['bin']}
+  Earliest tweet: {$t1_text}
+    Latest tweet: {$t2_text}
+  Period: ($dt_desc)
+    Number of tweeters: {$select_num} of {$total_num}
+
+END;
+
+            } else {
+                // No tweets
+                echo "Query bin: {$querybin['bin']}\n";
+                echo "  No tweets\n";
             }
 
             break;
@@ -1734,6 +2082,10 @@ function main()
                         $resource = 'querybin/retweets';
                         break;
                     }
+                    case 'tweeters': {
+                        $resource = 'querybin/tweeters';
+                        break;
+                    }
                     default: {
                         abort_with_error(404, "Not found: " . $_SERVER['PATH_INFO']);
                         break;
@@ -1777,6 +2129,9 @@ function main()
                 case 'querybin/retweets':
                     $action = 'retweet-info';
                     break;
+                case 'querybin/tweeters':
+                    $action = 'tweeters-info';
+                    break;
                 default:
                     $action = NULL;
                     abort_with_error(500, "Internal error: bad rsrc: $resource");
@@ -1791,8 +2146,6 @@ function main()
         }
 
         $bad_combination = false;
-
-        // TODO: bad combinations for hashtags, mentions, retweets?
 
         switch ($resource) {
             case 'all':
@@ -1835,6 +2188,13 @@ function main()
                     $bad_combination = true;
                 }
                 break;
+            case 'querybin/tweeters':
+                if (!(($action === 'tweeters-info' && $method === 'GET') ||
+                    ($action === 'tweeters-export' && $method === 'GET'))
+                ) {
+                    $bad_combination = true;
+                }
+                break;
             default:
                 abort_with_error(500, "Internal error: bad rsrc: $resource");
         }
@@ -1865,7 +2225,9 @@ function main()
             $action !== 'mention-info' &&
             $action !== 'mention-export' &&
             $action !== 'retweet-info' &&
-            $action !== 'retweet-export'
+            $action !== 'retweet-export' &&
+            $action !== 'tweeters-info' &&
+            $action !== 'tweeters-export'
             ) {
             // Other actions do not use start/end time
             if (isset($str_start)) {
@@ -1879,7 +2241,7 @@ function main()
     } else {
         // Invoked from command line
 
-        // TODO: implement options for hashtags, mentions, retweets
+        // TODO: implement command-line interface for hashtags, mentions, retweets, tweeters?
 
         // PHP's getopt is terrible, but it is always available.
         $skip_num = 1;
@@ -2121,8 +2483,13 @@ END;
             assert(isset($format));
             do_view_or_export_retweets($querybin, $dt_start, $dt_end, $format);
             break;
-
-
+        case 'tweeters-info':
+            do_view_or_export_tweeters($querybin, $dt_start, $dt_end, NULL);
+            break;
+        case 'tweeters-export':
+            assert(isset($format));
+            do_view_or_export_tweeters($querybin, $dt_start, $dt_end, $format);
+            break;
 
         default:
             abort_with_error(500, "Internal error: unexpected action: $action");

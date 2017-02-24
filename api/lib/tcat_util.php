@@ -181,6 +181,8 @@ function tweet_purge($query_bin, $dt_start, $dt_end)
 
 function hashtags_top($query_bin, $dt_start, $dt_end, $limit = NULL) {
 
+    // TODO: accept all TCAT parameters like in mentions
+
     // Create WHERE clause to restrict to requested timestamp range
 
     $time_condition = created_at_condition($dt_start, $dt_end);
@@ -266,9 +268,6 @@ function mentions_top($query_bin, $dt_start, $dt_end, $limit = NULL)
     if (!is_null($limit)) {
         $sql .= ' limit ' . $limit;
     }
-    // DEBUG BEGIN
-    file_put_contents("/tmp/debug.sql", $sql);
-    // DEBUG END
     $rec = $dbh->prepare($sql);
     $rec->execute();
 
@@ -287,6 +286,70 @@ function mentions_top($query_bin, $dt_start, $dt_end, $limit = NULL)
 }
 
 //----------------------------------------------------------------
+// Top tweeters
+//
+// Retrieve information about the top tweeters in the time period
+// between $dt_start and $dt_end (inclusive).
+//
+// $query_bin - the array produced by ~/analysis/common/functions.php
+// $dt_start - must either be a DateTime object or NULL.
+// $dt_end - must either be a DateTime object or NULL.
+
+function tweeters_top($query_bin, $dt_start, $dt_end, $limit = NULL)
+{
+
+    global $esc;
+
+    // This function allows special arguments, similar to the TCAT front-end;
+    // therefore we validate and process those arguments here
+    if (!isset($_GET['dataset'])) {
+        $_GET['dataset'] = $query_bin;
+    }
+    validate_all_variables();
+
+    // Create WHERE clause to restrict to requested timestamp range
+    // Convert to sqlSubset() format
+    if (isset($dt_start) && isset($dt_end)) {
+        $dt_start->setTimezone(new DateTimeZone('UTC'));
+        $esc['datetime']['startdate'] = $dt_start->format('Y-m-d\TH:i:s');
+        $dt_end->setTimezone(new DateTimeZone('UTC'));
+        $esc['datetime']['enddate'] = $dt_end->format('Y-m-d\TH:i:s');
+    }
+    $where = sqlSubset();
+
+    // Query database
+
+    $dbh = pdo_connect();
+
+    $bin_name = $query_bin['bin'];
+
+    // NOTICE: This query does not define a cut-off point
+
+    $sql = 'select count(t.id) as cnt, t.from_user_name as from_user_name from ' . $bin_name . '_tweets t ' . $where .
+           ' group by from_user_name order by count(t.id) desc';
+
+    if (!is_null($limit)) {
+        $sql .= ' limit ' . $limit;
+    }
+    $rec = $dbh->prepare($sql);
+    $rec->execute();
+
+    $list = array();
+
+    while ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
+        $user = $res['from_user_name'];
+        $count = $res['cnt'];
+        $element = array ( 'user' => $user,
+                           'count' => $count );
+        $list[] = $element;
+    }
+
+    return $list;
+
+}
+
+
+//----------------------------------------------------------------
 // Top retweets
 //
 // Retrieve information about the top mentions in the time period
@@ -297,6 +360,8 @@ function mentions_top($query_bin, $dt_start, $dt_end, $limit = NULL)
 // $dt_end - must either be a DateTime object or NULL.
 
 function retweets_top($query_bin, $dt_start, $dt_end, $limit = NULL) {
+
+    // TODO: accept all TCAT parameters like in mentions
 
     // Create WHERE clause to restrict to requested timestamp range
 
