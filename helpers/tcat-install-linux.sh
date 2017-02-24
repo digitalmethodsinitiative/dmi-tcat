@@ -412,7 +412,7 @@ fi
 
 if [ -n "$DEBIAN_VERSION" ]; then
     apt-get install -y debian-archive-keyring debian-keyring
-elif
+fi
 
 # MySQL server package name for apt-get
 
