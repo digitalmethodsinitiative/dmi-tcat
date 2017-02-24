@@ -230,16 +230,27 @@ function hashtags_top($query_bin, $dt_start, $dt_end, $limit = NULL) {
 // $dt_start - must either be a DateTime object or NULL.
 // $dt_end - must either be a DateTime object or NULL.
 
-function mentions_top($query_bin, $dt_start, $dt_end, $limit = NULL) {
+function mentions_top($query_bin, $dt_start, $dt_end, $limit = NULL)
+{
+
+    global $esc;
+
+    // This function allows special arguments, similar to the TCAT front-end;
+    // therefore we validate and process those arguments here
+    if (!isset($_GET['dataset'])) {
+        $_GET['dataset'] = $query_bin;
+    }
+    validate_all_variables();
 
     // Create WHERE clause to restrict to requested timestamp range
-
-    $time_condition = created_at_condition($dt_start, $dt_end);
-    if (isset($time_condition)) {
-        $where = 'WHERE ' . $time_condition;
-    } else {
-        $where = '';
+    // Convert to sqlSubset() format
+    if (isset($dt_start) && isset($dt_end)) {
+        $dt_start->setTimezone(new DateTimeZone('UTC'));
+        $esc['datetime']['startdate'] = $dt_start->format('Y-m-d\TH:i:s');
+        $dt_end->setTimezone(new DateTimeZone('UTC'));
+        $esc['datetime']['enddate'] = $dt_end->format('Y-m-d\TH:i:s');
     }
+    $where = sqlSubset();
 
     // Query database
 
@@ -249,11 +260,15 @@ function mentions_top($query_bin, $dt_start, $dt_end, $limit = NULL) {
 
     // NOTICE: This query does not define a cut-off point
 
-    if (is_null($limit)) {
-        $sql = 'select to_user, count(to_user) as cnt from ' . $bin_name . '_mentions ' . $where . ' group by to_user order by count(to_user) desc';
-    } else {
-        $sql = 'select to_user, count(to_user) as cnt from ' . $bin_name . '_mentions ' . $where . ' group by to_user order by count(to_user) desc limit ' . $limit;
+    $sql = 'select to_user, count(to_user) as cnt from ' . $bin_name . '_mentions m inner join ' . $bin_name . '_tweets t on t.id = m.tweet_id ' . $where .
+           ' group by to_user order by count(to_user) desc';
+
+    if (!is_null($limit)) {
+        $sql .= ' limit ' . $limit;
     }
+    // DEBUG BEGIN
+    file_put_contents("/tmp/debug.sql", $sql);
+    // DEBUG END
     $rec = $dbh->prepare($sql);
     $rec->execute();
 

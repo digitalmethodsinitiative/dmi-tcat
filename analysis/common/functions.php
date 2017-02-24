@@ -367,6 +367,7 @@ function sqlSubset($where = NULL) {
             $sql .= "from_user_lang = '" . $esc['mysql']['from_user_lang'] . "' AND ";
         }
     }
+
     $sql .= " t.created_at >= '" . $esc['datetime']['startdate'] . "' AND t.created_at <= '" . $esc['datetime']['enddate'] . "' ";
     //print $sql."<br>"; die;
 
@@ -982,7 +983,7 @@ function pdo_connect() {
     return $dbh;
 }
 
-function pdo_error_report() {
+function pdo_error_report($Exception) {
     error_log("Database access error occured. Code: " . $Exception->getCode() . " Msg: " . $Exception->getMessage());
 }
 

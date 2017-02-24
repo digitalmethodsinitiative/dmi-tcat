@@ -1136,10 +1136,10 @@ END;
 
                 // Get top mentions
 
-                if ($_SERVER['REQUEST_METHOD'] === 'GET' && array_key_exists('request', $_GET)) {
-                    $limit = $_GET['request'];
-                } else if ($_SERVER['REQUEST_METHOD'] === 'POST' && array_key_exists('request', $_POST)) {
-                    $limit = $_POST['request']; 
+                if ($_SERVER['REQUEST_METHOD'] === 'GET' && array_key_exists('limit', $_GET)) {
+                    $limit = $_GET['limit'];
+                } else if ($_SERVER['REQUEST_METHOD'] === 'POST' && array_key_exists('limit', $_POST)) {
+                    $limit = $_POST['limit'];
                 } else {
                     $limit = null;
                 }
@@ -1693,7 +1693,10 @@ function main()
     if (PHP_SAPI != 'cli') {
         // Invoked by Web server
 
-        expected_query_parameters(['action', 'startdate', 'enddate', 'format']);
+        expected_query_parameters(['action', 'startdate', 'enddate', 'format',
+            'request', 'limit',
+            'dataset', 'query', 'geo_query', 'url_query', 'exclude', 'from_user_name', 'from_user_description', 'from_source', 'whattodo', 'graph_resolution', 'outputformat',
+        ]);
 
         // Determine resource ($querybin_name will be set or not)
 
