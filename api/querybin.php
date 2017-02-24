@@ -2386,7 +2386,7 @@ function main()
 
         expected_query_parameters(['action', 'startdate', 'enddate', 'format',
             'request', 'limit',
-            'dataset', 'query', 'geo_query', 'url_query', 'exclude', 'from_user_name', 'from_user_description', 'from_source', 'whattodo', 'graph_resolution', 'outputformat',
+            'dataset', 'query', 'geo_query', 'url_query', 'exclude', 'from_user_name', 'exclude_from_user_name', 'from_user_lang', 'from_user_description', 'from_source', 'whattodo', 'graph_resolution', 'outputformat',
         ]);
 
         // Determine resource ($querybin_name will be set or not)
