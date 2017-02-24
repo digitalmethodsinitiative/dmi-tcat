@@ -373,16 +373,24 @@ function tweeters_top($query_bin, $dt_start, $dt_end, $limit = NULL)
 
 function retweets_top($query_bin, $dt_start, $dt_end, $limit = NULL) {
 
-    // TODO: accept all TCAT parameters like in mentions
+    global $esc;
+
+    // This function allows special arguments, similar to the TCAT front-end;
+    // therefore we validate and process those arguments here
+    if (!isset($_GET['dataset'])) {
+        $_GET['dataset'] = $query_bin;
+    }
+    validate_all_variables();
 
     // Create WHERE clause to restrict to requested timestamp range
-
-    $time_condition = created_at_condition($dt_start, $dt_end);
-    if (isset($time_condition)) {
-        $where = str_replace('created_at', 'T1.created_at', 'AND ' . $time_condition);
-    } else {
-        $where = '';
+    // Convert to sqlSubset() format
+    if (isset($dt_start) && isset($dt_end)) {
+        $dt_start->setTimezone(new DateTimeZone('UTC'));
+        $esc['datetime']['startdate'] = $dt_start->format('Y-m-d\TH:i:s');
+        $dt_end->setTimezone(new DateTimeZone('UTC'));
+        $esc['datetime']['enddate'] = $dt_end->format('Y-m-d\TH:i:s');
     }
+    $where = sqlSubset();
 
     // Query database
 
@@ -392,11 +400,16 @@ function retweets_top($query_bin, $dt_start, $dt_end, $limit = NULL) {
 
     // NOTICE: This query does not define a cut-off point
 
-    if (is_null($limit)) {
-        $sql = 'select T2.from_user_name as user, T2.text as text, T1.text as rt_text, T1.retweet_id as id, count(T1.retweet_id) as cnt from ' . $bin_name . '_tweets T1 left join ' . $bin_name . '_tweets T2 on T1.retweet_id = T2.id where T1.retweet_id is not null ' . $where . ' group by T1.retweet_id order by count(T1.retweet_id) desc';
-    } else {
-        $sql = 'select T2.from_user_name as user, T2.text as text, T1.text as rt_text, T1.retweet_id as id, count(T1.retweet_id) as cnt from ' . $bin_name . '_tweets T1 left join ' . $bin_name . '_tweets T2 on T1.retweet_id = T2.id where T1.retweet_id is not null ' . $where . ' group by T1.retweet_id order by count(T1.retweet_id) desc limit ' . $limit;
+    $sql = 'select T2.from_user_name as user, T2.text as text, t.text as rt_text, t.retweet_id as id, count(t.retweet_id) as cnt from ' . $bin_name . '_tweets t '.
+           'left join ' . $bin_name . '_tweets T2 on t.retweet_id = T2.id ' . $where .
+           ' and t.retweet_id is not null ' .
+           ' group by t.retweet_id order by count(t.retweet_id) desc';
+    if (!is_null($limit)) {
+        $sql .= ' limit ' . $limit;
     }
+    // DEBUG BEGIN
+    file_put_contents("/tmp/debug.sql", $sql);
+    // DEBUG END
     $rec = $dbh->prepare($sql);
     $rec->execute();
 
