@@ -1676,7 +1676,7 @@ function do_view_or_export_tweeters(array $querybin, $dt_start, $dt_end, $export
                 [
                     ["Query Bins", $query_bin_list],
                     [$querybin['bin'], $query_bin_info],
-                    ["View Retweets"]
+                    ["View Tweeters"]
                 ]);
 
             // Selection times as text for start/end text field values
