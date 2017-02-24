@@ -855,6 +855,352 @@ END;
 }
 
 //----------------------------------------------------------------
+// View (top) urls for a specific bin.
+
+function do_view_or_export_urls(array $querybin, $dt_start, $dt_end, $export)
+
+{
+    global $api_timezone;
+    global $utc_tz;
+
+    // Get information about tweets from the query bin
+
+    $info = tweet_info($querybin, $dt_start, $dt_end, array("urls"));
+
+    // Show result
+
+    $response_mediatype = choose_mediatype(['application/json', 'text/html',
+        'text/plain',
+        'text/csv', 'text/tab-separated-values']);
+
+    if (isset($export)) {
+        // Force exporting of tweets when viewed in a Web browser
+        // that cannot set the accepted mediatypes header.
+        if ($export === 'tsv') {
+            $response_mediatype = 'text/tab-separated-values';
+            $data = [
+               "number-selected-urls" => $info['urls'],
+            ];
+        } else {
+            $response_mediatype = 'text/csv';
+        }
+    }
+
+    switch ($response_mediatype) {
+
+        case 'text/csv':
+        case 'text/tab-separated-values':
+            $ds = $querybin['bin'];
+
+            $depth = count(explode('/', $_SERVER['PATH_INFO']));
+            $rel = str_repeat('../', $depth);
+
+            $qparams = 'dataset=' . urlencode($ds);
+
+            # Note: the export URL expected the times to be in UTC
+            # and formatted as 'YYYY-MM-DD HH:MM:SS'
+
+            if (isset($dt_start)) {
+                $dt_start->setTimezone($utc_tz);
+                $qparams .= '&startdate=';
+                $qparams .= urlencode($dt_start->format(DT_PARAM_PATTERN));
+            } else {
+                // Explicitly set startdate when there is none.
+                // This is probably unnecessary, but is done to mirror
+                // setting enddate explicitly (see below).
+                $min_t = dt_from_utc($querybin['mintime']);
+                $min_t->setTimezone($utc_tz);
+                $qparams .= '&startdate=';
+                $qparams .= urlencode($min_t->format(DT_PARAM_PATTERN));
+            }
+            if (isset($dt_end)) {
+                $dt_end->setTimezone($utc_tz);
+                $qparams .= '&enddate=';
+                $qparams .= urlencode($dt_end->format(DT_PARAM_PATTERN));
+            } else {
+                // Explicitly set enddate to maximum captured tweet time.
+                // This is necessary, because the export feature does not
+                // correctly infer the enddate when none is supplied:
+                // resulting in less tweets exported than expected.
+                $max_t = dt_from_utc($querybin['maxtime']);
+                $max_t->setTimezone($utc_tz);
+                $qparams .= '&enddate=';
+                $qparams .= urlencode($max_t->format(DT_PARAM_PATTERN));
+            }
+            if ($response_mediatype == 'text/tab-separated-values') {
+                $qparams .= '&outputformat=tsv';
+            } else {
+                $qparams .= '&outputformat=csv';
+            }
+
+            // Redirect to existing export function
+
+            header("Location: {$rel}analysis/mod.export_urls.php?$qparams");
+
+            exit(0);
+            break;
+
+        case 'text/html':
+
+            $script_url = $_SERVER['SCRIPT_URL'];
+            $components = explode('/', $script_url);
+            array_pop($components);
+            $query_bin_info = implode('/', $components);
+            array_pop($components);
+            $query_bin_list = implode('/', $components);
+
+            html_begin("Query bin urls: {$querybin['bin']}",
+                [
+                    ["Query Bins", $query_bin_list],
+                    [$querybin['bin'], $query_bin_info],
+                    ["View URLs"]
+                ]);
+
+            $total_num = $querybin['nourls'];
+
+            // Selection times as text for start/end text field values
+
+            $val_A = (isset($dt_start)) ? dt_format_text($dt_start, $api_timezone) : "";
+            $val_B = (isset($dt_end)) ? dt_format_text($dt_end, $api_timezone) : "";
+
+            if (0 < $total_num) {
+                // Has tweets: show form to select tweets
+
+                $min_t = dt_from_utc($querybin['mintime']);
+                $max_t = dt_from_utc($querybin['maxtime']);
+
+                // First/last tweet times as text for placeholders
+
+                $t1_text = dt_format_text($min_t, $api_timezone);
+                $t2_text = dt_format_text($max_t, $api_timezone);
+
+                // First/last tweet times as HTML for description
+
+                $t1_html = dt_format_html($min_t, $api_timezone);
+                $t2_html = dt_format_html($max_t, $api_timezone);
+
+                echo <<<END
+
+<p>This query bin contains a total of {$total_num} urls
+from {$t1_html} to {$t2_html}.</p>
+
+<form method="GET">
+  <table>
+    <tr>
+      <th style="white-space: nowrap">
+        <label for="startdate">Start time</label></th>
+      <td><input type="text" id="startdate" name="startdate"
+           placeholder="$t1_text" value="$val_A"/></td>
+    </tr>
+    <tr>
+      <th style="white-space: nowrap">
+        <label for="enddate">End time</label></th>
+      <td><input type="text" id="enddate" name="enddate"
+          placeholder="$t2_text" value="$val_B"/></td>
+    </tr>
+    <tr>
+      <td></td>
+      <td><input type="submit" value="Update selection"/></td>
+    <tr>
+
+<tr>
+<td></td>
+<td>
+
+<p>
+END;
+
+                if (isset($api_timezone) && $api_timezone !== '') {
+                    // Default timezone available
+                    echo <<<END
+Start and end times may include an explicit timezone.
+If there is no timezone, the time will be interpreted to be in
+the <em>{$api_timezone}</em> timezone.
+END;
+                } else {
+                    // No default timezone
+                    echo <<<END
+Start and end times must include an explicit timezone.
+END;
+                }
+
+                echo <<<END
+
+Acceptable timezone values are "Z", "UTC" or an offset in the form of
+[+-]HH:MM.
+
+No entered values means the time of the first or last tweet.  Partial
+times are also permitted: only the year is mandatory, the remaining
+components will be automatically added. Times are inclusive (i.e. any
+urls with timestamps equal to those times will be included in the
+selection).</p>
+
+</td>
+</tr>
+
+  </table>
+</form>
+END;
+                $title = "Selected urls";
+            } else {
+                // No tweets: do not show form to select tweets
+                echo '<p>This query bin contains no tweets.</p>';
+                $title = "Tweets";
+            }
+
+            // Show view of selected tweets (or no tweets)
+
+            // Selection times as HTML for display
+
+            $hB = (isset($dt_end)) ? dt_format_html($dt_end, $api_timezone) : "";
+
+            if (isset($dt_start)) {
+                $hA = dt_format_html($dt_start, $api_timezone);
+
+                if (isset($dt_end)) {
+                    $dt_desc_html = "From $hA to $hB";
+                } else {
+                    $dt_desc_html = "From $hA to last url";
+                }
+            } else {
+                if (isset($dt_end)) {
+                    $dt_desc_html = "From first url to $hB";
+                } else {
+                    $dt_desc_html = "All urls from first to last";
+                }
+            }
+
+            echo <<<END
+<fieldset>
+  <legend>$title</legend>
+
+  <table>
+    <tr><th>Selected range</th><td>$dt_desc_html</td></tr>
+    <tr><th>Number of urls</th><td>{$info['urls']} of $total_num</td></tr>
+  </table>
+END;
+
+            if (0 < $total_num) {
+                // Has tweets: show button to purge tweets
+                echo <<<END
+    <div id="export-tweets-form">
+    <form method="GET">
+        <input type="hidden" name="action" value="url-export"/>
+        <input type="hidden" name="startdate" value="$val_A"/>
+        <input type="hidden" name="enddate" value="$val_B"/>
+        <input type="submit" value="Export selected urls"/>
+
+        <input type="radio" name="format" value="csv" id="csv" checked="checked"/>
+        <label for="csv">CSV</label>
+        <input type="radio" name="format" value="tsv" id="tsv"/>
+        <label for="tsv">TSV</label>
+    </form>
+    </div>
+END;
+
+
+            if (isset($time_to_purge)) {
+                echo <<<END
+<p id="purge-time-warning">
+Warning: purging could take a long time (~ $time_to_purge).</p>
+END;
+                }
+            }
+
+            // End of view of tweets
+
+            echo "</fieldset>\n";
+
+            // End of page
+
+            html_end();
+            break;
+
+        case 'application/json':
+
+            $data = [
+               "number-selected-urls" => $info['urls'],
+            ];
+
+            // Process any additional information requests
+
+            if ($_SERVER['REQUEST_METHOD'] === 'GET' && array_key_exists('request', $_GET)) {
+                $request = $_GET['request'];
+            } else if ($_SERVER['REQUEST_METHOD'] === 'POST' && array_key_exists('request', $_POST)) {
+                $request = $_POST['request'];
+            } else {
+                $request = '';
+            }
+
+            if ($request == 'top') {
+
+                // Get top urls
+
+                if ($_SERVER['REQUEST_METHOD'] === 'GET' && array_key_exists('limit', $_GET)) {
+                    $limit = $_GET['limit'];
+                } else if ($_SERVER['REQUEST_METHOD'] === 'POST' && array_key_exists('limit', $_POST)) {
+                    $limit = $_POST['limit'];
+                } else {
+                    $limit = null;
+                }
+
+                $data['top'] = urls_top($querybin, $dt_start, $dt_end, $limit);
+
+            }
+
+            respond_with_json($data);
+            break;
+
+        case 'text/plain':
+        default:
+
+            $from = (isset($dt_start)) ? dt_format_text($dt_start, $api_timezone) : "";
+            $to = (isset($dt_end)) ? dt_format_text($dt_end, $api_timezone) : "";
+
+            if (isset($dt_start)) {
+                if (isset($dt_end)) {
+                    $dt_desc = "from $from to $to";
+                } else {
+                    $dt_desc = "from $from to last url";
+                }
+            } else {
+                if (isset($dt_end)) {
+                    $dt_desc = "first url up to $to";
+                } else {
+                    $dt_desc = "all urls";
+                }
+            }
+
+            $total_num = $querybin['nourls'];
+
+            if (0 < $total_num) {
+                // Has tweets
+                $min_t = dt_from_utc($querybin['mintime']);
+                $max_t = dt_from_utc($querybin['maxtime']);
+
+                $t1_text = dt_format_text($min_t, $api_timezone);
+                $t2_text = dt_format_text($max_t, $api_timezone);
+
+                echo <<<END
+Query bin: {$querybin['bin']}
+  Earliest url: {$t1_text}
+    Latest url: {$t2_text}
+  URLs: ($dt_desc)
+    Number of urls: {$info['urls']} of {$querybin['nourls']}
+
+END;
+
+            } else {
+                // No urls
+                echo "Query bin: {$querybin['bin']}\n";
+                echo "  No urls\n";
+            }
+
+            break;
+    }
+}
+
+//----------------------------------------------------------------
 // View (top) mentions for a specific bin.
 
 function do_view_or_export_mentions(array $querybin, $dt_start, $dt_end, $export)
@@ -2071,6 +2417,10 @@ function main()
                         $resource = 'querybin/hashtags';
                         break;
                     }
+                    case 'urls': {
+                        $resource = 'querybin/urls';
+                        break;
+                    }
                     case 'mentions': {
                         $resource = 'querybin/mentions';
                         break;
@@ -2119,6 +2469,9 @@ function main()
                     break;
                 case 'querybin/hashtags':
                     $action = 'hashtag-info';
+                    break;
+                case 'querybin/urls':
+                    $action = 'url-info';
                     break;
                 case 'querybin/mentions':
                     $action = 'mention-info';
@@ -2171,6 +2524,13 @@ function main()
                     $bad_combination = true;
                 }
                 break;
+            case 'querybin/urls':
+                if (!(($action === 'url-info' && $method === 'GET') ||
+                    ($action === 'url-export' && $method === 'GET'))
+                ) {
+                    $bad_combination = true;
+                }
+                break;
             case 'querybin/mentions':
                 if (!(($action === 'mention-info' && $method === 'GET') ||
                     ($action === 'mention-export' && $method === 'GET'))
@@ -2219,6 +2579,8 @@ function main()
             $action !== 'tweet-export' &&
             $action !== 'hashtag-info' &&
             $action !== 'hashtag-export' &&
+            $action !== 'url-info' &&
+            $action !== 'url-export' &&
             $action !== 'mention-info' &&
             $action !== 'mention-export' &&
             $action !== 'retweet-info' &&
@@ -2465,6 +2827,13 @@ END;
         case 'hashtag-export':
             assert(isset($format));
             do_view_or_export_hashtags($querybin, $dt_start, $dt_end, $format);
+            break;
+        case 'url-info':
+            do_view_or_export_urls($querybin, $dt_start, $dt_end, NULL);
+            break;
+        case 'url-export':
+            assert(isset($format));
+            do_view_or_export_urls($querybin, $dt_start, $dt_end, $format);
             break;
         case 'mention-info':
             do_view_or_export_mentions($querybin, $dt_start, $dt_end, NULL);

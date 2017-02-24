@@ -235,6 +235,73 @@ function hashtags_top($query_bin, $dt_start, $dt_end, $limit = NULL) {
 }
 
 //----------------------------------------------------------------
+// Top urls
+//
+// Retrieve information about the top urls in the time period
+// between $dt_start and $dt_end (inclusive).
+//
+// $query_bin - the array produced by ~/analysis/common/functions.php
+// $dt_start - must either be a DateTime object or NULL.
+// $dt_end - must either be a DateTime object or NULL.
+
+function urls_top($query_bin, $dt_start, $dt_end, $limit = NULL) {
+
+    global $esc;
+
+    // This function allows special arguments, similar to the TCAT front-end;
+    // therefore we validate and process those arguments here
+    if (!isset($_GET['dataset'])) {
+        $_GET['dataset'] = $query_bin;
+    }
+    validate_all_variables();
+
+    // Create WHERE clause to restrict to requested timestamp range
+    // Convert to sqlSubset() format
+    if (isset($dt_start) && isset($dt_end)) {
+        $dt_start->setTimezone(new DateTimeZone('UTC'));
+        $esc['datetime']['startdate'] = $dt_start->format('Y-m-d\TH:i:s');
+        $dt_end->setTimezone(new DateTimeZone('UTC'));
+        $esc['datetime']['enddate'] = $dt_end->format('Y-m-d\TH:i:s');
+    }
+    $where = sqlSubset();
+
+    // Query database
+
+    $dbh = pdo_connect();
+
+    $bin_name = $query_bin['bin'];
+
+    // NOTICE: This query does not define a cut-off point
+
+    $sql = 'select u.url_followed as url, u.domain as `domain`, count(u.url_followed) as cnt from ' . $bin_name . '_urls u inner join ' . $bin_name . '_tweets t on t.id = u.tweet_id '
+            . $where . ' group by u.url_followed order by count(u.url_followed) desc';
+
+    //$sql = 'select to_user, count(to_user) as cnt from ' . $bin_name . '_mentions m inner join ' . $bin_name . '_tweets t on t.id = m.tweet_id ' . $where .
+     //   ' group by to_user order by count(to_user) desc';
+
+    if (!is_null($limit)) {
+        $sql .= ' limit ' . $limit;
+    }
+    $rec = $dbh->prepare($sql);
+    $rec->execute();
+
+    $list = array();
+
+    while ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
+        $url = $res['url'];
+        $domain = $res['domain'];
+        $count = $res['cnt'];
+        $element = array ( 'url' => $url,
+                           'domain' => $domain,
+                           'count' => $count );
+        $list[] = $element;
+    }
+
+    return $list;
+
+}
+
+//----------------------------------------------------------------
 // Top mentions
 //
 // Retrieve information about the top mentions in the time period

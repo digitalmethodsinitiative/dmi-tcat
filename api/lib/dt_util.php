@@ -95,9 +95,10 @@ $utc_tz = new DateTimeZone('UTC');
 function dt_parse($str, $is_end = false, $tz_name = NULL)
 {
     // Start front-end panel datetime handling
+
     if (substr_count($str, ' ') < 2 &&
         strpos($str, 'Z') == FALSE && strpos($str, 'UTC') == FALSE &&
-        strpos($str, '+') == FALSE && strpos($str, '-') == FALSE) {
+        strpos($str, '+') == FALSE && substr_count($str, '-') <= 2) {
         if (substr_count($str, ' ') == 0) {
             // Year-month-day only
             if ($is_end) {

@@ -887,6 +887,11 @@ function get_all_datasets() {
                     $res3 = $rec3->fetch();
                     $row['nohashtags'] = $res3['nohashtags'];
                 }
+                $rec3 = $dbh->prepare("SELECT count(u.id) AS nourls FROM " . $res['querybin'] . "_urls u ");
+                if ($rec3->execute() && $rec3->rowCount() > 0) {
+                    $res3 = $rec3->fetch();
+                    $row['nourls'] = $res3['nourls'];
+                }
                 $rec3 = $dbh->prepare("SELECT count(m.id) AS nomentions FROM " . $res['querybin'] . "_mentions m ");
                 if ($rec3->execute() && $rec3->rowCount() > 0) {
                     $res3 = $rec3->fetch();
