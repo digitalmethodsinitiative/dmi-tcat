@@ -23,6 +23,7 @@
 # - Ubuntu 15.10
 # - Ubuntu 16.04
 # - Debian 8.*
+# - Debian 9.*
 #
 #----------------------------------------------------------------
 
@@ -46,7 +47,7 @@ URLEXPANDYES=y # install URL Expander or not
 SERVERNAME= # should default to this machine's IP address (-s overrides)
 
 # TCAT
-
+9
 TCAT_AUTO_UPDATE=0 # 0=off, 1=trivial, 2=substantial, 3=expensive
 
 # Unix user and group to own the TCAT files
@@ -388,7 +389,7 @@ elif [ "$DISTRIBUTION_ID" = 'Debian' ]; then
 	echo "$PROG: error: unexpected Debian version: $DEBIAN_VERSION" >&2
 	exit 1
     fi
-    if [ "$DEBIAN_VERSION_MAJOR" != '8' ]; then
+    if [ "$DEBIAN_VERSION_MAJOR" != '8' -a "$DEBIAN_VERSION_MAJOR" != '9' ]; then
 	if [ -z "$FORCE_INSTALL" ]; then
 	    echo "$PROG: error: unsupported distribution: Debian $DEBIAN_VERSION" >&2
 	    exit 1
@@ -406,6 +407,12 @@ if [ -e "$TCAT_DIR" ]; then
     echo "$PROG: cannot install: TCAT already installed: $TCAT_DIR" >&2
     exit 1
 fi
+
+# Install Debian keyring
+
+if [ -n "$DEBIAN_VERSION" ]; then
+    apt-get install -y debian-archive-keyring debian-keyring
+elif
 
 # MySQL server package name for apt-get
 
@@ -991,10 +998,17 @@ elif [ -n "$DEBIAN_VERSION" ]; then
 
     echo "$PROG: installing Apache for Debian"
 
+    if [ -a "$DEBIAN_VERSION_MAJOR" != '9' ]; then
     apt-get -y install \
-	apache2-mpm-prefork apache2-utils \
-	libapache2-mod-php5 \
-	php5-mysql php5-curl php5-cli php5-geos php-patchwork-utf8
+    apache2-mpm-prefork apache2-utils \
+    libapache2-mod-php5 \
+    php5-mysql php5-curl php5-cli php5-geos php-patchwork-utf8
+    else
+    apt-get -y install \
+    apache2-utils \
+    libapache2-mod-php7.0 \
+    php7.0-mysql php7.0-curl php7.0-cli php-patchwork-utf8 php7.0-mbstring
+    fi
 
     php5enmod geos
 
