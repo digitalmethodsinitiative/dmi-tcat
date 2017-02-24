@@ -67,6 +67,9 @@ $utc_tz = new DateTimeZone('UTC');
 // well as before or after the value. The letter "T" (with no
 // whitespace around it) can also be used to separate the date from
 // the time.
+//
+// It also accepts datetime strings in the TCAT front-end panel format
+// This format is either YYYY-MM-DD, or YYYY-MM-DD HH:MM:SS
 // 
 // Partial times are supported. Only the year is mandatory. The other
 // components are inferred based on whether $is_end is true or
@@ -91,6 +94,23 @@ $utc_tz = new DateTimeZone('UTC');
 
 function dt_parse($str, $is_end = false, $tz_name = NULL)
 {
+    // Start front-end panel datetime handling
+
+    if (substr_count($str, ' ') < 2) {
+        if (substr_count($str, ' ') == 0) {
+            // Year-month-day only
+            if ($is_end) {
+                $str .= ' 23:59:59 UTC';
+            } else {
+                $str .= ' 00:00:00 UTC';
+            }
+        } else {
+            $str .= ' UTC';
+        }
+    }
+
+    // End of front-end panel datetime handling
+
     $c = array();
     if (!preg_match('/^\s* (\d+) (-(\d\d?) (-(\d\d?)? )? )?' .
         '(([Tt]|(\s+)) (\d\d?) (:(\d\d?) (:(\d\d?))? )? )?' .
