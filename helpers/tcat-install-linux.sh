@@ -986,6 +986,11 @@ if [ -n "$UBUNTU_VERSION" ]; then
 elif [ -n "$DEBIAN_VERSION" ]; then
     echo "$PROG: installing MySQL for Debian"
 
+    if [ -a "$DEBIAN_VERSION_MAJOR" != '9' ]; then
+
+    # On Debian 8, we use the MySQL repository, because it contains a version we need
+    # to have GEO functionality.
+
     apt-get -qq -y install wget
 
     wget http://dev.mysql.com/get/mysql-apt-config_0.3.5-1debian8_all.deb
@@ -993,6 +998,8 @@ elif [ -n "$DEBIAN_VERSION" ]; then
     # Note: this prompts the user to choose the MySQL product to configure :-(
     # TODO: find a debconf-set-selections setting to avoid user interaction
     dpkg -i mysql-apt-config_0.3.5-1debian8_all.deb
+
+    fi
 
     apt-get -y install mariadb-server
 
