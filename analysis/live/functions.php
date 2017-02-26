@@ -247,7 +247,7 @@ function top_td($tops, $what, $i, $previous, $times) {
             $name = strtolower($array[$what]);
             if (isset($kandidaten[$name])) {
                 if (isset($partijen_images[$kandidaten[$name]]))
-                    print "<img src='" . $partijen_images[$kandidaten[$name]] . "' height='15px'>";
+                    print "<img src='" . $partijen_images[$kandidaten[$name]] . "' height='15px' alt='" . $kandidaten[$name] . "' title='" . $kandidaten[$name] . "'>";
                 else
                     print $kandidaten[$name];
             }
