@@ -132,7 +132,7 @@ require_once 'functions.php';
                                         </td>
                                         <td></td>
                                     </tr>
-
+                                    <tr><td>In this dataset</td><td><?php echo preg_replace("/,/", ", ", $datasets[$dataset]['keywords']); ?></td><td></td></tr>
                                     <tr>
                                         <td class="tbl_head">Query: </td><td><input type="text" id="ipt_query" class="form-control" name="query" value="<?php echo $query; ?>" /></td><td> (empty: containing any text*)</td>
                                     </tr>
@@ -196,8 +196,14 @@ require_once 'functions.php';
                             </form>
                         </div>
                     </div>
-                    Opgepast: alle tijden zijn Londen-based, dus Amsterdam - 1u!!<br><br>
                     <h1 class="page-header"><?= $dataset ?></h1>
+                    <div class='row placeholders' style='background-color: #eee; padding: 10px; margin-bottom: 10px;'>
+                        <b>In deze dataset:</b> <?php echo preg_replace("/,/", ", ", $datasets[$dataset]['keywords']); ?>
+                    </div>
+                    <div class='row placeholders' style='background-color: #eee; padding: 10px; margin-bottom: 10px;'>
+                        Opgepast: alle tijden zijn Londen-based, dus Amsterdam - 1u!!
+                    </div>
+
                     <?php
                     /* foreach ($esc as $k => $ar) {
                       print "<b>$k</b><br>";
