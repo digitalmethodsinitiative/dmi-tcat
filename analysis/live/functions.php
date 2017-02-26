@@ -157,6 +157,7 @@ if ($interval == "custom" && isset($_REQUEST['customInterval'])) {
 }
 
 function top_table($tops, $what, $times, $max_i) {
+    global $esc;
     ?>
     <div style='width: 2400px !important'>
 
@@ -170,9 +171,15 @@ function top_table($tops, $what, $times, $max_i) {
               <?php } else { */
             ?>
             <div class="col-xs-6 col-sm-1 placeholder">
-                <?php //}   ?>
+                <?php
+                $url = "../?";
+                foreach ($esc['mysql'] as $key => $value) {
+                    $url .= "$key=$value&";
+                }
+                $url .= "startdate=" . $times[$i]['datetimestart'] . "&enddate=" . $times[$i]['datetimeend'] . "&graph_resolution=minute";
+                ?>
                 <?php if ($what != "nrtweetsinperiod") { ?><h4><?= $what ?>s</h4><?php } ?>
-                <span class="text-muted"><?= $times[$i]['start'] ?> - <?= $times[$i]['end'] ?></span>
+                <span class="text-muted"><a href='<?= $url ?>' class='nolink' target='_blank'><?= $times[$i]['start'] ?> - <?= $times[$i]['end'] ?></a></span>
                 <div class="table-responsive">
                     <table class="table">
                         <thead>

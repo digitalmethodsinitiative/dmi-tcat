@@ -54,7 +54,14 @@
                 </div>
                 <div id="navbar" class="navbar-collapse collapse">
                     <ul class="nav navbar-nav navbar-right">
-                        <li><a href="../">Analysis</a></li>
+                        <?php
+                        $url = "../?";
+                        foreach ($esc['mysql'] as $key => $value) {
+                            $url .= "$key=$value&";
+                        }
+                        $url .= "startdate=$startdate&enddate=$enddate&graph_resolution=minute";
+                        ?>
+                        <li><a href="<?= $url ?>">Analysis</a></li>
                         <li><a href="../../capture/">Capture</a></li>
                         <li><a href='#' class='settings-toggle'>Settings</a></li>
                     </ul>
@@ -71,13 +78,6 @@
                     <ul class="nav nav-sidebar">
                         <ul class="nav nav-sidebar">
                             <li class="active"><a href="#">Export <span class="sr-only">(current)</span></a></li>
-                            <?php
-                            $url = "../?";
-                            foreach ($esc['mysql'] as $key => $value) {
-                                $url .= "$key=$value&";
-                            }
-                            $url .= "startdate=$startdate&enddate=$enddate";
-                            ?>
                             <li><a href="<?= $url ?>" traget='_blank'>Show in analysis</a></li>
                             <!--<li><a href="#">Analytics</a></li>
                             <li><a href="#">Export</a></li>-->
@@ -250,7 +250,6 @@
                                     DateTime($starttime), new
                                     DateTime($endtime), $top_number);
                     }
-
                     ?>
                     <div class="row placeholders">
                         <?php if (array_search('timeline', $show) !== false) linechart(strtotime($startdate), strtotime($startdate) + (($max_i + 1) * $tableinterval)); ?>

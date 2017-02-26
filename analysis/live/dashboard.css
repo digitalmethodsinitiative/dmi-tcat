@@ -108,7 +108,7 @@ body {
     padding-left: 0px;
 }
 .table thead tr th {
-   padding: 2px;
+    padding: 2px;
 }
 .table td {
     padding: 3px !important;
@@ -134,4 +134,7 @@ body {
 .nolink {
     color: #000;
     text-decoration: none;
+}
+.text-muted .nolink  {
+    color: #777 !important;
 }
