@@ -1,6 +1,6 @@
 <?php
-// TCAT functions for the API scripts.
 
+// TCAT functions for the API scripts.
 //----------------------------------------------------------------
 // Internal function used to create the SQL condition to restrict an
 // operation to the specified time period.
@@ -11,8 +11,7 @@
 // - "created_at <= yyy" -- if only $dt_end specified
 // - NULL -- if neither were specified
 
-function created_at_condition($dt_start, $dt_end)
-{
+function created_at_condition($dt_start, $dt_end) {
 
     // Note: The MySQL DATETIME datatype does not track timezones.
     // TCAT stores UTC timezone values in the DATETIME fields.
@@ -48,8 +47,7 @@ function created_at_condition($dt_start, $dt_end)
 // $dt_start - must either be a DateTime object or NULL.
 // $dt_end - must either be a DateTime object or NULL.
 
-function tweet_info($query_bin, $dt_start, $dt_end, $tables = array("tweets"))
-{
+function tweet_info($query_bin, $dt_start, $dt_end, $tables = array("tweets")) {
 
     // Create WHERE clause to restrict to requested timestamp range
 
@@ -70,28 +68,26 @@ function tweet_info($query_bin, $dt_start, $dt_end, $tables = array("tweets"))
 
     /* This join is too slow when there is a large number of tweets
 
-        // Tables without a 'created_at' column
-        // Must join with *_tweets table to get the 'created_at' timestamp
+      // Tables without a 'created_at' column
+      // Must join with *_tweets table to get the 'created_at' timestamp
 
-        foreach (["media", "places", "withheld"] as $tbl) {
-            $table_name = $bin_name . '_' . $tbl;
-            if ($where !== '') {
-                $sql = "SELECT count(*) FROM `{$table_name}` X" .
-                       " INNER JOIN `{$bin_name}_tweets` T ON T.id=X.tweet_id $where";
-            } else {
-                $sql = "SELECT count(*) FROM `{$table_name}`";
-            }
-            $rec = $dbh->prepare($sql);
-            $rec->execute();
-            $result[$tbl] = $rec->fetchColumn(0);
-        }
-    */
+      foreach (["media", "places", "withheld"] as $tbl) {
+      $table_name = $bin_name . '_' . $tbl;
+      if ($where !== '') {
+      $sql = "SELECT count(*) FROM `{$table_name}` X" .
+      " INNER JOIN `{$bin_name}_tweets` T ON T.id=X.tweet_id $where";
+      } else {
+      $sql = "SELECT count(*) FROM `{$table_name}`";
+      }
+      $rec = $dbh->prepare($sql);
+      $rec->execute();
+      $result[$tbl] = $rec->fetchColumn(0);
+      }
+     */
 
     // Tables with a 'created_at' column
-
     // Only do tweets, otherwise it takes a long time if there are many tweets
     //foreach (["tweets", "hashtags", "mentions", "urls"] as $tbl) {
-
 //    foreach (["tweets"] as $tbl) {
     foreach ($tables as $tbl) {
         $table_name = $bin_name . '_' . $tbl;
@@ -114,8 +110,7 @@ function tweet_info($query_bin, $dt_start, $dt_end, $tables = array("tweets"))
 //
 // Returns an array containing the number of rows deleted from each table.
 
-function tweet_purge($query_bin, $dt_start, $dt_end)
-{
+function tweet_purge($query_bin, $dt_start, $dt_end) {
 
     if (!is_admin()) {
         die("Access denied.");
@@ -145,9 +140,9 @@ function tweet_purge($query_bin, $dt_start, $dt_end)
         if ($where !== '') {
             // Must join with *_tweets to get 'created_at' timestamp
             $sql = "DELETE FROM `{$table_name}`" .
-                " USING `{$table_name}` INNER JOIN `{$bin_name}_tweets`" .
-                " ON `{$bin_name}_tweets`.id=`{$table_name}`.tweet_id" .
-                " $where";
+                    " USING `{$table_name}` INNER JOIN `{$bin_name}_tweets`" .
+                    " ON `{$bin_name}_tweets`.id=`{$table_name}`.tweet_id" .
+                    " $where";
         } else {
             $sql = "DELETE FROM `{$table_name}`"; // time irrelvant: del all
         }
@@ -208,11 +203,11 @@ function hashtags_top($query_bin, $dt_start, $dt_end, $limit = NULL) {
 
     // NOTICE: This query does not define a cut-off point
 
-    $sql = 'select h.text, count(h.text) as cnt from ' . $bin_name . '_hashtags h inner join ' . $bin_name . '_tweets t on t.id = h.tweet_id '
-            . $where . ' group by h.text order by count(h.text) desc';
+    $sql = 'select lower(h.text) as lt, count(h.text) as cnt from ' . $bin_name . '_hashtags h inner join ' . $bin_name . '_tweets t on t.id = h.tweet_id '
+            . $where . ' group by lt order by cnt desc';
 
     //$sql = 'select to_user, count(to_user) as cnt from ' . $bin_name . '_mentions m inner join ' . $bin_name . '_tweets t on t.id = m.tweet_id ' . $where .
-     //   ' group by to_user order by count(to_user) desc';
+    //   ' group by to_user order by count(to_user) desc';
 
     if (!is_null($limit)) {
         $sql .= ' limit ' . $limit;
@@ -223,15 +218,14 @@ function hashtags_top($query_bin, $dt_start, $dt_end, $limit = NULL) {
     $list = array();
 
     while ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
-        $hashtag = $res['text'];
+        $hashtag = $res['lt'];
         $count = $res['cnt'];
-        $element = array ( 'hashtag' => $hashtag,
-                           'count' => $count );
+        $element = array('hashtag' => $hashtag,
+            'count' => $count);
         $list[] = $element;
     }
 
     return $list;
-
 }
 
 //----------------------------------------------------------------
@@ -277,7 +271,7 @@ function urls_top($query_bin, $dt_start, $dt_end, $limit = NULL) {
             . $where . ' group by u.url_followed order by count(u.url_followed) desc';
 
     //$sql = 'select to_user, count(to_user) as cnt from ' . $bin_name . '_mentions m inner join ' . $bin_name . '_tweets t on t.id = m.tweet_id ' . $where .
-     //   ' group by to_user order by count(to_user) desc';
+    //   ' group by to_user order by count(to_user) desc';
 
     if (!is_null($limit)) {
         $sql .= ' limit ' . $limit;
@@ -291,14 +285,13 @@ function urls_top($query_bin, $dt_start, $dt_end, $limit = NULL) {
         $url = $res['url'];
         $domain = $res['domain'];
         $count = $res['cnt'];
-        $element = array ( 'url' => $url,
-                           'domain' => $domain,
-                           'count' => $count );
+        $element = array('url' => $url,
+            'domain' => $domain,
+            'count' => $count);
         $list[] = $element;
     }
 
     return $list;
-
 }
 
 //----------------------------------------------------------------
@@ -311,8 +304,7 @@ function urls_top($query_bin, $dt_start, $dt_end, $limit = NULL) {
 // $dt_start - must either be a DateTime object or NULL.
 // $dt_end - must either be a DateTime object or NULL.
 
-function mentions_top($query_bin, $dt_start, $dt_end, $limit = NULL)
-{
+function mentions_top($query_bin, $dt_start, $dt_end, $limit = NULL) {
 
     global $esc;
 
@@ -342,7 +334,7 @@ function mentions_top($query_bin, $dt_start, $dt_end, $limit = NULL)
     // NOTICE: This query does not define a cut-off point
 
     $sql = 'select to_user, count(to_user) as cnt from ' . $bin_name . '_mentions m inner join ' . $bin_name . '_tweets t on t.id = m.tweet_id ' . $where .
-           ' group by to_user order by count(to_user) desc';
+            ' group by to_user order by count(to_user) desc';
 
     if (!is_null($limit)) {
         $sql .= ' limit ' . $limit;
@@ -355,13 +347,54 @@ function mentions_top($query_bin, $dt_start, $dt_end, $limit = NULL)
     while ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
         $mention = $res['to_user'];
         $count = $res['cnt'];
-        $element = array ( 'mention' => $mention,
-                           'count' => $count );
+        $element = array('mention' => $mention,
+            'count' => $count);
         $list[] = $element;
     }
 
     return $list;
+}
 
+function tweets_count($query_bin, $dt_start, $dt_end) {
+
+    global $esc;
+
+    // This function allows special arguments, similar to the TCAT front-end;
+    // therefore we validate and process those arguments here
+    if (!isset($_GET['dataset'])) {
+        $_GET['dataset'] = $query_bin;
+    }
+    validate_all_variables();
+
+    // Create WHERE clause to restrict to requested timestamp range
+    // Convert to sqlSubset() format
+    if (isset($dt_start) && isset($dt_end)) {
+        $dt_start->setTimezone(new DateTimeZone('UTC'));
+        $esc['datetime']['startdate'] = $dt_start->format('Y-m-d\TH:i:s');
+        $dt_end->setTimezone(new DateTimeZone('UTC'));
+        $esc['datetime']['enddate'] = $dt_end->format('Y-m-d\TH:i:s');
+    }
+    $where = sqlSubset();
+
+    // Query database
+
+    $dbh = pdo_connect();
+
+    $bin_name = $query_bin['bin'];
+
+    // NOTICE: This query does not define a cut-off point
+
+    $sql = 'select count(id) as cnt from ' . $bin_name . '_tweets t ' . $where;
+
+
+    $rec = $dbh->prepare($sql);
+    $rec->execute();
+
+
+    if ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
+        return array(array('nrtweetsinperiod' => 'tweets', 'count' => $res['cnt']));
+    }
+    return array(array('nrtweetsinperiod' => 'tweets', 'count' => '-1'));
 }
 
 //----------------------------------------------------------------
@@ -374,8 +407,7 @@ function mentions_top($query_bin, $dt_start, $dt_end, $limit = NULL)
 // $dt_start - must either be a DateTime object or NULL.
 // $dt_end - must either be a DateTime object or NULL.
 
-function tweeters_top($query_bin, $dt_start, $dt_end, $limit = NULL)
-{
+function tweeters_top($query_bin, $dt_start, $dt_end, $limit = NULL) {
 
     global $esc;
 
@@ -405,7 +437,7 @@ function tweeters_top($query_bin, $dt_start, $dt_end, $limit = NULL)
     // NOTICE: This query does not define a cut-off point
 
     $sql = 'select count(t.id) as cnt, t.from_user_name as from_user_name from ' . $bin_name . '_tweets t ' . $where .
-           ' group by from_user_name order by count(t.id) desc';
+            ' group by from_user_name order by count(t.id) desc';
 
     if (!is_null($limit)) {
         $sql .= ' limit ' . $limit;
@@ -418,15 +450,13 @@ function tweeters_top($query_bin, $dt_start, $dt_end, $limit = NULL)
     while ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
         $user = $res['from_user_name'];
         $count = $res['cnt'];
-        $element = array ( 'user' => $user,
-                           'count' => $count );
+        $element = array('user' => $user,
+            'count' => $count);
         $list[] = $element;
     }
 
     return $list;
-
 }
-
 
 //----------------------------------------------------------------
 // Top retweets
@@ -467,10 +497,10 @@ function retweets_top($query_bin, $dt_start, $dt_end, $limit = NULL) {
 
     // NOTICE: This query does not define a cut-off point
 
-    $sql = 'select T2.from_user_name as user, T2.text as text, t.text as rt_text, t.retweet_id as id, count(t.retweet_id) as cnt from ' . $bin_name . '_tweets t '.
-           'left join ' . $bin_name . '_tweets T2 on t.retweet_id = T2.id ' . $where .
-           ' and t.retweet_id is not null ' .
-           ' group by t.retweet_id order by count(t.retweet_id) desc';
+    $sql = 'select T2.from_user_name as user, T2.text as text, t.text as rt_text, t.retweet_id as id, count(t.retweet_id) as cnt from ' . $bin_name . '_tweets t ' .
+            'left join ' . $bin_name . '_tweets T2 on t.retweet_id = T2.id ' . $where .
+            ' and t.retweet_id is not null ' .
+            ' group by t.retweet_id order by count(t.retweet_id) desc';
     if (!is_null($limit)) {
         $sql .= ' limit ' . $limit;
     }
@@ -488,11 +518,11 @@ function retweets_top($query_bin, $dt_start, $dt_end, $limit = NULL) {
         $count = $res['cnt'];
         $text = $res['text'];
         $rt_text = $res['rt_text'];
-        $element = array ( 'id' => $id,
-                           'user' => $user,
-                           'text' => $text,
-                           'rt_text' => $rt_text,
-                           'count' => $count );
+        $element = array('id' => $id,
+            'user' => $user,
+            'text' => $text,
+            'rt_text' => $rt_text,
+            'count' => $count);
         $list[] = $element;
     }
 
@@ -503,7 +533,7 @@ function retweets_top($query_bin, $dt_start, $dt_end, $limit = NULL) {
             // As Twitter user names cannot contain a ':' character, this regular expression should match the original username
             if (preg_match("/^RT @(.*?): (.*)$/", $list[$n]['rt_text'], $matches)) {
                 if (isset($matches[1])) {
-                   $list[$n]['user'] = $matches[1];
+                    $list[$n]['user'] = $matches[1];
                 }
                 if (isset($matches[2])) {
                     $list[$n]['text'] = $matches[2];
@@ -514,6 +544,4 @@ function retweets_top($query_bin, $dt_start, $dt_end, $limit = NULL) {
     }
 
     return $list;
-
 }
-
