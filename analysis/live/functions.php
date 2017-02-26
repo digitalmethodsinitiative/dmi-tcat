@@ -1,4 +1,7 @@
 <?php
+// read kandidaten
+require_once "kandidaten.php";
+
 // catch parameters
 if (isset($_GET['dataset']) && !empty($_GET['dataset'])) {
     $dataset = urldecode($_GET['dataset']);
@@ -211,7 +214,7 @@ function top_table($tops, $what, $times, $max_i) {
 
 function top_td($tops, $what, $i, $previous, $times) {
 
-    global $ignore_hashtags, $top_number, $dataset;
+    global $ignore_hashtags, $top_number, $dataset, $kandidaten, $partijen_images;
     $old = array();
     $ignore = array();
     $c = 0;
@@ -238,7 +241,19 @@ function top_td($tops, $what, $i, $previous, $times) {
         elseif ($what == "nrtweetsinperiod")
             $link = "zoom.php?dataset=$dataset&query=&url_query=&exclude=&from_user_name=&from_user_description=&from_source=&startdate=" . $times[$i]['datetimestart'] . "&enddate=" . $times[$i]['datetimeend'];
 
-        print "<tr $style class='" . ($what !== "nrtweetsinperiod" ? "highlight " : "") . $what . md5($array[$what]) . "' data-what='" . $what . md5($array[$what]) . "'><td class='col-sm-1'>" . $array['count'] . "</td><td>" . ($what == "url" ? "<a href='" . $array[$what] . "' target='_blank'>" : "<a href='$link' target='_blank' class='nolink'>") . $array[$what] . ($what == "url" ? "</a>" : "</a>") . "</td></tr>";
+        print "<tr $style class='" . ($what !== "nrtweetsinperiod" ? "highlight " : "") . $what . md5($array[$what]) . "' data-what='" . $what . md5($array[$what]) . "'><td class='col-sm-1'>" . $array['count'] . "</td><td>" . ($what == "url" ? "<a href='" . $array[$what] . "' target='_blank'>" : "<a href='$link' target='_blank' class='nolink'>") . $array[$what] . ($what == "url" ? "</a>" : "</a>") . "</td>";
+        if ($what == "mention" || $what == "user") {
+            print "<td>";
+            $name = strtolower($array[$what]);
+            if (isset($kandidaten[$name])) {
+                if (isset($partijen_images[$kandidaten[$name]]))
+                    print "<img src='" . $partijen_images[$kandidaten[$name]] . "' height='15px'>";
+                else
+                    print $kandidaten[$name];
+            }
+            print "</td>";
+        }
+        print "</tr>";
         $old[] = strtolower($array[$what]);
         $c++;
     }
