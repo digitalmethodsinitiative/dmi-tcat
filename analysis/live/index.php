@@ -78,13 +78,24 @@ require_once 'functions.php';
                 <div class="col-sm-3 col-md-1 sidebar">
                     <ul class="nav nav-sidebar">
                         <ul class="nav nav-sidebar">
-                            <li class="active"><a href="#">Export <span class="sr-only">(current)</span></a></li>
+                            <li class="active"><a href="#">Export</a></li>
                             <li><a href="<?= $url ?>" traget='_blank'>Show in analysis</a></li>
                             <!--<li><a href="#">Analytics</a></li>
                             <li><a href="#">Export</a></li>-->
                         </ul>
                     </ul>
+                    <ul class="nav nav-sidebar">
+                        <ul class="nav nav-sidebar">
+                            <li class="active"><a href="#">Locations</a></li>
+                            <li><a href="http://tcat7.digitalmethods.net/analysis/live/" traget='_blank'>tcat7</a></li>
+                            <li><a href="http://tcat8.digitalmethods.net/analysis/live/" traget='_blank'>tcat8</a></li>
+                            <li><a href="http://tcat9.digitalmethods.net/analysis/live/" traget='_blank'>tcat9</a></li>
+                            <!--<li><a href="#">Analytics</a></li>
+                            <li><a href="#">Export</a></li>-->
+                        </ul>
+                    </ul>
                 </div>
+                
                 <div class="col-sm-9 col-sm-offset-3 col-md-11 col-md-offset-1 main">
                     <div class="row placeholders hidden" id='settings'>
                         <button type="button" class="close settings-toggle" aria-label="Close"><span aria-hidden="true">&times;</span></button>

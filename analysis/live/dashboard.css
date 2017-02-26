@@ -138,3 +138,6 @@ body {
 .text-muted .nolink  {
     color: #777 !important;
 }
+.nav-sidebar li {
+    padding-left: 10px;
+}
