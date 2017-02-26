@@ -52,7 +52,7 @@ on_busy_wait = 20
 finished = 0
 working = {}
 sleepers = {}
-pool = Pool(50)
+pool = Pool(300)
 updates = []
 
 request_headers = {'User-agent': 'Mozilla/5.0 (Windows NT 5.1; rv:31.0) Gecko/20100101 Firefox/31.0'}
@@ -69,7 +69,8 @@ whitelist = [ 'j.mp',
               'fp.me',
               'wp.me',
               'is.gd',
-              'twitter.com'
+              'twitter.com',
+              't.co',
             ]
 
 def get_twitter_tables(table = None):
@@ -167,7 +168,9 @@ def main(argv = None):
     except (TypeError, IndexError):
         print "No tablename provided"
         table = None
-    for _table in get_twitter_tables(table):
+    tables = get_twitter_tables(table)
+    shuffle(tables)
+    for _table in tables:
         urls = get_urls_from_db(_table)
         total += len(urls)
         shuffle(urls)
