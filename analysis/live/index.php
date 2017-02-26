@@ -1,3 +1,11 @@
+<?php
+require_once __DIR__ . '/../../config.php';
+require_once __DIR__ . '/../../common/functions.php';
+require_once __DIR__ . '/../common/config.php';
+require_once __DIR__ . '/../common/functions.php';
+require_once __DIR__ . '/../../api/lib/tcat_util.php';
+require_once 'functions.php';
+?>
 <!DOCTYPE html>
 <html lang="en">
     <head>
@@ -5,7 +13,7 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title>TCAT live</title>
+        <title><?= $dataset ?> - TCAT live</title>
 
         <!-- Bootstrap core CSS -->
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
@@ -26,13 +34,6 @@
     </head>
 
     <?php
-    require_once __DIR__ . '/../../config.php';
-    require_once __DIR__ . '/../../common/functions.php';
-    require_once __DIR__ . '/../common/config.php';
-    require_once __DIR__ . '/../common/functions.php';
-    require_once __DIR__ . '/../../api/lib/tcat_util.php';
-    require_once 'functions.php';
-
     $keywords = array();
     $esc = array();
 
