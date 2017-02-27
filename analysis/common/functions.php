@@ -400,10 +400,10 @@ function sqlInterval() {
     global $interval;
     switch ($interval) {
         case "minute":
-            return "DATE_FORMAT(t.created_at,'%Y-%m-%d %Hh %im') datepart ";
+            return "DATE_FORMAT(t.created_at,'%Y-%m-%d %H:%i') datepart ";
             break;
         case "hourly":
-            return "DATE_FORMAT(t.created_at,'%Y-%m-%d %Hh') datepart ";
+            return "DATE_FORMAT(t.created_at,'%Y-%m-%d %H') datepart ";
             break;
         case "weekly":
             return "DATE_FORMAT(t.created_at,'%Y %u') datepart ";
