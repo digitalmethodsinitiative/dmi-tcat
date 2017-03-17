@@ -1463,6 +1463,7 @@ class Tweet {
     public $to_user_id;
     public $to_user_name;
     public $in_reply_to_status_id;
+    public $quoted_status_id;
     public $filter_level;
     public $lang;
     public $possibly_sensitive;
@@ -1488,6 +1489,7 @@ class Tweet {
     public $media = array();
 
     // TODO: import media entities in fromGnip()
+    // TODO: investigate how Gnip returns quoted tweets: http://support.gnip.com/sources/twitter/data_format.html
     public static function fromGnip($json) {
         // Parse JSON when fed JSON string
         if (is_string($json)) {
@@ -1673,6 +1675,11 @@ class Tweet {
         $this->to_user_id = $data["in_reply_to_user_id_str"];
         $this->to_user_name = $data["in_reply_to_screen_name"];
         $this->in_reply_to_status_id = $data["in_reply_to_status_id_str"];
+        if (isset($data["quoted_status_id_str"])) {
+            $this->quoted_status_id = $data["quoted_status_id_str"];
+        } else {
+            $this->quoted_status_id = null;
+        }
         if (isset($data['filter_level'])) {
             $this->filter_level = $data["filter_level"];
         } else {
