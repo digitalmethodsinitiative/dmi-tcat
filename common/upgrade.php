@@ -1358,9 +1358,9 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
         }
     }
 
-    // 20/03/2017 Resynchronize mentions, hashtags, urls created_at values to tcat_captured_phrases created_at values if present
+    // 20/03/2017 Resynchronize mentions, hashtags, urls created_at values to tweet created_at values if present
 
-    if ($have_tcat_status) {
+    if ($have_tcat_status && !is_null($single)) {
 
         $already_updated_tweets = true;
 
@@ -1400,7 +1400,7 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
                         }
                     }
                     if ($ans !== 'SKIP') {
-                        $ans = cli_yesnoall("Fix time zone information in meta tables (urls, mentions, hashtags) for tweets prior to $modified_at ", 1, '');
+                        $ans = cli_yesnoall("Fix time zone information in all meta tables (urls, mentions, hashtags) for tweets prior to $modified_at ?", 2, '');
                     }
 
                     if ($ans == 'y' || $ans == 'a') {
@@ -1408,7 +1408,7 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
                         $exts = array( 'urls', 'mentions', 'hashtags' );
                         foreach ($all_bins as $bin) {
                             foreach ($exts as $e) {
-                                $sql = "update $bin" . '_' . $e . " X inner join $bin" . "_tweets T on X.tweet_id = T.id set X.created_at = T.created_at where X.created_at != T.created_at";
+                                $sql = "update low_priority $bin" . '_' . $e . " X inner join $bin" . "_tweets T on X.tweet_id = T.id set X.created_at = T.created_at where X.created_at != T.created_at";
                                 logit($logtarget, "SQL query: $sql");
                                 $rec = $dbh->prepare($sql);
                                 $rec->execute();
