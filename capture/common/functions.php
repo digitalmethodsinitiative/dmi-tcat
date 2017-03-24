@@ -96,6 +96,9 @@ function create_error_logs() {
         $sql = "insert into tcat_status ( variable, value ) values ( 'ratelimit_database_rebuild', 2 )";
         $insert = $dbh->prepare($sql);
         $insert->execute();
+        $sql = "insert into tcat_status ( variable, value ) values ( 'tz_mentions_resync', 1 )";
+        $insert = $dbh->prepare($sql);
+        $insert->execute();
     }
 
 }
