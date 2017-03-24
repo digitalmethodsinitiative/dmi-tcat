@@ -1358,6 +1358,79 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
         }
     }
 
+    // 20/03/2017 Resynchronize mentions, hashtags, urls created_at values to tcat_captured_phrases created_at values if present
+
+    if ($have_tcat_status) {
+
+        $already_updated_tweets = true;
+
+        $sql = "select value from tcat_status where variable = 'ratelimit_database_rebuild' and value > 0";
+        $rec = $dbh->prepare($sql);
+        if (!$rec->execute() || $rec->rowCount() == 0) {
+            $already_updated_tweets = false;
+        }
+        
+        if ($already_updated_tweets == true) {
+            $already_updated = true;
+            $sql = "select value from tcat_status where variable = 'tz_mentions_resync' and value > 0";
+            $rec = $dbh->prepare($sql);
+            if (!$rec->execute() || $rec->rowCount() == 0) {
+                $already_updated = false;
+            }
+            if ($already_updated == false) {
+
+                $modified_at = FALSE;
+                $sql = "select value from tcat_status where variable = 'ratelimit_format_modified_at'";
+                $rec = $dbh->prepare($sql);
+                if ($rec->execute() && $rec->rowCount() > 0) {
+                    while ($res = $rec->fetch()) {
+                        $modified_at = $res['value'];
+                    }
+                }
+
+                if ($modified_at !== FALSE) {
+
+                    $ans = '';
+                    if ($interactive == false) {
+                        // require auto-upgrade level 2
+                        if ($aulevel > 1) {
+                            $ans = 'a';
+                        } else {
+                            $ans = 'SKIP';
+                        }
+                    }
+                    if ($ans !== 'SKIP') {
+                        $ans = cli_yesnoall("Fix time zone information in meta tables (urls, mentions, hashtags) for tweets prior to $modified_at ", 1, '');
+                    }
+
+                    if ($ans == 'y' || $ans == 'a') {
+
+                        $exts = array( 'urls', 'mentions', 'hashtags' );
+                        foreach ($all_bins as $bin) {
+                            foreach ($exts as $e) {
+                                $sql = "update $bin" . '_' . $e . " X inner join $bin" . "_tweets T on X.tweet_id = T.id set X.created_at = T.created_at where X.created_at != T.created_at";
+                                logit($logtarget, "SQL query: $sql");
+                                $rec = $dbh->prepare($sql);
+                                $rec->execute();
+                            }
+                        }
+
+                        // Update tcat_status table
+
+                        $sql = "insert into tcat_status ( variable, value ) values ( 'tz_mentions_resync', '1' )";
+                        $rec = $dbh->prepare($sql);
+                        $rec->execute();
+
+                    }
+
+                }
+
+            }
+        }
+
+    }
+
+
     // End of upgrades
 
     if ($required == true && $suggested == true) {
