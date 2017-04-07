@@ -133,9 +133,31 @@ function do_bin_info(array $querybin)
             echo "</tbody>\n";
             echo "</table>\n";
 
-            echo "<p><a title=\"View tweets\" href=\"";
+            echo "<p>";
+
+            echo "<a title=\"View tweets\" href=\"";
             echo htmlspecialchars($querybin['bin']);
-            echo "/tweets\">Tweets</a></p>";
+            echo "/tweets\">Tweets</a>";
+
+            echo " - ";
+
+            echo "<a title=\"View mentions\" href=\"";
+            echo htmlspecialchars($querybin['bin']);
+            echo "/mentions\">Mentions</a>";
+
+            echo " - ";
+
+            echo "<a title=\"View hashtags\" href=\"";
+            echo htmlspecialchars($querybin['bin']);
+            echo "/hashtags\">Hashtags</a>";
+
+            echo " - ";
+
+            echo "<a title=\"View URLs\" href=\"";
+            echo htmlspecialchars($querybin['bin']);
+            echo "/urls\">URLs</a>";
+
+            echo "</p>";
 
             echo "</fieldset>\n";
 
