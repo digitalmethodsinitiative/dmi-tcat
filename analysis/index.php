@@ -722,11 +722,12 @@ foreach ($linedata as $key => $value) {
                     <?php if ($show_ratelimit_and_gap_export) { ?>
                     <hr/>
 
+                    <?php/*
                     <h3>Export an estimation of the number of rate limited tweets in your data</h3>
                     <div class="txt_desc">Exports a spreadsheet with an estimation of the ammount of non-captured tweets in your query due to ratelimit occurances.</div>
                     <div class="txt_desc">Use: gain insight in possible missing data due to hitting the Twitter API rate limits.</div>
                     <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('ratelimits'+getInterval());sendUrl('mod.ratelimits.php');return false;">launch</a></div>
-
+*/
                     <hr/>
 
                     <h3>Export table with potential gaps in your data</h3>
