@@ -88,12 +88,15 @@ function do_ratelimit_info()
 
     $dbh = pdo_connect();
 
+    // TODO: this is work in progress code. */
+
     $days_back = 30;
 
     $limits = array();
 
     for ($d = 1; $d <= $days_back; $d++) {
-        $sql = "select sum(tweets) as sum from tcat_error_ratelimit where dayofyear(start) = dayofyear(date_sub(now(), interval $d day)) group by dayofyear(start)";
+        // TODO: handle year loop
+        $sql = "select sum(tweets) as sum from tcat_error_ratelimit where year(start) = year(now()) and dayofyear(start) = dayofyear(date_sub(now(), interval $d day)) group by dayofyear(start)";
         $rec = $dbh->prepare($sql);
         $rec->execute();
         if ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
