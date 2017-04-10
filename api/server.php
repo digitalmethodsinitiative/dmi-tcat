@@ -88,7 +88,7 @@ function do_ratelimit_info()
 
     $dbh = pdo_connect();
 
-    // TODO: this is work in progress code. */
+    // TODO: this is experimental, work-in-progress code. */
 
     $days_back = 30;
 
@@ -96,15 +96,33 @@ function do_ratelimit_info()
 
     for ($d = 1; $d <= $days_back; $d++) {
         // TODO: handle year loop
-        $sql = "select sum(tweets) as sum from tcat_error_ratelimit where year(start) = year(now()) and dayofyear(start) = dayofyear(date_sub(now(), interval $d day)) group by dayofyear(start)";
+        $sql = "select count(*) as sum from tcat_error_ratelimit R1 join tcat_error_ratelimit R2 on R2.id = R1.id + 1 where R1.tweets != R2.tweets ".
+               "and year(R1.start) = year(now()) and dayofyear(R1.start) = dayofyear(date_sub(now(), interval $d day)) group by dayofyear(R1.start)";
         $rec = $dbh->prepare($sql);
         $rec->execute();
         if ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
-            $limits[$days_back - $d] = $res['sum'];
+            $limits[$days_back - $d] = sprintf("%.3f", $res['sum'] / 1440);
         } else {
             // TODO: issue warning?
             $limits[$days_back - $d] = 0;
         }
+    }
+
+    // Most used keywords
+
+    $keywords = array();
+
+        // TODO: handle year loop
+        //$sql = "select TQP.phrase, count(*) as sum from tcat_captured_phrases TCP inner join tcat_query_phrases TQP on TCP.phrase_id = TQP.id " .
+        //       "where year(created_at) = year(now()) and dayofyear(created_at) = dayofyear(date_sub(now(), interval $d day)) group by dayofyear(created_at), " .
+        //       "phrase_id order by sum desc limit 30;
+    $sql = "select TQP.phrase as phrase, count(*) as sum from tcat_captured_phrases TCP inner join tcat_query_phrases TQP on TCP.phrase_id = TQP.id " .
+           "where year(created_at) = year(now()) and dayofyear(created_at) = dayofyear(date_sub(now(), interval 30 day)) group by " .
+           "phrase_id order by sum desc limit 50";
+    $rec = $dbh->prepare($sql);
+    $rec->execute();
+    while ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
+        $keywords[$res['phrase']] = $res['sum'];
     }
 
     $response_mediatype = choose_mediatype(['application/json', 'text/html',
@@ -112,7 +130,8 @@ function do_ratelimit_info()
 
     switch ($response_mediatype) {
         case 'application/json':
-            $obj = array( 'ratelimited-day-descending' => $limits );
+            $obj = array( 'ratelimited-day-descending' => $limits,
+                          'top-keywords' => $keywords);
             respond_with_json($obj);
             break;
         case 'text/html':
@@ -121,11 +140,15 @@ function do_ratelimit_info()
             // TODO: charts, graphs, something ..
 
             echo "    <ul>\n";
-
             foreach ($limits as $limit) {
                 echo "<li>$limit</li>\n";
             }
+            echo "    </ul>\n";
 
+            echo "    <ul>\n";
+            foreach ($keywords as $keyword => $sum) {
+                echo "<li>$keyword: $sum</li>\n";
+            }
             echo "    </ul>\n";
 
             html_end();
