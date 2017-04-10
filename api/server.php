@@ -117,7 +117,7 @@ function do_ratelimit_info()
         //       "where year(created_at) = year(now()) and dayofyear(created_at) = dayofyear(date_sub(now(), interval $d day)) group by dayofyear(created_at), " .
         //       "phrase_id order by sum desc limit 30;
     $sql = "select TQP.phrase as phrase, count(*) as sum from tcat_captured_phrases TCP inner join tcat_query_phrases TQP on TCP.phrase_id = TQP.id " .
-           "where year(created_at) = year(now()) and dayofyear(created_at) = dayofyear(date_sub(now(), interval 30 day)) group by " .
+           "where year(created_at) = year(now()) and dayofyear(created_at) >= dayofyear(date_sub(now(), interval 30 day)) group by " .
            "phrase_id order by sum desc limit 50";
     $rec = $dbh->prepare($sql);
     $rec->execute();
