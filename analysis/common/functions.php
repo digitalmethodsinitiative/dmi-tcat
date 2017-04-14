@@ -775,9 +775,24 @@ function validate_all_variables() {
         $esc['datetime']['enddate'] = $esc['date']['enddate'];
 }
 
-// This function reads the current collation by using the hashtags table as a reference
+/*
+ * This function reads the current collation by using the hashtags table as a reference
+ * It re-uses an established PDO connection if it is available, otherwise it will establish a one time
+ * connection, just to determine the collation of the selected bin.
+ */
 function current_collation() {
     global $esc;
+    global $dbh;
+    // Is the PDO connection active?
+    $re_use = false;
+    if (isset($dbh) && $dbh instanceof PDO) {
+	$status = $dbh->getAttribute(PDO::ATTR_CONNECTION_STATUS);
+        if ($status != CONNECTION_NORMAL) {
+           $dbh = null;
+	} else {
+	   $re_use = true;
+	}
+    }
     $dbh = pdo_connect();
     $collation = 'utf8_bin';
     $is_utf8mb4 = false;
@@ -797,7 +812,9 @@ function current_collation() {
         // fall back the current connection character set to utf8 as well, otherwise queries with 'COLLATE utf8_bin' will fail.
         $dbh->exec("SET NAMES utf8");
     }
-    $dbh = false;
+    if ($re_use == false) {
+	$dbh = false;
+    }
     return $collation;
 }
 
