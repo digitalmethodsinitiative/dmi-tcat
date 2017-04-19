@@ -840,7 +840,7 @@ function get_filename_for_export($module, $settings = "", $filetype = "csv") {
     $filename .= "-" . stripslashes($esc['shell']["query"]);
     $filename .= "-" . $esc['shell']["exclude"];
     $filename .= "-" . $esc['shell']["from_source"];
-    $filename .= "-" . $esc['shell']["from_user_name"];
+    $filename .= "-" . substr($esc['shell']["from_user_name"],0,20);
     $filename .= "-" . $esc['shell']["exclude_from_user_name"];
     $filename .= "-" . $esc['shell']["from_user_description"];
     $filename .= "-" . $esc['shell']["from_user_lang"];
