@@ -50,6 +50,7 @@ if (defined('ANALYSIS_URL'))
 <?php } ?>
         "&exclude=" + $("#ipt_exclude").val().replace(/#/g,"%23") +
             "&from_user_name=" + $("#ipt_from_user").val() +
+            "&from_user_lang=" + $("#ipt_user_lang").val() +
             "&from_user_description=" + $("#ipt_user_bio").val() +
             "&from_source=" + $("#ipt_from_source").val() +
             "&startdate=" + $("#ipt_startdate").val() +
@@ -243,7 +244,10 @@ if (defined('ANALYSIS_URL'))
                         </tr>
 
                         <tr>
-                            <td class="tbl_head">User bio: </td><td><input type="text" id="ipt_user_bio" size="60" name="from_user_description"  value="<?php echo $from_user_description; ?>" /> (empty: from any user*)</td>
+                            <td class="tbl_head">User bio: </td><td><input type="text" id="ipt_user_bio" size="60" name="from_user_description"  value="<?php echo $from_user_description; ?>" /> (empty: anything in biography*)</td>
+                        </tr>
+                        <tr>
+                            <td class="tbl_head">User language: </td><td><input type="text" id="ipt_user_lang" size="60" name="from_user_lang"  value="<?php echo $from_user_lang; ?>" /> (empty: any language*)</td>
                         </tr>
 
                         <tr>
