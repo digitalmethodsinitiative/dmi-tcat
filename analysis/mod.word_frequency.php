@@ -48,7 +48,7 @@ $minf = isset($_GET['minf']) ? $minf = $_GET['minf'] : 1;
         while ($data = $rec->fetch(PDO::FETCH_ASSOC)) {
             $text = $data["text"];
             $datepart = str_replace(' ', '_', $data["datepart"]);
-            preg_match_all('/(https?:\/\/[^\s]+)|([@#\p{L}][\p{L}]+)/u', $text, $matches, PREG_PATTERN_ORDER);
+            preg_match_all('/(https?:\/\/[^\s]+)|([@#\p{L}\p{N}][\p{L}\p{N}]+)/u', $text, $matches, PREG_PATTERN_ORDER);
             foreach ($matches[0] as $word) {
                 if (preg_match('/(https?:\/\/)/u', $word)) continue;
                 if ($lowercase !== 0) $word = mb_strtolower($word);
@@ -79,7 +79,6 @@ $minf = isset($_GET['minf']) ? $minf = $_GET['minf'] : 1;
         } else {
             system("sort -S 8% $templocation | uniq -c | sort -S 8% -b -k 2,2 -k 1,1nr -k 3,3 | awk '{ if ($1 >= $minf) { print $2 \",\" $3 \",\" $1} }' | sed -e 's/_/ /' >> $filename");
         }
- 
         fclose($csv);
         
         fclose($tempfile); // this removes the temporary file

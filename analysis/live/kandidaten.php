@@ -1816,7 +1816,6 @@ $zelfverklaard = array(
     "wybrenvanhaga" => "vvd",
     "wytzespoelstra" => "vvd",
 );
-
 $spindoctors = array(
     "engels_hans" => "d66",
     "maartenhijink" => "sp",
