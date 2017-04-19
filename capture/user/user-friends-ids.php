@@ -15,12 +15,9 @@ require __DIR__ . '/../common/tmhOAuth/tmhOAuth.php';
 // ----- connection -----
 $dbh = pdo_connect();
 
-//$bin_name = "lijsttrekker_aanvallers";
-$bin_name = "lijsttrekkers_likers"; 
+$bin_name = "";
 $max_num_friends = 100000;
-$screen_names = array();
-//$screen_names = array("AJonkhart","Bugs0007","DrGertJanMulder","Heerbean","JackPecozi","MartienHoute","Mayonaise100","PepijndeKorte","RAetREchte1","RalphGeest","Stormtroepen","WaerdtC","YidArmyNL","defret5","doenormaal_1","ger2591","hbroekhuisen","heuvel874","janjanssen1533","janklaassen1533","joke82260431","klaasvaak1533","longtallbaldy","mening66","veranderwens"); // an array of screen_names, leave empty if you want to retrieve users from an existing bin
-//$screen_names = array("1234Leenders","1LuckyWorld","7d8c4ed5622a48a","7eKamer","81dvw","AlexStraver","Allochtoons","AngeliqueWinder","Astriddegroot70","BackofficeGP","ChristeldeHaas","Classicon2","CorryLieverse","De_Regent","Don_Mascarpone","E_Hunyadi","Elimelech_Ring","FLSpringintveld","FreeHolland0","GMlovelie67xxx","GeertJeelof","GraalGrondwater","Grannny63","Hallyfax","Heelgewonevrouw","Heerbean","HellHound2015","JackPecozi","Jaspolitiek","JohanGrijzen","Johan_Driessen","Klefbek","LavieJanRoos","Malouiner","MarcdeGroot4","MarieJoseGMH","Matthijs85","Mazda_111","Merfralex","MijnGetweet","MrsPHSingh","MuslimInEurope","NieuwewegenNu","Nina72Nebula","Nokterian","PartijvdDieren","Peterscruff55","PiratePartyHI","PiratenGrn","Piratenpartij","PtrRkrs","RealDutchRoots","RebeccaFaussett","RechtenRadboud","RobbieRietdijk","Robwoltjer","RomeijndersK","RooieSpieker","Seriedad_porfi","SonjaPlomp","Stormtroepen","Tante_Frolic","TerlouwArie","Terror_Oehoe","TomvanderLee","TweedeKamerTwit","VNL153","VNLaanhangers","VitalMoors","VoorNederland","WaerdtC","WimSomers","YidArmyNL","ZanzibarZorro","adamsmithvnl","amg_weststrate","andrevanwanrooy","bastilladigital","caroline_pers","cdavandaag","christenunie","cmsNetherlands","cyrilAFCA023","d_heuver","dirkvano","ffl641","fvdemocratie","ger2591","heuvel874","jndkgrf","kanny081995","l_escala","l_ruigrok","lenifillekes","marizsmn","maxmonkau","mees_c","mening66","ncilla","neemjemoeder1","ogssie","petrakramer","pewe63","reinywielsma","ricobrouwer","script_lady","veranderwens","verderwellief","volgvarken","volgzwijn","vpartijbureau","windwens");
+$screen_names = array(); // an array of screen_names, leave empty if you want to retrieve users from an existing bin
 
 if (empty($bin_name))
     die("bin_name not set\n");
@@ -30,8 +27,8 @@ $ratefree = $current_key = $looped = 0;
 if (empty($screen_names)) {
     // retrieve users from a set of tweets
     $q = $dbh->prepare("SELECT from_user_name, max(from_user_friendcount) as m FROM " . $bin_name . "_tweets group by from_user_name order by m");
-    if ($q->execute());
-    $res = $q->fetchAll(PDO::FETCH_ASSOC);
+    if ($q->execute())
+    	$res = $q->fetchAll(PDO::FETCH_ASSOC);
     foreach ($res as $r) {
         if ($r['m'] <= $max_num_friends)
             $screen_names[] = $r['from_user_name'];

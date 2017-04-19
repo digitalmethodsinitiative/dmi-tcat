@@ -21,8 +21,7 @@ require __DIR__ . '/../common/tmhOAuth/tmhOAuth.php';
 /* ----- connection ----- */
 $dbh = pdo_connect();
 
-//$bin_name = "lijsttrekker_aanvallers";
-$bin_name = "lijsttrekkers_likers"; 
+$bin_name = "";
 $max_num_friends = 10000;
 $user_ids = array();
 
