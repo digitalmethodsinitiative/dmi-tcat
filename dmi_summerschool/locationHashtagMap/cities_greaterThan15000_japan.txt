@@ -1,0 +1,783 @@
+1847947	Shingū	Shingu	Schingu,Shingu,Shingui,Shingū,Sing,Singu,Singū,Синг	33.73333	135.98333	P	PPL	JP		43				31619		7	Asia/Tokyo	2012-01-19
+1847963	Atsugi	Atsugi	Acugi,Atsugi,Atsuki,Atugi,Atugi-chhi,Atugi-chhī,NJA,asseugi si,atswghy  kanaghawa,atswgy  kanagawa,hou mu shi,xa sungi,Атсуги,Ацуги,Ацуґі,آتسوگی، کاناگاوا,أتسوغي، كاناغاوا,อะสึงิ,厚木市,아쓰기 시	35.43889	139.35972	P	PPL	JP		19				229199		28	Asia/Tokyo	2012-01-19
+1847966	Akashi	Akashi	Akashi,Akasi,Akasi-chhi,Akasi-chhī,Akasis,Akasyi,Akašis,akashy  hywghw,akashy  hywgw,akasi si,ming shi shi,xa ka chi,Акаси,Акаши,Акаші,آکاشی، هیوگو,أكاشي، هيوغو,อะกะชิ,明石市,아카시 시	34.63333	134.98333	P	PPL	JP		13				297279		-9999	Asia/Tokyo	2012-01-19
+1847968	Zushi	Zushi	Zushi,dou zi,逗子	35.29264	139.57735	P	PPL	JP		19				60055		6	Asia/Tokyo	2014-03-08
+1848004	Zama	Zama	Zama,Зама	35.48889	139.38861	P	PPL	JP		19				134671		31	Asia/Tokyo	2012-01-19
+1848016	Yuza	Yuza	Yusa,Yusamachi,Yuza,Yuzamachi,you zuo,遊佐	39.01573	139.92909	P	PPL	JP		44				17082		25	Asia/Tokyo	2014-03-08
+1848087	Yukuhashi	Yukuhashi	Yukihashi,Yukuhashi,xing qiao shi,行橋市	33.72873	130.983	P	PPL	JP		07				71277		10	Asia/Tokyo	2012-02-05
+1848096	Yūki	Yuki	Juki,Yuki,Yūki,Юки	36.3	139.88333	P	PPL	JP		14				51574		40	Asia/Tokyo	2012-01-19
+1848113	Yugawara	Yugawara	Yugawara	35.15	139.06667	P	PPL	JP		19				27567		204	Asia/Tokyo	2012-01-19
+1848188	Yoshikawa	Yoshikawa	Esikava,Yoshikawa,Есикава	35.88528	139.83944	P	PPL	JP		34				60510		5	Asia/Tokyo	2012-01-19
+1848194	Yoshii	Yoshii		36.25	138.98333	P	PPL	JP		10				25655		125	Asia/Tokyo	2006-01-17
+1848210	Yoshida-kasugachō	Yoshida-kasugacho	Yoshida,Yoshida-kasugacho,Yoshida-kasugachō,ji tian chun ri ding,吉田春日町	37.68333	138.88333	P	PPL	JP		29				25500		7	Asia/Tokyo	2014-04-06
+1848243	Yorii	Yorii	Yorii	36.11667	139.2	P	PPL	JP		34				38717		96	Asia/Tokyo	2012-01-19
+1848254	Yono	Yono		35.88333	139.63333	P	PPL	JP		34				1077730		14	Asia/Tokyo	2006-01-17
+1848277	Yonago	Yonago	YGJ,Yonago,mi zi shi,米子市	35.43333	133.33333	P	PPL	JP		41				141368		9	Asia/Tokyo	2012-01-19
+1848313	Yokosuka	Yokosuka	Gorad Iakosuka,Jokosuka,Yokosuka,Yokosuka-chhi,Yokosuka-chhī,heng xu he shi,yoa koa suk a,yokoseuka si,ywkwswka  kanagawa,ywkwswka  kanaghawa,Ёкосука,Јокосука,Горад Іакосука,Йокосука,يوكوسوكا، كاناغاوا,یوکوسوکا، کاناگاوا,โยะโกะซุกะ,იოკოსუკა,横須賀市,橫須賀市,요코스카 시	35.28361	139.66722	P	PPL	JP		19				428992		9	Asia/Tokyo	2012-01-19
+1848354	Yokohama	Yokohama	Iokogama,Jokohama,Jokohamo,Jokokhama,YOK,Yokohama,Yokohama-shi,heng bang shi,heng bin shi,yoa koa ha ma,yokohama si,yokohamashi,ywkwhama,ywqwhmh,Јокохама,Иокогама,יוקוהמה,يوكوهاما,โยะโกะฮะมะ,იოკოჰამა,よこはまし,横浜市,横滨市,요코하마 시	35.44778	139.6425	P	PPLA	JP		19				3574443		10	Asia/Tokyo	2014-04-23
+1848373	Yokkaichi	Yokkaichi	Gorad Iakaity,Jokaichi,Jokkaichi,Jokkaiti,Yokkaichi,Yokkaiti,Yokkaiti-chhi,Yokkaiti-chhī,Yokkaitsi,si ri shi shi,yk ka xi ci,yoskaichi si,ywkaychy  myh,ywkaytshy  myh,Ёккаичи,Јокаичи,Горад Іакаіты,Йокаичи,Йоккаити,Йоккаичи,Йоккаїті,يوكايتشي، ميه,یوکایچی، میه,یوکای‌ایچی، میه,ยกกะอิจิ,四日市市,욧카이치 시	34.96667	136.61667	P	PPL	JP		23				295841		8	Asia/Tokyo	2012-01-19
+1848382	Youkaichi	Youkaichi	Yokaichicho,Yokkaichi,Yōkaichichō	35.11626	136.19768	P	PPL	JP		35				45338		124	Asia/Tokyo	2008-10-29
+1848439	Yawata	Yawata	Yahata,Yahatanosho,Yahatanoshō,Yahatasho,Yahatashō	34.87009	135.7027	P	PPL	JP		22				71656		17	Asia/Tokyo	2008-10-27
+1848445	Yatsushiro	Yatsushiro	Jacusiro,Yatsushiro,Yatusiro,Яцусиро	32.5	130.6	P	PPL	JP		21				104341		5	Asia/Tokyo	2012-01-19
+1848447	Yatsuomachi-higashikumisaka	Yatsuomachi-higashikumisaka	Yatsuo,Yatsuomachi-higashikumisaka,ba wei ding dong ge ban,八尾町東葛坂	36.56667	137.13333	P	PPL	JP		42				22205		197	Asia/Tokyo	2014-01-13
+1848482	Yasugichō	Yasugicho	Yasugi,Yasugicho,Yasugichō,an lai ding,安来町	35.42146	133.24224	P	PPL	JP		36				29368		2	Asia/Tokyo	2013-10-07
+1848498	Yashiro	Yashiro		34.91667	134.96667	P	PPL	JP		13				21554		67	Asia/Tokyo	2006-01-17
+1848499	Yashio-shi	Yashio-shi	Yashio,ba chao,ba chao shi,八潮,八潮市	35.82255	139.83905	P	PPL	JP	JP	34				81345		8	Asia/Tokyo	2013-07-31
+1848522	Yao	Yao	Jao,Yao,Yaocho,Yaochō,ba wei shi,Яо,八尾市	34.61667	135.6	P	PPL	JP		32				273213		13	Asia/Tokyo	2012-01-19
+1848550	Yanai	Yanai	Janai,Yanai,Янаи	33.96667	132.11667	P	PPL	JP		45				32229		0	Asia/Tokyo	2012-01-19
+1848573	Yanagawa	Yanagawa	Janagava,Yanagawa,Янагава	33.16667	130.4	P	PPL	JP		07				40386		1	Asia/Tokyo	2012-01-19
+1848633	Yamasaki	Yamasaki		35	134.55	P	PPL	JP		13				25115		95	Asia/Tokyo	2006-01-17
+1848689	Yamaguchi-shi	Yamaguchi-shi	Jamaguci,Jamaguti,Jamaguči,Yamaguchi,Yamaguchi-shi,Yamaguti,shan kou shi,yamaghwtshy,yamaguchi si,yamaguchishi,Ямагути,ياماغوتشي,やまぐちし,山口市,야마구치 시	34.18583	131.47139	P	PPLA	JP		45				145515		62	Asia/Tokyo	2012-01-19
+1848705	Yamaga	Yamaga	Jamaga,Yamaga,shan lu,Ямага,山鹿	33.01667	130.68333	P	PPL	JP		21				32298		21	Asia/Tokyo	2014-04-30
+1848774	Yaizu	Yaizu	Jaidzu,Yaidu,Yaizu,Yaizu Mati,shao jin,shao jin shi,Яидзу,焼津,焼津市	34.86877	138.31952	P	PPL	JP		37				121057		8	Asia/Tokyo	2014-01-13
+1848776	Yaita	Yaita	Yaita	36.8	139.93333	P	PPL	JP		38				36275		191	Asia/Tokyo	2012-01-19
+1848933	Waki	Waki	Waki,Wakimachi	34.06667	134.15	P	PPL	JP		39				17659		52	Asia/Tokyo	2012-01-19
+1849053	Utsunomiya-shi	Utsunomiya-shi	Ucunomija,Utsunomiya,Utsunomiya-shi,usseunomiya si,utsunomiyashi,yu dou gong shi,Уцуномия,うつのみやし,宇都宮市,우쓰노미야 시	36.56583	139.88361	P	PPLA	JP		38				449865		136	Asia/Tokyo	2012-01-19
+1849069	Uto	Uto	Udo,Uto	32.68333	130.66667	P	PPL	JP		21				39234		4	Asia/Tokyo	2012-01-19
+1849094	Usuki	Usuki	Usuki,jiu chu,jiu chu shi,臼杵,臼杵市	33.12342	131.80401	P	PPL	JP		30				35001		4	Asia/Tokyo	2014-04-30
+1849154	Ushibuka	Ushibuka	Ushibuka,Usibuka	32.19537	130.02554	P	PPL	JP		21				16667		7	Asia/Tokyo	2013-09-08
+1849183	Ureshino	Ureshino	Ureshino	33.1	129.98333	P	PPL	JP		33				18953		73	Asia/Tokyo	2012-01-19
+1849186	Urayasu	Urayasu	Urajasu,Urayasu,pu an shi,Ураясу,浦安市	35.67056	139.88861	P	PPL	JP		40				143758		6	Asia/Tokyo	2012-01-19
+1849237	Uozu	Uozu	Oozu,Owatsu,Uozo,Uozu	36.8	137.4	P	PPL	JP		42				45848		13	Asia/Tokyo	2012-01-19
+1849299	Umi	Umi	Umi,yu mei,宇美	33.56826	130.51009	P	PPL	JP		07				39772		41	Asia/Tokyo	2014-04-30
+1849367	Ujiie	Ujiie		36.68333	139.96667	P	PPL	JP		38				30366		164	Asia/Tokyo	2006-01-17
+1849372	Uji	Uji	Udyi,Udzhi,Udzi,Udzis,Udži,Udžis,Uji,Uji-cho,Uji-chō,Uzi-chhi,Uzi-chhī,awjy  kywtw,uji si,xu ci,yu zhi shi,ywjy  kywtw,Уджі,Удзи,Уџи,Уҷи,Үжи,اوجی، کیوتو,يوجي، كيوتو,อุจิ,宇治市,우지 시	34.88333	135.8	P	PPL	JP		22				192925		50	Asia/Tokyo	2012-01-19
+1849407	Uenohara	Uenohara	Uenohara	35.61667	139.11667	P	PPL	JP		46				27840		165	Asia/Tokyo	2012-01-19
+1849414	Ueno	Ueno		34.75	136.13333	P	PPL	JP		23				61598		155	Asia/Tokyo	2006-11-02
+1849424	Ueki	Ueki	Ueki	32.9	130.68333	P	PPL	JP		21				31688		99	Asia/Tokyo	2012-01-19
+1849429	Ueda	Ueda	Ueda,Ueda  Nagano,Uehda,shang tian,shang tian shi,ueda si,Уэда,上田,上田市,우에다 시	36.40265	138.28161	P	PPL	JP		26				126606		539	Asia/Tokyo	2014-06-05
+1849498	Ube	Ube	UBJ,Ube,Ubi,Убе	33.94306	131.25111	P	PPL	JP		45				173733		6	Asia/Tokyo	2012-01-19
+1849519	Tsuyama	Tsuyama	Cujama,Tsuyama,Tuyama,jin shan shi,Цуяма,津山市	35.05215	133.99885	P	PPL	JP		31				89717		97	Asia/Tokyo	2013-10-07
+1849539	Tsushima	Tsushima	Cusima,Tsushima,Tsushima cho,Tsushima chō,Цусима	35.16667	136.71667	P	PPLA2	JP		01	1849535			67658		2	Asia/Tokyo	2012-04-17
+1849561	Tsurusaki	Tsurusaki	Tsurusaki,he qi,鶴崎	33.24528	131.69166	P	PPL	JP		30				76968		5	Asia/Tokyo	2014-04-30
+1849563	Tsuruoka	Tsuruoka	Curuoka,Tsuruoka,Turuoka,Turuoka-chhi,Turuoka-chhī,he gang shi,sseuluoka si,tswrwawka  yamagata,tswrwka  yamaghata,Тсуруока,Цуруока,تسورواوکا، یاماگاتا,تسوروكا، ياماغاتا,鶴岡市,쓰루오카 시	38.72167	139.82167	P	PPL	JP		44				99820		13	Asia/Tokyo	2012-01-19
+1849584	Tsurugi-asahimachi	Tsurugi-asahimachi	Tsurugi,Tsurugi-asahimachi,he lai chao ri ding,鶴来朝日町	36.45	136.63333	P	PPL	JP		15				22042		159	Asia/Tokyo	2014-01-13
+1849592	Tsuruga	Tsuruga	Curuga,Tsuruga,Turuga,dun he shi,sseuluga si,Цуруга,敦賀市,쓰루가 시	35.64547	136.0558	P	PPL	JP		06				68482		6	Asia/Tokyo	2008-10-25
+1849647	Tsuma	Tsuma	Tsuma,Tuma	32.1	131.4	P	PPL	JP		25				34318		11	Asia/Tokyo	2012-01-19
+1849661	Tsukumiura	Tsukumiura	Tsukumi,Tsukumiura,Tukumi,jin jiu jian pu,津久見浦	33.07539	131.86907	P	PPL	JP		30				21658		13	Asia/Tokyo	2014-04-30
+1849706	Tsukawaki	Tsukawaki	Kusu,Tsukawaki,zhong xie,塚脇	33.27668	131.15628	P	PPL	JP		30				18371		336	Asia/Tokyo	2014-04-30
+1849782	Tsubata	Tsubata	Tsubata,jin fan,津幡	36.67012	136.7403	P	PPL	JP		15				38644		10	Asia/Tokyo	2014-01-13
+1849788	Tsubame	Tsubame	Cubameh,Tsubame,Tsubamemachi,yan,Цубамэ,燕	37.6645	138.92518	P	PPL	JP		29				44284		8	Asia/Tokyo	2014-04-06
+1849796	Tsu-shi	Tsu-shi	Cu,Tsu,Tsu-shi,Tu,jin shi,sseu si,tsushi,Цу,つし,津市,쓰 시	34.73028	136.50861	P	PPLA	JP		23				163461		32	Asia/Tokyo	2012-01-19
+1849814	Toyota	Toyota	Koromo,Tojoota khot,Tojota,Toyoda,Toyota,Toyota i Aichi,Toyota-chhi,Toyota-chhī,doyota si,feng tian shi,li tian,li tian shi,thoa yoa ta,twywta  aychy,twywta  aytshy,Тойота,Тоёота хот,Тоёта,Тојота,تويوتا، آيتشي,تویوتا، آیچی,ٹویوٹہ,โทะโยะตะ,丰田市,豊田,豊田市,도요타 시	35.08333	137.15	P	PPLA2	JP		01	1849809			362383		55	Asia/Tokyo	2012-02-18
+1849817	Toyoshina	Toyoshina		36.29991	137.90108	P	PPL	JP		26				27834		553	Asia/Tokyo	2008-11-24
+1849831	Toyooka	Toyooka	TJH,Toyooka	35.54008	134.82038	P	PPL	JP		13				46500		29	Asia/Tokyo	2013-10-07
+1849837	Toyonaka	Toyonaka		34.78244	135.46932	P	PPL	JP		32				384459		31	Asia/Tokyo	2008-10-27
+1849845	Toyokawa	Toyokawa	Tojokava,Toyokawa,Toyokawa-chhi,Toyokawa-chhī,doyokawa si,feng chuan shi,li chuan shi,thoa yoa kawa,twywkawa  aychy,twywkawa  aytshy,Тойокава,Тоёкава,Тојокава,تويوكاوا، آيتشي,تویوکاوا، آیچی,ٹویوکاوہ,โทะโยะกะวะ,豊川市,豐川市,도요카와 시	34.81667	137.4	P	PPLA2	JP		01	1850219			120537		4	Asia/Tokyo	2014-01-20
+1849846	Toyohashi	Toyohashi	Tojokhashi,Toyohashi,Toyohashi-shi,Toyohasi,li qiao,li qiao shi,Тойохаши,豊橋,豊橋市	34.76667	137.38333	P	PPL	JP		01				378374		12	Asia/Tokyo	2013-12-18
+1849850	Toyohama	Toyohama		34.70933	136.93425	P	PPL	JP		01				21917		3	Asia/Tokyo	2013-10-07
+1849876	Toyama-shi	Toyama-shi	TOY,Tojama,Toyama-shi,fu shan shi,toyamashi,Тояма,とやまし,富山市	36.69528	137.21139	P	PPLA	JP		42				325532		13	Asia/Tokyo	2013-04-05
+1849892	Tottori	Tottori	TTJ,Tottori-shi	35.5	134.23333	P	PPLA	JP		41				154098		6	Asia/Tokyo	2014-06-03
+1849904	Tosu	Tosu	Tosu,doseu si,niao qi shi,鳥栖市,도스 시	33.36667	130.51667	P	PPL	JP		33				63595		17	Asia/Tokyo	2012-01-19
+1850004	Tonoshō	Tonosho	Tonosho,Tonoshō,Tonosyo,Tonosyō	34.48333	134.18333	P	PPL	JP		17				16514		15	Asia/Tokyo	2012-01-19
+1850034	Tondabayashi	Tondabayashi	Tondabayashi,fu tian lin shi,富田林市	34.5	135.6	P	PPL	JP		32				132873		63	Asia/Tokyo	2012-01-19
+1850091	Tomioka	Tomioka	Tomioka	36.25	138.9	P	PPL	JP		10				49281		148	Asia/Tokyo	2012-01-19
+1850108	Tomigusuku	Tomigusuku	Gusuku,Temigusuku,Timigusuku,Tomigusuki,Tomigusuku	26.185	127.675	P	PPL	JP		47				55715		29	Asia/Tokyo	2012-01-19
+1850147	Tokyo	Tokyo	Edo,TYO,Tochiu,Tocio,Tokija,Tokijas,Tokio,Tokió,Tokjo,Tokyo,Toquio,Toquio - dong jing,Toquio - 東京,Tòquio,Tókýó,Tóquio,Tōkyō,dokyo,dong jing,dong jing dou,tokeiyw,tokkiyo,tokyo,twkyw,twqyw,Τόκιο,Токио,Токё,Токіо,Տոկիո,טוקיו,توكيو,توکیو,طوكيو,ܛܘܟܝܘ,ܜܘܟܝܘ,टोक्यो,டோக்கியோ,โตเกียว,ტოკიო,东京,東京,東京都,도쿄	35.6895	139.69171	P	PPLC	JP		40				8336599		44	Asia/Tokyo	2014-01-09
+1850152	Tokuyama	Tokuyama	Kakuyama,Tokuyama	34.05	131.81667	P	PPL	JP		45				101133		35	Asia/Tokyo	2012-01-19
+1850158	Tokushima-shi	Tokushima-shi	TKS,Tokushima,Tokushima - de dao shi,Tokushima - 徳島市,Tokushima-shi,Tokusima,Tokušima,de dao shi,dokusima si,tokushimashi,Токусима,とくしまし,徳島市,도쿠시마 시	34.06583	134.55944	P	PPLA	JP		39				267345		11	Asia/Tokyo	2012-01-19
+1850181	Tokorozawa	Tokorozawa	Tokorodzava,Tokorosawa,Tokorozaua,Tokorozava,Tokorozawa,Tokorozawa-chhi,Tokorozawa-chhī,dokolojawa si,suo ze shi,thoa koa roa sa wa,twkwrwzawa  saytama,Токородзава,Токорозава,Токорозауа,توكوروزاوا، سايتاما,توکوروزاوا، سایتاما,โทะโกะโระซะวะ,所沢市,所澤市,도코로자와 시	35.79916	139.46903	P	PPL	JP		34				339435		82	Asia/Tokyo	2008-11-05
+1850185	Tokoname	Tokoname	Tokoname,Tokoname-cho,Tokoname-chō,Tokonameh,chang hua shi,Токонамэ,常滑市	34.88333	136.85	P	PPL	JP		01				49554		11	Asia/Tokyo	2012-01-19
+1850207	Toki	Toki	Toka,Toki,Tokitsu-cho,Tokitsu-chō,tu qi shi,Тока,土岐市	35.35	137.18333	P	PPL	JP		09				61394		159	Asia/Tokyo	2012-01-19
+1850217	Tōkamachi	Tokamachi	Toka,Tokamachi,Tokamati,Tōka,Tōkamachi,Токамати	37.13333	138.76667	P	PPL	JP		29				41136		154	Asia/Tokyo	2012-01-19
+1850269	Togitsu	Togitsu	Togitsu,Tokitsu	32.83333	129.85	P	PPL	JP		27				29364		1	Asia/Tokyo	2012-01-19
+1850307	Tochio-honchō	Tochio-honcho	Tochio,Tochio-honcho,Tochio-honchō,Tochiomachi,li wei ben ding,栃尾本町	37.47642	138.99513	P	PPL	JP		29				23045		65	Asia/Tokyo	2014-04-06
+1850311	Tochigi	Tochigi	Tochigi,Totigi,Тотиги	36.38333	139.73333	P	PPL	JP		38				82133		51	Asia/Tokyo	2012-01-19
+1850345	Toba	Toba	Toba,Тоба	34.4833	136.84186	P	PPL	JP		23				23303		6	Asia/Tokyo	2013-10-07
+1850396	Tenri	Tenri	Tehnri,Tenri,Тэнри	34.58333	135.83333	P	PPL	JP		28				71052		56	Asia/Tokyo	2012-01-19
+1850405	Tennō	Tenno	Tenno,Tennō,tian wang,天王	39.9	139.96667	P	PPL	JP		02				22740		6	Asia/Tokyo	2013-07-06
+1850472	Tawaramoto	Tawaramoto	Taharamoto,Tawaramoto	34.55	135.8	P	PPL	JP		28				32659		50	Asia/Tokyo	2012-01-19
+1850498	Tatsuno	Tatsuno		35.98426	137.99721	P	PPL	JP		26				21499		726	Asia/Tokyo	2008-11-20
+1850499	Tatsuno	Tatsuno	Tatsuno	34.86667	134.55	P	PPL	JP		13				40011		21	Asia/Tokyo	2012-01-19
+1850523	Tateyama	Tateyama	Hojo,Hōjō,Tatejama,Tateyama,Tateyama-chhi,Tateyama-chhī,Tateyamahojo,Tateyamahozyo,Tateyamahōjō,Tateyamahōzyō,dateyama si,guan shan,guan shan shi,tath yama  tshyba,tatyama  chyba,tha tea ya ma,Татеяма,تاته ياما، تشيبا,تاتیاما، چیبا,ทะเตะยะมะ,館山,館山市,다테야마 시	34.98333	139.86667	P	PPL	JP		04				50064		7	Asia/Tokyo	2012-01-19
+1850559	Tatebayashi	Tatebayashi	Tatebayashi	36.25	139.53333	P	PPL	JP		10				81274		28	Asia/Tokyo	2012-01-19
+1850589	Tarumizu	Tarumizu	Tarumi	31.48333	130.7	P	PPL	JP		18				19146		10	Asia/Tokyo	2006-01-17
+1850600	Tarui	Tarui	Tarui,Таруи	35.36667	136.53333	P	PPL	JP		09				29070		26	Asia/Tokyo	2012-01-19
+1850627	Tanushimarumachi-toyoki	Tanushimarumachi-toyoki	Tanushimaru,Tanushimarumachi-toyoki,tian zhu wan ding li cheng,田主丸町豊城	33.35	130.68333	P	PPL	JP		07				21156		16	Asia/Tokyo	2014-04-30
+1850630	Tanuma	Tanuma	Tanuma	36.36667	139.58333	P	PPL	JP		38				28723		66	Asia/Tokyo	2012-01-19
+1850692	Nishi-Tokyo-shi	Nishi-Tokyo-shi	Hoya,Hoya-shi,Nishitokyo-shi,Tanashi,Tanashi-machi,bao gu shi,tian wu shi,xi dong jing shi,保谷市,田無市,西東京市	35.72526	139.5383	P	PPL	JP	JP	40	1850692			195164		58	Asia/Tokyo	2010-02-18
+1850693	Tanashichō	Tanashicho	Tanashi,Tanashicho,Tanashichō,tanashichou,tian wu ding,たなしちょう,タナシチョウ,田無町	35.7303	139.53391	P	PPL	JP		40				82112		68	Asia/Tokyo	2013-07-06
+1850707	Tanabe	Tanabe		34.81667	135.76667	P	PPL	JP		22				65903		39	Asia/Tokyo	2006-01-27
+1850708	Tanabe	Tanabe	Tanabe,Tanabeh,Танабэ	33.73333	135.36667	P	PPL	JP		43				69563		7	Asia/Tokyo	2012-01-19
+1850742	Tamano	Tamano	Tamano,Тамано	34.48333	133.95	P	PPL	JP		31				67786		-9999	Asia/Tokyo	2012-01-19
+1850745	Tamana	Tamana	Tamana,Tamano,Тамана	32.91667	130.56667	P	PPL	JP		21				45661		24	Asia/Tokyo	2012-01-19
+1850746	Tamamura	Tamamura	Tamamura	36.3	139.11667	P	PPL	JP		10	1852846			42566		68	Asia/Tokyo	2013-12-27
+1850818	Taketoyo	Taketoyo	Taketoyo,Taketoyocho,Taketoyochō	34.85	136.91667	P	PPL	JP		01				41679		4	Asia/Tokyo	2012-01-19
+1850834	Takeo	Takeo	Takeo,Такео	33.2	130.01667	P	PPL	JP		33				34230		37	Asia/Tokyo	2012-01-19
+1850860	Takehara	Takehara	Takehara,Takekara	34.33833	132.91667	P	PPL	JP		11				30506		19	Asia/Tokyo	2012-01-19
+1850872	Takefu	Takefu	Takebo,Takebu,Takefu,Takehu,wu sheng shi,武生市	35.90393	136.16687	P	PPL	JP		06				75753		34	Asia/Tokyo	2008-10-25
+1850878	Takedamachi	Takedamachi	Takeda,Takedamachi,Taketa,Taketa-machi	32.96667	131.4	P	PPLX	JP		30				16361		262	Asia/Tokyo	2012-01-19
+1850892	Takayama	Takayama	Takajama,Takayama,Takayama-chhi,Takayama-chhī,dakayama si,fei tuono gao shan,gao shan,gao shan shi,takayama,takayama  ghyfw,takayama  gyfw,tha ka ya ma,Такаяма,تاكاياما، غيفو,تاکایاما، گیفو,ทะกะยะมะ,たかやま,飛騨の高山,高山,高山市,다카야마 시	36.13333	137.25	P	PPL	JP		09				66636		583	Asia/Tokyo	2012-01-19
+1850910	Takatsuki	Takatsuki	Takacuki,Takatsuki,Takatuki,gao gui shi,高槻市	34.84833	135.61678	P	PPL	JP		32				354468		14	Asia/Tokyo	2008-10-27
+1851002	Takasaki	Takasaki	Takasaki,Takasaki-chhi,Takasaki-chhī,dakasaki si,gao qi shi,takasaky,takasaky  gwnma,tha ka saki,Такасаки,Такасакі,تاكاساكي,تاکاساکی، گونما,ทะกะซะกิ,ტაკასაკი,高崎市,다카사키 시	36.33333	139.01667	P	PPL	JP		10				240857		93	Asia/Tokyo	2012-01-19
+1851012	Takarazuka	Takarazuka		34.79936	135.35697	P	PPL	JP		13				219789		29	Asia/Tokyo	2008-10-27
+1851032	Takaoka	Takaoka	Takaoka	36.75	137.01667	P	PPL	JP		42				170077		8	Asia/Tokyo	2012-01-19
+1851068	Takanabe	Takanabe	Takanabe,Takanabecho,Takanabechō	32.13333	131.5	P	PPL	JP		25				22513		11	Asia/Tokyo	2012-01-19
+1851100	Takamatsu-shi	Takamatsu-shi	TAK,Takamacu,Takamatsu,Takamatsu-shi,Takamatu,dakamasseu si,gao song shi,takamatsushi,Такамацу,たかまつし,高松市,다카마쓰 시	34.34028	134.04333	P	PPLA	JP		17				334223		21	Asia/Tokyo	2012-01-19
+1851125	Takaishi	Takaishi	Takaishi,Takaishi-kita,Takashi-kita	34.51667	135.43333	P	PPL	JP		32				60511		7	Asia/Tokyo	2012-01-19
+1851137	Takahashi	Takahashi	Takahashi,Takahasi,Takakhasi,Такахаси	34.78333	133.61667	P	PPL	JP		31				24819		66	Asia/Tokyo	2012-01-19
+1851155	Takahama	Takahama	Takahama-cho,Takahama-chō,Takakhama,Такахама	34.91667	136.98333	P	PPL	JP		01				40501		7	Asia/Tokyo	2010-01-29
+1851170	Bungo-Takada-shi	Bungo-Takada-shi	Bungo-Takada,Bungo-Takata,BungoTakada,Takata,gao tian,li hou gao tian,li hou gao tian shi,豊後高田,豊後高田市,高田	33.5567	131.44506	P	PPL	JP		30				23856		6	Asia/Tokyo	2013-11-23
+1851193	Tajimi	Tajimi	Tadimi,Tajima,Tajimi,Tajumi,Tazimi	35.31667	137.13333	P	PPL	JP		09				107818		138	Asia/Tokyo	2012-01-19
+1851259	Tahara	Tahara	Tahara,Tawara	34.66667	137.26667	P	PPL	JP		01				38177		6	Asia/Tokyo	2012-01-19
+1851273	Tagawa	Tagawa	Tagava,Tagawa,Takawa,Тагава	33.63333	130.8	P	PPL	JP		07				51608		46	Asia/Tokyo	2012-01-19
+1851282	Tadotsu	Tadotsu	Tadotsu,Tadotsucho,Tadotsuchō	34.275	133.75	P	PPL	JP		17				23514		4	Asia/Tokyo	2012-01-19
+1851348	Suzuka	Suzuka	Kambe,Sudzuka,Susuka,Suzuka,Suzuka-chhi,Suzuka-chhī,ling lu shi,seujeuka si,swzwka  myh,Судзука,Сузука,سوزوكا، ميه,سوزوکا، میه,鈴鹿市,스즈카 시	34.88333	136.58333	P	PPL	JP		23				191477		10	Asia/Tokyo	2012-01-19
+1851357	Suzaka	Suzaka	Susaka,Suzaka,xu ban,須坂	36.65	138.31667	P	PPL	JP		26				54022		401	Asia/Tokyo	2014-06-05
+1851368	Suwa	Suwa	Kamisuwa,Suva,Сува	36.03799	138.11308	P	PPL	JP		26				54735		762	Asia/Tokyo	2010-01-29
+1851390	Susaki	Susaki	Susaki	33.39471	133.29128	P	PPL	JP		20				26195		6	Asia/Tokyo	2013-10-07
+1851426	Sumoto	Sumoto	Sumoto,Сумото	34.35	134.9	P	PPL	JP		13				39546		1	Asia/Tokyo	2012-01-19
+1851462	Sukumo	Sukumo	Sukumo	32.93333	132.73333	P	PPL	JP		20				25784		12	Asia/Tokyo	2012-01-19
+1851483	Suita	Suita	Suika,Suita,chui tian shi,seu-ita si,Суита,吹田市,스이타 시	34.76143	135.51567	P	PPL	JP		32				351630		4	Asia/Tokyo	2010-01-29
+1851494	Suibara	Suibara	Suibara,shui yuan,水原	37.84608	139.23039	P	PPL	JP		29				20392		6	Asia/Tokyo	2014-04-06
+1851504	Sugito	Sugito	Sugito,shan hu,sugito,すぎと,スギト,杉戸	36.03107	139.72636	P	PPL	JP		34				49817		10	Asia/Tokyo	2013-07-06
+1851542	Sueyoshichō-ninokata	Sueyoshicho-ninokata	Sueyoshi,Sueyoshicho-ninokata,Sueyoshichō-ninokata,mo ji ding er zhi fang,末吉町二之方	31.65	131.01667	P	PPL	JP		18				19986		188	Asia/Tokyo	2013-09-08
+1851604	Sōka	Soka	Sok,Soka,Sōka,Сок	35.82028	139.80444	P	PPL	JP		34				231445		4	Asia/Tokyo	2012-01-19
+1851606	Sōja	Soja	Soja,Sozya,Sōja,Sōzya	34.66667	133.75	P	PPL	JP		31				57469		16	Asia/Tokyo	2012-01-19
+1851622	Sobue	Sobue		35.25	136.71667	P	PPL	JP		01				23372		4	Asia/Tokyo	2006-01-17
+1851711	Shōbu	Shobu	Sebu,Shobu,Shōbu,chang pu,shoubu,Себу,しょうぶ,ショウブ,菖蒲	36.06667	139.6	P	PPL	JP		34				22156		13	Asia/Tokyo	2013-07-06
+1851713	Shōbara	Shobara	Shobara,Shōbara	34.85	133.01667	P	PPL	JP		11				20527		253	Asia/Tokyo	2012-01-19
+1851717	Shizuoka-shi	Shizuoka-shi	Shizuoka,Shizuoka-shi,Siduoka,Sidzuoka,Sizuoka,jing gang shi,shizuokashi,shyzwka  shyzwka,sijeuoka si,Ŝizuoka,Šizuoka,Сидзуока,شيزوكا، شيزوكا,しずおかし,静岡市,靜岡市,시즈오카 시	34.97694	138.38306	P	PPLA	JP		37				701561		46	Asia/Tokyo	2013-12-18
+1851813	Shirone	Shirone	Shirone,bai gen,白根	37.76354	139.02199	P	PPL	JP		29				41406		-1	Asia/Tokyo	2014-04-06
+1851883	Shiraoka	Shiraoka	Shiraoka,bai gang,shiraoka,しらおか,シラオカ,白岡	36.01839	139.66034	P	PPL	JP		34				50974		13	Asia/Tokyo	2014-03-29
+1851935	Shirahama	Shirahama	Shirahama,Shirahama-ku,Shirakhama,Ширахама	34.78333	134.71667	P	PPL	JP	JP	13				23180		2	Asia/Tokyo	2012-01-19
+1851952	Shiozawa	Shiozawa	Shiozawa,yan ze,塩沢	37.03757	138.84867	P	PPL	JP		29				20178		180	Asia/Tokyo	2014-04-06
+1852003	Shiojiri	Shiojiri	Shiojiri,Sioziri	36.1	137.96667	P	PPL	JP		26				67159		729	Asia/Tokyo	2012-01-19
+1852046	Shinshiro	Shinshiro	Shinshiro,Sinsiro,Sinsiro-chhi,Sinsiro-chhī,Syinsyiro,shynshyrw  aychy,shynshyrw  aytshy,sinsilo si,xin cheng shi,Синсиро,Сінсіро,Шинширо,شينشيرو، آيتشي,شینشیرو، آیچی,新城市,신시로 시	34.9	137.5	P	PPL	JP		01				36069		48	Asia/Tokyo	2012-01-19
+1852102	Shin’ichi	Shin'ichi	Shin'ichi,Shin’ichi,xin shi,新市	34.55543	133.27297	P	PPL	JP		11				21030		23	Asia/Tokyo	2013-10-07
+1852109	Shingū	Shingu	Shingu,Shingū,Sing,Singu,Singū,Синг	33.71667	130.43333	P	PPL	JP		07				25991		-9999	Asia/Tokyo	2012-01-19
+1852225	Shimonoseki	Shimonoseki	Shimonoseki,Simonoseki,Симоносеки	33.95	130.95	P	PPL	JP		45				245786		-9999	Asia/Tokyo	2012-01-19
+1852347	Shimodate	Shimodate	Shimodate,Simodate	36.3	139.98333	P	PPL	JP		14				63666		34	Asia/Tokyo	2012-01-19
+1852357	Shimoda	Shimoda	Shimoda,Simoda,Simoda-chhi,Simoda-chhī,Syimoda,shymwda  shyzwka,shymwda  shyzwywka,simoda si,xia tian shi,Ŝimoda,Симода,Сімода,Шимода,شيمودا، شيزوكا,شیمودا، شیزوئوکا,下田市,시모다 시	34.66667	138.95	P	PPL	JP		37				26704		1	Asia/Tokyo	2012-01-19
+1852383	Shimminatochō	Shimminatocho	Shimminatocho,Shimminatochō,Shinkomachi,Shinkōmachi	34.18333	135.2	P	PPLX	JP		43				375339		73	Asia/Tokyo	2012-01-19
+1852385	Nishishinminato	Nishishinminato	Nishishinminato,Shimminato,Shinminato,xi xin cou,西新湊	36.77957	137.07576	P	PPL	JP		42				35994		2	Asia/Tokyo	2014-01-13
+1852472	Shimada	Shimada	Shimada,Simada,Simada-chhi,Simada-chhī,Syimada,dao tian shi,shymada  shyzwka,shymada  shyzwywka,simada si,Симада,Сімада,Шимада,شيمادا، شيزوكا,شیمادا، شیزوئوکا,島田市,시마다 시	34.81667	138.18333	P	PPL	JP		37				75781		105	Asia/Tokyo	2012-01-19
+1852479	Shimabara	Shimabara	Shimabara,Simabara	32.78333	130.36667	P	PPL	JP		27				38113		11	Asia/Tokyo	2012-01-19
+1852502	Shiki	Shiki	Shiki,Siki,zhi mu shi,Сики,志木市	35.83333	139.58333	P	PPL	JP		34				65411		10	Asia/Tokyo	2012-01-19
+1852561	Shido	Shido		34.32333	134.17333	P	PPL	JP		17				22859		6	Asia/Tokyo	2007-01-30
+1852588	Shibushi	Shibushi	Sibusi	31.46667	131.105	P	PPL	JP		18				18349		1	Asia/Tokyo	2006-01-17
+1852595	Shibukawa	Shibukawa	Shibukawa	36.48333	139	P	PPL	JP		10				48322		202	Asia/Tokyo	2012-01-19
+1852607	Shibata	Shibata	Shibata,sibata,Шибата	37.95	139.33333	P	PPL	JP		29				80793		10	Asia/Tokyo	2012-01-19
+1852663	Seto	Seto	Seto,Seto-chhi,Seto-chhī,Setu,lai hu shi,seto si,stw  aychy,sytw  aytshy,Сето,Сету,ستو، آیچی,سيتو، آيتشي,سیٹو,瀨戶市,瀬戸市,세토 시	35.23333	137.1	P	PPL	JP		01				134246		111	Asia/Tokyo	2012-01-19
+1852673	Setaka	Setaka	Sedaka,Setaka	33.15	130.46667	P	PPL	JP		07				23985		4	Asia/Tokyo	2012-01-19
+1852736	Satsumasendai	Satsumasendai	Sendai,Sendaj,Sendajus,chuan nei,chuan nei shi,sendai si,sndayy,Сендай,Сендај,سندائي,川内,川内市,센다이 시	31.81667	130.3	P	PPL	JP		18				73132		5	Asia/Tokyo	2013-06-11
+1852849	Satte	Satte	Satte,satte,xing shou,さって,サッテ,幸手	36.07254	139.72615	P	PPL	JP		34				55286		9	Asia/Tokyo	2013-07-06
+1852899	Sasebo	Sasebo	Sasebo,Sasebum,Saseho,sasebo si,zuo shi bao shi,Сасебо,佐世保市,사세보 시	33.15917	129.72278	P	PPL	JP		27				237444		1	Asia/Tokyo	2012-01-19
+1852901	Sasayama	Sasayama	Sasajama,Sasayama,Сасаяма	35.06667	135.21667	P	PPL	JP		13				47204		202	Asia/Tokyo	2012-01-19
+1852915	Sasaguri	Sasaguri	Sasaguri,xiao li,篠栗	33.61561	130.55106	P	PPL	JP		07				32588		110	Asia/Tokyo	2014-04-30
+1852964	Sano	Sano	Sana,Sano,Сана	36.31667	139.58333	P	PPL	JP		38				82535		36	Asia/Tokyo	2012-01-19
+1852984	Sanjō	Sanjo	Sandscho,Sandyo,Sandze,Sanjo,Sanjō,Sanzyo,Sanzyō,Сандзе	37.61667	138.95	P	PPL	JP		29				82893		9	Asia/Tokyo	2012-01-19
+1853008	Sanda	Sanda	Sanda,Санда	34.88333	135.23333	P	PPL	JP		13				132858		143	Asia/Tokyo	2012-01-19
+1853066	Sakurai	Sakurai	Sakurai,Sakuri,Сакураи	34.5	135.85	P	PPL	JP		28				62964		108	Asia/Tokyo	2012-01-19
+1853081	Saku	Saku	Saku,Saku-chhi,Saku-chhī,sa ku,saku si,sakw  naganw,swkw  naghanw,zuo jiu shi,Саку,ساکو، ناگانو,سوكو، ناغانو,ซะกุ,佐久市,사쿠 시	36.21667	138.48333	P	PPL	JP		26				68885		684	Asia/Tokyo	2012-01-19
+1853140	Sakata	Sakata	Sakata,Sakata-chhi,Sakata-chhī,jiu tian shi,sakata si,sakata  yamagata,sakata  yamaghata,Саката,ساكاتا، ياماغاتا,ساکاتا، یاماگاتا,酒田市,사카타 시	38.91667	139.855	P	PPL	JP		44				100446		0	Asia/Tokyo	2012-01-19
+1853174	Sakaiminato	Sakaiminato	Sakae,Sakai,Sakaiminato	35.55	133.23333	P	PPL	JP		36				36324		0	Asia/Tokyo	2014-04-30
+1853190	Sakaide	Sakaide	Sakaide,Sakaide-cho,Sakaide-chō,Sakaidecho,Sakaidechō	34.31667	133.85	P	PPL	JP		17				57090		2	Asia/Tokyo	2012-01-19
+1853192	Sakai	Sakai		36.26667	139.25	P	PPL	JP		10				31268		43	Asia/Tokyo	2006-01-17
+1853193	Sakai	Sakai	Sakai,Сакаи	36.1	139.8	P	PPL	JP		14				26918		15	Asia/Tokyo	2012-01-19
+1853195	Sakai	Sakai	Sacaia,Sacaium,Sakai,jie shi,sakai si,Сакаи,堺市,사카이 시	34.58333	135.46667	P	PPL	JP		32				782339		7	Asia/Tokyo	2012-01-19
+1853209	Sakado	Sakado	Sakado,ban hu shi,坂戸市	35.95694	139.38889	P	PPL	JP		34				96656		33	Asia/Tokyo	2012-01-19
+1853237	Saiki	Saiki	Saeki,Saiki	32.95	131.9	P	PPL	JP		30				49065		3	Asia/Tokyo	2012-01-19
+1853280	Sagara	Sagara	Sagara,xiang liang,相良	34.68503	138.20461	P	PPL	JP		37				25922		10	Asia/Tokyo	2014-01-13
+1853303	Saga-shi	Saga-shi	Saga,Saga Japonija,Saga-shi,sagashi,zuo he,zuo he shi,Сага Япония,さがし,佐賀,佐賀市	33.24932	130.2988	P	PPLA	JP		33				165236		7	Asia/Tokyo	2012-01-19
+1853338	Sabae	Sabae	Sabae,qing jiang shi,鯖江市	35.94647	136.18498	P	PPL	JP		06				66291		27	Asia/Tokyo	2008-10-24
+1853354	Ryūō	Ryuo	Ryuo,Ryūō	35.65	138.5	P	PPL	JP		46				43180		288	Asia/Tokyo	2014-06-05
+1853371	Ryōtsu-minato	Ryotsu-minato	Ryotsu,Ryotsu-minato,Ryotu,Ryozu,Ryōtsu,Ryōtsu-minato,Ryōzu,liang jin cou,両津湊	38.07817	138.4394	P	PPL	JP		29				16359		4	Asia/Tokyo	2014-03-08
+1853433	Ōzu	Ozu	Odzu,Otsu,Ozu,Ōzu,Одзу	32.86667	130.86667	P	PPL	JP		21				29820		94	Asia/Tokyo	2012-01-19
+1853483	Oyama	Oyama	Ojama,Oyama,Ояма	36.3	139.8	P	PPL	JP		38				159936		41	Asia/Tokyo	2012-01-19
+1853486	Ōyama	Oyama	Oyama,da shan,Ōyama,大山	34.60359	138.21719	P	PPL	JP		37				21744		50	Asia/Tokyo	2014-01-13
+1853514	Owase	Owase	Otaka,Ovaseh,Owase,Owashi,Овасэ	34.06667	136.2	P	PPL	JP		23				22038		4	Asia/Tokyo	2012-01-19
+1853564	Ōtsuki	Otsuki	Ocuki,Otsuki,Ōtsuki,Оцуки	35.6	138.93333	P	PPL	JP		46				31226		387	Asia/Tokyo	2012-01-19
+1853574	Ōtsu-shi	Otsu-shi	Ocu,Otsu,Otsu-shi,Otu,da jin shi,ootsushi,osseu si,Ócu,Ōtsu,Ōtsu-shi,Ōtu,Оцу,おおつし,大津市,오쓰 시	35.00444	135.86833	P	PPLA	JP		35				298164		102	Asia/Tokyo	2012-01-19
+1853662	Ōtake	Otake	Otake,Otakeh,Ōtake,Отакэ	34.2	132.21667	P	PPL	JP		45				30151		54	Asia/Tokyo	2012-01-19
+1853677	Ōta	Ota	Ota,Ōta,Ота	36.3	139.36667	P	PPL	JP		10				152104		50	Asia/Tokyo	2012-01-19
+1853909	Ōsaka-shi	Osaka-shi	OSA,Osaca,Osaca - da ban shi,Osaca - 大阪市,Osaka,Osaka-shi,Osako,Oszaka,awsaka,awzaka,da ban shi,oosakashi,osaka,osaka si,xo sa ka,ywsaka,Ósaka,Ószaka,Ōsaka,Ōsaka-shi,Осака,אוסקה,أوساكا,ئوساكا,اوزاکا,ওসাকা,โอซะกะ,ოსაკა,おおさかし,大阪市,오사카 시	34.69374	135.50218	P	PPLA	JP		32				2592413		24	Asia/Tokyo	2012-05-09
+1853992	Onomichi	Onomichi	Onomichi,Onomiti,onomichi si,wei dao shi,尾道市,오노미치 시	34.41667	133.2	P	PPL	JP		11				90936		52	Asia/Tokyo	2012-01-19
+1854018	Onoda	Onoda		34.00139	131.18361	P	PPL	JP		45				44295		1	Asia/Tokyo	2006-01-17
+1854022	Ono	Ono	Ono,Оно	35.98106	136.48727	P	PPL	JP		06				37469		175	Asia/Tokyo	2010-01-29
+1854026	Ono	Ono	Ono,Onocho,Onochō,Оно	34.85	134.93333	P	PPL	JP		13				50230		53	Asia/Tokyo	2012-01-19
+1854028	Ōno-hara	Ono-hara	Hama,Ono,Ono-hara,da ye yuan,Ōno,Ōno-hara,Оно,大野原	34.28333	132.26667	P	PPL	JP		11				26190		3	Asia/Tokyo	2013-10-07
+1854083	Ōmuta	Omuta	Omuda,Omuta,da mou tian shi,Ōmuda,Ōmuta,Омута,大牟田市	33.03333	130.45	P	PPL	JP		07				131974		15	Asia/Tokyo	2012-01-19
+1854093	Ōmura	Omura	Omura,Ōmura,Омура	32.92139	129.95389	P	PPL	JP		27				89918		17	Asia/Tokyo	2012-01-19
+1854162	Ōme	Ome	Ome,Ōme,Оме	35.78389	139.24306	P	PPL	JP		40				149323		189	Asia/Tokyo	2012-01-19
+1854177	Ōmama	Omama		36.43333	139.28333	P	PPL	JP		10				21286		172	Asia/Tokyo	2006-01-17
+1854186	Ōmachi	Omachi	Omachi,da ting,Ōmachi,大町	36.5	137.86667	P	PPL	JP		26				30599		714	Asia/Tokyo	2012-01-19
+1854246	Ōkuchi	Okuchi	Oguchi,Okuti,Ōguchi,Ōkuti	32.06667	130.61667	P	PPL	JP		18				22425		222	Asia/Tokyo	2006-01-17
+1854371	Okegawa	Okegawa	Okegawa,Okugawamachi,tong chuan shi,桶川市	36	139.55722	P	PPL	JP		34				75062		22	Asia/Tokyo	2012-01-19
+1854376	Okazaki	Okazaki	Aichi,Okadzaki,Okasaki,Okazaki,Okazaki-chhi,Okazaki-chhī,awkazaky  aychy,awkazaky  aytshy,gang qi shi,okajaki si,xoa ka saki,Окадзаки,Окадзакі,Оказаки,أوكازاكي، آيتشي,اوکازاکی، آیچی,โอะกะซะกิ,岡崎市,오카자키 시	34.95	137.16667	P	PPL	JP		01				352361		34	Asia/Tokyo	2012-01-19
+1854383	Okayama-shi	Okayama-shi	OKJ,Okajama,Okayama,Okayama-shi,gang shan shi,okayama si,okayamashi,Окаяма,おかやまし,岡山市,오카야마 시	34.66167	133.935	P	PPLA	JP		31				639652		16	Asia/Tokyo	2012-01-19
+1854384	Okaya	Okaya	Hirano	36.05659	138.0451	P	PPL	JP		26				54286		773	Asia/Tokyo	2008-11-20
+1854405	Ōkawa	Okawa	Okava,Okawa,Ōkawa,Окава	33.2	130.35	P	PPL	JP		33				39223		0	Asia/Tokyo	2012-01-19
+1854444	Ojiya	Ojiya	Ojiya	37.3	138.8	P	PPL	JP		29				40549		72	Asia/Tokyo	2012-01-19
+1854487	Ōita	Oita	OIT,Oita,Oita-shi,da fen shi,oita si,ooitashi,Óita,Ōita,Ōita-shi,Оита,おおいたし,大分市,오이타 시	33.23806	131.6125	P	PPLA	JP		30				448907		13	Asia/Tokyo	2014-01-12
+1854492	Ōiso	Oiso	Oiso,Oiso-machi,Ōiso,Ōiso-machi	35.30306	139.30278	P	PPL	JP		19				32595		1	Asia/Tokyo	2012-01-19
+1854530	Ōi	Oi	Oi,da jing,ooi,Ōi,おおい,オオイ,大井	35.85091	139.51998	P	PPL	JP		34				50593		21	Asia/Tokyo	2013-07-06
+1854629	Ogōri-shimogō	Ogori-shimogo	Ogori,Ogori-shimogo,Ogōri,Ogōri-shimogō,xiao jun xia xiang,小郡下郷	34.1	131.4	P	PPL	JP		45				23516		4	Asia/Tokyo	2013-08-07
+1854665	Ogawa	Ogawa	Ogava,Ogawa,Огава	36.05	139.26667	P	PPL	JP		34				37443		90	Asia/Tokyo	2012-01-19
+1854703	Ōgaki	Ogaki	Oaki,Ogaki,Ōgaki	35.35	136.61667	P	PPL	JP		09				150570		7	Asia/Tokyo	2012-01-19
+1854747	Odawara	Odawara	Odauara,Odavara,Odawara,Odawara-chhi,Odawara-chhī,Odaŭara,Ontagouara,awdawara  kanagawa,awdawara  kanaghawa,odawala si,xiao tian yuan shi,xoa da wa ra,Ονταγουάρα,Одавара,أوداوارا، كاناغاوا,اوداوارا، کاناگاوا,โอะดะวะระ,小田原市,오다와라 시	35.25556	139.15972	P	PPL	JP		19				203035		15	Asia/Tokyo	2012-01-19
+1854774	Ōdachō-ōda	Odacho-oda	Oda,Odacho-oda,Ota,da tian ding da tian,da tian shi,Ōda,Ōdachō-ōda,Ōta,Ода,大田市,大田町大田	35.19025	132.50846	P	PPL	JP		36				31867		27	Asia/Tokyo	2013-10-07
+1854803	Ōbu	Obu	Obu,Ofu,Ōbu,Ōfu,Обу	35	136.96667	P	PPL	JP		01				77864		5	Asia/Tokyo	2012-01-19
+1854807	Obita	Obita	Nagayo,Obita	32.81667	129.88333	P	PPL	JP		27				45293		19	Asia/Tokyo	2012-01-19
+1854849	Obama	Obama	Obama,Ohama,xiao bang,Обама,小浜	35.49576	135.74604	P	PPL	JP		06				32896		3	Asia/Tokyo	2012-11-04
+1854868	Nyūzen	Nyuzen	Nyuzen,Nyūzen,ru shan,入膳	36.93744	137.50059	P	PPL	JP		42				27585		24	Asia/Tokyo	2014-01-13
+1854902	Numazu	Numazu	Numadu,Numadzu,Numasu,Numazu,Numazu-chhi,Numazu-chhī,namazw  shyzwka,nu masu,numajeu si,nwmazw  shyzwywka,zhao jin shi,Нумадзу,Нумазу,نامازو، شيزوكا,نومازو، شیزوئوکا,นุมะซุ,沼津市,누마즈 시	35.1	138.86667	P	PPL	JP		37				204318		8	Asia/Tokyo	2012-01-19
+1854905	Numata	Numata	Numata	36.63333	139.05	P	PPL	JP		10				45526		376	Asia/Tokyo	2012-01-19
+1854979	Nonoichi	Nonoichi	Nonoichi,Ноноичи	36.53333	136.61667	P	PPL	JP		15				48354		20	Asia/Tokyo	2012-01-19
+1855066	Nōgata	Nogata	Naogata,Naokata,Nogata,Nōgata,zhi fang,直方	33.73996	130.72282	P	PPL	JP		07				56821		14	Asia/Tokyo	2014-04-30
+1855078	Noda	Noda	Noda,Нода	35.94111	139.85806	P	PPL	JP		04				121411		16	Asia/Tokyo	2012-01-19
+1855095	Nobeoka	Nobeoka	Nobeoka,yan gang shi,Нобеока,延岡市	32.58333	131.66667	P	PPL	JP		25				121949		4	Asia/Tokyo	2012-01-19
+1855134	Nishiwaki	Nishiwaki	Nishivaki,Nishiwaki,Нишиваки	34.98333	134.96667	P	PPL	JP		13				36953		59	Asia/Tokyo	2012-01-19
+1855189	Nishio	Nishio	Nishio,Nisio,Nisio-chhi,Nisio-chhī,Nisyio,Niŝio,nisio si,nyshw,nyshyw  aychy,nyshyw  aytshy,xi wei shi,Нисио,Нишио,Нісіо,نيشيو، آيتشي,نیشو,نیشیو، آیچی,西尾市,니시오 시	34.86667	137.05	P	PPL	JP		01				103337		9	Asia/Tokyo	2012-01-19
+1855203	Nishinoomote	Nishinoomote	IIN,Nisinoomote	30.73333	131	P	PPL	JP		18				17832		38	Asia/Tokyo	2012-11-25
+1855207	Nishinomiya	Nishinomiya	Nishinomiya,Nisinomija,xi gong shi,Нисиномия,西宮市	34.71667	135.33333	P	PPL	JP		13				468925		5	Asia/Tokyo	2012-01-19
+1855363	Nirasaki	Nirasaki	Nirasaki,Nirasakimachi,Nirazaki,Nirazakimachi	35.7	138.45	P	PPL	JP		46				33263		349	Asia/Tokyo	2012-01-19
+1855380	Ninomiya	Ninomiya	Ninomija,Ninomiya,Ниномия	35.30333	139.25333	P	PPL	JP		19				31412		68	Asia/Tokyo	2012-01-19
+1855395	Nikkō	Nikko	Nikko,Nikko-chhi,Nikkó,Nikkô-chhī,Nikkō,Niko,nik ko,nisko si,nykw,nykw  twchygy,nyqw,ri guang shi,Никко,Нікко,ניקו,نيكو,نیکو، توچیگی,นิกโก,日光市,닛코 시	36.75	139.61667	P	PPL	JP		38				16041		555	Asia/Tokyo	2012-01-19
+1855410	Niitsu-honchō	Niitsu-honcho	Niitsu,Niitsu-honcho,Niitsu-honchō,Niitu,Niizu,xin jin ben ding,xin jin shi,新津市,新津本町	37.80024	139.1224	P	PPL	JP		29				65910		8	Asia/Tokyo	2014-04-06
+1855416	Niimi	Niimi	Niimi,Ниими	34.98333	133.46667	P	PPL	JP		31				23787		193	Asia/Tokyo	2012-01-19
+1855425	Niihama	Niihama	Niihama,niihama,xin ju bang,にいはま,新居浜	33.96047	133.30522	P	PPL	JP		05				123059		13	Asia/Tokyo	2013-10-07
+1855431	Niigata-shi	Niigata-shi	KIJ,Niahi-niigata,Nigita,Niigata,Niigata-shi,nigata si,niigatashi,xin xi shi,Ниигата,にいがたし,新潟市,니가타 시	37.90222	139.02361	P	PPLA	JP		29				505272		8	Asia/Tokyo	2012-05-15
+1855476	Nichinan	Nichinan	Nichinan,Nitinan,Нитинан	31.6	131.36667	P	PPL	JP		25				44243		29	Asia/Tokyo	2012-01-19
+1855540	Naze	Naze	Nase,Naze	28.36667	129.48333	P	PPL	JP		18				41365		192	Asia/Tokyo	2012-01-19
+1855580	Naruto	Naruto	Muya,Naruto,Naruto-chhi,Naruto-chhī,ming men shi,naluto si,narwtw  twkwshyma,Наруто,ناروتو، توكوشيما,ناروتو، توکوشیما,鳴門市,나루토 시	34.18333	134.61667	P	PPL	JP		39				64082		2	Asia/Tokyo	2012-01-19
+1855612	Nara-shi	Nara-shi	Nara,Nara-shi,nai liang shi,nala si,nara  nara,narashi,Нара,نارا، نارا,ならし,奈良市,나라 시	34.68505	135.80485	P	PPLA	JP		28				367353		68	Asia/Tokyo	2010-08-03
+1855670	Nanao	Nanao	Nanao,Нанао	37.05	136.96667	P	PPL	JP		15				45309		1	Asia/Tokyo	2012-01-19
+1855694	Namerikawa	Namerikawa	Namehrikava,Namerigawa,Namerikawa,Намэрикава	36.76667	137.33333	P	PPL	JP		42				34638		-9999	Asia/Tokyo	2012-01-19
+1855753	Nakatsugawa	Nakatsugawa	Nakatsu,Nakatsugawa	35.48333	137.5	P	PPL	JP		09				55011		338	Asia/Tokyo	2012-01-19
+1855757	Nakatsu	Nakatsu	Nakatsu,Nakatu	33.59811	131.1883	P	PPL	JP		07				67372		7	Asia/Tokyo	2012-02-05
+1855852	Nakanojō	Nakanojo	Nakanojo,Nakanojō	36.58333	138.85	P	PPL	JP		10				17741		332	Asia/Tokyo	2012-01-19
+1855863	Nakano	Nakano	Nakano,zhong ye,Накано,中野	36.75	138.36667	P	PPL	JP		26				42708		380	Asia/Tokyo	2014-06-05
+1855891	Nakamura	Nakamura	Nakamura,Nakamuramachi,Накамура	32.98333	132.93333	P	PPL	JP		20				34559		7	Asia/Tokyo	2012-01-19
+1855907	Nakama	Nakama	Nakama	33.81667	130.7	P	PPL	JP		07				46745		14	Asia/Tokyo	2012-01-19
+1856035	Naha-shi	Naha-shi	Nafa,Naha,Naha-shi,Nakha,Nawa,na ba shi,naha si,nahashi,nhh,Наха,נהה,なはし,那覇市,那霸市,나하 시	26.2125	127.68111	P	PPLA	JP		47				300795		19	Asia/Tokyo	2012-01-19
+1856057	Nagoya-shi	Nagoya-shi	NGO,Nagoia,Nagoja,Nagojo,Nagoya,Nagoya City,Nagoya-shi,ming gu wu,ming gu wu shi,na ngoa ya,naghwya,nagoya si,nagoyashi,nagwya  aychy,Нагоя,ناغويا,ناگویا، آیچی,นะโงะยะ,なごやし,名古屋,名古屋市,나고야 시	35.18147	136.90641	P	PPLA	JP		01				2191279		23	Asia/Tokyo	2013-12-18
+1856068	Nago	Nago	Naga,Nago,Nagu,Okaneku,Ôkaneku,Нага	26.58806	127.97611	P	PPL	JP		47				59587		38	Asia/Tokyo	2012-01-19
+1856177	Nagasaki-shi	Nagasaki-shi	NGS,Nagasacium,Nagasaki,Nagasaki-shi,Nagasakis,Nagasako,Nagaszaki,nagasaki,nagasaki si,nagasakishi,nagazaky,naghasaky,najazaky,zhang qi shi,Нагасаки,נגסאקי,ناجازاكي,ناغاساكي,ناگازاکی,नागासाकी,ნაგასაკი,ながさきし,長崎市,长崎市,나가사키 시	32.74472	129.87361	P	PPLA	JP		27				410204		13	Asia/Tokyo	2013-02-16
+1856184	Nagareyama	Nagareyama	Nagareyama,liu shan,liu shan shi,流山,流山市	35.8563	139.90266	P	PPL	JP		04				156000		15	Asia/Tokyo	2009-01-08
+1856199	Nagaoka	Nagaoka	Gorad Nagaoka,Nagaoka,Nagaoka-chhi,Nagaoka-chhī,na nga xoa ka,nagaoka si,nagaywka  nygata,naghawka  nyyghata,zhang gang shi,Горад Нагаока,Нагаока,Наґаока,ناغاوكا، نييغاتا,ناگائوکا، نیگاتا,นะงะโอะกะ,長岡市,나가오카 시	37.45	138.85	P	PPL	JP		29				195318		23	Asia/Tokyo	2012-01-19
+1856215	Nagano-shi	Nagano-shi	Nagano,Nagano-shi,naganoshi,zhang ye,zhang ye shi,Нагано,ながのし,長野,長野市	36.65139	138.18111	P	PPLA	JP		26				360176		374	Asia/Tokyo	2012-01-19
+1856243	Nagahama	Nagahama	Nagahama,Nagakhama,Нагахама	35.38333	136.26667	P	PPL	JP		35				62089		86	Asia/Tokyo	2012-01-19
+1856293	Nabari	Nabari	Nabari,ming zhang shi,名張市	34.61667	136.08333	P	PPL	JP		23				88128		192	Asia/Tokyo	2012-01-19
+1856367	Musashino	Musashino	Musashino,Musasinas,Musasino,Musasino-chhi,Musasino-chhī,Musašinas,mu sa chi noa,musasino si,mwsashynw  twkyw,wu cang ye shi,wu zang ye shi,Мусасино,Мусасіно,Мусашино,מוסאשינו,موساشينو، طوكيو,موساشینو، توکیو,มุซะชิโนะ,武蔵野市,武藏野市,무사시노 시	35.70611	139.55944	P	PPL	JP		40				137479		62	Asia/Tokyo	2012-01-19
+1856392	Muroto-misakicho	Muroto-misakicho	Muroto,Muroto-misakicho,shi hu jia ding,室戸岬町	33.28662	134.16832	P	PPL	JP		20				17601		99	Asia/Tokyo	2013-11-10
+1856426	Muramatsu	Muramatsu	Muramatsu,cun song,村松	37.69257	139.17127	P	PPL	JP		29				19712		21	Asia/Tokyo	2014-04-06
+1856434	Murakami	Murakami	Murakami,Murakamimachi,Мураками	38.23333	139.48333	P	PPL	JP		29				31334		4	Asia/Tokyo	2012-01-19
+1856456	Mukō	Muko	Muka,Мука	34.96545	135.70415	P	PPL	JP		22				53222		19	Asia/Tokyo	2010-01-29
+1856476	Muikamachi	Muikamachi	Muika,Muikamachi,liu ri ding,六日町	37.06667	138.88333	P	PPL	JP		29				29123		162	Asia/Tokyo	2014-04-06
+1856560	Morohongō	Morohongo	Morohongo,Morohongō,Moroyama	35.93556	139.30444	P	PPL	JP		34				39693		125	Asia/Tokyo	2012-01-19
+1856569	Moriyama	Moriyama	Morijama,Moriyama,Морияма	35.06667	135.98333	P	PPL	JP		35				68584		92	Asia/Tokyo	2012-01-19
+1856584	Moriguchi	Moriguchi	Moriguchi,QGT,shou kou shi,守口市	34.73333	135.56667	P	PPL	JP		32				148350		3	Asia/Tokyo	2012-01-19
+1856586	Mori	Mori	More,Mori,Море	34.83333	137.93333	P	PPL	JP		37				20280		56	Asia/Tokyo	2012-01-19
+1856667	Mizunami	Mizunami	Mizunami,Mizunami-cho,Mizunami-chō	35.36667	137.25	P	PPL	JP		09				42617		157	Asia/Tokyo	2012-01-19
+1856698	Miyoshi	Miyoshi	Miyoshi,Miyosi	34.8	132.85	P	PPL	JP		11				39257		154	Asia/Tokyo	2012-01-19
+1856703	Miyazu	Miyazu	Miyazu	35.53333	135.18333	P	PPL	JP		22				21632		146	Asia/Tokyo	2012-01-19
+1856717	Miyazaki-shi	Miyazaki-shi	KMI,Mijadzaki,Miyazaki-shi,gong qi,gong qi shi,miyazakishi,Миядзаки,みやざきし,宮崎,宮崎市	31.91111	131.42389	P	PPLA	JP		25				311203		16	Asia/Tokyo	2013-04-05
+1856775	Miyakonojō	Miyakonojo	Miyakonojo,Miyakonojō,Miyakonozyo,Miyakonozyō,dou cheng,都城	31.73333	131.06667	P	PPL	JP		25				130994		148	Asia/Tokyo	2012-01-19
+1856828	Miyata	Miyata	Miyada,Miyata,gong tian,宮田	33.70811	130.65297	P	PPL	JP		07				20421		44	Asia/Tokyo	2014-04-30
+1856878	Mitsuke	Mitsuke	Mitsuke	37.53333	138.93333	P	PPL	JP		29				43180		48	Asia/Tokyo	2012-01-19
+1856881	Mitsukaidō	Mitsukaido	Mitsukaido,Mitsukaidō,Mizukaido,Mizukaidō	36.01667	139.98333	P	PPL	JP		14				41147		23	Asia/Tokyo	2012-01-19
+1856938	Mitake	Mitake	Mitake,Mitake-cho,Mitake-chō	35.41667	137.13333	P	PPL	JP		09				19340		232	Asia/Tokyo	2012-01-19
+1856942	Mitaka-shi	Mitaka-shi	Mitaka,san ying,san ying shi,三鷹,三鷹市	35.68351	139.55963	P	PPL	JP		40	1856942			182901		61	Asia/Tokyo	2010-02-18
+1856977	Mishima	Mishima	Mishima,Misima,Misima-chhi,Misima-chhī,Misyima,misima si,myshyma  shyzwka,myshyma  shyzwywka,san dao shi,Мисима,Мишима,Місіма,ميشيما، شيزوكا,میشیما، شیزوئوکا,三島市,미시마 시	35.11667	138.91667	P	PPL	JP		37				113479		24	Asia/Tokyo	2012-01-19
+1857046	Mino	Mino	Mino-shi,Minoh City,ji mian,ji mian shi,箕面,箕面市	34.82691	135.47057	P	PPL	JP		32				129127		76	Asia/Tokyo	2010-02-18
+1857062	Mino	Mino	Mina,Mino,Minomachi,Мина	35.53333	136.91667	P	PPL	JP		09				23566		232	Asia/Tokyo	2012-01-19
+1857144	Minami-rinkan	Minami-rinkan	Minami Rinkan Yamato,Minami-rinkan	35.48333	139.45	P	PPL	JP		19				224015		72	Asia/Tokyo	2012-01-19
+1857208	Minamata	Minamata	Minamata,Minamata-chhi,Minamata-chhī,Mizumata,minamata si,mynamata  kwmamwtw,shui yu shi,Минамата,Мінамата,ميناماتا، كوماموتو,میناماتا، کوماموتو,水俁市,水俣市,미나마타 시	32.21667	130.4	P	PPL	JP		21				29428		2	Asia/Tokyo	2012-01-19
+1857209	Minakuchi	Minakuchi		34.96667	136.16667	P	PPL	JP		35				38986		171	Asia/Tokyo	2006-01-17
+1857260	Mikuni	Mikuni		36.21706	136.15185	P	PPL	JP		06				23480		10	Asia/Tokyo	2008-11-24
+1857276	Miki	Miki	Miki,Мики	34.8	134.98333	P	PPL	JP		13				74701		38	Asia/Tokyo	2012-01-19
+1857334	Mihara	Mihara	Mihama,Mihara	34.4	133.08333	P	PPL	JP		11				80387		11	Asia/Tokyo	2012-01-19
+1857379	Mibu	Mibu	Mibu,Мибу	36.41667	139.8	P	PPL	JP		38				39728		59	Asia/Tokyo	2012-01-19
+1857403	Menuma	Menuma	Menuma	36.21667	139.38333	P	PPL	JP		34				27684		29	Asia/Tokyo	2012-01-19
+1857470	Matsutō	Matsuto	Matsuto,Matsutō,Matto,Mattō	36.51667	136.56667	P	PPL	JP		15				68159		27	Asia/Tokyo	2012-01-19
+1857519	Matsumoto	Matsumoto	Fukase,Fukashi,MMJ,Macumoto,Matsumoto,Matumoto,Matumoto-chhi,Matumoto-chhī,Shonai,masseumoto si,masu moa toa,matswmwtw  naganw,matswmwtw  naghanw,song ben,song ben shi,Матсумото,Мацумото,ماتسوموتو، ناغانو,ماتسوموتو، ناگانو,มะสึโมะโตะ,松本,松本市,마쓰모토 시	36.23333	137.96667	P	PPL	JP		26				210667		593	Asia/Tokyo	2012-01-19
+1857550	Matsue-shi	Matsue-shi	Macueh,Matsu,Matsue-shi,Matue,matsueshi,song jiang shi,Мацуэ,まつえし,松江市	35.47222	133.05056	P	PPLA	JP		36				156811		6	Asia/Tokyo	2012-01-19
+1857553	Matsudo	Matsudo	Macudo,Matsudo,Matudo-chhi,Matudo-chhī,masseudo si,masu doa,matswdw  chyba,matswdw  tshyba,song hu shi,Матсудо,Мацудо,ماتسودو، تشيبا,ماتسودو، چیبا,มะสึโดะ,松戶市,松戸市,마쓰도 시	35.78333	139.9	P	PPL	JP		04				470277		15	Asia/Tokyo	2012-01-19
+1857560	Matsubase	Matsubase		32.65	130.66667	P	PPL	JP		21				26163		4	Asia/Tokyo	2006-01-17
+1857568	Matsubara	Matsubara	Matsubara	34.56667	135.55	P	PPL	JP		32				130855		24	Asia/Tokyo	2012-01-19
+1857594	Masuda	Masuda	IWJ,Masud,Masuda,Масуд	34.66667	131.85	P	PPL	JP		36				48576		14	Asia/Tokyo	2013-03-31
+1857651	Maruoka	Maruoka		36.1534	136.27029	P	PPL	JP		06				33563		13	Asia/Tokyo	2008-10-25
+1857659	Kamimaruko	Kamimaruko	Kamimaruko,Mariko,Maruko,shang wan zi,Маруко,上丸子	36.31865	138.2733	P	PPL	JP		26				25403		569	Asia/Tokyo	2014-06-05
+1857665	Marugame	Marugame	Marugame,Marukame,wan gui shi,丸亀市	34.28333	133.78333	P	PPL	JP		17				82090		5	Asia/Tokyo	2012-01-19
+1857712	Makurazaki	Makurazaki	Makurasaki,Mazuraki	31.26667	130.31667	P	PPL	JP		18				24971		153	Asia/Tokyo	2006-01-17
+1857751	Maki	Maki		37.75	138.88333	P	PPL	JP		29				29041		4	Asia/Tokyo	2006-01-17
+1857766	Maizuru	Maizuru	Maidsuru,Maiduru,Maizuru,Majdzuru,maijeulu si,wu he shi,Майдзуру,舞鶴市,舞鹤市,마이즈루 시	35.45	135.33333	P	PPL	JP		22				92465		6	Asia/Tokyo	2012-01-19
+1857843	Maebashi-shi	Maebashi-shi	Maebashi,Maebashi-shi,Maebasi,Maebaši,Maehbasi,ma-ebasi si,maebashishi,qian qiao shi,Маэбаси,まえばしし,前橋市,마에바시 시	36.39111	139.06083	P	PPLA	JP		10				282711		123	Asia/Tokyo	2013-12-27
+1857844	Maebaru	Maebaru	Maebaru,Maeharu	33.55	130.2	P	PPL	JP		07				70339		33	Asia/Tokyo	2012-01-19
+1857871	Machida	Machida	Machida,ting tian shi,Мачида,町田市	35.54028	139.45083	P	PPL	JP		40	1857869			399969		103	Asia/Tokyo	2013-12-27
+1857910	Kyoto	Kyoto	Gorad Kijota,Kejuots,Kiaⁿ-to͘-chhī,Kiotas,Kioto,Kiotó,Kjoto,Kjóto,Kyoto,Kyoto-shi,Kyotu,Kyotum,Kyōto,Kyōto-shi,Kėjuots,Lungsod ng Kyoto,Quioto,UKY,gyoto si,jing dou,jing dou shi,kheiyw toa,kiyotto,kyeattea,kyoto,kyoutoshi,kywtw,qywtw,Κιότο,Горад Кіёта,Киото,Кёто,Кіото,Кјото,Կիոտո,קיאטא,קיוטו,كيوتو,کیوتو,کیوٹو,ܩܝܘܛܘ,क्योटो,क्योतो,கியோத்தோ,ക്യോത്തോ,เคียวโตะ,ཁེཡོ་ཐྲོ།,ကျိုတိုမြို့,კიოტო,きょうとし,京都,京都市,교토 시	35.02107	135.75385	P	PPLA	JP		22				1459640		50	Asia/Tokyo	2012-05-09
+1858041	Kushikino	Kushikino	Kushigino,Kushikino,Kusiki-no	31.71667	130.26667	P	PPL	JP		18				25744		6	Asia/Tokyo	2012-01-19
+1858067	Kusatsu	Kusatsu	Kusacu,Kusatsu,Kusatsu-cho,Kusatsu-chō,Kusatu,Susatsu,Кусацу	35.01667	135.96667	P	PPL	JP		35				127680		102	Asia/Tokyo	2012-01-19
+1858088	Kurume	Kurume	Kurume,Kurume-chhi,Kurume-chhī,gulume si,jiu liu mi shi,khuru mea,kwrwmh  fwkwywka,kwrwmy  fwkwka,Куруме,كورومي، فوكوكا,کورومه، فوکوئوکا,คุรุเมะ,久留米市,구루메 시	33.31667	130.51667	P	PPL	JP		07				238197		10	Asia/Tokyo	2012-01-19
+1858249	Kuroda	Kuroda	Kisogawa,Kuroda,Курода	35.35	136.78333	P	PPL	JP		01				32586		10	Asia/Tokyo	2012-01-19
+1858283	Kurihashi	Kurihashi	Kurihashi	36.13333	139.7	P	PPL	JP		34				27813		14	Asia/Tokyo	2012-01-19
+1858296	Kure	Kure	Kure,Kure-chhi,Kure-chhī,gule si,khurea,kwrh  hyrwshyma,kwrshy  hyrwshyma,qwrh,wu shi,Куре,קורה,كورشي، هیروشیما,کوره، هیروشیما,คุเระ,吳市,呉市,구레 시	34.23222	132.56658	P	PPL	JP		11				196624		102	Asia/Tokyo	2013-10-07
+1858301	Kurayoshi	Kurayoshi	Kurayoshi	35.43333	133.81667	P	PPL	JP		41				48347		20	Asia/Tokyo	2012-01-19
+1858311	Kurashiki	Kurashiki	Kurashiki,Kurasiki,cang fu shi,Курашики,倉敷市	34.58333	133.76667	P	PPL	JP		31				437581		4	Asia/Tokyo	2012-01-19
+1858421	Kumamoto	Kumamoto	KMJ,Kumamoto,Kumamoto-shi,gumamoto si,kumamotoshi,xiong ben shi,Кумамото,くまもとし,熊本市,구마모토 시	32.80589	130.69181	P	PPLA	JP		21				680423		9	Asia/Tokyo	2014-01-05
+1858428	Kumagaya	Kumagaya	Kumagai,Kumagaja,Kumagaya,Kumagaya-chhi,Kumagaya-chhī,gumagaya si,khu ma nga ya,kwmagaya  saytama,kwmaghaya  saytama,xiong gu shi,Кумагая,Кумагаја,Кумаґая,كوماغايا، سايتاما,کوماگایا، سایتاما,คุมะงะยะ,熊谷市,구마가야 시	36.13333	139.38333	P	PPL	JP		34				155813		30	Asia/Tokyo	2012-01-19
+1858445	Kukichūō	Kukichuo	Kuki,Kukichuo,Kukichūō,jiu xi zhong yang,kukichuuou,Куки,くきちゅうおう,クキチュウオウ,久喜中央	36.06739	139.67498	P	PPL	JP		34				73373		14	Asia/Tokyo	2013-07-06
+1858498	Kudamatsu	Kudamatsu	Kudamatsu	34	131.86667	P	PPL	JP		45				52772		15	Asia/Tokyo	2012-01-19
+1858591	Kozakai-chō	Kozakai-cho	Kozakai,Kozakai-cho,Kozakai-chō,kozakaichou,xiao ban jing ding,こざかいちょう,小坂井町	34.8	137.35889	P	PPLA3	JP		01	1862294			22064		7	Asia/Tokyo	2014-02-01
+1858695	Kuragaki-kosugi	Kuragaki-kosugi	Kosugi,Kuragaki-kosugi,cang yuan xiao shan,倉垣小杉	36.73403	137.14186	P	PPL	JP		42				33200		2	Asia/Tokyo	2014-01-13
+1858729	Koshigaya	Koshigaya	Koshigaya,yue gu shi,越谷市	35.88333	139.78333	P	PPL	JP		34				317437		5	Asia/Tokyo	2012-01-19
+1858756	Kosai-shi	Kosai-shi	Kosai,Kosai-shi,hu xi,hu xi shi,湖西,湖西市	34.7184	137.53175	P	PPL	JP		37				43700		2	Asia/Tokyo	2010-02-18
+1858794	Kōnosu	Konosu	Konosu,Kōnosu,hong chao,kounosu,こうのす,コウノス,鴻巣	36.06868	139.51684	P	PPL	JP		34				88493		19	Asia/Tokyo	2013-07-06
+1858836	Kōnan	Konan	Konan,Конан	35.33165	136.87042	P	PPL	JP		01				100389		19	Asia/Tokyo	2010-01-29
+1858858	Komoro	Komoro	Komoro	36.31667	138.43333	P	PPL	JP		26				46272		686	Asia/Tokyo	2012-01-19
+1858866	Komono	Komono	Komono	35	136.51667	P	PPL	JP		23				40740		84	Asia/Tokyo	2012-01-19
+1858902	Komatsushimachō	Komatsushimacho	Komatsujima,Komatsushima,Komatsushimacho,Komatsushimachō,Komatusima,xiao song dao ding,小松島町	34	134.58333	P	PPL	JP		39				42598		3	Asia/Tokyo	2013-11-10
+1858910	Komatsu	Komatsu	KMQ	36.40263	136.45088	P	PPL	JP		15				109045		7	Asia/Tokyo	2013-03-25
+1858926	Komaki	Komaki	Komaki,Komaki-chhi,Komaki-chhī,gomaki si,khoa maki,kwmaky,kwmaky  aychy,kwmaky  aytshy,xiao mu shi,Комаки,Комакі,كوماكي، آيتشي,کوماکی,کوماکی، آیچی,โคะมะกิ,小牧市,고마키 시	35.28333	136.91667	P	PPL	JP		01				151025		17	Asia/Tokyo	2013-04-06
+1858964	Kokubunji	Kokubunji	Kokubundzi,Kokubunji,Кокубундзи	35.70222	139.47556	P	PPL	JP		40				118682		78	Asia/Tokyo	2012-01-19
+1858972	Kokubu-matsuki	Kokubu-matsuki	Kokubo,Kokubu,Kokubu-matsuki,Kokubun,guo fen,guo fen song mu,Кокубу,国分,国分松木	31.73333	130.76667	P	PPL	JP		18				57896		0	Asia/Tokyo	2013-09-08
+1859093	Koga	Koga	Koga,Кога	36.18333	139.71667	P	PPL	JP		14				58004		17	Asia/Tokyo	2012-01-19
+1859094	Koga	Koga	Koga,Кога	33.73333	130.46667	P	PPL	JP		07				60045		10	Asia/Tokyo	2012-01-19
+1859100	Kōfu-shi	Kofu-shi	Kofe,Kofu,Kofu-shi,Kohu,Kófu,Kōfu,Kōfu-shi,Kōhu,gohu si,jia fu shi,koufushi,Кофе,こうふし,甲府市,고후 시	35.66389	138.56833	P	PPLA	JP		46				190000		282	Asia/Tokyo	2012-01-19
+1859113	Kodama	Kodama	Kodama,Кодама	36.18333	139.13333	P	PPL	JP		34				21544		107	Asia/Tokyo	2012-01-19
+1859146	Kōchi-shi	Kochi-shi	KCZ,Kochi-shi,Kochin,Koti,Kôti,Kōchi-shi,gao zhi shi,kouchishi,Кочин,こうちし,高知市	33.55972	133.53111	P	PPLA	JP		20				335570		14	Asia/Tokyo	2013-04-05
+1859171	Kobe	Kobe	Kobe,Kobe-shi,Kobė,Kóbe,Kōbe,Kōbe-shi,gobe si,kobe,koubeshi,kwbh,qwbh,shen hu shi,Кобе,קובה,كوبه,कोबे,こうべし,神户市,神戸市,고베 시	34.6913	135.183	P	PPLA	JP		13				1528478		35	Asia/Tokyo	2014-04-23
+1859175	Kobayashi	Kobayashi	Kobajasi,Kobayashi,Kobayashi-cho,Kobayashi-chō,Кобаяси	31.98333	130.98333	P	PPL	JP		25				39747		205	Asia/Tokyo	2012-01-19
+1859234	Kitsuki	Kitsuki	Kicuki,Kitsuki,chu zhu,Кицуки,杵築	33.41998	131.61836	P	PPL	JP		30				23353		3	Asia/Tokyo	2014-04-30
+1859307	Kitakyūshū	Kitakyushu	Kita-Kjushju,Kitakiusiu,Kitakiūšiū,Kitakjushju,Kitakjushu,Kitakjusju,Kitakjusu,Kitakjuŝu,Kitakjúsú,Kitakjúšú,Kitakjūshū,Kitakyuesue,Kitakyushu,Kitakyusyu,Kitakyüşü,Kitakyūshū,Pak-kiu-chiu-chhi,Pak-kiú-chiu-chhī,bei jiu zhou shi,gitakyusyu si,khi ta kiw chu,kytakywshw,kytakywshw  fwkwywka,Китакюсю,Китакюшу,Китакюшю,Китакјушу,Кіта-Кюшю,Կիտակյուսյու,كيتاكيوشو,کیتاکیوشو، فوکوئوکا,คิตะกีวชู,北九州市,기타큐슈 시	33.83333	130.83333	P	PPL	JP		07				997536		165	Asia/Tokyo	2012-01-19
+1859319	Kitakata	Kitakata	Kitagata,Kitakata,Китаката	37.65	139.86667	P	PPL	JP		08				37140		207	Asia/Tokyo	2010-01-29
+1859335	Kitahama	Kitahama		35.16667	135.91667	P	PPL	JP		35				23836		97	Asia/Tokyo	2006-01-17
+1859383	Kishiwada	Kishiwada	Kishiwada,Kisivada,Kisiwada,an he tian shi,gisiwada si,Кисивада,岸和田市,기시와다 시	34.46667	135.36667	P	PPL	JP		32				205561		8	Asia/Tokyo	2012-01-19
+1859393	Kisarazu	Kisarazu	Kisaradu,Kisaradzu,Kisarazu,Kisarazu-chhi,Kisarazu-chhī,Kizarazu,gisalajeu si,khi sa rasu,kysarazw  chyba,kysarazw  tshyba,mu geng jin shi,Кисарадзу,Кисаразу,Кісарадзу,كيسارازو، تشيبا,کیسارازو، چیبا,คิซะระซุ,木更津市,기사라즈 시	35.37472	139.9225	P	PPL	JP		04				122524		3	Asia/Tokyo	2012-01-19
+1859400	Kisai	Kisai	Kisai	36.1	139.58333	P	PPL	JP		34				20850		16	Asia/Tokyo	2012-01-19
+1859405	Kiryū	Kiryu	Kiri,Kiriu,Kiryu,Kiryū,Кири	36.4	139.33333	P	PPL	JP		10				110219		108	Asia/Tokyo	2012-01-19
+1859492	Kikuchi	Kikuchi	Kikuchi,Kikuti,Кикути	32.98333	130.81667	P	PPL	JP		21				26677		73	Asia/Tokyo	2012-01-19
+1859586	Kazo	Kazo	Kazo,jia xu shi,加須市	36.11667	139.6	P	PPL	JP		34				71291		12	Asia/Tokyo	2012-01-19
+1859642	Kawasaki	Kawasaki	Cita de Kawasaki,Cità de Kawasaki,Gorad Kavasaki,Kauasaki,Kavasaki,Kavasakis,Kavaszaki,Kawasaki,Kawasaki City,Kawasaki Si,Kawasaki-chhi,Kawasaki-chhī,Kaŭasaki,chuan qi shi,gawasaki si,kavasaki,kawasaky  kanagawa,kawasaky  kanaghawa,kha wa saki,Καβασάκι,Горад Кавасакі,Кавасаки,Кавасакі,קווסאקי,كاواساكي، كاناغاوا,کاواساکی، کاناگاوا,कावासाकी,คะวะซะกิ,川崎市,가와사키 시	35.52056	139.71722	P	PPL	JP		19	1859635			1306785		1	Asia/Tokyo	2012-10-09
+1859647	Kawasaki	Kawasaki	Kawasaki	33.59993	130.81495	P	PPL	JP		07				19141		47	Asia/Tokyo	2012-03-04
+1859675	Kawanishi	Kawanishi	Kawanishi	34.81667	135.41667	P	PPL	JP		13				160520		21	Asia/Tokyo	2012-01-19
+1859730	Kawaguchi	Kawaguchi	Kavaguti,Kawaguchi,chuan kou,chuan kou shi,kawaguchi,Кавагути,かわぐち,カワグチ,川口,川口市	35.80521	139.71072	P	PPL	JP		34				468565		6	Asia/Tokyo	2014-05-24
+1859740	Kawagoe	Kawagoe	Kavagoe,Kavagoeh,Kawagoe,Kawagoe-chhi,Kawagoe-chhī,chuan yue shi,gawago-e si,kawaghwyh  saytama,kawagwyh  saytama,kha wa ngoa xea,Кавагое,Кавагоэ,Каваґое,كاواغويه، سايتاما,کاواگوئه، سایتاما,คะวะโงะเอะ,კავაგოე,川越市,가와고에 시	35.90861	139.48528	P	PPL	JP		34				337931		26	Asia/Tokyo	2012-01-19
+1859765	Katsuyama	Katsuyama		36.06173	136.50101	P	PPL	JP		06				27088		130	Asia/Tokyo	2008-10-25
+1859884	Kasukabe	Kasukabe	Kasukabe,chun ri bu shi,gaseukabe si,kasukabe,po bi,かすかべ,カスカベ,春日部市,粕壁,가스카베 시	35.98122	139.74424	P	PPL	JP		34				206915		10	Asia/Tokyo	2013-12-17
+1859891	Kasugai	Kasugai	Kasugai,Kasugai-chhi,Kasugai-chhī,Kasugaj,chun ri jing shi,gaseugai si,kaswgay,kaswgay  aychy,kaswghay  aytshy,kha sung axi,Касугаи,Касугай,Касугај,Касуґай,Касүгаи,كاسوغاي، آيتشي,کاسوگای,کاسوگای، آیچی,کسوگا‌‍‌ئ,คะซุงะอิ,春日井市,가스가이 시	35.24762	136.97229	P	PPL	JP		01				298589		30	Asia/Tokyo	2010-01-29
+1859908	Kashiwazaki	Kashiwazaki	Kashiwazaki,Kasivadzaki,Касивадзаки	37.36667	138.55	P	PPL	JP		29				86183		4	Asia/Tokyo	2012-01-19
+1859924	Kashiwa	Kashiwa	Kashiva,Kashiwa,Kasiva,Kasiwa-chhi,Kasiwa-chhī,Kaşiva,bai shi,gasiwa si,kashywa  chyba,kashywa  tshyba,kha chi wa,Касива,Касіва,Кашива,كاشيوا، تشيبا,کاشیوا، چیبا,คะชิวะ,柏市,가시와 시	35.85444	139.96889	P	PPL	JP		04				340221		23	Asia/Tokyo	2012-01-19
+1859941	Kashima	Kashima	Kashima,Kasima,Касима	33.10611	130.09056	P	PPL	JP		33				32410		20	Asia/Tokyo	2012-01-19
+1859951	Kashihara-shi	Kashihara-shi	Kashihara,Kashihara-shi,jiang yuan,jiang yuan shi,橿原,橿原市	34.50896	135.7929	P	PPL	JP	JP	28	1859951			124521		65	Asia/Tokyo	2010-02-17
+1859952	Kashihara	Kashihara	Kashihara,Kashiharacho,Kashiharachō,Kashiwabara,Kashiwara	34.58333	135.61667	P	PPL	JP		32				79058		18	Asia/Tokyo	2012-01-19
+1859964	Kaseda-shirakame	Kaseda-shirakame	Kaseda,Kaseda-shirakame,jia shi tian bai gui,加世田白亀	31.41667	130.31667	P	PPL	JP		18				23710		22	Asia/Tokyo	2013-09-08
+1859990	Kasaoka	Kasaoka	Kasaoka	34.5	133.5	P	PPL	JP		31				58461		-3	Asia/Tokyo	2012-01-19
+1859998	Kasamatsuchō	Kasamatsucho	Kasamatsu,Kasamatsucho,Kasamatsuchō	35.36667	136.76667	P	PPL	JP		09				22671		4	Asia/Tokyo	2012-01-19
+1860034	Kariya	Kariya	Karija,Kariya,Kariya-chhi,Kariya-chhī,Kariya-cho,Kariya-chō,galiya si,karya  aychy,karyya  aytshy,yi gu shi,Кария,Карија,Карія,كارييا، آيتشي,کاریا، آیچی,کاریہ,刈谷市,가리야 시	34.98333	136.98333	P	PPL	JP		01				139159		2	Asia/Tokyo	2012-01-19
+1860063	Karatsu	Karatsu	Karacu,Karatsu,Karatu,Karatu Si,tang jin shi,Карацу,唐津市	33.4425	129.96972	P	PPL	JP		33				78330		7	Asia/Tokyo	2012-01-19
+1860095	Kanzaki	Kanzaki	Kanzaki	33.3	130.36667	P	PPL	JP		33				20172		1	Asia/Tokyo	2012-01-19
+1860098	Kanuma	Kanuma	Kamima,Kanuma,lu zhao shi,Канума,鹿沼市	36.55	139.73333	P	PPL	JP		38				94903		162	Asia/Tokyo	2012-01-19
+1860112	Kanoya	Kanoya	Kanoja,Kanoya,ganoya si,lu wu shi,Каноя,鹿屋市,가노야 시	31.38333	130.85	P	PPL	JP		18				82335		23	Asia/Tokyo	2010-01-29
+1860122	Kanonji	Kanonji	Kannonji,Kannonzi,Kanonji,Kanonji-cho,Kanonji-chō	34.11667	133.65	P	PPL	JP		17				44363		6	Asia/Tokyo	2012-01-19
+1860176	Kannabechō-yahiro	Kannabecho-yahiro	Kannabe,Kannabecho-yahiro,Kannabechō-yahiro,shen bian ding ba xun,神辺町八尋	34.55808	133.41796	P	PPL	JP		11				40766		17	Asia/Tokyo	2013-10-07
+1860191	Kanie	Kanie	Kanie	35.13333	136.8	P	PPL	JP		01				36592		0	Asia/Tokyo	2012-01-19
+1860211	Kaneko	Kaneko		36.4	139	P	PPL	JP		10				37107		164	Asia/Tokyo	2006-01-17
+1860234	Kanda	Kanda	Kanda,Karita,Канда	33.78333	130.98333	P	PPL	JP		07				36122		4	Asia/Tokyo	2012-01-19
+1860243	Kanazawa-shi	Kanazawa-shi	Canasava,Kanadzava,Kanazaua,Kanazawa,Kanazawa-shi,Kanazawa-si,Kanazaŭa,ganajawa si,jin ze shi,kanazawashi,Канадзава,かなざわし,金沢市,金澤市,가나자와 시	36.59444	136.62556	P	PPLA	JP		15				458937		5	Asia/Tokyo	2012-01-19
+1860256	Kanaya	Kanaya	Kanaya,jin gu,金谷	34.82022	138.12775	P	PPL	JP		37				20286		106	Asia/Tokyo	2014-01-13
+1860321	Kamojima	Kamojima	Kamojima,Kamoshima	34.06667	134.35	P	PPL	JP		39				24374		12	Asia/Tokyo	2012-01-19
+1860335	Kamogata	Kamogata	Kamogata,Kamokata	34.53333	133.58333	P	PPL	JP		31				18412		13	Asia/Tokyo	2012-01-19
+1860341	Kamo	Kamo	Kamo,jia mao,Камо,加茂	37.66442	139.03502	P	PPL	JP		29				32129		3	Asia/Tokyo	2014-04-06
+1860437	Kamirenjaku	Kamirenjaku	Kami-renjaku,Kamirenjaku,Mitaka,Mitaka-machi,Mitaka-mura,kamirenjaku,shang lian que,Митака,かみれんじゃく,カミレンジャク,上連雀	35.70034	139.55665	P	PPL	JP		40				178739		58	Asia/Tokyo	2013-07-06
+1860458	Kaminokawa	Kaminokawa	Kaminokawa	36.43333	139.91667	P	PPL	JP		38				30827		65	Asia/Tokyo	2012-01-19
+1860563	Kamiichi	Kamiichi	Kamiichi	36.7	137.36667	P	PPL	JP		42				23004		42	Asia/Tokyo	2012-01-19
+1860626	Kameyama	Kameyama	Kameyama	34.85	136.45	P	PPL	JP		23				39899		54	Asia/Tokyo	2012-01-19
+1860635	Kameoka	Kameoka	Kameoka,Камеока	35	135.58333	P	PPL	JP		22				97181		129	Asia/Tokyo	2012-01-19
+1860648	Kameda-honchō	Kameda-honcho	Kameda,Kameda-honcho,Kameda-honchō,gui tian ben ding,亀田本町	37.87214	139.1099	P	PPL	JP		29				32765		0	Asia/Tokyo	2014-04-06
+1860672	Kamakura	Kamakura	Gorad Kamakura,Kamakura,Kamakura-chhi,Kamakura-chhī,gamakula si,kamakwra  kanagawa,kamakwra  kanaghawa,kha ma kura,lian cang shi,Горад Камакура,Камакура,كاماكورا، كاناغاوا,کاماکورا، کاناگاوا,คะมะกุระ,鎌倉市,镰仓市,가마쿠라 시	35.30889	139.55028	P	PPL	JP		19				166016		7	Asia/Tokyo	2012-01-19
+1860704	Kakogawa	Kakogawa	Kakogawa,gakogawa si,jia gu chuan shi,加古川市,가코가와 시	34.76667	134.85	P	PPL	JP		13				271634		7	Asia/Tokyo	2012-01-19
+1860728	Kakegawa	Kakegawa	Kakegawa,Kakehgava,gua chuan shi,Какэгава,掛川市	34.76667	138.01667	P	PPL	JP		37				84004		32	Asia/Tokyo	2012-01-19
+1860735	Kakamigahara	Kakamigahara	Kagamigahara,Kagamihara,Kakamigahara,gakamigahala si,ge wu yuan shi,各務原市,가카미가하라 시	35.41667	136.86667	P	PPL	JP		09				132241		40	Asia/Tokyo	2012-01-19
+1860748	Kashima-shi	Kashima-shi	Kashima,lu dao,lu dao shi,鹿島,鹿島市,鹿嶋,鹿嶋市	35.96536	140.64474	P	PPLX	JP	JP	14				65814		38	Asia/Tokyo	2010-02-18
+1860750	Kajiki	Kajiki	Kajiki-cho,Kajiki-chō	31.73333	130.66667	P	PPL	JP		18				22997		3	Asia/Tokyo	2006-01-17
+1860765	Kaizuka	Kaizuka	Kaitsuka,Kaizuka,bei zhong shi,貝塚市	34.45	135.35	P	PPL	JP		32				92632		4	Asia/Tokyo	2012-01-19
+1860785	Kainan	Kainan	Kainan	34.15	135.2	P	PPL	JP		43				43369		0	Asia/Tokyo	2012-01-19
+1860827	Kagoshima-shi	Kagoshima-shi	Kagoshima,Kagoshima-shi,Kagosima,Kagošima,gagosima si,kaghwshyma,kagoshimashi,lu er dao shi,lu r dao shi,Кагошима,كاغوشيما,かごしまし,鹿儿岛市,鹿児島市,가고시마 시	31.56018	130.55814	P	PPLA	JP		18				555352		40	Asia/Tokyo	2012-01-19
+1860871	Kadoma	Kadoma	Kadoma,Kadome,men zhen shi,Кадоме,門真市	34.73333	135.58333	P	PPL	JP		32				131727		4	Asia/Tokyo	2012-01-19
+1861084	Izumo	Izumo	IZO,Idzumo,Itsumo,Izumo,Идзумо	35.36667	132.76667	P	PPL	JP		36				89286		6	Asia/Tokyo	2012-01-19
+1861095	Izumiōtsu	Izumiotsu	Ebisucho,Ebisuchō,Idzumotsu,Izumiotsu,Izumiōtsu,Otsu,Ōtsu,Идзумотсу	34.5	135.4	P	PPL	JP		32				80772		3	Asia/Tokyo	2012-01-19
+1861107	Izumi	Izumi	Izumi	34.48333	135.43333	P	PPL	JP		32				189085		24	Asia/Tokyo	2012-01-19
+1861108	Izumi	Izumi	Izumi,chu shui,Изуми,出水	32.08333	130.36667	P	PPL	JP		18				39217		37	Asia/Tokyo	2010-06-23
+1861164	Iwatsuki	Iwatsuki	Iwatsuki,iwatsuki,yan gui,いわつき,イワツキ,岩槻	35.95225	139.68502	P	PPL	JP		34				108833		12	Asia/Tokyo	2013-07-06
+1861171	Iwata	Iwata	Ivata,Iwata,Iwata-chhi,Iwata-chhī,awata  shyzwka,aywata  shyzwywka,iwata si,pan tian,pan tian shi,xi wa ta,Івата,Ивата,إواتا، شيزوكا,ایواتا، شیزوئوکا,อิวะตะ,磐田,磐田市,이와타 시	34.7	137.85	P	PPL	JP		37				88509		5	Asia/Tokyo	2012-01-19
+1861207	Iwakura	Iwakura	Iwakura	35.28333	136.86667	P	PPL	JP		01				48007		11	Asia/Tokyo	2012-01-19
+1861212	Iwakuni	Iwakuni	IWK,Ivakuni,Iwakuni,Ивакуни	34.16297	132.22	P	PPL	JP		45				104004		4	Asia/Tokyo	2014-04-26
+1861223	Iwai	Iwai		36.05	139.9	P	PPL	JP		14				42497		5	Asia/Tokyo	2006-01-17
+1861244	Iwade	Iwade	Iwade	34.25	135.31667	P	PPL	JP		43				55633		17	Asia/Tokyo	2012-01-19
+1861261	Itsukaichi	Itsukaichi		35.72528	139.21778	P	PPL	JP		40				24954		184	Asia/Tokyo	2006-01-17
+1861280	Itoman	Itoman	Ichuman,Itoman,Shionja,Shunja,Sunja,Sunza,itoman,mi man,いとまん,糸満	26.12647	127.66918	P	PPL	JP		47				57184		5	Asia/Tokyo	2013-08-07
+1861285	Itoigawa	Itoigawa	Itoigawa,Itoikawa	37.03333	137.85	P	PPL	JP		29				30865		15	Asia/Tokyo	2012-01-19
+1861290	Itō	Ito	Ito,Itō,yi dong shi,Ито,伊東市	34.96667	139.08333	P	PPL	JP		37				71578		92	Asia/Tokyo	2012-01-19
+1861310	Itami	Itami	Itami,Itan,itami si,yi dan shi,Итами,伊丹市,이타미 시	34.78427	135.40126	P	PPL	JP		13				193524		22	Asia/Tokyo	2010-01-29
+1861383	Ishiki	Ishiki	Ishiki,Isshiki	34.8	137.01667	P	PPL	JP		01				23966		0	Asia/Tokyo	2012-01-19
+1861393	Ishikawa	Ishikawa	Ishikawa,Ishiza,Isikava,Исикава	26.42333	127.82139	P	PPL	JP		47				22412		11	Asia/Tokyo	2012-01-19
+1861400	Ishii	Ishii	Ishii,Isii,Исии	34.06667	134.43333	P	PPL	JP		39				26394		8	Asia/Tokyo	2012-01-19
+1861406	Ishige	Ishige	Ishige,Moto-ishige	36.11667	139.96667	P	PPL	JP		14				24948		19	Asia/Tokyo	2012-01-19
+1861416	Ishigaki	Ishigaki	ISG,Ishigachi,Ishigaki,Isigaki,Isigaki-chhi,Isigaki-chhī,Isigakis,Išigakis,Shika,ashyghaka  awkynawa,ayshygaky  awkynawa,ishigaki,isigaki si,shi yuan,shi yuan shi,İshigaki,Ішіґакі,Исигаки,Ишигаки,إشيغاكا، أوكيناوا,ایشیگاکی، اوکیناوا,いしがき,石垣,石垣市,이시가키 시	24.34478	124.15717	P	PPL	JP		47				44802		18	Asia/Tokyo	2012-01-19
+1861436	Isesaki	Isesaki	Isesaki,Isezaki,yi shi qi shi,伊勢崎市	36.31667	139.2	P	PPL	JP		10				130692		62	Asia/Tokyo	2013-12-27
+1861449	Isehara	Isehara	Isehara	35.39056	139.30778	P	PPL	JP		19				103401		49	Asia/Tokyo	2012-01-19
+1861450	Ise	Ise	Ise,Ise-chhi,Ise-chhī,Iseh,Isė,Udiyamada,Uji,Uji-Yamada,Uziyamada,Yamada,aysh,aysh  myh,ise,ise si,yi shi shi,Ісе,Исе,Исэ,إيسه,ایسه، میه,ისე,伊勢市,이세 시	34.48333	136.7	P	PPL	JP		23				97314		56	Asia/Tokyo	2012-01-19
+1861454	Isawa	Isawa	Isawa	35.65	138.63333	P	PPL	JP		46				29616		269	Asia/Tokyo	2012-05-06
+1861464	Isahaya	Isahaya	Isahara,Isahaya,jian zao shi,諫早市	32.84111	130.04306	P	PPL	JP		27				97371		104	Asia/Tokyo	2012-01-19
+1861528	Inuyama	Inuyama	Inujama,Inuyama,Inuyama-chhi,Inuyama-chhī,Inuyama-cho,Inuyama-chō,anwyama  aytshy,aynwyama  aychy,inuyama si,quan shan shi,xinu ya ma,Інуяма,Инуяма,إنوياما، آيتشي,انویامہ,اینویاما، آیچی,อินุยะมะ,犬山市,이누야마 시	35.37995	136.94295	P	PPL	JP		09				73995		56	Asia/Tokyo	2010-01-29
+1861584	Ino	Ino	Ino,Inocho,Inochō,Ино	33.55	133.43333	P	PPL	JP		20				24123		29	Asia/Tokyo	2012-01-19
+1861586	Innoshima	Innoshima		34.28333	133.18333	P	PPL	JP		11				26141		33	Asia/Tokyo	2006-01-17
+1861602	Inazawa	Inazawa	Inasawa,Inasawacho,Inasawachō,Inazawa,Inazawacho,Inazawachō	35.25	136.78333	P	PPL	JP		01				102130		4	Asia/Tokyo	2012-01-19
+1861641	Ina	Ina	Ina,yi na shi,Ина,伊那市	35.82756	137.95378	P	PPL	JP		26				62104		638	Asia/Tokyo	2010-01-29
+1861677	Imari	Imari	Imari,Imarimachi,Имари	33.26667	129.88333	P	PPL	JP		33				57940		17	Asia/Tokyo	2012-01-19
+1861699	Imaichi	Imaichi		36.71667	139.68333	P	PPL	JP		38				64323		391	Asia/Tokyo	2006-01-17
+1861749	Ikoma	Ikoma	Ikoma,Ikuma,sheng ju,Икома,生駒	34.68333	135.7	P	PPL	JP		28	1861747			117601		146	Asia/Tokyo	2013-12-27
+1861795	Ikeda	Ikeda	Ikeda,chi tian,chi tian shi,Икеда,池田,池田市	34.82208	135.4298	P	PPL	JP		32				99476		26	Asia/Tokyo	2010-02-17
+1861799	Ikeda	Ikeda	Ikeda	34.01667	133.8	P	PPL	JP		39				15895		398	Asia/Tokyo	2012-01-19
+1861825	Ijūin	Ijuin	Ijuin,Ijūin,Izyuin,Izyūin	31.61667	130.4	P	PPL	JP		18				25217		93	Asia/Tokyo	2012-01-19
+1861835	Iizuka	Iizuka	Iidzuka,Iizuka,fan zhong,Иидзука,飯塚	33.63654	130.68678	P	PPL	JP		07				78206		21	Asia/Tokyo	2014-04-30
+1861838	Iiyama	Iiyama	Iiyama,Iyama,fan shan,飯山	36.85	138.36667	P	PPL	JP		26				25281		311	Asia/Tokyo	2014-06-05
+1861864	Iida	Iida	Iida,Иида	35.51965	137.82074	P	PPL	JP		26				107111		517	Asia/Tokyo	2010-01-29
+1861949	Ichinomiya	Ichinomiya	Ichinomiya,Itinomiya,Owari-ichinomiya,ichinomiya si,yi gong shi,一宮市,이치노미야 시	35.3	136.8	P	PPL	JP		01				280331		11	Asia/Tokyo	2012-01-19
+1862010	Ibusuki	Ibusuki		31.23333	130.65	P	PPL	JP		18				29710		2	Asia/Tokyo	2006-01-17
+1862033	Ibaraki	Ibaraki	IBR,Ibaragi,Ibaraki,ci cheng shi,ci mu,ci mu shi,Ибараки,茨城市,茨木,茨木市	34.81641	135.56828	P	PPL	JP		32				273992		18	Asia/Tokyo	2010-02-18
+1862034	Ibara	Ibara	Ibara,Ihara	34.6	133.46667	P	PPL	JP		31				34424		44	Asia/Tokyo	2012-01-19
+1862098	Hotaka	Hotaka		36.3396	137.88254	P	PPL	JP		26				33195		547	Asia/Tokyo	2008-11-24
+1862198	Honjō	Honjo	Honjo,Honjō	36.23333	139.18333	P	PPL	JP		34				61868		61	Asia/Tokyo	2012-01-19
+1862230	Hondo	Hondo	Hondo,Khondo,Хондо	32.45	130.2	P	PPL	JP		21				40787		5	Asia/Tokyo	2012-01-19
+1862302	Hōfu	Hofu	Bofu,Bohu,Bōfu,Bōhu,Hofu,Hōfu	34.05	131.56667	P	PPL	JP		45				116925		4	Asia/Tokyo	2012-01-19
+1862352	Hitoyoshi	Hitoyoshi	Hitoyoshi,Hitoyosi	32.21667	130.75	P	PPL	JP		21				38006		130	Asia/Tokyo	2012-01-19
+1862373	Hita	Hita	Hida,Hita,Khity,Хиты	33.3213	130.94098	P	PPL	JP		30				61481		90	Asia/Tokyo	2012-03-04
+1862389	Hisai	Hisai		34.66667	136.46667	P	PPL	JP		23				41642		20	Asia/Tokyo	2006-01-17
+1862415	Hiroshima-shi	Hiroshima-shi	Chirosima,HIJ,Hiroshima,Hiroshima-shi,Hirosima,Hirosimo,Hiroxima - guang dao shi,Hiroxima - 広島市,Hiroŝimo,Hiroşima,Hirošima,Hiroșima,Khiroshima,Khirosima,canghwad hi roa chi ma,guang dao shi,hi ro chi ma,hilosima si,hiroshima,hiroshimashi,hirosima,hyrwshyma,hyrwsymh,Χιροσίμα,Хиросима,Хирошима,Хіросіма,הירושימה,هيروشيما,هیروشیما,हिरोशिमा,จังหวัดฮิโระชิมะ,ฮิโรชิมา,ჰიროსიმა,ჰიროშიმა,ひろしまし,広島市,廣島市,히로시마 시	34.39627	132.45937	P	PPLA	JP		11				1143841		12	Asia/Tokyo	2014-01-04
+1862462	Hiratsuka	Hiratsuka	Hiracuka,Hiratsuka,Hiratuka,Hiratuka-chhi,Hiratuka-chhī,Khiracuka,hi ra suk a,hilasseuka si,hyratswka  kanagawa,hyratswka  kanaghawa,ping zhong shi,Хирацука,Хірацука,Ҳиратсука,هيراتسوكا، كاناغاوا,هیراتسوکا، کاناگاوا,ฮิระสึกะ,平塚市,히라쓰카 시	35.32306	139.34222	P	PPL	JP		19				259052		6	Asia/Tokyo	2012-01-19
+1862471	Hiratachō	Hiratacho	Hirata,Hiratacho,Hiratachō,ping tian ding,平田町	35.43333	132.81667	P	PPL	JP		36				28154		-1	Asia/Tokyo	2013-10-07
+1862505	Hirara	Hirara	Hirara,Taira,hirara,ping liang,ひらら,平良	24.80379	125.30222	P	PPLH	JP		47				34354		31	Asia/Tokyo	2012-07-21
+1862540	Hirakata	Hirakata	Hirakata,hilakata si,hyrakata  awsaka,mei fang shi,هيراكاتا، أوساكا,枚方市,히라카타 시	34.81352	135.64914	P	PPL	JP		32				406331		17	Asia/Tokyo	2010-07-07
+1862555	Hirado	Hirado	Hirado,Hirato,Khirado,ping hu,Хирадо,平戸	33.36853	129.55247	P	PPLA2	JP		27	7418805			22516		5	Asia/Tokyo	2013-08-17
+1862599	Hino	Hino	Hino	35.67306	139.40028	P	PPL	JP		40				171777		85	Asia/Tokyo	2012-01-19
+1862601	Hino	Hino	Hino	35	136.25	P	PPL	JP		35				22767		182	Asia/Tokyo	2012-01-19
+1862612	Himi	Himi	Himi,Khimi,bing jian,Хими,氷見	36.85	136.98333	P	PPL	JP		42				54510		5	Asia/Tokyo	2012-01-19
+1862627	Himeji	Himeji	Gorad Khimedzi,Hime,Himeci,Himedi,Himegi,Himeji,Himezi,Himezi-chhi,Himezi-chhī,Himeĝi,Khimedzhi,Khimedzi,Khimehdzi,hi mea ci,himeji si,hymgy,hymyjy  hywghw,ji lu shi,Горад Хімедзі,Химеджи,Химедзи,Химеџи,Химэдзи,Ҳимеҷи,הימגי,هيميجي، هيوغو,هیمه‌جی، هیوگو,ฮิเมะจิ,姫路市,姬路市,히메지 시	34.81667	134.7	P	PPL	JP		13				481493		8	Asia/Tokyo	2012-01-19
+1862636	Hikone	Hikone	Hikone,Khikoneh,yan gen shi,Хиконэ,彦根市	35.25	136.25	P	PPL	JP		35				110925		95	Asia/Tokyo	2012-01-19
+1862689	Hiji	Hiji	Higi,Hiji,Hinode,Hizi,ri chu,日出	33.37081	131.53025	P	PPL	JP		30				27864		23	Asia/Tokyo	2014-04-30
+1862912	Hekinan	Hekinan	Hekinan,Hekinan-chhi,Hekinan-chhī,Khekinan,bi nan shi,hekinan si,hkynan  aychy,hykynan  aytshy,Хекинан,Хекинан қаласы,Хекінан,Ҳекинан,هيكينان، آيتشي,هکینان، آیچی,ہیکینان,碧南市,헤키난 시	34.88333	136.98333	P	PPL	JP		01				68872		3	Asia/Tokyo	2012-01-19
+1862992	Hayama	Hayama	Hayama,Khajama,ye shan,Хаяма,葉山	35.27651	139.57733	P	PPL	JP		19				31136		10	Asia/Tokyo	2014-03-08
+1863018	Hatsukaichi	Hatsukaichi	Hatsukaichi,Hatukaiti,hasseukaichi si,nian ri shi shi,廿日市市,하쓰카이치 시	34.35	132.33333	P	PPL	JP		11				77341		4	Asia/Tokyo	2012-01-19
+1863023	Hatogaya-honchō	Hatogaya-honcho	Hatagayacho,Hatagayachō,Hatogaya,Hatogaya-honcho,Hatogaya-honchō,Hatogayamachi,hatogayahonchou,jiu~ke gu ben ding,はとがやほんちょう,ハトガヤホンチョウ,鳩ヶ谷本町	35.83314	139.7425	P	PPL	JP		34	1859726			53062		18	Asia/Tokyo	2014-02-17
+1863082	Hashimoto	Hashimoto	Hashimoto,Hasimoto,Khasimoto,Хасимото	34.31667	135.61667	P	PPL	JP		43				57115		79	Asia/Tokyo	2012-01-19
+1863173	Hanyū	Hanyu	Hanyu,Hanyū,Khan'juj,Ханьюй	36.16667	139.53333	P	PPL	JP		34				58686		18	Asia/Tokyo	2012-01-19
+1863183	Hannō	Hanno	Hanno,Hannō,Khanno,Ханно	35.85194	139.31806	P	PPL	JP		34				86262		113	Asia/Tokyo	2012-01-19
+1863209	Handa	Handa	Handa,Handa-chhi,Handa-chhī,Khanda,Manda,ban tian shi,handa,handa si,handa  aychy,handa  aytshy,Ханда,Ханда қаласы,هاندا,هاندا، آيتشي,هاندا، آیچی,ہینڈا,半田市,한다 시	34.88333	136.93333	P	PPL	JP		01				116119		1	Asia/Tokyo	2012-01-19
+1863279	Hamanoichi	Hamanoichi	Hama-no-iti,Hamanoichi,Hayato	31.71667	130.73333	P	PPL	JP		18				39475		-1	Asia/Tokyo	2012-01-19
+1863289	Hamamatsu	Hamamatsu	Hamamacu,Hamamatsu,Hamamatsu City,Hamamatsu-shi,Hamamatu,Hamamatu-chhi,Hamamatu-chhī,Khamamacu,bang song,bang song shi,bin song shi,ha ma masu,hamamasseu si,hamamatsw,hamamatsw  shyzwywka,Хамамацу,Хамамацү,Ҳамаматсу,هاماماتسو,هاماماتسو، شیزوئوکا,ฮะมะมะสึ,浜松,浜松市,滨松市,하마마쓰 시	34.7	137.73333	P	PPL	JP		37				605098		3	Asia/Tokyo	2013-12-18
+1863293	Hamakita	Hamakita	Hamakita	34.8	137.78333	P	PPL	JP		37				86502		21	Asia/Tokyo	2012-05-06
+1863310	Hamada	Hamada	Hamada,Khamada,Хамада	34.88333	132.08333	P	PPL	JP		36				45750		142	Asia/Tokyo	2012-01-19
+1863341	Hakui	Hakui	Hagui,Hakui	36.88333	136.78333	P	PPL	JP		15				24529		6	Asia/Tokyo	2012-01-19
+1863398	Haibara	Haibara	Hagihara,Hagiwara,Haibara	34.53333	135.95	P	PPL	JP		28				18472		345	Asia/Tokyo	2012-01-19
+1863418	Hagi	Hagi	Hagi	34.4	131.41667	P	PPL	JP		45				43826		31	Asia/Tokyo	2012-01-19
+1863426	Haebaru	Haebaru	Haebaru,Hiebaru	26.33694	127.87194	P	PPL	JP		47				34239		4	Asia/Tokyo	2012-01-19
+1863431	Hadano	Hadano	Hadano,Hadano-chhi,Hadano-chhī,Hatano,Hatano-machi,Khadano,ha da noa,hadano si,hadanw  kanagawa,hadanw  kanaghawa,qin ye shi,Хадано,Ҳадано,هادانو، كاناغاوا,هادانو، کاناگاوا,ฮะดะโนะ,秦野市,하다노 시	35.37111	139.22361	P	PPL	JP		19				174281		103	Asia/Tokyo	2012-01-19
+1863440	Hachiōji	Hachioji	Hachioji,Hachiōji,Hatiozi,Hatiôzi,Khatiodzi,ba wang zi shi,hachioji si,Хатиодзи,八王子市,하치오지 시	35.65583	139.32389	P	PPL	JP		40				579399		127	Asia/Tokyo	2012-01-19
+1863451	Ōmihachiman	Omihachiman	Omihachiman-shi,jin jiang ba fan,jin jiang ba fan shi,Ōmihachiman-shi,近江八幡,近江八幡市	35.12861	136.0976	P	PPL	JP		35				69189		91	Asia/Tokyo	2010-02-17
+1863482	Gyōda	Gyoda	Gyoda,Gyōda	36.13333	139.45	P	PPL	JP		34				86343		21	Asia/Tokyo	2012-01-19
+1863495	Gushikawa	Gushikawa	Geshicha,Geshichā,Gushichaa,Gushikawa,Gusikawa,ju zhi chuan,具志川	26.35937	127.86735	P	PPL	JP		47				65251		61	Asia/Tokyo	2013-08-07
+1863521	Gōtsuchō	Gotsucho	Gatsu,Gotsu,Gotsucho,Gotu,Gozu,Gōtsu,Gōtsuchō,Gōtu,Gōzu,jiang jin ding,江津町	35.00856	132.2257	P	PPL	JP		36				24597		31	Asia/Tokyo	2013-10-07
+1863528	Gotemba	Gotemba	Gotemba,Kyu-gotemba,Kyū-gotemba,Готемба	35.3	138.93333	P	PPL	JP		37				83794		461	Asia/Tokyo	2012-01-19
+1863540	Gosen	Gosen	Gosen,wu quan,Госен,五泉	37.73333	139.16667	P	PPL	JP		29				37360		9	Asia/Tokyo	2014-04-06
+1863541	Gose	Gose	Gose,Gosecho,Gosho,Goze,Gōsechō	34.45	135.73333	P	PPL	JP		28				32870		105	Asia/Tokyo	2012-01-19
+1863592	Gojō	Gojo	Goio,Goiō,Gojo,Gojō	34.35	135.7	P	PPL	JP		28				34342		98	Asia/Tokyo	2012-01-19
+1863611	Gōdo	Godo	Goda,Godo,Godo-cho,Gōdo,Gōdō-chō,Года	35.41667	136.6	P	PPL	JP		09				20758		17	Asia/Tokyo	2012-01-19
+1863614	Gobō	Gobo	Gobo,Gobō,Hidaka,Гобо	33.88333	135.15	P	PPL	JP		43				27169		2	Asia/Tokyo	2012-01-19
+1863627	Ginowan	Ginowan	Chinon,Chinōn,Ginowan,Jinon,Jinōn,ginowan,ginowan si,yi ye wan,yi ye wan shi,ぎのわん,宜野湾,宜野湾市,宜野灣市,기노완 시	26.26265	127.76147	P	PPL	JP		47				91800		105	Asia/Tokyo	2012-01-19
+1863641	Gifu-shi	Gifu-shi	Gifu,Gifu-shi,Gihu,gifushi,gihu si,qi fu shi,Гифу,ぎふし,岐阜市,기후 시	35.42291	136.76039	P	PPLA	JP		09				397714		14	Asia/Tokyo	2010-08-03
+1863693	Gamagōri	Gamagori	Gamagori,Gamagōri	34.83333	137.23333	P	PPL	JP		01				80786		23	Asia/Tokyo	2012-01-19
+1863713	Futtsu	Futtsu	Fuccu,Futtso,Futtsu,Huttu-chhi,Huttu-chhī,fu jin shi,fut su,fwtsw  chyba,fwtsw  tshyba,hus-sseu si,Футтсу,Фуццу,فوتسو، تشيبا,فوتسو، چیبا,ฟุตสึ,富津市,훗쓰 시	35.30528	139.81861	P	PPL	JP		04				51650		5	Asia/Tokyo	2012-01-19
+1863905	Funabashi	Funabashi	Funabashi,Funabasi,Funabaŝi,Funabaşi,Furabeshi,Hunabasi,Hunabasi-chhi,Hunabasi-chhī,chuan qiao shi,fu naba chi,fwnabashy  chyba,fwnabashy  tshyba,hunabasi si,Фунабаси,Фунабасі,Фунабаши,فوناباشي، تشيبا,فوناباشی، چیبا,ฟุนะบะชิ,船橋市,후나바시 시	35.69306	139.98333	P	PPL	JP		04				560743		5	Asia/Tokyo	2012-01-19
+1863917	Fukuyama	Fukuyama	Fukujama,Fukuyama,Hukuyama,Фукуяма	34.48333	133.36667	P	PPL	JP		11				383298		7	Asia/Tokyo	2012-01-19
+1863945	Fukuroi	Fukuroi	Fukuroi,dai jing shi,Фукурои,袋井市	34.75	137.91667	P	PPL	JP		37				63045		11	Asia/Tokyo	2012-01-19
+1863953	Fukura	Fukura	Fukura,Hukura	34.25	134.71667	P	PPL	JP		13				18721		-9999	Asia/Tokyo	2012-01-19
+1863967	Fukuoka-shi	Fukuoka-shi	FUK,Fucuoca,Fukuoka,Fukuoka-shi,Hukuoka,fu gang shi,fukuokashi,fwkwka,hukuoka si,Фукуока,فوكوكا,ふくおかし,福岡市,후쿠오카 시	33.60639	130.41806	P	PPLA	JP		07				1392289		7	Asia/Tokyo	2013-11-27
+1863973	Fukumitsu	Fukumitsu	Fukumitsu,Fukumitsumachi,fu guang,福光	36.55751	136.86945	P	PPL	JP		42				19535		90	Asia/Tokyo	2014-01-13
+1863978	Fukuma	Fukuma		33.76667	130.46667	P	PPL	JP		07				43154		-9999	Asia/Tokyo	2006-01-17
+1863985	Fukui-shi	Fukui-shi	Fukuj,fu jing shi,fukuishi,Фукуй,ふくいし,福井市	36.06443	136.22257	P	PPLA	JP		06				248707		15	Asia/Tokyo	2014-02-27
+1863997	Fukuechō	Fukuecho	FUJ,Fukae,Fukaye,Fukue,Fukuecho,Fukuechō,Fukuego,Hukae,Hukue,fu jiang ding,福江町	32.69732	128.84561	P	PPL	JP		27				26636		5	Asia/Tokyo	2013-08-07
+1864009	Fukuchiyama	Fukuchiyama	Fukuchiyama,Hukutiyama,fu zhi shan shi,福知山市	35.3	135.11667	P	PPL	JP		22				68735		20	Asia/Tokyo	2012-01-19
+1864025	Fukiage	Fukiage	Fukiage	36.1	139.45	P	PPL	JP		34				28334		20	Asia/Tokyo	2012-01-19
+1864031	Fukaya	Fukaya	Fukaya	36.2	139.28333	P	PPL	JP		34				106595		35	Asia/Tokyo	2012-01-19
+1864092	Fujisawa	Fujisawa	Fudzhisava,Fudzisava,Fudžisava,Fujisava,Fujisawa,Gorad Fudzisava,Huzisawa-chhi,Huzisawa-chhī,Pudyisawa,fu ci sa wa,fwjysawa  kanagawa,fwjysawa  kanaghawa,hujisawa si,teng ze shi,Горад Фудзісава,Фуджисава,Фудзисава,Фудзісава,Фуџисава,Фуҷисава,فوجيساوا، كاناغاوا,فوجیساوا، کاناگاوا,ฟุจิซะวะ,藤沢市,藤澤市,후지사와 시	35.34194	139.47	P	PPL	JP		19				394624		11	Asia/Tokyo	2012-01-19
+1864098	Fujioka	Fujioka	Fudzioka,Fujioka,Фудзиока	36.25	139.65	P	PPL	JP		38				18335		21	Asia/Tokyo	2012-01-19
+1864099	Fujioka	Fujioka	Fudzioka,Fujioka,Фудзиока	36.25	139.08333	P	PPL	JP		10				63358		85	Asia/Tokyo	2012-01-19
+1864105	Fujinomiya	Fujinomiya	Fudzinomija,Fudžinomija,Fujimiya,Fujinomija,Fujinomiya,Huzinomiya-chhi,Huzinomiya-chhī,Omiya,Pudyinomiya,fu ci noa mi ya,fu shi gong shi,fwjynwmya  shyzwka,hujinomiya si,Ōmiya,Фудзиномия,Фудзіномія,Фуџиномија,Фуҷиномия,فوجينوميا، شيزوكا,فوجی‌نومیا، شیزوئوکا,ฟุจิโนะมิยะ,富士宮市,후지노미야 시	35.21667	138.61667	P	PPL	JP		37				121515		116	Asia/Tokyo	2012-01-19
+1864132	Fujieda	Fujieda	Fudziehda,Fujieda,teng zhi shi,Фудзиэда,藤枝市	34.86667	138.26667	P	PPL	JP		37				132859		22	Asia/Tokyo	2012-01-19
+1864134	Fuji	Fuji	Foutzi,Fudzhi,Fudzi,Fudzis,Fudži,Fudžis,Fuji,Huzi-chhi,Huzi-chhī,fu ci,fu shi shi,fwjy  shyzwka,fwjy  shyzwywka,huji si,Φούτζι,Фуджи,Фудзи,Фудзі,Фуџи,Фуҷи,فوجي، شيزوكا,فوجی، شیزوئوکا,ฟุจิ,富士市,후지 시	35.16667	138.68333	P	PPL	JP		37				240014		9	Asia/Tokyo	2012-01-19
+1864155	Fuchūchō	Fuchucho	Fuchu,Fuchucho,Fuchū,Fuchūchō,fu zhong ding,Фучу,府中町	34.5735	133.23513	P	PPL	JP		11				50746		33	Asia/Tokyo	2013-10-07
+1864180	Enzan	Enzan	Enzan	35.7	138.73333	P	PPL	JP		46				25142		393	Asia/Tokyo	2012-05-06
+1864416	Daitō	Daito		34.7	135.61667	P	PPL	JP		32				129521		-1	Asia/Tokyo	2006-01-17
+1864518	Chōfugaoka	Chofugaoka	Chofu,Chofugaoka,Chōfu,Chōfugaoka,diao bu~ke qiu,調布ヶ丘	35.65924	139.54837	P	PPLX	JP		40				212977		44	Asia/Tokyo	2014-02-17
+1864549	Chiryū	Chiryu	Chiryu,Chiryu-cho,Chiryū,Chiryū-chō,zhi li,知立	35	137.03333	P	PPL	JP		01				67062		15	Asia/Tokyo	2013-12-18
+1864557	Chino	Chino		35.9944	138.15428	P	PPL	JP		26				56567		801	Asia/Tokyo	2008-11-20
+1864572	Chikushino-shi	Chikushino-shi	chikushino,zhu zi ye,zhu zi ye shi,筑紫野,筑紫野市	33.49631	130.5156	P	PPL	JP		07	1864572			100353		37	Asia/Tokyo	2010-02-18
+1864624	Chigasaki	Chigasaki	Chigaraki,Chigasaki,mao~ke qi shi,茅ヶ崎市	35.32611	139.40389	P	PPL	JP		19				231657		8	Asia/Tokyo	2012-01-19
+1864637	Chichibu	Chichibu	Chichibu,Titibu,Titubunomiya	35.99028	139.07639	P	PPL	JP		34				58507		236	Asia/Tokyo	2012-01-19
+1864652	Chatan	Chatan	Chatan,Tyatan	26.30944	127.77028	P	PPL	JP		47				27844		27	Asia/Tokyo	2012-01-19
+1864750	Beppu	Beppu	BPU,Behppu,Beppu,Beppu-chhi,Beppu-chhī,Bepu,bespu si,bie fu shi,bpw  awyyta,bybw  awyta,Беппу,Бепу,Бэппу,بيبو، أويتا,بپو، اوئیتا,ბეპუ,別府市,벳푸 시	33.27945	131.49751	P	PPL	JP		30				125065		22	Asia/Tokyo	2013-02-16
+1864873	Ayabe	Ayabe	Ajabe,Ayabe,Аябе	35.3	135.25	P	PPL	JP		22				37612		46	Asia/Tokyo	2012-01-19
+1864945	Atami	Atami	Atami,Atami-chhi,Atami-chhī,Atamis,atami si,atamy  shyzwka,atamy  shyzwywka,re hai shi,xa ta mi,Атами,Атамі,آتامی، شیزوئوکا,أتامي، شيزوكا,อะตะมิ,熱海市,아타미 시	35.08944	139.06861	P	PPL	JP		37				40687		49	Asia/Tokyo	2012-01-19
+1864985	Ashiya	Ashiya	Ashiya,lu wu shi,芦屋市	34.72807	135.30264	P	PPL	JP		13				88573		14	Asia/Tokyo	2008-12-04
+1865005	Ashikaga	Ashikaga	Ashikaga,Ashikaga - zu li shi,Ashikaga - 足利市,Asikaga,zu li shi,Асикага,足利市	36.33333	139.45	P	PPL	JP		38				159671		45	Asia/Tokyo	2012-01-19
+1865207	Arai	Arai	Arai,xin jing,新井	37.00059	138.2259	P	PPL	JP		29				27481		175	Asia/Tokyo	2014-04-06
+1865290	Annaka	Annaka	Annaka	36.31667	138.9	P	PPL	JP		10				48235		178	Asia/Tokyo	2012-01-19
+1865294	Anjō	Anjo	Andyo,Andz'o,Andzijas,Andzjo,Andzo,Andzso,Andzsó,Andžijas,Anjo,Anjō,Anziyan,Anzyo-chhi,Anzyô-chhī,an cheng,an cheng shi,anjo si,anjw  aychy,anjw  aytshy,aynjw,Андзьо,Андзё,Анџо,Анҷо,آنجو، آیچی,أنجو، آيتشي,اینجو,安城,安城市,안조 시	34.95828	137.08054	P	PPL	JP	JP	01				178402		20	Asia/Tokyo	2010-02-18
+1865309	Anan	Anan	Anan,Анан	33.91667	134.65	P	PPL	JP		39				55421		12	Asia/Tokyo	2012-01-19
+1865375	Amagi	Amagi	Amagi,Amaki,gan mu,甘木	33.41804	130.65413	P	PPL	JP		07				42312		38	Asia/Tokyo	2014-04-30
+1865387	Amagasaki	Amagasaki	Amagasaki,ni qi shi,尼崎市	34.71667	135.41667	P	PPL	JP		13				442173		1	Asia/Tokyo	2012-01-19
+1865401	Akune	Akune	a jiu gen,阿久根	32.01667	130.2	P	PPL	JP		18				25089		6	Asia/Tokyo	2010-06-23
+1865412	Akō	Ako	Akaho,Ako,Akō,Kariya,Ако	34.75	134.4	P	PPL	JP		13				52015		51	Asia/Tokyo	2012-01-19
+1865449	Aki	Aki	Aki,Akii,Аки	33.5	133.9	P	PPL	JP		20				20117		13	Asia/Tokyo	2012-01-19
+1865661	Aioi-shi	Aioi-shi	Aioi,Aioi-shi,O,aioishi,xiang sheng shi,Ō,あいおいし,相生市	34.80361	134.46806	P	PPL	JP		13				32394		8	Asia/Tokyo	2012-01-19
+1865714	Ageoshimo	Ageoshimo	Ageo,Ageomura,Ageoshimo,ageoshimo,shang wei shi,shang wei xia,あげおしも,アゲオシモ,上尾下,上尾市	35.97145	139.61382	P	PPL	JP		34				219401		17	Asia/Tokyo	2013-07-06
+1894616	Okinawa	Okinawa	OKA,Okinava,Okinawa,chong sheng shi,chong ying shi,okinawa si,Окинава,沖縄市,沖繩市,오키나와 시	26.33583	127.80139	P	PPL	JP		47				125483		112	Asia/Tokyo	2012-01-19
+1895695	Kushima	Kushima	Kushima,chuan jian,串間	31.48621	131.2421	P	PPL	JP		25				22102		17	Asia/Tokyo	2013-09-09
+1896348	Hikari	Hikari	Hikari,Khikari,Хикари	33.955	131.95	P	PPL	JP		45				45885		1	Asia/Tokyo	2012-01-19
+1899102	Nagato	Nagato	Nagato,Нагато	34.38333	131.2	P	PPL	JP		45				23101		4	Asia/Tokyo	2012-01-19
+1907123	Hasuda	Hasuda	Hasuda,hasuda,lian tian,lian tian shi,はすだ,ハスダ,蓮田,蓮田市	35.97134	139.6534	P	PPL	JP		34				65161		15	Asia/Tokyo	2013-07-07
+1907125	Kamifukuoka	Kamifukuoka	Kamifukuoka,kamifukuoka,shang fu gang,かみふくおか,カミフクオカ,上福岡	35.87076	139.51393	P	PPL	JP		34				52323		26	Asia/Tokyo	2013-07-07
+1907146	Sayama	Sayama	Irumagawa,Sajama,Sayama,sayama si,xia shan shi,Саяма,狭山市,사야마 시	35.85295	139.41212	P	PPL	JP		34				160843		81	Asia/Tokyo	2010-01-29
+1907148	Fussa	Fussa	Fussa,fu sheng shi,福生市	35.73667	139.32361	P	PPL	JP		40				62296		117	Asia/Tokyo	2012-01-19
+1907299	Asaka	Asaka	Asaka,asaka si,chao xia shi,Асака,朝霞市,아사카 시	35.80472	139.60194	P	PPL	JP		34				128058		25	Asia/Tokyo	2012-01-19
+1907300	Wako	Wako	Vako,Wako,Вако	35.78944	139.62333	P	PPL	JP		34				77435		24	Asia/Tokyo	2012-01-19
+1907301	Shimotoda	Shimotoda	Shimotoda,Toda,hu tian shi,shimotoda,xia hu tian,Тода,しもとだ,シモトダ,下戸田,戸田市	35.81251	139.6856	P	PPL	JP		34				118731		10	Asia/Tokyo	2013-07-07
+1907307	Kimitsu	Kimitsu	Kimicu,Kimitsu,Kimitu-chhi,Kimitu-chhī,gimisseu si,jun jin shi,khi misu,kymytsw  chyba,kymytsw  tshyba,Кимитсу,Кимицу,Кіміцу,كيميتسو، تشيبا,کیمیتسو، چیبا,คิมิสึ,君津市,기미쓰 시	35.32528	139.89111	P	PPL	JP		04				92126		5	Asia/Tokyo	2012-01-19
+1907309	Miura	Miura	Miura,san pu,Миура,三浦	35.14	139.61917	P	PPL	JP		19				51483		8	Asia/Tokyo	2012-01-19
+1926004	Wakayama-shi	Wakayama-shi	Vakajama,Wakayama,Wakayama-shi,he ge shan shi,wakayamashi,Вакаяма,わかやまし,和歌山市	34.22611	135.1675	P	PPLA	JP		43				351000		18	Asia/Tokyo	2012-01-19
+1926006	Iyo	Iyo	Ie,Iyo,Ие	33.75139	132.70139	P	PPL	JP		05				30760		14	Asia/Tokyo	2012-01-19
+1926020	Uwajima	Uwajima	Uvadzhima,Uvadzima,Uwadyima,Uwazima,Uwazima-chhi,Uwazima-chhī,awajyma  ahymh,uwajima si,yu he dao shi,ywajyma  ahymh,Уваджіма,Увадзима,Уваҷима,اواجیما، اهیمه,يواجيما، إهيمه,宇和島市,우와지마 시	33.22375	132.56001	P	PPL	JP		05				58971		6	Asia/Tokyo	2008-04-04
+1926054	Saijō	Saijo	Saidyo,Saidzo,Saijo,Saijō,Saizyo,Saizyo-chhi,Saizyô,Saizyô-chhī,Sajdzh'o,Sajdzjo,saijo si,sajyw  ahymh,sayjw  ahymh,xi tiao shi,Саиџо,Саиҷо,Сайджьо,Сайдзё,ساجيو، إهيمه,سایجو، اهیمه,西条市,西條市,사이조 시	33.91667	133.18333	P	PPL	JP		05				58823		8	Asia/Tokyo	2012-01-19
+1926055	Ōzu	Ozu	Odzu,Osu,Ozu,Ōsu,Ōzu,Одзу	33.5	132.55	P	PPL	JP		05				38833		27	Asia/Tokyo	2012-01-19
+1926099	Matsuyama	Matsuyama	MYJ,Macujama,Matsujama,Matsuyama,Matsuyama-shi,Matuyama,Matuyama-chhi,Matuyama-chhī,masseuyama si,masu ya ma,matsuyamashi,matswyama  ahymh,song shan,song shan shi,Матсуяма,Мацуяма,Мацујама,ماتسوياما، إهيمه,ماتسویاما، اهیمه,ماتسویاما، اہیمے,มะสึยะมะ,まつやまし,松山,松山市,마쓰야마 시	33.83916	132.76574	P	PPLA	JP		05	7406319			443322		28	Asia/Tokyo	2014-02-02
+1926101	Masaki-chō	Masaki-cho	Masaki,song qian ding,松前町	33.78757	132.71124	P	PPL	JP		05		1926101		30548		7	Asia/Tokyo	2014-03-04
+1926116	Kawanoe	Kawanoe	Kawanoe	34.01667	133.56667	P	PPL	JP		05				37641		-9999	Asia/Tokyo	2012-01-19
+1926142	Hōjō	Hojo	Khodze,Ходзе	33.97661	132.77767	P	PPL	JP		05				27992		7	Asia/Tokyo	2010-01-29
+2110460	Yuzawa	Yuzawa	Judzava,Yuzawa,Юдзава	39.16667	140.5	P	PPL	JP		02				33536		100	Asia/Tokyo	2012-01-19
+2110480	Yotsukaidō	Yotsukaido	Yotsukaido,Yotsukaidō	35.65	140.16667	P	PPL	JP		04				86701		25	Asia/Tokyo	2012-01-19
+2110498	Yonezawa	Yonezawa	Jonedzava,Jonezava,Yonesawa,Yonezawa,Yonezawa-chhi,Yonezawa-chhī,ionedzava,mi ze shi,yonejawa si,ywnyzawa  yamaghata,Ёнезава,Йонедзава,Йонезава,يونيزاوا، ياماغاتا,یونه‌زاوا، یاماگاتا,იონეძავა,米沢市,米澤市,요네자와 시	37.91	140.11667	P	PPL	JP		44				94486		249	Asia/Tokyo	2014-04-10
+2110506	Yokotemachi	Yokotemachi	Jokote,Yokote,Yokotemachi,heng shou ding,横手町	39.31691	140.55034	P	PPL	JP		02				39178		61	Asia/Tokyo	2013-07-06
+2110518	Yōkaichiba	Yokaichiba	Yokaichiba,Yōkaichiba	35.7	140.55	P	PPL	JP		04				32651		10	Asia/Tokyo	2012-05-06
+2110538	Yanagawamachi-saiwaichō	Yanagawamachi-saiwaicho	Janagava,Yanagawa,Yanagawamachi-saiwaicho,Yanagawamachi-saiwaichō,Yanakawa,liang chuan ding xing ding,Янагава,梁川町幸町	37.85	140.6	P	PPL	JP		08				20807		44	Asia/Tokyo	2014-04-30
+2110541	Yamoto	Yamoto	Yamoto,shi ben,yamoto,やもと,ヤモト,矢本	38.42738	141.21487	P	PPL	JP		24				32028		2	Asia/Tokyo	2012-02-02
+2110556	Yamagata-shi	Yamagata-shi	GAJ,Jamagata,Yamagata-shi,shan xing,shan xing shi,yamagatashi,Ямагата,やまがたし,山形,山形市	38.24056	140.36333	P	PPLA	JP		44				254538		200	Asia/Tokyo	2013-04-04
+2110560	Yamada	Yamada	Jamada,Yamada,Yamatamachi,Ямада	39.46667	141.95	P	PPL	JP		16				20144		4	Asia/Tokyo	2012-01-19
+2110579	Yachimata	Yachimata	Yachimata,ba jie shi,八街市	35.65	140.31667	P	PPL	JP		04				83322		47	Asia/Tokyo	2012-01-19
+2110586	Watari	Watari	Vatari,Watari,Ватари	38.035	140.85111	P	PPL	JP		24				36321		10	Asia/Tokyo	2012-01-19
+2110596	Wakuya	Wakuya	Wakuya,yong gu,涌谷	38.54465	141.13461	P	PPL	JP		24				18334		29	Asia/Tokyo	2014-02-10
+2110629	Ushiku	Ushiku	Ushiku,niu jiu,牛久	35.96667	140.13333	P	PPL	JP		14				80020		26	Asia/Tokyo	2012-01-19
+2110683	Tsukuba	Tsukuba	Tsukuba,XEI	36.2	140.1	P	PPL	JP		14				175589		33	Asia/Tokyo	2012-01-19
+2110729	Toride	Toride	Toride,Torite,qu shou,取手	35.9	140.08333	P	PPL	JP		14				80716		8	Asia/Tokyo	2012-01-19
+2110735	Tōno	Tono	Nambu,Tona,Tono,Tōno,Тона	39.31667	141.53333	P	PPL	JP		16				26781		328	Asia/Tokyo	2012-01-19
+2110743	Tomobe	Tomobe		36.35	140.3	P	PPL	JP		14				37146		45	Asia/Tokyo	2006-01-17
+2110744	Tomiya	Tomiya	Tomiya	38.39306	140.88611	P	PPL	JP		24				42500		64	Asia/Tokyo	2012-01-19
+2110774	Tōgane	Togane	Togane,Toganemachi,Tōgane,Tōganemachi	35.55	140.36667	P	PPL	JP		04				66332		9	Asia/Tokyo	2012-01-19
+2110793	Tendō	Tendo	Tendo,Tendō,tian tong,Тендо,天童	38.35361	140.36972	P	PPL	JP		44				65393		108	Asia/Tokyo	2014-03-08
+2110891	Takahata	Takahata	Takahata,Takakhata,gao tian,Такахата,高畠	38.0025	140.19111	P	PPL	JP		44				26347		223	Asia/Tokyo	2014-03-08
+2110893	Takahagi	Takahagi	Takahagi	36.71667	140.71667	P	PPL	JP		14				33576		6	Asia/Tokyo	2012-01-19
+2110959	Sukagawa	Sukagawa	Sukagawa,xu he chuan shi,須賀川市	37.28333	140.38333	P	PPL	JP		08				68790		261	Asia/Tokyo	2012-01-19
+2110994	Shizukuishi	Shizukuishi	Shizukuishi,na shi,雫石	39.69414	140.98442	P	PPL	JP		16				19866		192	Asia/Tokyo	2013-07-06
+2111008	Shisui	Shisui	Shisui,Shisuimachi,Shusui	35.71667	140.26667	P	PPL	JP		04				19903		40	Asia/Tokyo	2012-01-19
+2111016	Shiroishi	Shiroishi	Shiroishi,Siroisi	38.00333	140.61833	P	PPL	JP		24				39481		57	Asia/Tokyo	2012-01-19
+2111018	Shiroi	Shiroi	Shiroi,bai jing shi,白井市	35.8	140.06667	P	PPL	JP		04				55314		17	Asia/Tokyo	2014-05-12
+2111049	Shiogama	Shiogama	Schiogama,Shiogama,Siogama,yan zao,Сиогама,塩竈	38.31667	141.03333	P	PPL	JP		24				59526		2	Asia/Tokyo	2012-01-19
+2111065	Shinjō	Shinjo	Shinjo,Shinjō,Sindscho,Sindze,Sinzyo,Синдзе	38.75861	140.30083	P	PPL	JP		44				41140		99	Asia/Tokyo	2012-01-19
+2111149	Sendai-shi	Sendai-shi	SDJ,Sendai,Sendai-shi,Sendaj,sendaishi,xian tai,xian tai shi,Сендай,せんだいし,仙台,仙台市	38.26889	140.87194	P	PPLA	JP		24				1063103		59	Asia/Tokyo	2014-01-01
+2111173	Sawara	Sawara	Sawara	35.88333	140.5	P	PPL	JP		04				47199		8	Asia/Tokyo	2012-01-19
+2111220	Sakura	Sakura	Sakura,Sakura-chhi,Sakura-chhī,sa kura,sakula si,sakwra  chyba,sakwra  tshyba,zuo cang shi,Сакура,ساكورا، تشيبا,ساکورا، چیبا,ซะกุระ,佐倉市,사쿠라 시	35.71667	140.23333	P	PPL	JP		04				182549		15	Asia/Tokyo	2012-01-19
+2111248	Sagae	Sagae	Sagae,han he jiang,寒河江	38.3725	140.2725	P	PPL	JP		44				43544		102	Asia/Tokyo	2014-03-08
+2111258	Ryūgasaki	Ryugasaki	Ryugasaki,Ryūgasaki	35.9	140.18333	P	PPL	JP		14				85761		8	Asia/Tokyo	2012-01-19
+2111277	Rifu	Rifu	Rifu,Rifuhongo,Rifuhongō,Ritu,li fu,利府	38.33092	140.97691	P	PPL	JP		24				35037		7	Asia/Tokyo	2014-03-08
+2111310	Ōtsuchi	Otsuchi	Otsuchi,Ozuchi,Ozuti,Ōtsuchi	39.36667	141.9	P	PPL	JP		16				16497		5	Asia/Tokyo	2012-01-19
+2111325	Ōtawara	Otawara	Otahara,Otawara,Ōtawara	36.86667	140.03333	P	PPL	JP		38				58888		205	Asia/Tokyo	2012-01-19
+2111425	Ōmiya	Omiya	Omiya,Ōmiya	36.55	140.41667	P	PPL	JP		14				27588		56	Asia/Tokyo	2014-04-06
+2111429	Omigawa	Omigawa	Omigawa,Omikawa	35.85	140.61667	P	PPL	JP		04				25763		0	Asia/Tokyo	2012-01-19
+2111435	Ōmagari	Omagari	Omagari,da qu,Ōmagari,大曲	39.45	140.48333	P	PPL	JP		02				38805		28	Asia/Tokyo	2013-07-06
+2111441	Okunoya	Okunoya		36.28333	140.41667	P	PPL	JP		14				34627		22	Asia/Tokyo	2006-01-17
+2111461	Ōkawara	Okawara	Ogawara,Okawara,Ōkawara	38.05	140.73361	P	PPL	JP		24				23340		20	Asia/Tokyo	2012-01-19
+2111495	Ōhara	Ohara	Ohara,Ōhara	35.25	140.38333	P	PPL	JP		04				20226		9	Asia/Tokyo	2012-01-19
+2111530	Ōfunato	Ofunato	Ofunato,da chuan du,Ōfunato,大船渡	39.07167	141.71667	P	PPL	JP		16				35418		7	Asia/Tokyo	2012-01-19
+2111559	Obanazawa	Obanazawa	Obanasawa,Obanazawa,wei hua ze,尾花沢	38.60333	140.40194	P	PPL	JP		44				20821		93	Asia/Tokyo	2014-03-08
+2111567	Ōarai	Oarai	Oarai,da xi,Ōarai,大洗	36.31409	140.58389	P	PPL	JP		14				19326		22	Asia/Tokyo	2014-04-06
+2111568	Ōami	Oami		35.51667	140.31667	P	PPL	JP		04				53239		8	Asia/Tokyo	2006-01-27
+2111656	Nihommatsu	Nihommatsu	Nihommatsu,Nihonmatsu	37.58333	140.43333	P	PPL	JP		08				36287		224	Asia/Tokyo	2012-01-19
+2111677	Narutō	Naruto		35.6	140.41667	P	PPL	JP		04				25696		6	Asia/Tokyo	2006-01-17
+2111684	Narita	Narita	Narita,Narita-chhi,Narita-chhī,cheng tian shi,na ri ta,nalita si,naryta  chyba,naryta  tshyba,Нарита,Наріта,ناريتا، تشيبا,ناریتا، چیبا,นะริตะ,成田市,나리타 시	35.78333	140.31667	P	PPL	JP		04				100641		27	Asia/Tokyo	2012-01-19
+2111704	Namie	Namie	Namie	37.48333	141	P	PPL	JP		08				21866		15	Asia/Tokyo	2012-01-19
+2111749	Naka	Naka	Naka,Nakamuracho,Nakamurachō	36.05	140.16667	P	PPL	JP		14				46760		28	Asia/Tokyo	2012-01-19
+2111781	Nagai	Nagai	Nagai,Нагаи	38.10361	140.035	P	PPL	JP		44				31026		204	Asia/Tokyo	2012-01-19
+2111824	Motomiya	Motomiya	Motomiya,ben gong,本宮	37.51391	140.40063	P	PPL	JP		08				22705		213	Asia/Tokyo	2014-04-30
+2111827	Motegi	Motegi	Motegi	36.51667	140.18333	P	PPL	JP		38				19575		105	Asia/Tokyo	2012-01-19
+2111831	Moriya	Moriya	Morija,Moriya,Мория	35.93333	140	P	PPL	JP		14				56566		19	Asia/Tokyo	2012-01-19
+2111834	Morioka-shi	Morioka-shi	Morioka,Morioka-shi,molioka si,moriokashi,sheng gang shi,Мориока,もりおかし,盛岡市,모리오카 시	39.70361	141.1525	P	PPLA	JP		16				295172		141	Asia/Tokyo	2012-01-19
+2111836	Mooka	Mooka	Moka,Mooka,Mōka,zhen gang shi,真岡市	36.43333	140.01667	P	PPL	JP		38				65717		67	Asia/Tokyo	2012-01-19
+2111855	Mobara	Mobara	Mobara,Mobaramachi,Mohara,mao yuan shi,茂原市	35.41667	140.3	P	PPL	JP		04				97315		13	Asia/Tokyo	2012-01-19
+2111859	Mizusawa	Mizusawa	Midzusava,Mizusawa,Mizuzawa,Мидзусава	39.13333	141.13333	P	PPL	JP		16				61281		64	Asia/Tokyo	2012-01-19
+2111884	Miyako	Miyako	Mijakas,Mijako,Miyako,Miyako-chhi,Miyako-chhī,gong gu shi,maykw  aywath,miyako si,myakw  aywath,Мияко,Міяко,مايكو، إيواته,میاکو، ایواته,宮古市,미야코 시	39.64692	141.94057	P	PPL	JP		16				51721		10	Asia/Tokyo	2014-04-06
+2111901	Mito-shi	Mito-shi	Mito-shi,mitoshi,shui hu shi,みとし,水戸市	36.34139	140.44667	P	PPLA	JP		14				246538		37	Asia/Tokyo	2012-01-19
+2111943	Miharu	Miharu	Miharu	37.43333	140.48333	P	PPL	JP		08				19708		352	Asia/Tokyo	2012-01-19
+2111964	Matsushima	Matsushima	Macusima,Matsushima,Matsusima,matsushima,song dao,Мацусима,まつしま,マツシマ,松島	38.37357	141.06105	P	PPL	JP		24				16363		20	Asia/Tokyo	2012-02-02
+2111999	Mashiko	Mashiko	Mashiko,yi zi,益子	36.46667	140.1	P	PPL	JP		38				26045		79	Asia/Tokyo	2012-01-19
+2112008	Marumori	Marumori	Marumori,wan sen,丸森	37.91667	140.76667	P	PPL	JP		24				16752		22	Asia/Tokyo	2014-04-30
+2112019	Makabe	Makabe	Makabe	36.26667	140.1	P	PPL	JP		14				19293		42	Asia/Tokyo	2012-01-19
+2112077	Kuroiso	Kuroiso		36.96667	140.05	P	PPL	JP		38				61230		301	Asia/Tokyo	2006-01-17
+2112141	Kōriyama	Koriyama	Ginqsan Si,Korijama,Koriyama,Koriyama-chhi,Kôriyama-chhī,Kōriyama,goliyama si,jun shan shi,kho ri ya ma,kwryama  fwkwshyma,kwryyama  fwkwshyma,Корияма,Коријама,Коріяма,كورياما، فوكوشيما,کورییاما، فوکوشیما,کوری‌یاما، فوکوشیما,โคริยะมะ,郡山市,고리야마 시	37.4	140.38333	P	PPL	JP		08				340560		236	Asia/Tokyo	2012-01-19
+2112182	Kogota	Kogota	Kogota	38.55	141.05	P	PPL	JP		24				19760		10	Asia/Tokyo	2012-01-19
+2112227	Kitakami	Kitakami	Kitakami,bei shang shi,Китаками,北上市	39.28333	141.11667	P	PPL	JP		16				93854		63	Asia/Tokyo	2012-01-19
+2112232	Kitaibaraki	Kitaibaraki	Kitaibaragi,Kitaibaraki	36.78671	140.74901	P	PPL	JP		14				50843		5	Asia/Tokyo	2014-04-06
+2112297	Kawaguchi	Kawaguchi	Kamogawa,Kavaguti,Kawaguchi,ya chuan,Кавагути,鴨川	35.0969	140.1003	P	PPL	JP		04				29119		20	Asia/Tokyo	2013-07-06
+2112309	Katsuura	Katsuura	Kacuura,Katsuura,Кацуура	35.14297	140.31388	P	PPL	JP		04				22307		21	Asia/Tokyo	2013-07-06
+2112312	Katsuta	Katsuta		36.38333	140.53333	P	PPL	JP		14				155968		21	Asia/Tokyo	2006-01-27
+2112319	Katori-shi	Katori-shi	Katori,Sawara,Sawara-shi,xiang qu,xiang qu shi,zuo yuan shi,佐原市,香取,香取市	35.89767	140.49943	P	PPL	JP		04				83181		6	Asia/Tokyo	2010-02-18
+2112343	Kasama	Kasama	Kasama,li jian,Касама,笠間	36.38333	140.26667	P	PPL	JP		14				29477		177	Asia/Tokyo	2012-01-19
+2112354	Karasuyama	Karasuyama		36.65	140.15	P	PPL	JP		38				18488		119	Asia/Tokyo	2006-01-17
+2112409	Kaminoyama	Kaminoyama	Kaminoyama	38.15389	140.27361	P	PPL	JP		44				35593		177	Asia/Tokyo	2012-01-19
+2112444	Kamaishi	Kamaishi	Kamaischi,Kamaishi,Kamaisi,fu shi,Камаиси,釜石	39.27694	141.86801	P	PPL	JP		16				43107		25	Asia/Tokyo	2014-04-06
+2112455	Kakuda	Kakuda	Kakuda,Kakudskij,jiao tian,Какудский,角田	37.97451	140.77202	P	PPL	JP		24				33221		12	Asia/Tokyo	2014-04-30
+2112521	Iwase	Iwase	Ivaseh,Iwase,Ивасэ	36.35	140.1	P	PPL	JP		14				21980		49	Asia/Tokyo	2012-01-19
+2112527	Iwanuma	Iwanuma	Iwanuma	38.10472	140.85944	P	PPL	JP		24				42411		5	Asia/Tokyo	2012-01-19
+2112539	Iwaki	Iwaki	Banjsingz Si,Iuaki,Ivaki,Iwaki,Iwaki-chhi,Iwaki-chhī,Iŭaki,aywaky  fwkwshyma,iwaki shi,iwaki si,lwaky  fwkwshyma,pan cheng shi,xi waki,Івакі,Иваки,ایواکی، فوکوشیما,لواكي، فوكوشيما,อิวะกิ,いわき市,磐城市,이와키 시	37.05	140.88333	P	PPL	JP		08				357309		9	Asia/Tokyo	2012-01-19
+2112555	Itako	Itako	Idako,Itako	35.93333	140.55	P	PPL	JP		14				25791		0	Asia/Tokyo	2012-01-19
+2112571	Ishioka	Ishioka	Ishioka,Isioka,Исиока	36.18333	140.26667	P	PPL	JP		14				52304		4	Asia/Tokyo	2012-01-19
+2112576	Ishinomaki	Ishinomaki	Ishinomachi,Ishinomaki,Isinomaki,isinomaki si,shi juan shi,石巻市,이시노마키 시	38.41667	141.3	P	PPL	JP		24				117233		2	Asia/Tokyo	2012-01-19
+2112583	Ishikawa	Ishikawa	Ishikawa,Isikava,Исикава	37.15	140.45	P	PPL	JP		08				18817		330	Asia/Tokyo	2012-01-19
+2112615	Inawashiro	Inawashiro	Inawashiro	37.56667	140.11667	P	PPL	JP		08				17413		532	Asia/Tokyo	2012-01-19
+2112656	Ichinoseki	Ichinoseki	Ichinoseki,Itinoseki,Itschinoseki	38.91667	141.13333	P	PPL	JP		16				62970		30	Asia/Tokyo	2012-01-19
+2112664	Ichihara	Ichihara	Ichihara,Ichikhara,Icihara,Itihara-chhi,Itihara-chhī,Itikhara,Iĉihara,aychyhara  chyba,aytshyhara  tshyba,ichihala si,shi yuan shi,xi chi ha ra,Ітіхара,Итихара,Ичихара,Ичиҳара,إيتشيهارا، تشيبا,ایچیهارا، چیبا,อิชิฮะระ,იტიჰარა,市原市,이치하라 시	35.51667	140.08333	P	PPL	JP		04				283531		1	Asia/Tokyo	2012-01-19
+2112692	Hobaramachi	Hobaramachi	Hobara,Hobaramachi,bao yuan ding,保原町	37.81667	140.55	P	PPL	JP		08				24515		51	Asia/Tokyo	2014-04-30
+2112708	Hitachi	Hitachi	Hidachi,Hitachi,ri li,日立	36.6	140.65	P	PPL	JP		14				186307		51	Asia/Tokyo	2012-01-19
+2112758	Higashine	Higashine	Higashine	38.43889	140.40056	P	PPL	JP		44				45779		119	Asia/Tokyo	2012-01-19
+2112802	Hasaki	Hasaki	Hasaki,Hazaki,Namisaki	35.73333	140.83333	P	PPL	JP		04				39209		5	Asia/Tokyo	2012-01-19
+2112823	Hanamaki	Hanamaki	HNA,Hanamaki,hua juan shi,花巻市	39.38333	141.11667	P	PPL	JP		16				73115		77	Asia/Tokyo	2012-01-19
+2112899	Furukawa	Furukawa	Furukawa,Hurukawa	38.57167	140.95556	P	PPL	JP		24				76312		23	Asia/Tokyo	2012-01-19
+2112903	Funehikimachi-funehiki	Funehikimachi-funehiki	Funahiki,Funehiki,Funehikimachi-funehiki,chuan yin ding chuan yin,船引町船引	37.44722	140.5771	P	PPL	JP		08				23524		441	Asia/Tokyo	2014-04-30
+2112913	Funaishikawa	Funaishikawa	Funaishikawa,Tokai-mura,Tōkai-mura	36.46667	140.56667	P	PPL	JP		14				35318		32	Asia/Tokyo	2012-01-19
+2112923	Fukushima-shi	Fukushima-shi	FKS,Fukushima-shi,Fukusima,Furukawa,Hukusima,fu dao shi,fukushimashi,Фукусима,ふくしまし,福島市	37.75	140.46778	P	PPLA	JP		08				294237		74	Asia/Tokyo	2013-04-04
+2112940	Fujishiro	Fujishiro		35.91667	140.11667	P	PPL	JP		14				33148		4	Asia/Tokyo	2006-01-17
+2112963	Edosaki	Edosaki	Edosaki	35.95	140.31667	P	PPL	JP		14				20800		4	Asia/Tokyo	2012-01-19
+2112989	Daigo	Daigo	Daigo,Даиго	36.76667	140.35	P	PPL	JP		14				22310		195	Asia/Tokyo	2012-01-19
+2113015	Chiba	Chiba	Chiba,Chiba-shi,Ciba,QCB,Tiba,chibashi,jiba si,qian ye shi,tshyba,Ĉiba,Čiba,Чиба,تشيبا,ちばし,千葉市,지바 시	35.60472	140.12333	P	PPLA	JP		04				919729		11	Asia/Tokyo	2014-01-06
+2113077	Asahi	Asahi	Asahi,Asahi-chhi,Asahi-chhī,Asakhi,asahi si,asahy  chyba,asahy  tshyba,xa sa hi,xu shi,Асахи,Асахі,Асаҳи,آساهي، تشيبا,آساهی، چیبا,อะซะฮิ,旭市,아사히 시	35.71667	140.65	P	PPL	JP		04				41720		5	Asia/Tokyo	2012-01-19
+2113115	Ami	Ami	Ami,Ами	36.03333	140.2	P	PPL	JP		14				48256		30	Asia/Tokyo	2012-01-19
+2113126	Akita	Akita	AXT,Akita	39.71667	140.11667	P	PPL	JP		02				320069		14	Asia/Tokyo	2013-03-31
+2113164	Abiko	Abiko	Abiko,wo sun zi shi,Абико,我孫子市	35.86667	140.01667	P	PPL	JP		04				131771		10	Asia/Tokyo	2012-01-19
+2113719	Akita Shi	Akita Shi	Akita Shi,Akita-shi,akitashi,qiu tian shi,あきたし,アキタシ,秋田市	39.71806	140.10333	P	PPLA	JP		02				325837		8	Asia/Tokyo	2012-06-06
+2127383	Bihoro	Bihoro	Biboro,Biholo,Bihoro,Biporo	43.82278	144.10444	P	PPL	JP		12				22972		32	Asia/Tokyo	2012-01-19
+2127515	Wakkanai	Wakkanai	Inai,Vakkanaj,WKJ,Wakkanai,waskanai si,zhi nei shi,Вакканай,稚内市,왓카나이 시	45.40944	141.67389	P	PPL	JP		12				41556		7	Asia/Tokyo	2012-01-19
+2127733	Tomakomai	Tomakomai	QTM,Tomakomai,Tomakomaj,shan xiao mu,Томакомай,苫小牧	42.63694	141.60333	P	PPL	JP		12				174806		7	Asia/Tokyo	2012-01-19
+2127802	Tōbetsu	Tobetsu	Tobetsu,Tōbetsu	43.21694	141.51694	P	PPL	JP		12				21818		14	Asia/Tokyo	2012-01-19
+2127878	Mutsu	Mutsu	Mucu,Mutsu,Mutu-chhi,Mutu-chhī,Tanabe,Tanabu,lu ao shi,musseu si,mutsu,mutsu shi,mwtsw  awmwry,mwtsw  aywmwry,Мутсу,Муцу,Муцу қаласы,موتسو، آئوموری,موتسو، آوموري,მუცუ,むつ,むつ市,陸奧市,무쓰 시	41.28944	141.21694	P	PPL	JP		03				49220		6	Asia/Tokyo	2012-01-19
+2127896	Takikawa	Takikawa	Takigawa,Takikawa	43.55278	141.90639	P	PPL	JP		12				45131		31	Asia/Tokyo	2012-01-19
+2127910	Takanosu	Takanosu	Takanosu	40.22194	140.36944	P	PPL	JP		02				20542		27	Asia/Tokyo	2012-05-06
+2127955	Sunagawa	Sunagawa	Sunagawa,Sunakawa,Sunigawa	43.48639	141.90556	P	PPL	JP		12				20102		33	Asia/Tokyo	2012-01-19
+2128025	Shizunai-furukawachō	Shizunai-furukawacho	Shimo geho,Shimo-kebo,Shimo-kebō,Shimo-keho,Shimo-kehō,Shizunai,Shizunai-furukawacho,Shizunai-furukawachō,jing nei gu chuan ding,静内古川町	42.33389	142.36694	P	PPL	JP		12				22436		4	Asia/Tokyo	2014-06-05
+2128072	Shiraoi	Shiraoi	Shiraoi	42.55	141.35	P	PPL	JP		12				20804		5	Asia/Tokyo	2012-01-19
+2128147	Shimo-furano	Shimo-furano	Shimo-furano,Shimo-furanoshigai	43.35	142.38333	P	PPL	JP		12				25872		170	Asia/Tokyo	2012-01-19
+2128206	Shibetsu	Shibetsu	Sibetsu,Sibetu,Sipetu,biao jin,標津	43.65899	145.13197	P	PPL	JP		12				21744		2	Asia/Tokyo	2010-06-23
+2128295	Sapporo	Sapporo	SPK,Saporas,Saporo,Sapporia,Sapporo,Sapporo-shi,capporo,sabwrw,sap poa roa,sapporoshi,saspolo si,zha huang shi,Сапоро,Саппоро,سابورو,சப்போரோ,ซัปโปะโระ,საპორო,さっぽろし,札幌市,삿포로 시	43.06417	141.34694	P	PPLA	JP		12				1883027		29	Asia/Tokyo	2013-11-27
+2128382	Rumoi	Rumoi	Rumoe,Rumoi	43.93444	141.64278	P	PPL	JP		12				26454		35	Asia/Tokyo	2012-01-19
+2128558	Otofuke	Otofuke	Otopuke	42.99167	143.20028	P	PPL	JP		12				40944		64	Asia/Tokyo	2006-01-17
+2128574	Otaru	Otaru	Otaru,QOT,otalu si,xiao zun shi,Отару,小樽市,오타루 시	43.18944	141.00222	P	PPL	JP		12				143792		30	Asia/Tokyo	2012-01-19
+2128787	Ōdate	Odate	Odate,Odate-chhi,Odateh,Otate,awdath  akyta,da guan,da guan shi,odate si,oodate,xo da tea,Ódate,Ôdate-chhī,Ōdate,Ōtate,Одате,Одатэ,Одатэ қаласы,أوداته، أكيتا,اوداته، آکیتا,โอดะเตะ,おおだて,オオダテ,大館,大館市,오다테 시	40.27178	140.55756	P	PPL	JP		02				64543		66	Asia/Tokyo	2013-02-09
+2128815	Obihiro	Obihiro	OBO,Obibiro,Obihiro,Obikhiro,dai guang,Обихиро,帯広	42.91722	143.20444	P	PPL	JP		12				173890		44	Asia/Tokyo	2012-01-19
+2128867	Noshiro	Noshiro	Noshiro,Noshirominato,Nosiro,Nosirskij,Носирский	40.20389	140.02417	P	PPL	JP		02				51079		10	Asia/Tokyo	2012-01-19
+2128975	Nemuro	Nemuro	Nehmuro,Nemuro,gen shi shi,nemulo si,Нэмуро,根室市,네무로 시	43.32361	145.575	P	PPL	JP		12				31223		24	Asia/Tokyo	2012-01-19
+2128983	Nayoro	Nayoro	NAERO,Nayoro,Nayoru,НАЕРО	44.35056	142.45778	P	PPL	JP		12				26457		97	Asia/Tokyo	2012-01-19
+2129003	Nanae	Nanae	Nanae	41.88333	140.68333	P	PPL	JP		12				30008		12	Asia/Tokyo	2012-01-19
+2129005	Namioka	Namioka	Namioka,lang gang,namioka,Намиока,なみおか,ナミオカ,浪岡	40.71069	140.59048	P	PPL	JP		03				20681		28	Asia/Tokyo	2014-06-05
+2129101	Muroran	Muroran	Muroran,QRN,shi lan,Муроран,室蘭	42.31722	140.98806	P	PPL	JP		12				96197		8	Asia/Tokyo	2012-01-19
+2129163	Mombetsu	Mombetsu	Mobetsu,Mombecu,Mombetsu,Monbetsu,Monbetu,wen bie,Момбецу,紋別	44.3525	143.3525	P	PPL	JP		12				26895		16	Asia/Tokyo	2012-01-19
+2129211	Misawa	Misawa	MSJ,Misava,Misawa,Omisawa,misawa,san ze,Ōmisawa,Мисава,みさわ,ミサワ,三沢	40.68682	141.38969	P	PPL	JP		03				42805		37	Asia/Tokyo	2012-10-07
+2129218	Yoichi	Yoichi	Minatomachi,Yoichi,Yoichicho,Yoichichō,Yoiti	43.20389	140.77028	P	PPL	JP		12				22788		2	Asia/Tokyo	2012-01-19
+2129324	Makubetsu	Makubetsu		45.37139	141.82111	P	PPL	JP		12				25935		33	Asia/Tokyo	2006-01-17
+2129376	Kushiro	Kushiro	KUH,Kushira,Kushiro,Kusiro,chuan lu shi,Куширо,釧路市	42.975	144.37472	P	PPL	JP		12				183612		6	Asia/Tokyo	2012-01-19
+2129395	Kuroishi	Kuroishi	Kuroishi,hei shi,kuroishi,くろいし,クロイシ,黒石	40.64581	140.58354	P	PPL	JP		03				38615		45	Asia/Tokyo	2013-04-04
+2129513	Shimokizukuri	Shimokizukuri	Kizukuri,Shimokizukuri,shimokidzukuri,xia mu zao,しもきづくり,シモキヅクリ,下木造	40.81609	140.37539	P	PPL	JP		03				18907		3	Asia/Tokyo	2013-03-05
+2129537	Kitami	Kitami	Kitami,Kity,Nokkeushi,Nokkeusi,Notsukeushi,Nupukeushi-mura,Киты	43.80306	143.89083	P	PPL	JP		12				113137		79	Asia/Tokyo	2012-01-19
+2129766	Kamiiso	Kamiiso		41.82013	140.64482	P	PPL	JP		12				38098		2	Asia/Tokyo	2014-03-08
+2129868	Iwanai	Iwanai	Iwanai	42.97444	140.50889	P	PPL	JP		12				15584		6	Asia/Tokyo	2012-01-19
+2129870	Iwamizawa	Iwamizawa	Iwamisawa,Iwamizawa,Twamizawa,iwamizawa,yan jian ze,いわみざわ,イワミザワ,岩見沢,ｲﾜﾐｻﾞﾜ	43.20028	141.75972	P	PPL	JP		12				85107		17	Asia/Tokyo	2012-01-19
+2129909	Ishikari	Ishikari	Ishikari,Isikari,Исикари	43.23972	141.35389	P	PPL	JP		12				57301		0	Asia/Tokyo	2012-01-19
+2129961	Ichinohe	Ichinohe	Ehinohe,Ichinobe,Ichinohe,Itinohe,Itschinohe,ichinohe,yi hu,いちのへ,イチノヘ,一戸	40.21965	141.28986	P	PPL	JP		16				15825		243	Asia/Tokyo	2013-05-09
+2130054	Kitahiroshima	Kitahiroshima	Hiroshima,Khirosima,Kitahiroshima,Nakaosawa,bei guang dao,Хиросима,北広島	42.97583	141.56722	P	PPL	JP		12				62370		19	Asia/Tokyo	2012-01-19
+2130057	Hirosaki	Hirosaki	Hirosaki,Hirosaki-chhi,Hirosaki-chhī,Khirosaki,hi roa saki,hilosaki si,hong qian shi,hyrwsaky  awmwry,hyrwzaky  aywmwry,Хиросаки,Хиросаки қаласы,Хіросакі,Ҳиросаки,هيروساكي، آوموري,هیروزاکی، آئوموری,ฮิโระซะกิ,ჰიროსაკი,弘前市,히로사키 시	40.59306	140.4725	P	PPL	JP		03				174972		45	Asia/Tokyo	2012-01-19
+2130146	Kazuno	Kazuno	Hanawa,Kazuno	40.18361	140.78722	P	PPL	JP		02				36925		144	Asia/Tokyo	2012-01-19
+2130188	Hakodate	Hakodate	HKD,Hakodate,Hakodate-chhi,Hakodate-chhī,Hokodate,Khakodate,Khakodateh,ha koa da tea,hakodate si,hakwdath,hakwdath  hwkaydw,han guan,han guan shi,Хакодате,Хакодатэ,Ҳакодате,هاكوداته، هوكايدو,هاکوداته,هاکوداته، هوکایدو,ฮะโกะดะเตะ,函館,函館市,하코다테 시	41.77583	140.73667	P	PPL	JP		12				275730		5	Asia/Tokyo	2012-01-19
+2130203	Hachinohe	Hachinohe	Hachinohe,ba hu,八戸	40.5	141.5	P	PPL	JP		03				239046		20	Asia/Tokyo	2012-01-19
+2130332	Fukagawa	Fukagawa	Fukagava,Fukagawa,Hukagawa,Фукагава	43.70806	142.03917	P	PPL	JP		12				26152		40	Asia/Tokyo	2012-01-19
+2130404	Ebetsu	Ebetsu	Ebetsu	43.10806	141.55056	P	PPL	JP		12				133953		12	Asia/Tokyo	2012-01-19
+2130421	Date	Date	Date,Nishi-mombetsu	42.46806	140.86806	P	PPL	JP		12				35301		6	Asia/Tokyo	2012-01-19
+2130452	Chitose	Chitose	Chitose	42.81944	141.65222	P	PPL	JP		12				92942		15	Asia/Tokyo	2012-01-19
+2130534	Bibai	Bibai	Bibai,Numakai	43.32472	141.85861	P	PPL	JP		12				29028		25	Asia/Tokyo	2012-01-19
+2130612	Ashibetsu	Ashibetsu	Ashibetsu,Shimo-ashibetsu	43.50972	142.18556	P	PPL	JP		12				19108		111	Asia/Tokyo	2012-01-19
+2130629	Asahikawa	Asahikawa	AKJ,Asahikava,Asahikawa,Asahikawa-chhi,Asahikawa-chhī,Asakhikava,Gorad Asakhikava,asahikawa si,asahykawa  hwkaydw,xa sa hi kawa,xu chuan,xu chuan shi,Асахикава,Асахікава,Асаҳикауа,Горад Асахікава,آساهیکاوا، هوکایدو,أساهيكاوا، هوكايدو,อะซะฮิกะวะ,旭川,旭川市,아사히카와 시	43.77063	142.36489	P	PPL	JP		12	2130628			356612		121	Asia/Tokyo	2014-01-05
+2130658	Aomori Shi	Aomori Shi	AOJ,Aomori,Aomori Shi,Aomori-shi,aomoli si,aomorishi,awmwry,qing sen shi,Аомори,آوموري,あおもりし,アオモリシ,青森市,아오모리 시	40.82444	140.74	P	PPLA	JP		03				298394		17	Asia/Tokyo	2014-05-31
+2130741	Abashiri	Abashiri	ABASIRI,Abashiri,Abasiri,Aburatsu,wang zou,АБАСИРИ,網走	44.02127	144.26971	P	PPL	JP		12				42498		4	Asia/Tokyo	2010-06-23
+2131612	Goshogawara	Goshogawara	Gos'ogavara,Goshogavara,Goshogawara,Gosjogavara,Gosogauara,Gosyogawara,Gosyogawara-chhi,Gosyogawara-chhī,Goŝogaŭara,ghwshwghawara  awmwry,gosiogavara,gosyogawala si,gwshwgawara  aywmwry,wu suo chuan yuan shi,Госегавара қаласы,Госёгавара,Гошогавара,Ґосьоґавара,غوشوغاوارا، آوموري,گوشوگاوارا، آئوموری,გოსიოგავარა,五所川原市,고쇼가와라 시	40.80444	140.44139	P	PPL	JP		03				49110		9	Asia/Tokyo	2012-01-19
+6324583	Aso	Aso	Aso,a su,Асо,阿蘇	32.93726	131.08008	P	PPL	JP		21				27978		520	Asia/Tokyo	2013-11-10
+6694821	Nanto-shi	Nanto-shi	Nanto,nan li shi,南砺市	36.56922	136.91162	P	PPL	JP		42				55315		70	Asia/Tokyo	2012-08-26
+6696932	Kawage	Kawage		34.80447	136.54645	P	PPL	JP		23				17948	20	14	Asia/Tokyo	2013-07-30
+6697563	Neyagawa	Neyagawa	Neyagawa-shi,qin wu chuan,qin wu chuan shi,寝屋川,寝屋川市	34.76615	135.62759	P	PPL	JP		32				238549	4	9	Asia/Tokyo	2010-02-18
+6822096	Hitachi-Naka	Hitachi-Naka	hitachinaka,hitachinaka shi,hitachinaka-shi,ひたちなか,ひたちなか市	36.39659	140.53479	P	PPL	JP		14				156811		31	Asia/Tokyo	2010-02-18
+6822108	Inashiki	Inashiki	dao fu,dao fu shi,sakuragawa,sakuragawa-mura,稲敷,稲敷市	35.95633	140.32356	P	PPL	JP		14				46994		5	Asia/Tokyo	2010-02-17
+6822146	Ōnojō	Onojo	da ye cheng,da ye cheng shi,大野城,大野城市	33.53567	130.47861	P	PPL	JP		07				94957		25	Asia/Tokyo	2010-02-17
+6822217	Minokamo	Minokamo	Minokamo,mei nong jia mao,Минокамо,美濃加茂	35.48199	137.02166	P	PPL	JP		09				51543		175	Asia/Tokyo	2010-06-07
+6822219	Gujō	Gujo	Gudyo,Gudz'o,Gudzjo,Gujo,Gujō,Guzyo-chhi,Guzyô-chhī,gujo si,gwjw  gyfw,jun shang,jun shang shi,Гудзё,Гуҷо,Ґудзьо,گوجو، گیفو,郡上,郡上市,구조 시	35.73691	136.95852	P	PPL	JP		09				46918		314	Asia/Tokyo	2012-01-20
+6825489	Jōetsu	Joetsu	Joetsu,Joetsu-shi,shang yue,shang yue shi,上越,上越市	37.14828	138.23642	P	PPL	JP		29				204137		10	Asia/Tokyo	2010-02-18
+6940394	Saitama	Saitama	Saitama,Саитама	35.90807	139.65657	P	PPLA	JP		34				1193350		16	Asia/Tokyo	2010-05-27
+7279570	Higashimurayama-shi	Higashimurayama-shi	Higashi-Murayama,Higashi-Murayama-shi,Higashimurayama,dong cun shan,dong cun shan shi,東村山,東村山市	35.75459	139.46852	P	PPL	JP		40				150556		82	Asia/Tokyo	2010-02-18
+7281819	Fujikawaguchiko	Fujikawaguchiko	Fudzikavagutiko,Фудзикавагутико	35.48933	138.68832	P	PPL	JP	JP	46				23097		1086	Asia/Tokyo	2013-07-31
+7422816	Dazaifu	Dazaifu	Dadzajfu,Dazaifu-shiyakusho,dazaifushiyakusho,tai zai fu shi,Дадзайфу,だざいふしやくしょ,太宰府市	33.51278	130.52389	P	PPL	JP		07				70587		42	Asia/Tokyo	2013-12-26
+8125829	Kamigyō-ku	Kamigyo-ku		35.02954	135.75666	P	PPLA3	JP	JP	22	1857906			83000		61	Asia/Tokyo	2014-02-01
+8198709	Buzen	Buzen		33.61153	131.13002	P	PPL	JP		07	1864660			26886		20	Asia/Tokyo	2012-02-05
+8555918	Sendai	Sendai	Sendai-shi,xian tai shi,仙台市	38.25759	140.8667	P	PPL	JP		24				1063103		46	Asia/Tokyo	2013-10-25
+1848649	Yamanashi-ken	Yamanashi-ken	Yamanashi,Yamanashi-ken,shan li xian,yamanashiken,yamanasi hyeon,やまなしけん,山梨県,야마나시 현	35.61602	138.608	A	ADM1	JP		46				0		252	Asia/Tokyo	2014-03-05
+1848681	Yamaguchi-ken	Yamaguchi-ken	Yamaguchi,Yamaguchi-ken,shan kou xian,yamaguchi hyeon,yamaguchiken,やまぐちけん,山口県,야마구치 현	34.20608	131.57046	A	ADM1	JP		45				0		130	Asia/Tokyo	2014-03-05
+1848938	Wakayama-ken	Wakayama-ken	Wakayama,Wakayama-ken,he ge shan xian,wakayama hyeon,wakayamaken,わかやまけん,和歌山県,와카야마 현	33.91458	135.51112	A	ADM1	JP		43				0		488	Asia/Tokyo	2014-03-05
+1849872	Toyama-ken	Toyama-ken	Toyama,doyama hyeon,fu shan xian,toyamaken,とやまけん,富山県,도야마 현	36.63926	137.26513	A	ADM1	JP		42				0		76	Asia/Tokyo	2014-02-12
+1849890	Tottori-ken	Tottori-ken	Tottori,Tottori-ken,dostoli hyeon,niao qu xian,tottoriken,とっとりけん,鳥取県,돗토리 현	35.36786	133.85081	A	ADM1	JP		41				0		94	Asia/Tokyo	2014-03-05
+1850144	Tōkyō-to	Tokyo-to	Tokyo,Tōkyō,dokyo do,dong jing dou,toukyouto,とうきょうと,東京都,도쿄 도	35.6895	139.69171	A	ADM1	JP		40				12445327		44	Asia/Tokyo	2014-02-12
+1850157	Tokushima-ken	Tokushima-ken	Tokushima,de dao xian,dokusima hyeon,tokushimaken,とくしまけん,徳島県,도쿠시마 현	33.92176	134.23682	A	ADM1	JP		39				0		953	Asia/Tokyo	2014-02-12
+1850310	Tochigi-ken	Tochigi-ken	Tochigi,Tochigi-ken,dochigi hyeon,li mu xian,tochigiken,とちぎけん,栃木県,도치기 현	36.69259	139.81613	A	ADM1	JP		38				2017548		237	Asia/Tokyo	2014-03-05
+1851715	Shizuoka-ken	Shizuoka-ken	Shizuoka,Shizuoka-ken,jing gang xian,shizuokaken,sijeuoka hyeon,しずおかけん,静岡県,시즈오카 현	35.02522	138.32542	A	ADM1	JP		37				0		339	Asia/Tokyo	2014-03-05
+1852442	Shimane-ken	Shimane-ken	Gubernio Simane,Gubernio Ŝimane,Mkoa wa Shimane,Praefektur Shimane,Prefectura Shimane,Prefectura de Shimane,Prefecture de Shimane,Prefektur Shimane,Prefektura Shimane,Prefektura Simane,Prefektura Šimane,Prefekturai Shimane,Prefettura di Shimane,Prepektura ng Shimane,Prepektura ti Shimane,Präfektur Shimane,Préfecture de Shimane,Shimane,Shimane Prefecture,Shimane prefektur,Shimane prefektuur,Shimanen prefektuuri,Simane,Simaneh,Simanes prefektura,Simanes prefektūra,To-kin-yen,Tó-kîn-yen,Wilayah Shimane,astan shymanh,canghwad chi manea,dao gen xian,shimaneken,shymanh,simane,simane hyeon,Šimane,Šimanės prefektūra,Префектура Шимане,Префектура Шімане,Префектураи Шимане,Симанэ,Шимане,استان شیمانه,شيمانه,شیمانێ,ضلع شیمانے,शिमाने,จังหวัดชิมะเนะ,ខេត្តស៊ីម៉ាណិ,しまねけん,シマネケン,岛根县,島根県,시마네 현	35.07693	132.56111	A	ADM1	JP		36				712336		218	Asia/Tokyo	2014-02-12
+1852553	Shiga-ken	Shiga-ken	Shiga,Shiga-ken,shigaken,siga hyeon,zi he xian,しがけん,滋賀県,시가 현	35.21939	136.13652	A	ADM1	JP		35				0		82	Asia/Tokyo	2014-03-05
+1853226	Saitama-ken	Saitama-ken	Saitama,qi yu xian,saitama hyeon,埼玉県,사이타마 현	35.85721	139.64904	A	ADM1	JP		34				0		21	Asia/Tokyo	2014-05-29
+1853299	Saga-ken	Saga-ken	Saga,Saga-ken,saga hyeon,sagaken,zuo he xian,さがけん,佐賀県,사가 현	33.28904	130.11491	A	ADM1	JP		33				0		59	Asia/Tokyo	2014-03-05
+1853904	Ōsaka-fu	Osaka-fu	Osaka,da ban fu,oosakafu,osaka bu,Ōsaka,おおさかふ,大阪府,오사카 부	34.68631	135.51968	A	ADM1	JP		32				0		25	Asia/Tokyo	2014-02-12
+1854345	Okinawa-ken	Okinawa-ken	Okinawa,Okinawa-ken,chong ying xian,okinawa hyeon,okinawaken,おきなわけん,沖縄県,오키나와 현	25.77225	126.66871	A	ADM1	JP		47				0		-9999	Asia/Tokyo	2014-03-05
+1854381	Okayama-ken	Okayama-ken	Okayama,Okayama-ken,gang shan xian,okayama hyeon,okayamaken,おかやまけん,岡山県,오카야마 현	34.90204	133.81018	A	ADM1	JP		31				0		286	Asia/Tokyo	2014-03-05
+1854484	Ōita	Oita	Oita,Oita Ken,Oita-ken,da fen xian,oita hyeon,ooitaken,Ōita,Ōita Ken,Ōita-ken,おおいたけん,大分県,오이타 현	33.19899	131.43353	A	ADM1	JP		30				0		209	Asia/Tokyo	2014-04-29
+1855429	Niigata	Niigata	Gubernio Niigata,Mkoa wa Niigata,Nigata,Niigata,Niigata Ken,Niigata Prefectur,Niigata Prefecture,Niigata prefektur,Niigata prefektura,Niigata prefektuur,Niigata prefektúra,Niigata-ken,Niigata-koan,Niigata-koān,Niigata-praefekturet,Niigata-præfekturet,Niigatan prefektuuri,Niigatas prefektura,Niigatas prefektūra,Nijigatos prefektura,Nijigatos prefektūra,Praefektur Niigata,Prefectura Niigata,Prefectura de Niigata,Prefecture de Niigata,Prefektur Niigata,Prefektura Nigata,Prefektura Niigata,Prefekturai Niigata,Prefettura di Niigata,Prehfektura Niigata,Prepektura ng Niigata,Prepektura ti Niigata,Präfektur Niigata,Préfecture de Niigata,Wilayah Niigata,astan nygata,canghwad ni nga ta,nigata,nigata hyeon,niigataken,nygata,nyyghata,xin xi xian,Ниигата,Префектура Нигата,Префектура Ніїґата,Префектураи Ниигата,Прэфектура Ніігата,استان نیگاتا,ضلع نیایگاٹا,نييغاتا,نیگاتا,निगाता,จังหวัดนีงะตะ,にいがたけん,新潟县,新潟県,新潟縣,니가타 현	37.52343	138.91748	A	ADM1	JP		29				0		21	Asia/Tokyo	2014-04-05
+1855608	Nara-ken	Nara-ken	Nara,nai liang xian,nala hyeon,naraken,ならけん,奈良県,나라 현	34.68525	135.83289	A	ADM1	JP		28				0		96	Asia/Tokyo	2014-02-12
+1856156	Nagasaki-ken	Nagasaki-ken	Nagasaki,Nagasaki-ken,nagasaki hyeon,nagasakiken,zhang qi xian,ながさきけん,長崎県,나가사키 현	33.23344	129.61108	A	ADM1	JP		27				0		76	Asia/Tokyo	2014-03-05
+1856210	Nagano	Nagano	Gubernio Nagano,Mkoa wa Nagano,Nagano,Nagano Ken,Nagano Prefectur,Nagano Prefecture,Nagano prefektur,Nagano prefektura,Nagano prefektuur,Nagano prefektúra,Nagano prefektūra,Nagano-ken,Nagano-koan,Nagano-koān,Naganon prefektuuri,Naganum,Praefektur Nagano,Prefectura Nagano,Prefectura de Nagano,Prefecture de Nagano,Prefektur Nagano,Prefektura Nagano,Prefekturai Nagano,Prefettura di Nagano,Prepektura ng Nagano,Prepektura ti Nagano,Präfektur Nagano,Préfecture de Nagano,Wilayah Nagano,astan naganw,canghwad na nga noa,nagano,nagano hyeon,naganoken,naghanw,zhang ye xian,Нагано,Префектура Нагано,Префектура Наґано,Префектураи Нагано,استان ناگانو,ضلع ناگانو,ناغانو,ناگانۆ,नागानो,จังหวัดนะงะโนะ,ながのけん,長野県,長野縣,长野县,나가노 현	36.13464	138.04077	A	ADM1	JP		26				0		1601	Asia/Tokyo	2014-06-04
+1856710	Miyazaki-ken	Miyazaki-ken	Miyazaki,Miyazaki-ken,gong qi xian,miyajaki hyeon,miyazakiken,みやざきけん,宮崎県,미야자키 현	32.19807	131.29762	A	ADM1	JP		25				0		363	Asia/Tokyo	2014-03-05
+1857352	Mie-ken	Mie-ken	Mie,Mie-ken,Miye-ken,mie hyeon,mieken,san zhong xian,みえけん,三重県,미에 현	34.52123	136.38296	A	ADM1	JP		23				0		515	Asia/Tokyo	2014-03-05
+1857907	Kyōto-fu	Kyoto-fu	Kyoto,Kyoto-fu,Kyōto,Kyōto-fu,gyoto bu,jing dou fu,kyoutofu,きょうとふ,京都府,교토 부	35.25432	135.44118	A	ADM1	JP		22				0		459	Asia/Tokyo	2014-03-05
+1858419	Kumamoto-ken	Kumamoto-ken	Kumamoto,Kumamoto-ken,gumamoto hyeon,kumamotoken,xiong ben xian,くまもとけん,熊本県,구마모토 현	32.62049	130.7543	A	ADM1	JP		21				1812255		75	Asia/Tokyo	2014-03-05
+1859133	Kōchi-ken	Kochi-ken	Kochi,Kochi-ken,Kōchi,Kōchi-ken,gao zhi xian,gochi hyeon,kouchiken,こうちけん,高知県,고치 현	33.42801	133.36401	A	ADM1	JP		20				0		8	Asia/Tokyo	2014-03-05
+1860291	Kanagawa-ken	Kanagawa-ken	Kanagawa,Kanagawa-ken,ganagawa hyeon,kanagawaken,shen nai chuan xian,かながわけん,神奈川県,가나가와 현	35.41746	139.33885	A	ADM1	JP		19				0		49	Asia/Tokyo	2014-03-05
+1860825	Kagoshima-ken	Kagoshima-ken	Kagoshima,gagosima hyeon,kagoshimaken,lu er dao xian,かごしまけん,鹿児島県,가고시마 현	31.03225	130.43292	A	ADM1	JP		18				0		-9999	Asia/Tokyo	2014-02-12
+1860834	Kagawa-ken	Kagawa-ken	Kagawa,Kagawa-ken,gagawa hyeon,kagawaken,xiang chuan xian,かがわけん,香川県,가가와 현	34.24717	133.99471	A	ADM1	JP		17				0		61	Asia/Tokyo	2014-03-05
+1861387	Ishikawa-ken	Ishikawa-ken	Ishikawa,ishikawaken,isikawa hyeon,shi chuan xian,いしかわけん,石川県,이시카와 현	36.77145	136.7705	A	ADM1	JP		15				0		121	Asia/Tokyo	2014-02-12
+1862047	Hyōgo-ken	Hyogo-ken	Hyogo,Hyogo-ken,Hyōgo,Hyōgo-ken,bing ku xian,hyogo hyeon,hyougoken,ひょうごけん,兵庫県,효고 현	35.04032	134.82597	A	ADM1	JP		13				0		254	Asia/Tokyo	2014-03-05
+1862413	Hiroshima-ken	Hiroshima-ken	Hiroshima,guang dao xian,hilosima hyeon,hiroshimaken,ひろしまけん,広島県,히로시마 현	34.60673	132.78543	A	ADM1	JP		11				0		529	Asia/Tokyo	2014-02-12
+1863501	Gunma-ken	Gunma-ken	Gubernio Gunma,Gumma,Gumma prefektuur,Gummas prefektura,Gummas prefektūra,Gunma,Gunma Prefecture,Gunma prefektur,Gunma prefektura,Gunma prefektúra,Gunman prefektuuri,Gunmos prefektura,Gunmos prefektūra,Mkoa wa Gunma,Praefektur Gunma,Prefectura Gunma,Prefectura de Gunma,Prefecture de Gunma,Prefektur Gunma,Prefektura Gumma,Prefektura Gunma,Prefekturai Gumma,Prefettura di Gunma,Prepektura ng Gunma,Prepektura ti Gunma,Präfektur Gunma,Préfecture de Gunma,Préféktur Gunma,Qumma,Wilayah Gunma,astan gwnma,canghwad kum ma,ghwnma,gunma,gunma hyeon,gunmaken,gwnma,qun ma xian,Гумма,Гунма,Префектура Гунма,Префектура Ґумма,Префектураи Гумма,استان گونما,ضلع گنما,غونما,گونما,गुन्मा,จังหวัดกุมมะ,ぐんまけん,群馬県,群馬縣,群马县,군마 현	36.50747	138.98235	A	ADM1	JP		10				2014608		351	Asia/Tokyo	2014-02-12
+1863640	Gifu-ken	Gifu-ken	Gifu,Gifu-ken,gifuken,gihu hyeon,qi fu xian,ぎふけん,岐阜県,기후 현	35.78091	137.05398	A	ADM1	JP		09				0		585	Asia/Tokyo	2014-03-05
+1863958	Fukuoka	Fukuoka	Fuk-kong-yen,Fuk-kông-yen,Fukuoka,Fukuoka Ken,Fukuoka Prefectur,Fukuoka Prefecture,Fukuoka prefektur,Fukuoka prefektura,Fukuoka prefektuur,Fukuoka prefektúra,Fukuoka-ken,Fukuokan prefektuuri,Fukuokas prefektura,Fukuokas prefektūra,Fukuoke-ken,Fukuokos prefektura,Fukuokos prefektūra,Gubernio Fukuoka,Hukuoka-koan,Hukuoka-koān,Mkoa wa Fukuoka,Praefektur Fukuoka,Prefectura Fukuoka,Prefectura de Fukuoka,Prefecture de Fukuoka,Prefektur Fukuoka,Prefektura Fukuoka,Prefekturai Fukuoka,Prefettura di Fukuoka,Prepektura ng Fukuoka,Prepektura ti Fukuoka,Präfektur Fukuoka,Préfecture de Fukuoka,Préféktur Fukuoka,Wilayah Fukuoka,astan fwkwywka,canghwad fu ku xoa ka,fu gang xian,fukuokaken,fwkwka,fwkwka pryfykchr,hukuoka hyeon,phuku'oka,Префектура Фукуока,Префектураи Фукуока,Фукуока,Ֆուկուոկա,استان فوکوئوکا,ضلع فوکوکا,فوكوكا,فوکوئۆکا,فوکوکا پریفیکچر,फुकुओका,จังหวัดฟุกุโอะกะ,ふくおかけん,福冈县,福岡県,福岡縣,후쿠오카 현	33.52813	130.66472	A	ADM1	JP		07				0		212	Asia/Tokyo	2014-04-29
+1863983	Fukui-ken	Fukui-ken	Fukui,Fukui-ken,fu jing xian,fukuiken,huku-i hyeon,ふくいけん,福井県,후쿠이 현	35.8501	136.22517	A	ADM1	JP		06				0		345	Asia/Tokyo	2014-03-05
+1864226	Ehime-ken	Ehime-ken	Ehime,Ehime-ken,ai yuan xian,ehime hyeon,ehimeken,えひめけん,愛媛県,에히메 현	33.6258	132.85472	A	ADM1	JP		05				1476750		604	Asia/Tokyo	2014-03-05
+1865694	Aichi-ken	Aichi-ken	Aichi,Aichi Prefecture,ai zhi xian,aichi hyeon,aichiken,あいちけん,愛知県,아이치 현	35.18017	136.90656	A	ADM1	JP		01				0		23	Asia/Tokyo	2014-02-15
+2110554	Yamagata	Yamagata	Gubernio Jamagata,Jamagata,Jamagata-kehn,Jamagatas prefektura,Jamagatas prefektūra,Jamagatos prefektura,Jamagatos prefektūra,Mkoa wa Yamagata,Praefektur Yamagata,Prefectura Yamagata,Prefectura de Yamagata,Prefecture de Yamagata,Prefektur Yamagata,Prefektura Jamagata,Prefektura Yamagata,Prefekturai Jamagata,Prefettura di Yamagata,Prehfektura Jamagata,Prepektura ng Yamagata,Prepektura ti Yamagata,Präfektur Yamagata,Préfecture de Yamagata,Wilayah Yamagata,Yamagata,Yamagata Ken,Yamagata Prefectur,Yamagata Prefecture,Yamagata prefektur,Yamagata prefektuur,Yamagata-ken,Yamagata-koan,Yamagata-koān,Yamagatan prefektuuri,astan yamagata,canghwad ya ma nga ta,shan xing xian,yamagata,yamagata hyeon,yamagataken,yamaghata,Јамагата,Префектура Јамагата,Префектура Ямаґата,Префектураи Ямагата,Прэфектура Ямагата,Ямагата,Ямагата-кэн,יאמאגטה,استان یاماگاتا,ضلع یاماگاٹا,ياماغاتا,ياماگاتا ناھىيىسى,یاماگاتا,یاگاماٹا پریفیکچر,यामागाता,จังหวัดยะมะงะตะ,იამაგატის პრეფექტურა,ខេត្តយ៉ាម៉ាកាតា,やまがたけん,山形县,山形県,山形縣,야마가타 현	38.4503	140.0997	A	ADM1	JP		44				0		336	Asia/Tokyo	2014-03-05
+2111888	Miyagi	Miyagi	Gubernio Mijagi,Honshu-miyagi-ken,Honshū-miyagi-ken,Mijagi,Mijagi prefektura,Mijagi prefektūra,Mijagio prefektura,Mijagio prefektūra,Miyaga-ken,Miyagi,Miyagi Ken,Miyagi Prefectur,Miyagi Prefecture,Miyagi prefektur,Miyagi prefektuur,Miyagi-ken,Miyagi-koan,Miyagi-koān,Miyagi-praefekturet,Miyagi-præfekturet,Miyagin prefektuuri,Miyaqi,Mkoa wa Miyagi,Praefektur Miyagi,Prefectura Miyagi,Prefectura de Miyagi,Prefecture de Miyagi,Prefektur Miyagi,Prefektura Mijagi,Prefektura Miyagi,Prefekturai Mijagi,Prefettura di Miyagi,Prepektura ng Miyagi,Prepektura ti Miyagi,Präfektur Miyagi,Préfecture de Miyagi,Wilayah Miyagi,astan myagy,canghwad mi yangi,gong cheng xian,miyagi,miyagi hyeon,miyagiken,myaghy,myagy,myagy pryfykchr,Мияги,Мијаги,Префектура Мијаги,Префектура Міяґі,Префектураи Мияги,Միյագի,מיאגי,استان میاگی,ضلع میاگی,مىياگى ناھىيىسى,مياغي,میاگی,میاگی پریفیکچر,मियागी,จังหวัดมิยะงิ,მიაგის პრეფექტურა,მიაგიშ პრეფექტურა,みやぎけん,ミヤギケン,宮城县,宮城県,宮城縣,미야기 현	38.44938	140.92624	A	ADM1	JP		24				0		56	Asia/Tokyo	2014-03-05
+2112518	Iwate-ken	Iwate-ken	Ihate-ken,Iwate,Iwate-ken,ihwate hyeon,iwateken,yan shou xian,いわてけん,岩手県,이화테 현	39.59601	141.35971	A	ADM1	JP		16				0		551	Asia/Tokyo	2014-03-05
+2112669	Ibaraki-ken	Ibaraki-ken	Ibaraki,Ibaraki-ken,ci cheng xian,ibalaki hyeon,ibarakiken,いばらきけん,茨城県,이바라키 현	36.31035	140.31615	A	ADM1	JP		14				0		17	Asia/Tokyo	2014-03-05
+2112922	Fukushima	Fukushima	Fukushima,Fukushima Ken,Fukushima Prefectur,Fukushima Prefecture,Fukushima prefektuur,Fukushima-ken,Fukushima-praefekturet,Fukushima-præfekturet,Fukushiman prefektuuri,Fukusima,Fukusima prefektura,Fukusima prefektúra,Fukusimos prefektura,Fukušima,Fukušimos prefektūra,Gubernio Fukusima,Gubernio Fukuŝima,Hukusima-koan,Hukusima-koān,Mkoa wa Fukushima,Praefektur Fukushima,Prefectura Fukushima,Prefectura de Fukushima,Prefecture de Fukushima,Prefektur Fukushima,Prefektura Fukushima,Prefektura Fukusima,Prefektura Fukušima,Prefekturai Fukushima,Prefettura di Fukushima,Prepektura ng Fukushima,Prepektura ti Fukushima,Präfektur Fukushima,Préfecture de Fukushima,Préféktur Fukushima,Wilayah Fukushima,astan fwkwshyma,canghwad fu ku chi ma,fu dao xian,fukushimaken,fukusima prifekcara,fwkwshyma,fwkwshyma pryfykchr,hukusima hyeon,phukusima,pwqwsymh,Префектура Фукусіма,Префектура Фукушима,Префектураи Фукушима,Фукусима,Фукушима,Фүкүшима,Ֆուկուսիմա,פוקושימה,استان فوکوشیما,ضلع فوکوشیما,فوكوشيما,فوکوشیما,فوکوشیما پریفیکچر,فۇكۇشىما ناھىيىسى,फ़ूकूशिमा प्रीफ़ेक्चर,फुकुशिमा,จังหวัดฟุกุชิมะ,ふくしまけん,福岛县,福島県,福島縣,후쿠시마 현	37.38158	140.22199	A	ADM1	JP		08				0		490	Asia/Tokyo	2014-04-29
+2113014	Chiba-ken	Chiba-ken	Chiba,chibaken,jiba hyeon,qian ye xian,ちばけん,千葉県,지바 현	35.60506	140.12333	A	ADM1	JP		04				0		11	Asia/Tokyo	2014-02-12
+2113124	Akita-ken	Akita-ken	Akita,Akita-ken,akita hyeon,akitaken,qiu tian xian,あきたけん,秋田県,아키타 현	39.75251	140.40538	A	ADM1	JP		02				0		410	Asia/Tokyo	2014-03-05
+2130037	Hokkaidō	Hokkaido	Hokkaido,Hokkaidō,bei hai dao,hokkaidou,huskaido,ほっかいどう,ホッカイドウ,北海道,훗카이도	43.06451	141.3466	A	ADM1	JP		12				5647230		29	Asia/Tokyo	2014-02-12
+2130656	Aomori-ken	Aomori-ken	Aomori,Aomori Prefectur,Aomori Prefecture,Aomori prefektur,Aomori prefektura,Aomori prefektuur,Aomori prefektúra,Aomori prefektūra,Aomorin prefektuuri,Aomorio prefektura,Aomorio prefektūra,Gubernio Aomori,Mkoa wa Aomori,Praefektur Aomori,Prefectura Aomori,Prefectura dAomori,Prefectura de Aomori,Prefecture dAomori,Prefektur Aomori,Prefektura Aomori,Prefekturai Aomori,Prefettura di Aomori,Prepektura ng Aomori,Prepektura ti Aomori,Präfektur Aomori,Préfecture dAomori,Préféktur Aomori,Wilayah Aomori,a'omori prifekcara,aomoli hyeon,aomoriken,astan aywmwry,awmwry,cang hwad xa xoa moa ri,omori,qing sen xian,Аомори,Префектура Аомори,Префектура Аоморі,Префектураи Аомори,Աոմորի,אאומורי,آوموري,ئائومورى ناھىيىسى,ئائۆمۆری,استان آئوموری,ضلع آوموری,आओमोरी प्रीफ़ेक्चर,ओमोरी,จังหวัดอะโอะโมะริ,あおもりけん,アオモリケン,青森县,青森県,青森縣,아오모리 현	40.7831	140.82828	A	ADM1	JP		03				1373164		138	Asia/Tokyo	2014-02-12
