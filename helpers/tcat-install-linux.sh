@@ -47,7 +47,6 @@ URLEXPANDYES=y # install URL Expander or not
 SERVERNAME= # should default to this machine's IP address (-s overrides)
 
 # TCAT
-9
 TCAT_AUTO_UPDATE=0 # 0=off, 1=trivial, 2=substantial, 3=expensive
 
 # Unix user and group to own the TCAT files
@@ -986,18 +985,18 @@ if [ -n "$UBUNTU_VERSION" ]; then
 elif [ -n "$DEBIAN_VERSION" ]; then
     echo "$PROG: installing MySQL for Debian"
 
-    if [ -a "$DEBIAN_VERSION_MAJOR" != '9' ]; then
+    if [ "$DEBIAN_VERSION_MAJOR" != '9' ]; then
 
-    # On Debian 8, we use the MySQL repository, because it contains a version we need
-    # to have GEO functionality.
+        # On Debian 8, we use the MySQL repository, because it contains a version we need
+        # to have GEO functionality.
 
-    apt-get -qq -y install wget
+        apt-get -qq -y install wget
 
-    wget http://dev.mysql.com/get/mysql-apt-config_0.3.5-1debian8_all.deb
+        wget http://dev.mysql.com/get/mysql-apt-config_0.3.5-1debian8_all.deb
 
-    # Note: this prompts the user to choose the MySQL product to configure :-(
-    # TODO: find a debconf-set-selections setting to avoid user interaction
-    dpkg -i mysql-apt-config_0.3.5-1debian8_all.deb
+        # Note: this prompts the user to choose the MySQL product to configure :-(
+        # TODO: find a debconf-set-selections setting to avoid user interaction
+        dpkg -i mysql-apt-config_0.3.5-1debian8_all.deb
 
     fi
 
@@ -1005,19 +1004,18 @@ elif [ -n "$DEBIAN_VERSION" ]; then
 
     echo "$PROG: installing Apache for Debian"
 
-    if [ -a "$DEBIAN_VERSION_MAJOR" != '9' ]; then
-    apt-get -y install \
-    apache2-mpm-prefork apache2-utils \
-    libapache2-mod-php5 \
-    php5-mysql php5-curl php5-cli php5-geos php-patchwork-utf8
+    if [ "$DEBIAN_VERSION_MAJOR" != '9' ]; then
+        apt-get -y install \
+        apache2-mpm-prefork apache2-utils \
+        libapache2-mod-php5 \
+        php5-mysql php5-curl php5-cli php5-geos php-patchwork-utf8
+        php5enmod geos
     else
-    apt-get -y install \
-    apache2-utils \
-    libapache2-mod-php7.0 \
-    php7.0-mysql php7.0-curl php7.0-cli php-patchwork-utf8 php7.0-mbstring
+        apt-get -y install \
+        apache2-utils \
+        libapache2-mod-php7.0 \
+        php7.0-mysql php7.0-curl php7.0-cli php-patchwork-utf8 php7.0-mbstring
     fi
-
-    php5enmod geos
 
 else
     echo "$PROG: internal error: unexpected OS" >&2
