@@ -358,7 +358,7 @@ if [ "$DISTRIBUTION_ID" = 'Ubuntu' ]; then
 	"$UBUNTU_VERSION" != '15.10' -a \
 	"$UBUNTU_VERSION" != '16.04' -a \
 	"$UBUNTU_VERSION" != '16.10' -a \
-	"$UBUNTU_VERSION" != '17.04' -a
+	"$UBUNTU_VERSION" != '17.04'
 	]; then
 	if [ -z "$FORCE_INSTALL" ]; then
 	    echo "$PROG: error: unsupported distribution: Ubuntu $UBUNTU_VERSION" >&2
