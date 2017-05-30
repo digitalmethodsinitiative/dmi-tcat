@@ -1283,7 +1283,7 @@ sed -i "s/dbuser = \"\"/dbuser = \"$TCATMYSQLUSER\"/g" "$CFG"
 sed -i "s/dbpass = \"\"/dbpass = \"$TCATMYSQLPASS\"/g" "$CFG"
 sed -i "s/example.com\/dmi-tcat\//$SERVERNAME\//g" "$CFG"
 
-if [ "$URLEXPANDYES" == "y" ]; then
+if [ "$URLEXPANDYES" = 'y' ]; then
    echo ""
    tput bold
    echo "Installation and configuration of the URL expander ..."
