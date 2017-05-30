@@ -1015,6 +1015,28 @@ elif [ -n "$DEBIAN_VERSION" ]; then
         apache2-utils \
         libapache2-mod-php7.0 \
         php7.0-mysql php7.0-curl php7.0-cli php-patchwork-utf8 php7.0-mbstring
+
+        # Build and enable PHP GEOS module for PHP 7.0
+
+        apt-get install -y build-essential automake make gcc g++ php7.0-dev
+        wget http://download.osgeo.org/geos/geos-3.6.1.tar.bz2
+        tar xjf geos-3.6.1.tar.bz2 
+        cd geos-3.6.1/
+        ./configure
+        make -j 4
+        make install
+        ldconfig
+        cd ../
+        git clone https://git.osgeo.org/gogs/geos/php-geos.git --depth 1
+        cd php-geos
+        sh autogen.sh
+        ./configure
+        make -j 4
+        make install
+        cd ../
+        echo "extension=geos.so" > /etc/php/7.0/mods-available/geos.ini
+        phpenmod geos
+
     fi
 
 else
