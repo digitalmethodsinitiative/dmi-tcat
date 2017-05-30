@@ -22,6 +22,9 @@
 # - Ubuntu 15.04
 # - Ubuntu 15.10
 # - Ubuntu 16.04
+# - Ubuntu 16.10
+# - Ubuntu 17.04
+# - Ubuntu 17.10
 # - Debian 8.*
 # - Debian 9.*
 #
@@ -353,7 +356,9 @@ if [ "$DISTRIBUTION_ID" = 'Ubuntu' ]; then
 	"$UBUNTU_VERSION" != '14.04' -a \
 	"$UBUNTU_VERSION" != '15.04' -a \
 	"$UBUNTU_VERSION" != '15.10' -a \
-	"$UBUNTU_VERSION" != '16.04' \
+	"$UBUNTU_VERSION" != '16.04' -a \
+	"$UBUNTU_VERSION" != '16.10' -a \
+	"$UBUNTU_VERSION" != '17.04' -a
 	]; then
 	if [ -z "$FORCE_INSTALL" ]; then
 	    echo "$PROG: error: unsupported distribution: Ubuntu $UBUNTU_VERSION" >&2
@@ -956,12 +961,40 @@ if [ -n "$UBUNTU_VERSION" ]; then
     echo "$PROG: installing Apache for Ubuntu"
     apt-get -y install apache2 apache2-utils
 
-    if [ "$UBUNTU_VERSION" = '16.04' ]; then
+    if [ "$UBUNTU_VERSION_MAJOR" -lt 16 ]; then
+	    # 14.04, 15.04, 15.10 and untested earlier versions
+	    PHP_PACKAGES="libapache2-mod-php5 php5-mysql php5-curl php5-cli php-patchwork-utf8"
+    else
         # This will install PHP 7
 	    PHP_PACKAGES="libapache2-mod-php php-mysql php-curl php-cli php-patchwork-utf8 php-mbstring"
-    else
-	    # 14.04, 15.04, 15.10 and untested
-	    PHP_PACKAGES="libapache2-mod-php5 php5-mysql php5-curl php5-cli php-patchwork-utf8"
+        if [ "$UBUNTU_VERSION_MAJOR" -gt 16 ]; then
+            # Ubuntu versions starting from 17.04 have the PHP GEOS module in the repository
+
+            apt-get -y install php-geos
+        else
+            # Build and enable PHP GEOS module for PHP 7 (TODO: verify)
+
+            apt-get install -y build-essential automake make gcc g++ php-dev
+            wget http://download.osgeo.org/geos/geos-3.6.1.tar.bz2
+            tar xjf geos-3.6.1.tar.bz2 
+            cd geos-3.6.1/
+            ./configure
+            make -j 4
+            make install
+            ldconfig
+            cd ../
+            git clone https://git.osgeo.org/gogs/geos/php-geos.git --depth 1
+            cd php-geos
+            sh autogen.sh
+            ./configure
+            make -j 4
+            make install
+            cd ../
+            # TODO: verify Ubuntu extension path!
+            echo "extension=geos.so" > /etc/php/mods-available/geos.ini
+            # TODO: verify Ubuntu extension enable command
+            phpenmod geos
+        fi
     fi
     echo "$PROG: installing PHP packages:"
     echo "  $PHP_PACKAGES"
