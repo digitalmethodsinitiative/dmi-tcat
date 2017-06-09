@@ -400,23 +400,23 @@ function sqlInterval() {
     global $interval;
     switch ($interval) {
         case "minute":
-            return "DATE_FORMAT(t.created_at,'%Y-%m-%d %Hh %im') datepart ";
-            break;
+            return "DATE_FORMAT(t.created_at,'%Y-%m-%d %H:%i') datepart ";
+            break; 
         case "hourly":
-            return "DATE_FORMAT(t.created_at,'%Y-%m-%d %Hh') datepart ";
-            break;
+            return "DATE_FORMAT(t.created_at,'%Y-%m-%d %H') datepart ";
+            break; 
         case "weekly":
             return "DATE_FORMAT(t.created_at,'%Y %u') datepart ";
-            break;
+            break; 
         case "monthly":
             return "DATE_FORMAT(t.created_at,'%Y-%m') datepart ";
-            break;
+            break; 
         case "yearly":
             return "DATE_FORMAT(t.created_at,'%Y') datepart ";
-            break;
+            break; 
         case "overall":
             return "DATE_FORMAT(t.created_at,'overall') datepart ";
-            break;
+            break; 
         default:
             return "DATE_FORMAT(t.created_at,'%Y-%m-%d') datepart "; // default daily (also used for custom)
     }
@@ -857,8 +857,8 @@ function get_filename_for_export($module, $settings = "", $filetype = "csv") {
     $filename .= "-" . stripslashes($esc['shell']["query"]);
     $filename .= "-" . $esc['shell']["exclude"];
     $filename .= "-" . $esc['shell']["from_source"];
-    $filename .= "-" . $esc['shell']["from_user_name"];
-    $filename .= "-" . $esc['shell']["exclude_from_user_name"];
+    $filename .= "-" . substr($esc['shell']["from_user_name"],0,20);
+    $filename .= "-" . substr($esc['shell']["exclude_from_user_name"],0,20);
     $filename .= "-" . $esc['shell']["from_user_description"];
     $filename .= "-" . $esc['shell']["from_user_lang"];
     $filename .= "-" . $esc['shell']["url_query"];
