@@ -786,14 +786,10 @@ function current_collation() {
     // Is the PDO connection active?
     $re_use = false;
     if (isset($dbh) && $dbh instanceof PDO) {
-	$status = $dbh->getAttribute(PDO::ATTR_CONNECTION_STATUS);
-        if ($status != CONNECTION_NORMAL) {
-           $dbh = null;
-	} else {
-	   $re_use = true;
-	}
+        $re_use = true;
+    } else {
+        $dbh = pdo_connect();
     }
-    $dbh = pdo_connect();
     $collation = 'utf8_bin';
     $is_utf8mb4 = false;
     $sql = "SHOW FULL COLUMNS FROM " . $esc['mysql']['dataset'] . "_hashtags";
