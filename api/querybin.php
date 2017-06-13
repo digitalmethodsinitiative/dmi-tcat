@@ -2470,13 +2470,15 @@ function main()
         // Determine action
 
         if ($_SERVER['REQUEST_METHOD'] === 'GET' &&
-            array_key_exists('action', $_GET)
+            array_key_exists('action', $_REQUEST)
         ) {
-            $action = $_GET['action']; // explicit action
+            $action = $_REQUEST['action']; // explicit action
         } else if ($_SERVER['REQUEST_METHOD'] === 'POST' &&
-            array_key_exists('action', $_POST)
+            array_key_exists('action', $_REQUEST)
         ) {
-            $action = $_POST['action']; // explicit action
+            $action = $_REQUEST['action']; // explicit action
+        } else if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
+            $action = 'tweet-purge';
         } else {
             // Use default action for resource
             switch ($resource) {
