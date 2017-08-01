@@ -54,7 +54,7 @@ if (defined('ANALYSIS_URL'))
             "&from_user_lang=" + $("#ipt_user_lang").val() +
             "&exclude_from_user_name=" + $("#ipt_exclude_from_user").val() +
             "&from_user_description=" + $("#ipt_user_bio").val() +
-            "&from_source=" + $("#ipt_from_source").val() +
+            "&from_source=" + $("#ipt_from_source").val().replace(/#/g,"%23") +
             "&startdate=" + $("#ipt_startdate").val() +
             "&enddate=" + $("#ipt_enddate").val() +
             "&whattodo=" + $("#whattodo").val() +
@@ -257,7 +257,7 @@ if (defined('ANALYSIS_URL'))
                         </tr>
 
                         <tr>
-                            <td class="tbl_head">From twitter client: </td><td><input type="text" id="ipt_from_source" size="60" name="from_source"  value="<?php echo $from_source; ?>" /> (empty: from any client*)</td>
+                            <td class="tbl_head">Twitter client URL/descr: </td><td><input type="text" id="ipt_from_source" size="60" name="from_source"  value="<?php echo $from_source; ?>" /> (empty: from any client*)</td>
                         </tr>
                         <tr>
                             <td class="tbl_head">(Part of) URL: </td><td><input type="text" id="ipt_url_query" size="60" name="url_query"  value="<?php echo $url_query; ?>" /> (empty: any or all URLs*)</td>
