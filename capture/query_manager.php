@@ -98,6 +98,16 @@ function create_new_bin($params) {
             $phrases = array_trim_and_unique($phrases);
         } elseif ($type == "geotrack") {
             $phrases = get_phrases_from_geoquery($params["newbin_phrases"]);
+
+            // Validate geo phrases
+
+            foreach ($phrases as $geophrase) {
+                $area = geoPhraseArea($geophrase);
+                if ($area > 45.0) {
+                    echo '{"msg":"Cannot add geobox ' . $geophrase . '. Area is too large."}';
+                    return;
+                }
+            }
         }
 
         // populate the phrases and connector tables

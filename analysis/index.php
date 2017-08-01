@@ -51,6 +51,8 @@ if (defined('ANALYSIS_URL'))
 <?php } ?>
         "&exclude=" + $("#ipt_exclude").val().replace(/#/g,"%23") +
             "&from_user_name=" + $("#ipt_from_user").val() +
+            "&from_user_lang=" + $("#ipt_user_lang").val() +
+            "&exclude_from_user_name=" + $("#ipt_exclude_from_user").val() +
             "&from_user_description=" + $("#ipt_user_bio").val() +
             "&from_source=" + $("#ipt_from_source").val() +
             "&startdate=" + $("#ipt_startdate").val() +
@@ -241,10 +243,17 @@ if (defined('ANALYSIS_URL'))
 
                         <tr>
                             <td class="tbl_head">From user: </td><td><input type="text" id="ipt_from_user" size="60" name="from_user_name"  value="<?php echo $from_user_name; ?>" /> (empty: from any user*)</td>
+			</tr>
+
+                        <tr>
+                            <td class="tbl_head">Exclude user: </td><td><input type="text" id="ipt_exclude_from_user" size="60" name="exclude_from_user_name"  value="<?php echo $exclude_from_user_name; ?>" /> (empty: exclude no users*)</td>
                         </tr>
 
                         <tr>
-                            <td class="tbl_head">User bio: </td><td><input type="text" id="ipt_user_bio" size="60" name="from_user_description"  value="<?php echo $from_user_description; ?>" /> (empty: from any user*)</td>
+                            <td class="tbl_head">User bio: </td><td><input type="text" id="ipt_user_bio" size="60" name="from_user_description"  value="<?php echo $from_user_description; ?>" /> (empty: anything in biography*)</td>
+                        </tr>
+                        <tr>
+                            <td class="tbl_head">User language: </td><td><input type="text" id="ipt_user_lang" size="60" name="from_user_lang"  value="<?php echo $from_user_lang; ?>" /> (empty: any language*)</td>
                         </tr>
 
                         <tr>
@@ -442,6 +451,9 @@ if (defined('ANALYSIS_URL'))
 
                             <tr>
                                 <td class="tbl_head">From user:</td><td><?php echo $esc['mysql']['from_user_name']; ?></td>
+			    </tr>
+                            <tr>
+                                <td class="tbl_head">Exclude from user:</td><td><?php echo $esc['mysql']['exclude_from_user_name']; ?></td>
                             </tr>
                             <tr>
                                 <td class="tbl_head">From twitter client: </td><td><?php echo $esc['mysql']['from_source']; ?></td>
@@ -591,7 +603,7 @@ foreach ($linedata as $key => $value) {
 
                 <legend>Export selected data</legend>
 
-                <p class="txt_desc">All exports have the following filename convention: {dataset}-{startdate}-{enddate}-{query}-{exclude}-{from_user_name}-{from_user_lang}-{url_query}-{module_name}-{module_settings}-{dmi-tcat_version}.{filetype}</p>
+                <p class="txt_desc">All exports have the following filename convention: {dataset}-{startdate}-{enddate}-{query}-{exclude}-{from_user_name}-{exclude_from_user_name}-{from_user_lang}-{url_query}-{module_name}-{module_settings}-{dmi-tcat_version}.{filetype}</p>
 
                 <p>
                     <div class='txt_desc' style='background-color: #eee; padding: 5px;'>Output format for tables:
@@ -742,22 +754,19 @@ foreach ($linedata as $key => $value) {
                     <div class="txt_desc">Use: get a grasp of the most popular media.</div>
                     <div class="txt_link"> &raquo;  <a href="" onclick="var minf = askFrequency(); $('#whattodo').val('media_frequency&minf='+minf+getInterval());sendUrl('mod.media_frequency.php');return false;">launch</a></div>
 
-                    <hr/>
+<!--                    <hr/> -->
 
 <!--                    <h3>Export an estimation of the number of rate limited tweets in your data</h3> -->
 <!--                    <div class="txt_desc">Exports a spreadsheet with an estimation of the ammount of non-captured tweets in your query due to ratelimit occurances.</div> -->
 <!--                    <div class="txt_desc">Use: gain insight in possible missing data due to hitting the Twitter API rate limits.</div> -->
 <!--                    <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('ratelimits'+getInterval());sendUrl('mod.ratelimits.php');return false;">launch</a></div> -->
+
 <!--                    <hr/> -->
-                    
-                    <?php if ($show_ratelimit_and_gap_export) { ?>
 
                     <h3>Export table with potential gaps in your data</h3>
                     <div class="txt_desc">Exports a spreadsheet with all known data gaps in your current query, during which TCAT was not running or capturing data for this bin.</div>
                     <div class="txt_desc">Use: Gain insight in possible missing data due to outages</div>
                     <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('gaps');sendUrl('mod.gaps.php');return false;">launch</a></div>
-
-                    <?php } ?>
 
                 </div>
 

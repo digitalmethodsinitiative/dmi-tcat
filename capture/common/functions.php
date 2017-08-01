@@ -868,6 +868,19 @@ function coordinatesInsideBoundingBox($point_lng, $point_lat, $sw_lng, $sw_lat, 
     return $geobox->contains($geopoint);
 }
 
+// Get the area of a specific geophrase
+function geoPhraseArea($geophrase) {
+    $box = explode(",", $geophrase);
+    $sw_lng = $box[0]; $sw_lat = $box[1]; $ne_lng = $box[2]; $ne_lat = $box[3];
+    $boxwkt = 'POLYGON((' . $sw_lng . ' ' . $sw_lat . ', '
+            . $sw_lng . ' ' . $ne_lat . ', '
+            . $ne_lng . ' ' . $ne_lat . ', '
+            . $ne_lng . ' ' . $sw_lat . ', '
+            . $sw_lng . ' ' . $sw_lat . '))';
+    $geobox = geoPHP::load($boxwkt, 'wkt');
+    return $geobox->area();
+}
+
 /*
  * Create a full location query string from multiple coordinate 'phrases' (geobox phrases)
  */
