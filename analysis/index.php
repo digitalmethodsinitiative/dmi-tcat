@@ -4,6 +4,7 @@ require_once __DIR__ . '/../common/functions.php';
 require_once __DIR__ . '/common/config.php';
 require_once __DIR__ . '/common/functions.php';
 ?>
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -651,11 +652,39 @@ foreach ($linedata as $key => $value) {
                     <hr />
 
                     <h3>Hashtag-user activity</h3>
-                    <div class="txt_desc">Lists hashtags, the number of tweets with that hashtag, the numnber of distinct users tweeting with that hashtag, the number of distinct mentions tweeted together with the hashtag, and the total number of mentions tweeted together with the hashtag.</div>
+                    <div class="txt_desc">Lists hashtags, the number of tweets with that hashtag, the number of distinct users tweeting with that hashtag, the number of distinct mentions tweeted together with the hashtag, and the total number of mentions tweeted together with the hashtag.</div>
                     <div class="txt_desc">Use: explor user-hashtag activity.</div>
                     <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('mod.hashtag_user_activity'); sendUrl('mod.hashtag_user_activity.php');return false;">launch</a></div>
 
                     <hr />
+
+                    <h3>Twitter client (source) frequency</h3>
+                    <div class="txt_desc">Contains source frequencies.</div>
+                    <div class="txt_desc">List the frequency of tweet software sources per interval.</div>
+                    <div class="txt_link"> &raquo;  <a href="index.php?" onclick="var minf = askFrequency(); $('#whattodo').val('source&minf='+minf+getInterval()); sendUrl('index.php');return false;">launch</a></div>
+
+                    <hr />
+                    
+                    <h3>Twitter client (source) stats (overall)</h3>
+                    <div class="txt_desc">Contains the min, max, average, Q1, median, Q3, and trimmed mean for: number of tweets per source, urls per source</div>
+                    <div class="txt_desc">Use: get a better feel for the sources in your data set.</div>
+                    <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('source.stats'+getInterval()); sendUrl('mod.source.stats.php');return false;">launch</a></div>
+
+                    <hr />
+                    
+                    <h3>Twitter client (source) stats (individual)</h3>
+                    <div class="txt_desc">Lists sources and their number of tweets, retweets, hashtags, URLs and mentions.</div>
+                    <div class="txt_desc">Use: get a better feel for the sources in your data set.</div>
+                    <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('source.list'+getInterval()); sendUrl('mod.source.list.php');return false;">launch</a></div>
+
+                    <hr/>
+
+                    <!--<h3>Source-user activity</h3>
+                    <div class="txt_desc">Lists sources, the number of tweets sent with that source, the number of distinct sources that have tweeted that hashtag, the number of distinct mentions tweeted from the source, and the total number of mentions tweeted with the source.</div>
+                    <div class="txt_desc">Use: explor user-hashtag activity.</div>
+                    <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('mod.hashtag_source_activity'); sendUrl('mod.hashtag_source_activity.php');return false;">launch</a></div>
+
+                    <hr />-->
 
                     <h3>User visibility (mention frequency)</h3>
                     <div class="txt_desc">Lists usernames and the number of times they were mentioned by others.</div>
@@ -675,12 +704,6 @@ foreach ($linedata as $key => $value) {
                     <div class="txt_desc">Lists usernames with both tweet and mention counts.</div>
                     <div class="txt_desc">Use: see wether the users mentioned are also those who tweet a lot.</div>
                     <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('user-mention'+getInterval()); sendUrl('index.php');return false;">launch</a></div>
-
-                    <hr />
-
-                    <h3>Twitter client frequency</h3>
-                    <div class="txt_desc">List the frequency of tweet software sources per interval.</div>
-                    <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('sources'+getInterval());sendUrl('mod.sources.stats.php');return false;">launch</a></div>
 
                     <?php if ($show_url_export) { ?>
                         <hr />
@@ -882,7 +905,9 @@ foreach ($linedata as $key => $value) {
                         The more often they appear together, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>").</div>
                     <div class="txt_desc">Use: explore the relational <i>activity</i> between mentioned users and hashtags, find and analyze which users are considered experts around which topics.</div>
                     <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('mention_hashtags');sendUrl('mod.mention_hashtags.php');return false;">launch</a></div>
-
+                    
+                    <hr/>
+                    
                     <h3>Bipartite hashtag-source graph</h3>
                     <div class="txt_desc">Produces a <a href="http://en.wikipedia.org/wiki/Bipartite_graph">bipartite graph</a> based on co-occurence of hashtags and "sources" (the client a
                         tweet was sent from is its source) . If a hashtag is tweeted from a particular client, there will be a link between that client and the hashtag.
@@ -890,7 +915,28 @@ foreach ($linedata as $key => $value) {
                     <div class="txt_desc">Use: explore the relations between clients and hashtags, find and analyze which clients are related to which topics.</div>
                     <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('mod.sources_hashtags');sendUrl('mod.sources_hashtags.php');return false;">launch</a></div>
 
+                    <hr/>
+                    
+                    <h3>Bipartite user-source graph</h3>
+                    <div class="txt_desc">Produces a <a href="http://en.wikipedia.org/wiki/Bipartite_graph">bipartite graph</a> based on co-occurence of users and "sources" (the client a
+                        tweet was sent from is its source) . If a users tweets from a particular client, there will be a link between that client and the user.
+                        The more often they appear together, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>").</div>
+                    <div class="txt_desc">Use: explore the relations between clients and users, find and analyze which users use which clients.</div>
+                    <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('mod.sources_users');sendUrl('mod.sources_users.php');return false;">launch</a></div>
+
+                    
+                    
                     <?php if ($show_url_export) { ?>
+                    
+                        <hr/>
+                    
+                        <h3>Bipartite domain-source graph</h3>
+                        <div class="txt_desc">Produces a <a href="http://en.wikipedia.org/wiki/Bipartite_graph">bipartite graph</a> based on co-occurence of (URL-)domains and "sources" (the client a
+                            tweet was sent from is its source) . If a domain is tweeted from a particular client, there will be a link between that client and the domain.
+                            The more often they appear together, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>").</div>
+                        <div class="txt_desc">Use: explore the relations between domains and hashtags, find and analyze which domains are related to which sources.</div>
+                        <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('mod.sources_hosts');sendUrl('mod.sources_hosts.php');return false;">launch</a></div>
+                    
                         <hr />
                         <h3>Bipartite URL-user graph</h3>
                         <div class="txt_desc">Produces a <a href="http://en.wikipedia.org/wiki/Bipartite_graph">bipartite graph</a> based on co-occurence of URLS and users. If a user wrote a tweet with a certain URL, there will be a link between that user and the URL.

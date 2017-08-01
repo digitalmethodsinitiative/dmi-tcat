@@ -150,7 +150,7 @@ $esc = array();
 $punctuation = array("\s", "\.", ",", "!", "\?", ":", ";", "\/", "\\", "#", "@", "&", "\^", "\$", "\|", "`", "~", "=", "\+", "\*", "\"", "'", "\(", "\)", "\]", "\[", "\{", "\}", "<", ">", "�");
 
 // define the type of output
-$tsv = array("hashtag", "mention", "retweet", "urls", "hosts", "user", "user-mention"); // these analyses will output tsv files
+$tsv = array("hashtag", "mention", "retweet", "urls", "hosts", "user", "user-mention", "source"); // these analyses will output tsv files
 $network = array("coword", "interaction");   // these analyses will output network files
 
 $titles = array(
@@ -159,7 +159,8 @@ $titles = array(
     "user" => "User frequency",
     "mention" => "Mention (@username) frequency",
     "urls" => "URL frequency",
-    "hosts" => "host frequency"
+    "hosts" => "host frequency",
+    "source" => "source frequency"
 );
 
 
@@ -471,7 +472,7 @@ function generate($what, $filename) {
         // get other things
     } else {
         // @todo, this could also use database grouping
-        $sql = "SELECT id,text COLLATE $collation as text,created_at,from_user_name COLLATE $collation as from_user_name FROM " . $esc['mysql']['dataset'] . "_tweets t ";
+        $sql = "SELECT id,text COLLATE $collation as text,created_at,source, from_user_name COLLATE $collation as from_user_name FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
 
         // get slice and its min and max time
@@ -482,6 +483,7 @@ function generate($what, $filename) {
             $ids[] = $res['id'];
             $times[] = $res['created_at'];
             $from_user_names[] = strtolower($res['from_user_name']);
+            $sources[] = strtolower($res['source']);
         }
 
         // extract desired things ($what) and group per interval
@@ -527,7 +529,9 @@ function generate($what, $filename) {
                 case "user":
                     $results[$group][] = $from_user_names[$key];
                     break;
-
+                case "source":
+                    $results[$group][] = $sources[$key];
+                    break;
                 case "user-mention":
                     $stuff = get_replies($tweet);
                     foreach ($stuff as $thing) {
@@ -550,7 +554,7 @@ function generate($what, $filename) {
                 //    break;
                 default:
                     break;
-            }
+            } 
         }
         // count frequency of occurence of thing, per interval
         if ($what != "user-mention") {
