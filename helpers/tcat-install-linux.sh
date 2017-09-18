@@ -968,10 +968,10 @@ if [ -n "$UBUNTU_VERSION" ]; then
             # Build and enable PHP GEOS module for PHP 7 (TODO: verify)
 
             apt-get install -y build-essential automake make gcc g++ php-dev
-            wget http://download.osgeo.org/geos/geos-3.6.1.tar.bz2
-            tar xjf geos-3.6.1.tar.bz2 
-            cd geos-3.6.1/
-            ./configure
+            wget http://download.osgeo.org/geos/geos-3.6.2.tar.bz2
+            tar -xjf geos-3.6.2.tar.bz2
+            cd geos-3.6.2/
+            ./configure --enable-php
             make -j 4
             make install
             ldconfig
@@ -984,7 +984,7 @@ if [ -n "$UBUNTU_VERSION" ]; then
             make install
             cd ../
             # TODO: verify Ubuntu extension path!
-            echo "extension=geos.so" > /etc/php/mods-available/geos.ini
+            echo "extension=geos.so" > /etc/php/7.0/mods-available/geos.ini
             # TODO: verify Ubuntu extension enable command
             phpenmod geos
         fi
@@ -1045,10 +1045,10 @@ elif [ -n "$DEBIAN_VERSION" ]; then
         # Build and enable PHP GEOS module for PHP 7.0
 
         apt-get install -y build-essential automake make gcc g++ php7.0-dev
-        wget http://download.osgeo.org/geos/geos-3.6.1.tar.bz2
-        tar xjf geos-3.6.1.tar.bz2 
-        cd geos-3.6.1/
-        ./configure
+        wget http://download.osgeo.org/geos/geos-3.6.2.tar.bz2
+        tar -xjf geos-3.6.2.tar.bz2
+        cd geos-3.6.2/
+        ./configure --enable-php
         make -j 4
         make install
         ldconfig
