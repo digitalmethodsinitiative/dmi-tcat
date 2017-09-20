@@ -753,6 +753,10 @@ foreach ($bins as $id => $bin)
                 alert("You should specify at least one user id");
             return false;
         }
+        if(query.indexOf("\t") != -1 || query.indexOf("\n") != -1) {
+            alert("Please do not use tabs or spaces in your query definition!");
+            return false;
+        }
         if(type == 'track') {
             // if literal phrase, there should be no comma's in between
             if(query.indexOf("'")==-1) {
