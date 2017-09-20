@@ -31,6 +31,9 @@ if (empty($bin_name))
 if (empty($keywords))
     die("keywords not set\n");
 
+if (!validate_capture_phrases($keywords))
+    die("Malformed keywords\n");
+
 if (dbserver_has_utf8mb4_support() == false) {
     die("DMI-TCAT requires at least MySQL version 5.5.3 - please upgrade your server");
 }

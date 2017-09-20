@@ -58,4 +58,18 @@ function is_admin(){
     return true;
 }
 
+/**
+ * Validates a given list of keywords, as entered as a parameter in capture/search/search.php for example
+ */
+function validate_capture_phrases($keywords) {
+    $illegal_chars = array( "\t", "\n", ";", "(", ")" );
+    foreach ($illegal_chars as $c) {
+        if (strpos($keywords, $c) !== FALSE) {
+            return FALSE;
+        }
+    }
+    return TRUE;
+}
+
+
 ?>
