@@ -18,8 +18,8 @@ require_once __DIR__ . '/common/Gexf.class.php';
 
         </script>
 
-        <script src="http://d3js.org/d3.v2.min.js?2.9.1"></script>
-        <script src="http://bost.ocks.org/mike/sankey/sankey.js"></script>
+        <script src="https://d3js.org/d3.v2.min.js?2.9.1"></script>
+        <script src="https://bost.ocks.org/mike/sankey/sankey.js"></script>
 
         <style>
 
