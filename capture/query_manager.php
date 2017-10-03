@@ -698,7 +698,7 @@ function getBins() {
     // select phrases
     // select users
 
-    $sql = "SELECT b.id, b.querybin, b.type, b.comments, b.active, period.starttime AS bin_starttime, period.endtime AS bin_endtime FROM tcat_query_bins b, tcat_query_bins_periods period WHERE b.id = period.querybin_id GROUP BY b.id";
+    $sql = "SELECT b.id, b.querybin, b.type, b.comments, b.active, period.starttime AS bin_starttime, period.endtime AS bin_endtime FROM tcat_query_bins b, tcat_query_bins_periods period WHERE b.id = period.querybin_id AND b.access != " . TCAT_QUERYBIN_ACCESS_INVISIBLE . " GROUP BY b.id";
 
     $rec = $dbh->prepare($sql);
     $rec->execute();
