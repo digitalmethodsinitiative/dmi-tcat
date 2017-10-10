@@ -756,6 +756,8 @@ foreach ($linedata as $key => $value) {
 
 <!--                    <hr/> -->
 
+                        <!-- Module has been disabled because of https://twittercommunity.com/t/why-are-track-values-in-limit-notices-out-of-order-and-how-to-interpret-them/35729 -->
+
 <!--                    <h3>Export an estimation of the number of rate limited tweets in your data</h3> -->
 <!--                    <div class="txt_desc">Exports a spreadsheet with an estimation of the ammount of non-captured tweets in your query due to ratelimit occurances.</div> -->
 <!--                    <div class="txt_desc">Use: gain insight in possible missing data due to hitting the Twitter API rate limits.</div> -->

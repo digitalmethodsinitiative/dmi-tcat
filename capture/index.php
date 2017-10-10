@@ -4,7 +4,7 @@ include_once __DIR__ . '/../common/constants.php';
 include_once __DIR__ . '/../common/functions.php';
 
 if (!is_admin())
-    die("Go away, you evil hacker!");
+    die("Sorry, access denied. Your username does not match the ADMIN user defined in the config.php file.");
 
 include_once __DIR__ . '/query_manager.php';
 include_once __DIR__ . '/../common/functions.php';

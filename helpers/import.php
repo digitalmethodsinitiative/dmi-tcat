@@ -73,7 +73,7 @@ foreach ($queryBins as $bin) {
 }
 
 if ($binsExist) {
-    print "Error: query bin(s) already exist. Will not overwrite.\n";
+    print "Error: query bin(s) already exist. You need to run merge.php to import tweets into existing bins.\n";
     die("You may want to rename the existing query bin through the TCAT administration panel.\n");
 }
 
