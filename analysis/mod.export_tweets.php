@@ -87,23 +87,23 @@ require_once __DIR__ . '/common/CSV.class.php';
                 }
                 // lookup media from media table
                 if (array_search("media", $exportSettings) !== false) {
-                    $sql3 = "SELECT * FROM " . $esc['mysql']['dataset'] . "_media WHERE tweet_id = " . $id;
-                    $rec3 = $dbh->prepare($sql2);
-                    $rec3->execute();
-                    while ($res3 = $rec3->fetch(PDO::FETCH_ASSOC)) {
-                        $urls[] = $res3['url'];
-                        $expanded[] = $res3['url_expanded'];
+                    $sql2 = "SELECT * FROM " . $esc['mysql']['dataset'] . "_media WHERE tweet_id = " . $id;
+                    $rec2 = $dbh->prepare($sql2);
+                    $rec2->execute();
+                    while ($res2 = $rec2->fetch(PDO::FETCH_ASSOC)) {
+                        $urls[] = $res2['url'];
+                        $expanded[] = $res2['url_expanded'];
                         $followed[] = '';
                         $domain[] = '';
                         $error[] = '';
-                        $media_ids[] = $res3['id'];
-                        $media_urls[] = $res3['media_url_https'];
-                        $media_type[] = $res3['media_type'];
-                        $photo_width[] = $res3['photo_size_width'];
-                        $photo_height[] = $res3['photo_size_height'];
-                        $photo_resize[] = $res3['photo_resize'];
-                        $indice_start[] = $res3['indice_start'];
-                        $indice_end[] = $res3['indice_end'];
+                        $media_ids[] = $res2['id'];
+                        $media_urls[] = $res2['media_url_https'];
+                        $media_type[] = $res2['media_type'];
+                        $photo_width[] = $res2['photo_size_width'];
+                        $photo_height[] = $res2['photo_size_height'];
+                        $photo_resize[] = $res2['photo_resize'];
+                        $indice_start[] = $res2['indice_start'];
+                        $indice_end[] = $res2['indice_end'];
                     }
                 }
 
