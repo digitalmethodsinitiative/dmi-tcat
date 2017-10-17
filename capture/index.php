@@ -739,6 +739,10 @@ foreach ($bins as $id => $bin)
             alert("bin names can only consist of alpha-numeric characters and underscores")
             return false;
         }
+        if(binname.length > 45) {
+            alert("Bin names must be shorter than 45 characters in length (you entered " + binname.length +")");
+            return false;
+        }
         return true;
     }
             
