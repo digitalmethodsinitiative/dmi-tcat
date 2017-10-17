@@ -200,7 +200,7 @@ $lastRateLimitHit = getLastRateLimitHit();
                         <div class="if_row">
                             <div class='if_row_header'>Bin name:</div>
                             <div class='if_row_content'>
-                                <input id="newbin_name" name="newbin_name" type="text"/>
+                                <input id="newbin_name" name="newbin_name" type="text" maxlength="45"/>
                             </div>
                         </div>
 <?php if (array_search('track', $captureroles) !== false) { ?>
@@ -737,6 +737,10 @@ foreach ($bins as $id => $bin)
         var reg = /^[a-zA-Z0-9_]+$/;
         if(!reg.test(binname.trim())) {
             alert("bin names can only consist of alpha-numeric characters and underscores")
+            return false;
+        }
+        if(binname.length > 45) {
+            alert("Bin names must be shorter than 45 characters in length (you entered " + binname.length +")");
             return false;
         }
         return true;
