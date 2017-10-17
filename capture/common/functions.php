@@ -118,6 +118,11 @@ function get_current_minute() {
 }
 
 function create_bin($bin_name, $dbh = false) {
+
+    if (strlen($bin_name) > 45) {
+        throw new Exception("Bin name exceeds legal length of 45 characters");
+    }
+
     try {
 
         $dbh = pdo_connect();
