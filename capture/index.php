@@ -200,7 +200,7 @@ $lastRateLimitHit = getLastRateLimitHit();
                         <div class="if_row">
                             <div class='if_row_header'>Bin name:</div>
                             <div class='if_row_content'>
-                                <input id="newbin_name" name="newbin_name" type="text"/>
+                                <input id="newbin_name" name="newbin_name" type="text" maxlength="45"/>
                             </div>
                         </div>
 <?php if (array_search('track', $captureroles) !== false) { ?>
