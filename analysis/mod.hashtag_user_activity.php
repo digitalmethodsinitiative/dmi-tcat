@@ -24,6 +24,7 @@ require_once __DIR__ . '/common/CSV.class.php';
         <?php
         validate_all_variables();
         dataset_must_exist();
+        $collation = current_collation();
         $dbh = pdo_connect();
         pdo_unbuffered($dbh);
         $filename = get_filename_for_export("hashtagUserActivity", (isset($_GET['probabilityOfAssociation']) ? "_normalizedAssociationWeight" : ""));
@@ -36,21 +37,19 @@ require_once __DIR__ . '/common/CSV.class.php';
         $rec = $dbh->prepare($sql);
         $rec->execute();
         if ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
-            $nrOfTweets = $res['count'];
+            $nrOfTweets = $res['count']; $rec = null;
         } else {
             die('no data in selection');
         }
 
-        $collation = current_collation();
-
         // select nr of users in subset
         $sql = "SELECT count(distinct(from_user_name COLLATE $collation)) AS count FROM " . $esc['mysql']['dataset'] . "_tweets t ";
-        $sql .= sqlSubset();
+	$sql .= sqlSubset();
 
         $rec = $dbh->prepare($sql);
         $rec->execute();
         if ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
-            $nrOfUsers = $res['count'];
+            $nrOfUsers = $res['count']; $rec = null;
         } else {
             die('no data in selection');
         }
