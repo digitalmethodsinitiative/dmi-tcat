@@ -150,7 +150,7 @@ ini_set("max_execution_time", 3600);
 /*
  * How much memory the script is allowed to take
  */
-ini_set("memory_limit", "2G");
+ini_set("memory_limit", "4G");
 
 /* Sysload monitoring. Display a traffic light indicating system load in the analysis panel */
 
