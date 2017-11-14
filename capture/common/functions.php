@@ -1647,6 +1647,9 @@ class Tweet {
         
         $store_text = $full_text;
 
+        /* Deprecated field will now store non-boolean value */
+        $deprecated = -1;
+
         /* calculate string length as it will be seen by MySQL */
 //        if (mb_strlen($store_text, '8bit') > 254) {
 //            /* the effective storage limit of 254 bytes is being exceeded */
