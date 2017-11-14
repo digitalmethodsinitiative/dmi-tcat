@@ -1726,6 +1726,12 @@ class Tweet {
         if (array_key_exists('extended_entities', $data) &&
             array_key_exists('media', $data["extended_entities"])) {
             $search_image_array = $data['extended_entities']['media'];
+        } else if (!array_key_exists('extended_entities', $data) &&
+                   array_key_exists('entities', $data) &&
+                   array_key_exists('media', $data["entities"])) {
+            // Extract the photo data from the media[] array (which contains only a single item)
+            // At this moment only the Search API does not return extended_entities
+            $search_image_array = $data['entities']['media'];
         }
 
         $media = array();
