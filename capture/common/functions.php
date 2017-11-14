@@ -214,7 +214,7 @@ function create_bin($bin_name, $dbh = false) {
                     `location` varchar(64),
                     `geo_lat` float(10,6),
                     `geo_lng` float(10,6),
-                    `text` varchar(255) NOT NULL,
+                    `text` text NOT NULL,
                     `retweet_id` bigint(20),
                     `retweet_count` int(11),
                     `favorite_count` int(11),
@@ -225,7 +225,6 @@ function create_bin($bin_name, $dbh = false) {
                     `lang` varchar(16),
                     `possibly_sensitive` tinyint(1),
                     `quoted_status_id` bigint,
-                    `truncated` tinyint(1),
                     `withheld_copyright` tinyint(1),
                     `withheld_scope` varchar(32),
                     PRIMARY KEY (`id`),
@@ -262,7 +261,7 @@ function create_bin($bin_name, $dbh = false) {
                     KEY `tweet_id` (`tweet_id`),                
                     KEY `created_at` (`created_at`),
                     KEY `from_user_id` (`from_user_id`),
-                    FULLTEXT KEY `url_followed` (`url_followed`),
+                    KEY `url_followed` (`url_followed`),
                     KEY `url_expanded` (`url_expanded`)
             ) ENGINE=MyISAM  DEFAULT CHARSET=utf8mb4";
 
@@ -1488,7 +1487,6 @@ class Tweet {
     public $filter_level;
     public $lang;
     public $possibly_sensitive;
-    public $truncated;
     public $place_ids;
     public $places;
     public $withheld_in_countries;              // not used as tweet database field
@@ -1636,15 +1634,6 @@ class Tweet {
             $this->geo_lng = $data["geo"]["coordinates"][1];
         }
 
-        /*
-         * Truncated tweets are tweets with more than 140 characters; the full text being stored in an extended tweet segment.
-         * The truncated boolean is set to true in the API when this occurs.
-         * We repurpose this truncated boolean to set it to true when the tweet text exceeds our own internal storage limit of 254 bytes.
-         */
-
-        $full_text = "";
-        $this->truncated = 0;
-
         if (!isset($data["text"])) {
             /* running in extended context, text field does not exist in JSON response (default for REST API) */
             $full_text = $data["full_text"];
@@ -1657,34 +1646,19 @@ class Tweet {
         }
         
         $store_text = $full_text;
-        if (isset($data["retweeted_status"])) {
-            /*
-             * Incorporate full retweet text from retweeted_status to cope with possible truncated due to character limit.
-             * This fix makes the stored text more closely resemble the tweet a shown to the end-user.
-             * See the discussion here: https://github.com/digitalmethodsinitiative/dmi-tcat/issues/74
-             *
-             * NOTE: this fix will probably not be neccessary in the near future, because Twitter has announced
-             * mentions in tweets will no longer count for the character limit.
-             */
-            if (array_key_exists('full_text', $data["retweeted_status"])) {
-                $store_text = "RT @" . $data["retweeted_status"]["user"]["screen_name"] . ": " . $data["retweeted_status"]["full_text"];
-            } else {
-                $store_text = "RT @" . $data["retweeted_status"]["user"]["screen_name"] . ": " . $data["retweeted_status"]["text"];
-            }
-        }
-        /* calculate string length as it will be seen by MySQL */
-        if (mb_strlen($store_text, '8bit') > 254) {
-            /* the effective storage limit of 254 bytes is being exceeded */
-            $this->truncated = 1;
-            if (array_key_exists('extended_tweet', $data)) {
-                /* We only retain the displayable text */
-                $store_text = mb_substr($data['extended_tweet']['full_text'], $data['extended_tweet']['display_text_range'][0], $data['extended_tweet']['display_text_range'][1] - $data['extended_tweet']['display_text_range'][0], '8bit');
-            } else {
-                /* We truncate the string manually */
-                $store_text = mb_substr($store_text, 0, 254, '8bit');
-            }
 
-        }
+        /* calculate string length as it will be seen by MySQL */
+//        if (mb_strlen($store_text, '8bit') > 254) {
+//            /* the effective storage limit of 254 bytes is being exceeded */
+//            $this->truncated = 1;
+//            if (array_key_exists('extended_tweet', $data)) {
+//                /* We only retain the displayable text */
+//                $store_text = mb_substr($data['extended_tweet']['full_text'], $data['extended_tweet']['display_text_range'][0], $data['extended_tweet']['display_text_range'][1] - $data['extended_tweet']['display_text_range'][0], '8bit');
+//            } else {
+//                /* We truncate the string manually */
+//                $store_text = mb_substr($store_text, 0, 254, '8bit');
+//            }
+//        }
         $this->text = $store_text;
 
         $this->retweet_id = null;
