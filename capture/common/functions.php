@@ -1487,6 +1487,7 @@ class Tweet {
     public $filter_level;
     public $lang;
     public $possibly_sensitive;
+    public $truncated;
     public $place_ids;
     public $places;
     public $withheld_in_countries;              // not used as tweet database field
