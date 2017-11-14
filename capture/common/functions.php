@@ -1627,6 +1627,8 @@ class Tweet {
         $this->from_user_favourites_count = $data["user"]["favourites_count"];
         $this->source = $data["source"];
         $this->location = $data["user"]["location"];
+        /* Deprecated field will now store non-boolean value */
+        $this->truncated = -1;
         $this->geo_lat = null;
         $this->geo_lng = null;
         if ($data["geo"] != null) {
@@ -1646,9 +1648,6 @@ class Tweet {
         }
         
         $store_text = $full_text;
-
-        /* Deprecated field will now store non-boolean value */
-        $this->deprecated = -1;
 
         /* calculate string length as it will be seen by MySQL */
 //        if (mb_strlen($store_text, '8bit') > 254) {
@@ -1712,7 +1711,7 @@ class Tweet {
         // all other link data is available under entities->urls
         // by concatenating this information we do not get duplicates
         $urls = array();
-        foreach ($data["entities"]["urls"] as $url) {
+        foreach ($data["extended_entities"]["urls"] as $url) {
             $u = $url;
             $u['url_expanded'] = $u["expanded_url"];
             unset($u["expanded_url"]);
@@ -1726,12 +1725,6 @@ class Tweet {
         if (array_key_exists('extended_entities', $data) &&
             array_key_exists('media', $data["extended_entities"])) {
             $search_image_array = $data['extended_entities']['media'];
-        } else if (!array_key_exists('extended_entities', $data) &&
-                   array_key_exists('entities', $data) &&
-                   array_key_exists('media', $data["entities"])) {
-            // Extract the photo data from the media[] array (which contains only a single item)
-            // At this moment only the Search API does not return extended_entities
-            $search_image_array = $data['entities']['media'];
         }
 
         $media = array();
@@ -1769,8 +1762,8 @@ class Tweet {
 
         $this->urls = json_decode(json_encode($urls, FALSE));
         $this->media = json_decode(json_encode($media, FALSE));
-        $this->user_mentions = json_decode(json_encode($data["entities"]["user_mentions"]), FALSE);
-        $this->hashtags = json_decode(json_encode($data["entities"]["hashtags"]), FALSE);
+        $this->user_mentions = json_decode(json_encode($data["extended_entities"]["user_mentions"]), FALSE);
+        $this->hashtags = json_decode(json_encode($data["extended_entities"]["hashtags"]), FALSE);
         if (isset($data["withheld_in_countries"])) {
             $this->withheld_in_countries = json_decode(json_encode($data["withheld_in_countries"]), FALSE);
         } else {
@@ -2594,7 +2587,7 @@ function processtweets($capturebucket) {
     // running through every single tweet
     foreach ($capturebucket as $data) {
 
-        if (!array_key_exists('entities', $data)) {
+        if (!array_key_exists('extended_entities', $data)) {
 
             // unexpected/irregular tweet data
             if (array_key_exists('delete', $data)) {
