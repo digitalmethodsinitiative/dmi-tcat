@@ -1711,7 +1711,7 @@ class Tweet {
         // all other link data is available under entities->urls
         // by concatenating this information we do not get duplicates
         $urls = array();
-        foreach ($data["extended_entities"]["urls"] as $url) {
+        foreach ($data["entities"]["urls"] as $url) {
             $u = $url;
             $u['url_expanded'] = $u["expanded_url"];
             unset($u["expanded_url"]);
@@ -1762,8 +1762,8 @@ class Tweet {
 
         $this->urls = json_decode(json_encode($urls, FALSE));
         $this->media = json_decode(json_encode($media, FALSE));
-        $this->user_mentions = json_decode(json_encode($data["extended_entities"]["user_mentions"]), FALSE);
-        $this->hashtags = json_decode(json_encode($data["extended_entities"]["hashtags"]), FALSE);
+        $this->user_mentions = json_decode(json_encode($data["entities"]["user_mentions"]), FALSE);
+        $this->hashtags = json_decode(json_encode($data["entities"]["hashtags"]), FALSE);
         if (isset($data["withheld_in_countries"])) {
             $this->withheld_in_countries = json_decode(json_encode($data["withheld_in_countries"]), FALSE);
         } else {
@@ -2587,7 +2587,7 @@ function processtweets($capturebucket) {
     // running through every single tweet
     foreach ($capturebucket as $data) {
 
-        if (!array_key_exists('extended_entities', $data)) {
+        if (!array_key_exists('entities', $data)) {
 
             // unexpected/irregular tweet data
             if (array_key_exists('delete', $data)) {
