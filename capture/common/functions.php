@@ -2153,7 +2153,28 @@ class TweetQueue {
                 try {
                     $tweetq->execute();
                 } catch (PDOException $e) {
-                    $this->reportPDOError($e, $bin_name . '_tweets');
+                    $errInfo = $dbh->errorInfo();
+                    if ($errInfo[0] == '42S02') {
+                        // 42S02: SQLSTATE[42S02]: Base table or view not found: 1146
+                        logit(CAPTURE . ".error.log", "table $bin_name" . "_tweets went missing. This is expected behavior if a live upgrade is in progress.");
+                        $failure = false;
+                        for ($retries = 0; $retries < 3; $retries++) {
+                            sleep(1); $failure = false;
+                            try { $tweetq->execute(); } catch (PDOException $e) {
+                                $failure = true;
+                            }
+                            if ($failure == false) {
+                                break;
+                            }
+                        }
+                        if ($failure) {
+                            $this->reportPDOError($e, $bin_name . '_tweets');
+                        } else {
+                            logit(CAPTURE . ".error.log", "table $bin_name" . "_tweets is back. Queue has been flushed.");
+                        }
+                    } else {
+                        $this->reportPDOError($e, $bin_name . '_tweets');
+                    }
                 }
             }
             if ($statement['hashtags'] !== '') {
