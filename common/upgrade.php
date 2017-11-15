@@ -1430,6 +1430,78 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
 
     }
 
+    // 15/11/2017 Alter existing tweets tables to support 280 character tweets
+
+    $query = "SHOW TABLES";
+    $rec = $dbh->prepare($query);
+    $rec->execute();
+    $results = $rec->fetchAll(PDO::FETCH_COLUMN);
+    $ans = '';
+    if ($interactive == false) {
+        // require auto-upgrade level 2
+        if ($aulevel >= 2) {
+            $ans = 'a';
+        } else {
+            $ans = 'SKIP';
+        }
+    }
+    if ($ans !== 'SKIP') {
+        foreach ($results as $k => $v) {
+            if (!preg_match("/_tweets$/", $v)) continue;
+            if ($single && $v !== $single . '_tweets') { continue; }
+            $query = "SHOW COLUMNS FROM $v";
+            $rec = $dbh->prepare($query);
+            $rec->execute();
+            $update = FALSE;
+            while ($res = $rec->fetch()) {
+                if ($res['Field'] == 'text' && $res['Type'] == 'varchar(255)') {
+                    $update = TRUE;
+                    /* This update is suggested because it affects primary TCAT functionality */
+                    $suggested = TRUE;
+                    break;
+                }
+            }
+            if ($update) {
+                if ($ans !== 'a') {
+                    $ans = cli_yesnoall("Alter text field to support 280 character tweets in table $v", 2, '870d2b103b821421f52b87afca9e8a5dce7bdd6c');
+                }
+                if ($ans == 'a' || $ans == 'y') {
+                    /* If the bin is currently active, we should pause it to prevent capture roles from hanging on inserts */
+                    $querybin = preg_replace("/_tweets$/", "", $v);
+                    $sql = "SELECT `active` FROM tcat_query_bins WHERE querybin = :querybin";
+                    $rec = $dbh->prepare($sql);
+                    $rec->bindParam(":querybin", $querybin, PDO::PARAM_STR);
+                    $rec->execute();
+                    $results = $rec->fetch(PDO::FETCH_ASSOC);
+                    $active = $results['active'];
+                    if ($active == '1') {
+                        logit($logtarget, "Querybin $querybin is currently active. Pausing bin and restarting track roles now");
+                        $sql = "UPDATE tcat_query_bins SET active = 0 WHERE querybin = :querybin";
+                        logit($logtarget, "$sql");
+                        $rec = $dbh->prepare($sql);
+                        $rec->bindParam(":querybin", $querybin, PDO::PARAM_STR);
+                        $rec->execute();
+                        controller_restart_roles($logtarget, true);
+                    }
+                    logit($logtarget, "Modifying text field from VARCHAR to TEXT in table $v");
+                    $query = "ALTER TABLE " . quoteIdent($v) . " MODIFY text TEXT";
+                    logit($logtarget, "$query");
+                    $rec = $dbh->prepare($query);
+                    $rec->execute();
+                    if ($active == '1') {
+                        logit($logtarget, "Resuming activity for querybin $querybin and restarting track roles");
+                        $sql = "UPDATE tcat_query_bins SET active = 1 WHERE querybin = :querybin";
+                        logit($logtarget, "$sql");
+                        $rec = $dbh->prepare($sql);
+                        $rec->bindParam(":querybin", $querybin, PDO::PARAM_STR);
+                        $rec->execute();
+                        controller_restart_roles($logtarget, true);
+                    }
+                }
+            }
+        }
+    }
+
 
     // End of upgrades
 
@@ -1491,6 +1563,15 @@ if (env_is_cli()) {
 
     upgrades(false, $interactive, $aulevel, $single);
 
+    controller_restart_roles($logtarget);
+
+}
+
+/*
+ * Helper function to restart all active capture roles via the controller and optionally wait a minute to ensure the tracking is refreshed
+ */
+function controller_restart_roles($logtarget = "cli", $wait = false) {
+    global $logtarget;
     $dbh = pdo_connect();
     $roles = unserialize(CAPTUREROLES);
     foreach ($roles as $role) {
@@ -1499,7 +1580,10 @@ if (env_is_cli()) {
         $rec = $dbh->prepare($query);
         $rec->execute();
     }
-
+    if ($wait) {
+        /* TODO: more intelligent wait procedure by checking if roles have attained a new PID */
+        sleep(60);
+    }
 }
 
 /*
