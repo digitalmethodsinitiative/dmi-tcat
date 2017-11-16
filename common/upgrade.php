@@ -1532,7 +1532,8 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
                                 logit($logtarget, $sql);
                                 $rec = $dbh->prepare($sql);
                                 $rec->execute();
-                                if ($results = $rec->fetch(PDO::FETCH_ASSOC) && isset($results['max_tweet_id'])) {
+                                $results = $rec->fetch(PDO::FETCH_ASSOC);
+                                if ($results !== FALSE && array_key_exists('max_tweet_id', $results)) {
                                     $max_tweet_id = $results['max_tweet_id'];
                                 } else {
                                     $max_tweet_id = 0;
