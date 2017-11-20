@@ -2154,7 +2154,7 @@ class TweetQueue {
                     $tweetq->execute();
                 } catch (PDOException $e) {
                     $errInfo = $dbh->errorInfo();
-                    if ($errInfo[0] == '42S02') {
+                    if ($errInfo[0] == '42S02' || $errInfo[0] == '1146') {
                         // 42S02: SQLSTATE[42S02]: Base table or view not found: 1146
                         logit(CAPTURE . ".error.log", "table $bin_name" . "_tweets went missing. This is expected behavior if a live upgrade is in progress.");
                         $failure = false;
