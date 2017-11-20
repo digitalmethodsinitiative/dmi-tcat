@@ -1439,8 +1439,8 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
     $results = $rec->fetchAll(PDO::FETCH_COLUMN);
     $ans = '';
     if ($interactive == false) {
-        // require auto-upgrade level 2
-        if ($aulevel >= 2) {
+        // require auto-upgrade level 0
+        if ($aulevel >= 0) {
             $ans = 'a';
         } else {
             $ans = 'SKIP';
@@ -1485,20 +1485,13 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
                         /* The query bin is empty */
                         $count = 0;
                     }
-                    /* We require 2GB per million tweets */
+                    /* We require 2GB per million tweets for the upgrade to proceed (which is substantially more than the estimated real disk space costs) */
                     if ($disk_space_mb < $count / 1000000 * 2048) {
                         /* If not, we don't advocate the fallback method, because it too may require temporary disk space! */
                         logit($logtarget, "WARNING: Insufficient disk space available to upgrade bin $querybin - cannot add 280 character support.");
                     } else {
-                        if (intval($count / 1000000) < 1) {
-                            $time_costs = 0;
-                        } else if (intval($count / 1000000) < 10) {
-                            $time_costs = 1;
-                        } else {
-                            $time_costs = 2;
-                        }
                         if ($ans !== 'a') {
-                            $ans = cli_yesnoall("Alter text field to support 280 character tweets in table $v without table locks", $time_costs, '870d2b103b821421f52b87afca9e8a5dce7bdd6c');
+                            $ans = cli_yesnoall("Alter text field to support 280 character tweets in table $v without table locks (may take time but is not blocking capture)", 0, '870d2b103b821421f52b87afca9e8a5dce7bdd6c');
                         }
                         if ($ans == 'a' || $ans == 'y') {
                             $temporary_bin_name = 'tu_' . strtolower($querybin);
