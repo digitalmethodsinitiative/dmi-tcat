@@ -1533,7 +1533,7 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
                                 $rec = $dbh->prepare($sql);
                                 $rec->execute();
                                 $results = $rec->fetch(PDO::FETCH_ASSOC);
-                                if ($results !== FALSE && array_key_exists('max_tweet_id', $results)) {
+                                if ($results !== FALSE && array_key_exists('max_tweet_id', $results) && !is_null($results['max_tweet_id'])) {
                                     $max_tweet_id = $results['max_tweet_id'];
                                 } else {
                                     $max_tweet_id = 0;
