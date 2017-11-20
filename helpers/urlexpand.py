@@ -22,8 +22,8 @@ socket_timeout = 7
 socket.setdefaulttimeout(socket_timeout)
 
 db_host = 'localhost'
-db_user = 'root'
-db_passwd = 'Y9vEwrUh'
+db_user = 'tcatdbuser'
+db_passwd = ''
 db_db = 'twittercapture'
 
 with open(os.path.dirname(__file__) + '/../config.php', 'r') as f:
