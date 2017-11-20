@@ -1430,6 +1430,197 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
 
     }
 
+    // 15/11/2017 Alter existing tweets tables to support 280 character tweets
+
+    $roles_reloaded_for_upgrade = false;
+    $query = "SHOW TABLES";
+    $rec = $dbh->prepare($query);
+    $rec->execute();
+    $results = $rec->fetchAll(PDO::FETCH_COLUMN);
+    $ans = '';
+    if ($interactive == false) {
+        // require auto-upgrade level 0
+        if ($aulevel >= 0) {
+            $ans = 'a';
+        } else {
+            $ans = 'SKIP';
+        }
+    }
+    if ($ans !== 'SKIP') {
+        foreach ($results as $k => $v) {
+            if (!preg_match("/_tweets$/", $v)) continue;
+            if ($single && $v !== $single . '_tweets') { continue; }
+            $query = "SHOW COLUMNS FROM $v";
+            $rec = $dbh->prepare($query);
+            $rec->execute();
+            $update = FALSE;
+            while ($res = $rec->fetch()) {
+                if ($res['Field'] == 'text' && $res['Type'] == 'varchar(255)') {
+                    $update = TRUE;
+                    break;
+                }
+            }
+            if ($dry_run) {
+                if ($update) {
+                    /* This update is suggested because it affects primary TCAT functionality */
+                    $suggested = TRUE;
+                    break;
+                }
+                continue;
+            }
+            if ($update) {
+
+                $querybin = preg_replace("/_tweets$/", "", $v);
+
+                $disk_space_mb = get_available_mysql_disk_space($logtarget);
+
+                $missing_support = FALSE;
+                if (!is_null($disk_space_mb)) {
+                    $sql = "SELECT COUNT(id) AS cnt FROM $v";
+                    $rec = $dbh->prepare($sql);
+                    $rec->execute();
+                    $results = $rec->fetch(PDO::FETCH_ASSOC);
+                    $count = $results['cnt'];
+                    if ($count == FAlSE) {
+                        /* The query bin is empty */
+                        $count = 0;
+                    }
+                    /* We require 2GB per million tweets for the upgrade to proceed (which is substantially more than the estimated real disk space costs) */
+                    if ($disk_space_mb < $count / 1000000 * 2048) {
+                        /* If not, we don't advocate the fallback method, because it too may require temporary disk space! */
+                        logit($logtarget, "WARNING: Insufficient disk space available to upgrade bin $querybin - cannot add 280 character support.");
+                    } else {
+                        if ($ans !== 'a') {
+                            $ans = cli_yesnoall("Alter text field to support 280 character tweets in table $v without table locks (may take time but is not blocking capture)", 0, '870d2b103b821421f52b87afca9e8a5dce7bdd6c');
+                        }
+                        if ($ans == 'a' || $ans == 'y') {
+                            $temporary_bin_name = 'tu_' . strtolower($querybin);
+                            $query = "SHOW TABLES LIKE '$temporary_bin_name'";
+                            $rec = $dbh->prepare($query);
+                            $rec->execute();
+                            $results = $rec->fetchAll(PDO::FETCH_COLUMN);
+                            if (count($results)) {
+                                logit($logtarget, "ERROR: The temporary processing table $temporary_bin_name already exists!");
+                                logit($logtarget, "ERROR: Have you interrupted this script during a previous run?");
+                                logit($logtarget, "ERROR: You will need to manually drop this table before you can proceed with upgrading this bin.");
+                            } else {
+                                /* All requirements have been met to upgrade the bin */
+                                if ($roles_reloaded_for_upgrade == false) {
+                                    /* We need the new codebase to work with this code */
+                                    logit($logtarget, "Reloading capture roles before we can proceed");
+                                    controller_restart_roles($logtarget, true);
+                                    $roles_reloaded_for_upgrade = true;
+                                }
+                                $queries = array(
+                                    "CREATE TABLE $temporary_bin_name LIKE $v",
+                                    "ALTER TABLE $temporary_bin_name MODIFY text TEXT",
+                                    "INSERT INTO $temporary_bin_name SELECT * FROM $v"
+                                );
+                                foreach ($queries as $sql) {
+                                    logit($logtarget, $sql);
+                                    $rec = $dbh->prepare($sql);
+                                    $rec->execute();
+                                }
+                                $sql = "SELECT MAX(id) AS max_tweet_id FROM $temporary_bin_name";
+                                logit($logtarget, $sql);
+                                $rec = $dbh->prepare($sql);
+                                $rec->execute();
+                                $results = $rec->fetch(PDO::FETCH_ASSOC);
+                                if ($results !== FALSE && array_key_exists('max_tweet_id', $results) && !is_null($results['max_tweet_id'])) {
+                                    $max_tweet_id = $results['max_tweet_id'];
+                                } else {
+                                    $max_tweet_id = 0;
+                                }
+                                logit($logtarget, "Logged maximum tweet id in bin as " . $max_tweet_id);
+                                /* Synchronize again, as the copy statement may have taken a long time */
+                                $sql = "INSERT INTO $temporary_bin_name SELECT * FROM $v WHERE id > $max_tweet_id";
+                                logit($logtarget, $sql);
+                                $rec = $dbh->prepare($sql);
+                                $rec->execute();
+                                /* Sanity check before table swap */
+                                $sql = "SELECT COUNT(id) AS sanity_count FROM $temporary_bin_name";
+                                logit($logtarget, $sql);
+                                $rec = $dbh->prepare($sql);
+                                $rec->execute();
+                                $abort = FALSE;
+                                if ($results = $rec->fetch(PDO::FETCH_ASSOC)) {
+                                    $sanity_count = $results['sanity_count'];
+                                    if ($sanity_count < $count) {
+                                       $abort = TRUE;
+                                    } else {
+                                       $sql = "DROP TABLE $v";
+                                       logit($logtarget, $sql);
+                                       $rec = $dbh->prepare($sql);
+                                       $rec->execute();
+                                       $sql = "RENAME TABLE $temporary_bin_name TO $v";
+                                       logit($logtarget, $sql);
+                                       $rec = $dbh->prepare($sql);
+                                       $rec->execute();
+                                    }
+                                } else {
+                                    $abort = TRUE;
+                                }
+                                if ($abort) {
+                                    logit($logtarget, "ERROR: Sanity check failed. Table reconstruction is incomplete. Original table remains untouched.");
+                                    logit($logtarget, "ERROR: Please drop table $temporary_bin_name and diagnose this issue manually before trying again.");
+                                }
+                            }
+
+                        }
+                    }
+                } else {
+                    $missing_support = TRUE;
+                }
+
+                if ($missing_support) {
+
+                    // Fallback procedure; simple, but will pause capture in bins
+
+                    logit($logtarget, "Warning: due to an unknown server configuration, we cannot detect the currently available MySQL disk space.");
+                    logit($logtarget, "Warning: we cannot alter your query bins without temporarily pausing them.");
+                    logit($logtarget, "Warning: the duration of those pauses per bin will be roughly 2 minutes + 1 minute per 830 thousand tweets on a fast machine.");
+
+                    if ($ans !== 'a') {
+                        $ans = cli_yesnoall("Alter text field to support 280 character tweets in table $v", 2, '870d2b103b821421f52b87afca9e8a5dce7bdd6c');
+                    }
+                    if ($ans == 'a' || $ans == 'y') {
+                        /* If the bin is currently active, we should pause it to prevent capture roles from hanging on inserts */
+                        $querybin = preg_replace("/_tweets$/", "", $v);
+                        $sql = "SELECT `active` FROM tcat_query_bins WHERE querybin = :querybin";
+                        $rec = $dbh->prepare($sql);
+                        $rec->bindParam(":querybin", $querybin, PDO::PARAM_STR);
+                        $rec->execute();
+                        $results = $rec->fetch(PDO::FETCH_ASSOC);
+                        $active = $results['active'];
+                        if ($active == '1') {
+                            logit($logtarget, "Querybin $querybin is currently active. Pausing bin and restarting track roles now");
+                            $sql = "UPDATE tcat_query_bins SET active = 0 WHERE querybin = :querybin";
+                            logit($logtarget, "$sql");
+                            $rec = $dbh->prepare($sql);
+                            $rec->bindParam(":querybin", $querybin, PDO::PARAM_STR);
+                            $rec->execute();
+                            controller_restart_roles($logtarget, true);
+                        }
+                        logit($logtarget, "Modifying text field from VARCHAR to TEXT in table $v");
+                        $query = "ALTER TABLE " . quoteIdent($v) . " MODIFY text TEXT";
+                        logit($logtarget, "$query");
+                        $rec = $dbh->prepare($query);
+                        $rec->execute();
+                        if ($active == '1') {
+                            logit($logtarget, "Resuming activity for querybin $querybin and restarting track roles");
+                            $sql = "UPDATE tcat_query_bins SET active = 1 WHERE querybin = :querybin";
+                            logit($logtarget, "$sql");
+                            $rec = $dbh->prepare($sql);
+                            $rec->bindParam(":querybin", $querybin, PDO::PARAM_STR);
+                            $rec->execute();
+                            controller_restart_roles($logtarget, true);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
 
     // End of upgrades
 
@@ -1491,6 +1682,15 @@ if (env_is_cli()) {
 
     upgrades(false, $interactive, $aulevel, $single);
 
+    controller_restart_roles($logtarget);
+
+}
+
+/*
+ * Helper function to restart all active capture roles via the controller and optionally wait a minute to ensure the tracking is refreshed
+ */
+function controller_restart_roles($logtarget = "cli", $wait = false) {
+    global $logtarget;
     $dbh = pdo_connect();
     $roles = unserialize(CAPTUREROLES);
     foreach ($roles as $role) {
@@ -1499,7 +1699,37 @@ if (env_is_cli()) {
         $rec = $dbh->prepare($query);
         $rec->execute();
     }
+    if ($wait) {
+        /* TODO: more intelligent wait procedure by checking if roles have attained a new PID */
+        sleep(90);
+    }
+}
 
+/*
+ * Attempt to retrieve available disk space (in megabytes) for MySQL. Returns null if information is not available.
+ */
+function get_available_mysql_disk_space($logtarget = "cli") {
+    $dbh = pdo_connect();
+    $sql = "SHOW VARIABLES WHERE Variable_Name LIKE '%datadir%'";
+    $rec = $dbh->prepare($sql);
+    $datadir = null;
+    if ($rec->execute() && $rec->rowCount() > 0) {
+        while ($res = $rec->fetch()) {
+            $datadir = $res['Value'];
+        }
+    }
+    if (is_null($datadir)) {
+        logit($logtarget, "Cannot find datadir system variable in MySQL.");
+        return null;
+    }
+    logit($logtarget, "MySQL data directory found: " . $datadir);
+    $free_space_bytes = disk_free_space($datadir);
+    if ($free_space_bytes == NULL) {
+        logit($logtarget, "Cannot read available disk space on path: $datadir");
+        return null;
+    }
+    logit($logtarget, "Free space in data directory: " . intval($free_space_bytes / 1024 / 1024) . "M");
+    return intval($free_space_bytes / 1024 / 1024);
 }
 
 /*
