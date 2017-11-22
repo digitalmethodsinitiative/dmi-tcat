@@ -304,14 +304,22 @@ if (defined('ANALYSIS_URL'))
 
             // create cache storage for current subsample
             // TODO: use a meta table to cleanup memory tables
-            // TODO: add created_at field, and other relevant fields?
+            // TODO: handle PDO exception and fall-back to disk tables
             // TODO EXPLAIN/FIX: Database access error occured. Code: HY000 Msg: SQLSTATE[HY000]: General error
 
             $uniqid = substr(md5(uniqid("", true)), 0, 15);
             $tweet_cache = "tcat_cache_memory_$uniqid";
             $sql = "CREATE TABLE $tweet_cache (id BIGINT PRIMARY KEY) ENGINE=Memory";
-            $create = $dbh->prepare($sql);
-            $create->execute();
+            try {
+                $create = $dbh->prepare($sql);
+                $create->execute();
+            } catch (PDOException $Exception) {
+                /* Fall-back to using disk table */
+                pdo_error_report($Exception);
+                $sql = "CREATE TABLE $tweet_cache (id BIGINT PRIMARY KEY) ENGINE=MyISAM";
+                $create = $dbh->prepare($sql);
+                $create->execute();
+            }
 
             // store subset ids in cache
             $sql = "INSERT IGNORE INTO $tweet_cache SELECT t.id AS id FROM " . $esc['mysql']['dataset'] . "_tweets t ";
@@ -441,9 +449,16 @@ if (defined('ANALYSIS_URL'))
                 }
             }
 
-            // DESTRUCTION OF CACHE MEMORY TABLE OCCURS HERE
+            /* The destruction of the temporary memory cache table occurs here */
+            /* TODO: implement robust cleanup method */
             $sql = "DROP TABLE $tweet_cache";
-            pdo_fastquery($sql, $dbh);
+            try {
+                $drop = $dbh->prepare($sql);
+                $drop->execute();
+            } catch (PDOException $Exception) {
+                /* Fall-back to using disk table */
+                pdo_error_report($Exception);
+            }
 
             $dbh = null;
 
