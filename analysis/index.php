@@ -352,7 +352,7 @@ if (defined('ANALYSIS_URL'))
             $show_url_export = false;
             if ($numlinktweets) {
                 $sql = "SELECT COUNT(u.id) AS count FROM " . $esc['mysql']['dataset'] . "_urls u INNER JOIN $tweet_cache c ON u.tweet_id = c.id " .
-                       "WHERE AND u.error_code != ''";
+                       "WHERE u.error_code != ''";
                 if ($data = pdo_fastquery($sql, $dbh) && $data['count'] / $numlinktweets > 0.5) $show_url_export = true;
             }
             // see whether database is up-to-date to export ratelimit and gap tables
