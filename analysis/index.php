@@ -302,21 +302,46 @@ if (defined('ANALYSIS_URL'))
 
             $dbh = pdo_connect();
 
-            // count current subsample
-            $sql = "SELECT count(t.id) as count FROM " . $esc['mysql']['dataset'] . "_tweets t ";
+            // create cache storage for current subsample
+            // TODO: use a meta table to cleanup memory tables
+            // TODO: add created_at field, and other relevant fields?
+            // TODO EXPLAIN/FIX: Database access error occured. Code: HY000 Msg: SQLSTATE[HY000]: General error
+
+            $uniqid = substr(md5(uniqid("", true)), 0, 15);
+            $tweet_cache = "tcat_cache_memory_$uniqid";
+            $sql = "CREATE TABLE $tweet_cache (id BIGINT PRIMARY KEY) ENGINE=Memory";
+            $create = $dbh->prepare($sql);
+            $create->execute();
+
+            // store subset ids in cache
+            $sql = "INSERT INTO $tweet_cache SELECT t.id AS id FROM " . $esc['mysql']['dataset'] . "_tweets t ";
             $sql .= sqlSubset();
-            if ($data = pdo_fastquery($sql, $dbh)) $numtweets = $data["count"];
+            $subset = $dbh->prepare($sql);
+            $subset->execute();
+            $numtweets = $subset->rowCount();
+
+            // count current subsample
+//            $sql = "SELECT count(t.id) as count FROM " . $esc['mysql']['dataset'] . "_tweets t ";
+//            $sql .= sqlSubset();
+//            if ($data = pdo_fastquery($sql, $dbh)) $numtweets = $data["count"];
 
             // count tweets containing links
-            $sql = "SELECT count(distinct(t.id)) AS count FROM " . $esc['mysql']['dataset'] . "_urls u, " . $esc['mysql']['dataset'] . "_tweets t ";
-            $where = "u.tweet_id = t.id AND ";
-            $sql .= sqlSubset($where);
+//            $sql = "SELECT count(distinct(t.id)) AS count FROM " . $esc['mysql']['dataset'] . "_urls u, " . $esc['mysql']['dataset'] . "_tweets t ";
+//            $where = "u.tweet_id = t.id AND ";
+//            $sql .= sqlSubset($where);
+//            $numlinktweets = 0;
+//            if ($data = pdo_fastquery($sql, $dbh)) $numlinktweets = $data["count"];
+            $sql = "SELECT COUNT(DISTINCT(u.tweet_id)) AS count FROM " . $esc['mysql']['dataset'] . "_urls u INNER JOIN $tweet_cache c ON u.tweet_id = c.id";
+            print "<pre>$sql</pre><br>";
             $numlinktweets = 0;
             if ($data = pdo_fastquery($sql, $dbh)) $numlinktweets = $data["count"];
 
             // number of users
-            $sql = "SELECT count(distinct(t.from_user_id)) as count FROM " . $esc['mysql']['dataset'] . "_tweets t ";
-            $sql .= sqlSubset();
+//            $sql = "SELECT count(distinct(t.from_user_id)) as count FROM " . $esc['mysql']['dataset'] . "_tweets t ";
+//            $sql .= sqlSubset();
+//            if ($data = pdo_fastquery($sql, $dbh)) $numusers = $data["count"];
+            $sql = "SELECT COUNT(DISTINCT(t.from_user_id)) AS count FROM " . $esc['mysql']['dataset'] . "_tweets t INNER JOIN $tweet_cache c ON t.id = c.id";
+            print "<pre>$sql</pre><br>";
             if ($data = pdo_fastquery($sql, $dbh)) $numusers = $data["count"];
 
             // see whether the relations table exists
@@ -324,12 +349,12 @@ if (defined('ANALYSIS_URL'))
             //$sql = "SHOW TABLES LIKE '" . $esc['mysql']['dataset'] . "_relations'";
             //if (mysql_num_rows(mysql_query($sql)) == 1)
             //    $show_relations_export = TRUE;
+
             // see whether URLs are expanded
             $show_url_export = false;
             if ($numlinktweets) {
-                $sql = "SELECT count(u.id) as count FROM " . $esc['mysql']['dataset'] . "_urls u, " . $esc['mysql']['dataset'] . "_tweets t ";
-                $where = "u.tweet_id = t.id AND u.error_code != '' AND ";
-                $sql .= sqlSubset($where);
+                $sql = "SELECT COUNT(u.id)) AS count FROM " . $esc['mysql']['dataset'] . "_urls u INNER JOIN $tweet_cache c ON u.tweet_id = c.id " .
+                       "WHERE AND u.error_code != ''";
                 if ($data = pdo_fastquery($sql, $dbh) && $data['count'] / $numlinktweets > 0.5) $show_url_export = true;
             }
             // see whether database is up-to-date to export ratelimit and gap tables
@@ -387,8 +412,9 @@ if (defined('ANALYSIS_URL'))
             else
                 $sql .= "DATE_FORMAT(t.created_at,'%Y-%m-%d %H:%i') datepart ";
             $sql .= "FROM " . $esc['mysql']['dataset'] . "_tweets t ";
-            $sql .= sqlSubset();
+            $sql .= "WHERE t.id IN ( SELECT id FROM $tweet_cache ) ";
             $sql .= "GROUP BY datepart ORDER BY datepart";
+            print "<pre>$sql</pre><br>";
 
             $rec = $dbh->prepare($sql);
             $rec->execute();
@@ -417,6 +443,10 @@ if (defined('ANALYSIS_URL'))
                     $linedata[$res['datepart']]["full"] = $res['count'];
                 }
             }
+
+            // DESTRUCTION OF CACHE MEMORY TABLE OCCURS HERE
+            $sql = "DROP TABLE $tweet_cache";
+            pdo_fastquery($sql, $dbh);
 
             $dbh = null;
 
