@@ -314,7 +314,7 @@ if (defined('ANALYSIS_URL'))
             $create->execute();
 
             // store subset ids in cache
-            $sql = "INSERT INTO $tweet_cache SELECT t.id AS id FROM " . $esc['mysql']['dataset'] . "_tweets t ";
+            $sql = "INSERT IGNORE INTO $tweet_cache SELECT t.id AS id FROM " . $esc['mysql']['dataset'] . "_tweets t ";
             $sql .= sqlSubset();
             $subset = $dbh->prepare($sql);
             $subset->execute();
@@ -332,7 +332,6 @@ if (defined('ANALYSIS_URL'))
 //            $numlinktweets = 0;
 //            if ($data = pdo_fastquery($sql, $dbh)) $numlinktweets = $data["count"];
             $sql = "SELECT COUNT(DISTINCT(u.tweet_id)) AS count FROM " . $esc['mysql']['dataset'] . "_urls u INNER JOIN $tweet_cache c ON u.tweet_id = c.id";
-            print "<pre>$sql</pre><br>";
             $numlinktweets = 0;
             if ($data = pdo_fastquery($sql, $dbh)) $numlinktweets = $data["count"];
 
@@ -341,7 +340,6 @@ if (defined('ANALYSIS_URL'))
 //            $sql .= sqlSubset();
 //            if ($data = pdo_fastquery($sql, $dbh)) $numusers = $data["count"];
             $sql = "SELECT COUNT(DISTINCT(t.from_user_id)) AS count FROM " . $esc['mysql']['dataset'] . "_tweets t INNER JOIN $tweet_cache c ON t.id = c.id";
-            print "<pre>$sql</pre><br>";
             if ($data = pdo_fastquery($sql, $dbh)) $numusers = $data["count"];
 
             // see whether the relations table exists
@@ -353,7 +351,7 @@ if (defined('ANALYSIS_URL'))
             // see whether URLs are expanded
             $show_url_export = false;
             if ($numlinktweets) {
-                $sql = "SELECT COUNT(u.id)) AS count FROM " . $esc['mysql']['dataset'] . "_urls u INNER JOIN $tweet_cache c ON u.tweet_id = c.id " .
+                $sql = "SELECT COUNT(u.id) AS count FROM " . $esc['mysql']['dataset'] . "_urls u INNER JOIN $tweet_cache c ON u.tweet_id = c.id " .
                        "WHERE AND u.error_code != ''";
                 if ($data = pdo_fastquery($sql, $dbh) && $data['count'] / $numlinktweets > 0.5) $show_url_export = true;
             }
@@ -414,7 +412,6 @@ if (defined('ANALYSIS_URL'))
             $sql .= "FROM " . $esc['mysql']['dataset'] . "_tweets t ";
             $sql .= "WHERE t.id IN ( SELECT id FROM $tweet_cache ) ";
             $sql .= "GROUP BY datepart ORDER BY datepart";
-            print "<pre>$sql</pre><br>";
 
             $rec = $dbh->prepare($sql);
             $rec->execute();
