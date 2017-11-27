@@ -285,14 +285,14 @@ foreach ($queryBins as $bin) {
     while ($row = $q->fetch(PDO::FETCH_NUM)) {
         $tables_in_db[] = $row[0];
     }
-/
+
     if ($where !== '') {
 
         // First dump the tweets table using our custom query
 
         $tweets_tablename = "$bin" . '_tweets';
         $where_option = str_replace('"', "'", $where);
-        $cmd = "$bin_mysqldump --lock-tables=false --skip-add-drop-table --default-character-set=utf8mb4 -w \"$where\" -u$dbuser -h $hostname $database $tweets_tablename >> $filename";
+        $cmd = "$bin_mysqldump --lock-tables=false --skip-add-drop-table --default-character-set=utf8mb4 -w \"$where\" -u$dbuser -h $hostname $database $tweets_tablename | sed -e \"s/SQL_MODE='NO_AUTO_VALUE_ON_ZERO'/SQL_MODE='ALLOW_INVALID_DATES'/g\"  >> $filename";
         print "$cmd\n"; // DEBUG
         system($cmd);
 
@@ -313,7 +313,7 @@ foreach ($queryBins as $bin) {
         }
 
 
-        $cmd = "$bin_mysqldump --lock-tables=false --skip-add-drop-table --default-character-set=utf8mb4 -w \"tweet_id in ( SELECT id FROM $tweets_tablename WHERE $where )\" -u$dbuser -h $hostname $database $string >> $filename";
+        $cmd = "$bin_mysqldump --lock-tables=false --skip-add-drop-table --default-character-set=utf8mb4 -w \"tweet_id in ( SELECT id FROM $tweets_tablename WHERE $where )\" -u$dbuser -h $hostname $database $string | sed -e \"s/SQL_MODE='NO_AUTO_VALUE_ON_ZERO'/SQL_MODE='ALLOW_INVALID_DATES'/g\" >> $filename";
         print "$cmd\n"; // DEBUG
         system($cmd);
     } else {
@@ -333,9 +333,9 @@ foreach ($queryBins as $bin) {
         }
 
         if ($export == "all") {
-            $cmd = "$bin_mysqldump --skip-add-drop-table --default-character-set=utf8mb4 -u$dbuser -h $hostname $database $string >> $filename";
+            $cmd = "$bin_mysqldump  --lock-tables=false --skip-add-drop-table --default-character-set=utf8mb4 -u$dbuser -h $hostname $database $string | sed -e \"s/SQL_MODE='NO_AUTO_VALUE_ON_ZERO'/SQL_MODE='ALLOW_INVALID_DATES'/g\" >> $filename";
         } else {
-            $cmd = "$bin_mysqldump --skip-add-drop-table --no-data --default-character-set=utf8mb4 -u$dbuser -h $hostname $database $string >> $filename";
+            $cmd = "$bin_mysqldump --lock-tables=false --skip-add-drop-table --no-data --default-character-set=utf8mb4 -u$dbuser -h $hostname $database $string | sed -e \"s/SQL_MODE='NO_AUTO_VALUE_ON_ZERO'/SQL_MODE='ALLOW_INVALID_DATES'/g\"  >> $filename";
         }
         system($cmd);
     }
