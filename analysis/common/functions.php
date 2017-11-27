@@ -397,6 +397,8 @@ function sqlSubset($where = NULL) {
 }
 
 // here further sqlSubset selection is constructed
+// TODO: handle dynamic stopwords (words with weight 0) and queries with length < 3 et cetera.
+// http://download.nust.na/pub6/mysql/tech-resources/articles/full-text-revealed.html
 function sqlSubsetFulltext($where = NULL) {
     error_reporting(E_ALL);
     global $esc;
@@ -461,18 +463,22 @@ function sqlSubsetFulltext($where = NULL) {
     if (!empty($esc['mysql']['query'])) {
         if (strstr($esc['mysql']['query'], "AND") !== false) {
             $subqueries = explode(" AND ", $esc['mysql']['query']);
+            $sql .= "MATCH(t.text) AGAINST ('+";
+            $first = true;
             foreach ($subqueries as $subquery) {
-                $sql .= "MATCH(t.text) AGAINST ('*" . $subquery . "*' IN BOOLEAN MODE) AND ";
+                if (!$first) { $sql .= " "; } else { $first = false; }
+                $sql .= "+" . $subquery;
             }
+            $sql .= "' IN BOOLEAN MODE) AND ";
         } elseif (strstr($esc['mysql']['query'], "OR") !== false) {
             $subqueries = explode(" OR ", $esc['mysql']['query']);
             $sql .= "(";
-            foreach ($subqueries as $subquery) {
-                $sql .= "MATCH(t.text) AGAINST ('*" . $subquery . "*' IN BOOLEAN MODE) OR ";
-            }
-            $sql = substr($sql, 0, -3) . ") AND ";
+            $sql .= "MATCH(t.text) AGAINST ('";
+            $sql .= implode(' ', $subqueries);
+            $sql .= "' IN BOOLEAN MODE) ";
+            $sql .= ") AND ";
         } else {
-            $sql .= "MATCH(t.text) AGAINST ('*" . $esc['mysql']['query'] . "*' IN BOOLEAN MODE) AND ";
+            $sql .= "MATCH(t.text) AGAINST ('" . $esc['mysql']['query'] . "' IN BOOLEAN MODE) AND ";
         }
     }
     if (!empty($esc['mysql']['url_query'])) {
@@ -530,21 +536,26 @@ function sqlSubsetFulltext($where = NULL) {
             $sql .= "LOWER(t.source COLLATE $collation) LIKE LOWER('%" . $esc['mysql']['from_source'] . "%' COLLATE $collation) AND ";
         }
     }
+    // TODO: integrate query and include in a single section, with + and - operators
     if (!empty($esc['mysql']['exclude'])) {
         if (strstr($esc['mysql']['exclude'], "AND") !== false) {
             $subqueries = explode(" AND ", $esc['mysql']['exclude']);
+            $sql .= "MATCH(t.text) AGAINST ('+";
+            $first = true;
             foreach ($subqueries as $subquery) {
-                $sql .= "NOT MATCH(t.text) AGAINST ('*" . $subquery . "*' IN BOOLEAN MODE) AND ";
+                if (!$first) { $sql .= " "; } else { $first = false; }
+                $sql .= "+" . $subquery;
             }
+            $sql .= "' IN BOOLEAN MODE) AND ";
         } elseif (strstr($esc['mysql']['exclude'], "OR") !== false) {
             $subqueries = explode(" OR ", $esc['mysql']['exclude']);
             $sql .= "(";
-            foreach ($subqueries as $subquery) {
-                $sql .= "NOT MATCH(t.text) AGAINST ('*" . $subquery . "*' IN BOOLEAN MODE) OR ";
-            }
-            $sql = substr($sql, 0, -3) . ") AND ";
+            $sql .= "MATCH(t.text) AGAINST ('";
+            $sql .= implode(' ', $subqueries);
+            $sql .= "' IN BOOLEAN MODE) ";
+            $sql .= ") AND ";
         } else {
-            $sql .= "NOT MATCH(t.text) AGAINST ('*" . $esc['mysql']['exclude'] . "*' IN BOOLEAN MODE) AND ";
+            $sql .= "MATCH(t.text) AGAINST ('" . $esc['mysql']['exclude'] . "' IN BOOLEAN MODE) AND ";
         }
     }
     if (!empty($esc['mysql']['from_user_lang'])) {

@@ -325,6 +325,7 @@ if (defined('ANALYSIS_URL'))
             $sql = "INSERT IGNORE INTO $tweet_cache SELECT t.id AS id FROM " . $esc['mysql']['dataset'] . "_tweets t ";
             $sql .= sqlSubsetFulltext();
             $subset = $dbh->prepare($sql);
+            print "<pre>$sql</pre>";
             $subset->execute();
             $numtweets = $subset->rowCount();
 
