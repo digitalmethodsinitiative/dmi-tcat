@@ -44,6 +44,7 @@ if (defined('ANALYSIS_URL'))
 ?>
             + _file +
             "?dataset=" + $("#ipt_dataset").val() +
+            "&fulltext=" + $("#ipt_fulltext").val().replace(/#/g,"%23") +
             "&query=" + $("#ipt_query").val().replace(/#/g,"%23") +
             "&url_query=" + $("#ipt_url_query").val().replace(/#/g,"%23") +
 <?php if (dbserver_has_geo_functions()) { ?>
@@ -241,6 +242,12 @@ if (defined('ANALYSIS_URL'))
                             <td class="tbl_head">Exclude: </td><td><input type="text" id="ipt_exclude" size="60" name="exclude"  value="<?php echo $exclude; ?>" /> (empty: exclude nothing*)</td>
                         </tr>
 
+                        <!--
+                        <tr>
+                            <td class="tbl_head">Fast whole words query:<br>(minimum length of words is 4 chars): </td><td><input type="text" id="ipt_fulltext" size="60" name="query" value="<?php echo $fulltext; ?>" /> (empty: containing any text*)</td>
+                        </tr>
+                        -->
+
                         <tr>
                             <td class="tbl_head">From user: </td><td><input type="text" id="ipt_from_user" size="60" name="from_user_name"  value="<?php echo $from_user_name; ?>" /> (empty: from any user*)</td>
 			</tr>
@@ -303,29 +310,14 @@ if (defined('ANALYSIS_URL'))
             $dbh = pdo_connect();
 
             // create cache storage for current subsample
-            // TODO: use a meta table to cleanup memory tables
-            // TODO: handle PDO exception and fall-back to disk tables
-            // TODO EXPLAIN/FIX: Database access error occured. Code: HY000 Msg: SQLSTATE[HY000]: General error
 
-            $uniqid = substr(md5(uniqid("", true)), 0, 15);
-            $tweet_cache = "tcat_cache_memory_$uniqid";
-            $sql = "CREATE TABLE $tweet_cache (id BIGINT PRIMARY KEY) ENGINE=Memory";
-            try {
-                $create = $dbh->prepare($sql);
-                $create->execute();
-            } catch (PDOException $Exception) {
-                /* Fall-back to using disk table */
-                pdo_error_report($Exception);
-                $sql = "CREATE TABLE $tweet_cache (id BIGINT PRIMARY KEY) ENGINE=MyISAM";
-                $create = $dbh->prepare($sql);
-                $create->execute();
-            }
+            list($uniqid, $tweet_cache) = create_tweet_cache();
 
             // store subset ids in cache
             $sql = "INSERT IGNORE INTO $tweet_cache SELECT t.id AS id FROM " . $esc['mysql']['dataset'] . "_tweets t ";
-            $sql .= sqlSubsetFulltext();
+            $sql .= sqlSubset();
             $subset = $dbh->prepare($sql);
-            print "<pre>$sql</pre>";
+//            print "<pre>$sql</pre>";
             $subset->execute();
             $numtweets = $subset->rowCount();
 

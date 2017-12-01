@@ -21,6 +21,16 @@ function dbclose() {
 */
 }
 
+function pdo_connect() {
+    global $dbuser, $dbpass, $database, $hostname;
+
+    $dbh = new PDO("mysql:host=$hostname;dbname=$database;charset=utf8mb4", $dbuser, $dbpass, array(PDO::MYSQL_ATTR_INIT_COMMAND => "set sql_mode='ALLOW_INVALID_DATES'"));
+    $dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $dbh->query("set time_zone='+00:00'");
+
+    return $dbh;
+}
+
 function dbserver_has_utf8mb4_support() {
     global $hostname,$database,$dbuser,$dbpass;
     $dbt = new PDO("mysql:host=$hostname;dbname=$database", $dbuser, $dbpass, array(PDO::MYSQL_ATTR_INIT_COMMAND => "set sql_mode='ALLOW_INVALID_DATES'"));
@@ -79,5 +89,28 @@ function validate_capture_phrases($keywords) {
     return TRUE;
 }
 
+/*
+ * Create a temporary memory-based cache table to store tweets.
+ * TODO: use a meta table to cleanup memory tables, or use callback function on script exit
+ * TODO: handle PDO exception and fall-back to disk tables
+ * TODO EXPLAIN/FIX: Database access error occured. Code: HY000 Msg: SQLSTATE[HY000]: General error
+ */
+function create_tweet_cache() {
+    global $dbh;
+    $uniqid = substr(md5(uniqid("", true)), 0, 15);
+    $tweet_cache = "tcat_cache_memory_$uniqid";
+    $sql = "CREATE TABLE $tweet_cache (id BIGINT PRIMARY KEY) ENGINE=Memory";
+    try {
+        $create = $dbh->prepare($sql);
+        $create->execute();
+    } catch (PDOException $Exception) {
+        /* Fall-back to using disk table */
+        pdo_error_report($Exception);
+        $sql = "CREATE TABLE $tweet_cache (id BIGINT PRIMARY KEY) ENGINE=MyISAM";
+        $create = $dbh->prepare($sql);
+        $create->execute();
+    }
+    return array($uniqid, $tweet_cache);
+}
 
 ?>

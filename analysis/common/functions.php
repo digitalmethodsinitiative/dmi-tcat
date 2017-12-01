@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . '/../../common/functions.php';   // include common functions file
+
 $connection = false;
 
 // PHP7
@@ -20,6 +22,27 @@ if (count($datasets) == 0) {
     $dataset = NULL;        // No query bins are available
 }
 
+if (isset($_GET['fulltext']) && !empty($_GET['fulltext'])) {
+    $components = explode(" ", $_GET['fulltext']);
+    $fulltext = "";
+    for ($i = 0; $i < count($components); $i++) {
+        $component = $components[$i];
+        if (substr($component, 0, 1) === "-") {
+            $add =  urldecode($_GET['fulltext']);
+        } else if (substr($component, 0, 1) !== "+") {
+            $add = "+" . urldecode($_GET['fulltext']);
+        } else {
+            $add = urldecode($_GET['fulltext']);
+        }
+        if ($i > 0) {
+            $fulltext .= " " . $add;
+        } else {
+            $fulltext .= $add;
+        }
+    }
+} else {
+    $fulltext = "";
+}
 if (isset($_GET['query']) && !empty($_GET['query']))
     $query = urldecode($_GET['query']);
 else
@@ -282,6 +305,9 @@ function sqlSubset($where = NULL) {
         } else {
             $sql .= "LOWER(t.from_user_description COLLATE $collation) LIKE LOWER('%" . $esc['mysql']['from_user_description'] . "%' COLLATE $collation) AND ";
         }
+    }
+    if (!empty($esc['mysql']['fulltext'])) {
+        $sql .= "MATCH(t.text) AGAINST ('" . $esc['mysql']['fulltext'] . "' IN BOOLEAN MODE) AND ";
     }
     if (!empty($esc['mysql']['query'])) {
         if (strstr($esc['mysql']['query'], "AND") !== false) {
@@ -776,6 +802,7 @@ function generate($what, $filename) {
             $results[$group] = $counted_things;
         }
 
+        // TODO: add fulltext parameter info
         if (isset($titles[$what])) {
             if (!empty($esc['shell']['query'])) {
                 $q = " with search " . $esc['shell']['query'];
@@ -802,7 +829,7 @@ function generate($what, $filename) {
 
         ksort($results);
 
-        // construct file
+        // construct file (TODO: add fulltext parameter info)
         if (isset($titles[$what])) {
             if (!empty($esc['shell']['query'])) {
                 $q = " with search " . $esc['shell']['query'];
@@ -921,9 +948,10 @@ function decodeAndFlatten($text) {
 // make sure that we have all the right types and values
 // also make sure one cannot do a mysql injection attack
 function validate_all_variables() {
-    global $esc, $query, $url_query, $geo_query, $dataset, $exclude, $from_user_name, $exclude_from_user_name, $from_user_description, $from_source, $startdate, $enddate, $interval, $databases, $connection, $keywords, $database, $minf, $topu, $from_user_lang, $outputformat;
+    global $esc, $fulltext, $query, $url_query, $geo_query, $dataset, $exclude, $from_user_name, $exclude_from_user_name, $from_user_description, $from_source, $startdate, $enddate, $interval, $databases, $connection, $keywords, $database, $minf, $topu, $from_user_lang, $outputformat;
 
     $esc['mysql']['dataset'] = validate($dataset, "mysql-literal");
+    $esc['mysql']['fulltext'] = validate($fulltext, "mysql-literal");
     $esc['mysql']['query'] = validate($query, "mysql-literal");
     $esc['mysql']['url_query'] = validate($url_query, "mysql-literal");
     $esc['mysql']['geo_query'] = validate($geo_query, "mysql-literal");
@@ -935,6 +963,7 @@ function validate_all_variables() {
     $esc['mysql']['from_user_lang'] = validate($from_user_lang, "mysql-literal");
 
     $esc['shell']['dataset'] = validate($dataset, "shell");
+    $esc['shell']['fulltext'] = validate($fulltext, "shell");
     $esc['shell']['query'] = validate($query, "shell");
     $esc['shell']['url_query'] = validate($url_query, "shell");
     $esc['shell']['geo_query'] = validate($geo_query, "shell");
@@ -1204,15 +1233,6 @@ function dbserver_has_geo_functions() {
         }
     }
     return false;
-}
-
-function pdo_connect() {
-    global $dbuser, $dbpass, $database, $hostname;
-
-    $dbh = new PDO("mysql:host=$hostname;dbname=$database;charset=utf8mb4", $dbuser, $dbpass, array(PDO::MYSQL_ATTR_INIT_COMMAND => "set sql_mode='ALLOW_INVALID_DATES'"));
-    $dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-    return $dbh;
 }
 
 function pdo_error_report($Exception) {

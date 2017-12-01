@@ -29,6 +29,11 @@
 // Export queries and data for a bin with a custom MySQL WHERE query for the tweets table
 //
 //     export.php -wt "text LIKE '%apple%'" foo
+//
+// Export queries and data for a bin from a LOCAL analysis URL
+//
+//     export.php -url "URL"
+//
 // 
 // Export queries and data for all query bins, saving it to the named file:
 // 
@@ -59,6 +64,7 @@ if (!env_is_cli()) {
 
 $export = 'all'; // default
 $where = '';     // default
+$url = '';       // default
 
 $prog = basename($argv[0]);
 
@@ -97,6 +103,14 @@ for ($i = 1; $i < $argc; $i++) {
                     die("The -wt option should be followed by a MySQL WHERE style query on the tweets table. Ex. -wt \"MATCH('text') CONTAINS ('apple')\"\n");
                 }
                 break;
+            case 'url':
+                if ($i + 1 < $argc) {
+                    $url = $argv[$i + 1];
+                } else {
+                    die("The -url option should be followed by an analysis page URL from the local server. Ex. -url \"URL\"\n");
+                }
+                $i++;
+                break;
             default:
                 die("$prog: usage error: unknown option: -$opt (-h for help)\n");
                 break;
@@ -106,18 +120,48 @@ for ($i = 1; $i < $argc; $i++) {
     }
 }
 
-if ($isAllBins && $where !== '') {
-    die("Sorry, using the -wt option is not compatible with exporting all bins.\n");
+if ($isAllBins && ($where !== '' || $url !== '')) {
+    die("Sorry, using the -wt option, or the -url option is not compatible with exporting all bins.\n");
 }
 
 $queryBins = $isAllBins ? array() : $args;
 
-if (!$isAllBins && count($queryBins) == 0) {
+if (!$isAllBins && count($queryBins) == 0 && $url == '') {
     print_help($prog, $defaultOutputDir);
     exit(0);
 }
 
-// All query bins
+if ($url !== '' && count($queryBins) != 0) {
+    die("When using the -url option, the querybin name will be extracted from the URL and should not be entered manually.\n");
+}
+
+// If provided with an URL, we retrieve the querybin name here
+if ($url !== '') {
+    $parse = parse_url($url);
+    if (!array_key_exists('query', $parse)) {
+        die("The provided URL appears to be malformed.\n");
+    }
+    parse_str($parse['query'], $params);
+    if (!array_key_exists('dataset', $params)) {
+        die("The dataset parameter is missing in the provided URL.\n");
+    }
+    // Pull in code from analysis/common/functions.php to validate and parse parameters
+    $_GET = $params;        // should be safe as this is a CLI script
+    require_once __DIR__ . '/../analysis/common/functions.php';
+    validate_all_variables();
+    list($uniqid, $tweet_cache) = create_tweet_cache();
+    // store subset ids in cache
+    $sql = "INSERT IGNORE INTO $tweet_cache SELECT t.id AS id FROM " . $esc['mysql']['dataset'] . "_tweets t ";
+    $sql .= sqlSubset();
+    $subset = $dbh->prepare($sql);
+    $subset->execute();
+    // TODO: cleanup
+    $url = '';
+    $queryBins = array( $params['dataset'] );
+    $where = "id IN ( SELECT id FROM $tweet_cache )";
+}
+
+// All\n query bins
 
 if ($isAllBins) {
     // Export all of the query bins
@@ -137,8 +181,6 @@ if ($isAllBins) {
         }
     }
 }
-
-
 
 // Execute
 
@@ -286,14 +328,13 @@ foreach ($queryBins as $bin) {
         $tables_in_db[] = $row[0];
     }
 
-    if ($where !== '') {
+   if ($where !== '') {
 
         // First dump the tweets table using our custom query
 
         $tweets_tablename = "$bin" . '_tweets';
         $where_option = str_replace('"', "'", $where);
         $cmd = "$bin_mysqldump --lock-tables=false --skip-add-drop-table --default-character-set=utf8mb4 -w \"$where\" -u$dbuser -h $hostname $database $tweets_tablename | sed -e \"s/SQL_MODE='NO_AUTO_VALUE_ON_ZERO'/SQL_MODE='ALLOW_INVALID_DATES'/g\"  >> $filename";
-        print "$cmd\n"; // DEBUG
         system($cmd);
 
         // Now dump the records of related tables if they reference those tweets
@@ -312,9 +353,7 @@ foreach ($queryBins as $bin) {
             die("$prog: internal error: no tables for bin: $bin (check case is correct)\n");
         }
 
-
         $cmd = "$bin_mysqldump --lock-tables=false --skip-add-drop-table --default-character-set=utf8mb4 -w \"tweet_id in ( SELECT id FROM $tweets_tablename WHERE $where )\" -u$dbuser -h $hostname $database $string | sed -e \"s/SQL_MODE='NO_AUTO_VALUE_ON_ZERO'/SQL_MODE='ALLOW_INVALID_DATES'/g\" >> $filename";
-        print "$cmd\n"; // DEBUG
         system($cmd);
     } else {
 
@@ -464,6 +503,7 @@ function print_help($prog, $defaultOutputDir) {
     echo "  -s                   export structure: query pharases only, no data\n";
     echo "  -o file              output file (default: automatically generated)\n";
     echo "  -wt WHERE            MySQL WHERE query for the tweets table. Ex. -wt \"MATCH('text') CONTAINS ('apple')\"\n";
+    echo "  -url URL             Export subset based on analysis page URL. Ex. -url \"URL\"\n";
     echo "  -h                   show this help message\n";
     echo "If no queryBins are named and the -a option is not used, this help message is displayed.\n";
     echo "Default output file is a .sql.gz file in $defaultOutputDir\n";
