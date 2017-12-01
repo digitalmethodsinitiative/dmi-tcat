@@ -390,8 +390,25 @@ foreach ($queryBins as $bin) {
     fputs($fh, "-- DMI-TCAT - Update TCAT tables\n");
     fputs($fh, "--\n");
 
-    $sql = "INSERT INTO tcat_query_bins ( querybin, `type`, active, access ) values ( " . $dbh->Quote($bin) . ", " . $dbh->Quote($bintype) . ", 0, 0 );";
-    fputs($fh, $sql . "\n");
+    if ($where !== '') {
+        if (isset($tweet_cache)) {
+            // Export via URL
+            $cleaned = $params;
+            unset($cleaned['whattodo']);
+            unset($cleaned['graph_resolution']);
+            unset($cleaned['outputformat']);
+            unset($cleaned['fulltext']);
+            $comments = 'This is a read-only subset of the bin on ' . $parse['host'] . ' with query parameters ' . substr(var_export($cleaned, true), 6);
+            $sql = "INSERT INTO tcat_query_bins ( querybin, `type`, active, access, comments ) values ( " . $dbh->Quote($bin) . ", 'other', 0, 0, " . $dbh->Quote($comments) . ");";
+        } else {
+            // Custom export with WHERE query
+            $sql = "INSERT INTO tcat_query_bins ( querybin, `type`, active, access, comments ) values ( " . $dbh->Quote($bin) . ", 'other', 0, 0, 'This is a read-only custom subset of an original bin (on a different server).' );";
+        }
+        fputs($fh, $sql . "\n");
+    } else {
+        $sql = "INSERT INTO tcat_query_bins ( querybin, `type`, active, access ) values ( " . $dbh->Quote($bin) . ", " . $dbh->Quote($bintype) . ", 0, 0 );";
+        fputs($fh, $sql . "\n");
+    }
 
     if ($bintype == 'track') {
 
@@ -466,6 +483,19 @@ foreach ($queryBins as $bin) {
 $fh = fopen($filename, "a");
 fputs($fh, "-- Export DMI-TCAT: end\n");
 fclose($fh);
+
+/* The destruction of the temporary memory cache table occurs here */
+/* TODO: implement robust cleanup method */
+if (isset($tweet_cache)) {
+    $sql = "DROP TABLE $tweet_cache";
+    try {
+        $drop = $dbh->prepare($sql);
+        $drop->execute();
+    } catch (PDOException $Exception) {
+        /* Fall-back to using disk table */
+        pdo_error_report($Exception);
+    }
+}
 
 /* Finally gzip the file */
 
