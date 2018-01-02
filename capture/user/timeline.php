@@ -14,8 +14,8 @@ require __DIR__ . '/../common/tmhOAuth/tmhOAuth.php';
 // ----- connection -----
 $dbh = pdo_connect();
 
-$user_ids = array('geertwilderspvv'); // provide an array of user ids or screen names
-$bin_name = "wilders";
+$user_ids = array(); // provide an array of user ids or screen names
+$bin_name = "";
 $list_name = "";
 $type = 'timeline'; // specify 'timeline' if you want this to be a standalone bin, or 'follow' if you want to be able to continue tracking these users later on via BASE_URL/capture/index.php
 
