@@ -44,7 +44,7 @@ if (defined('ANALYSIS_URL'))
 ?>
             + _file +
             "?dataset=" + $("#ipt_dataset").val() +
-            "&fulltext=" + $("#ipt_fulltext").val().replace(/#/g,"%23") +
+//            "&fulltext=" + $("#ipt_fulltext").val().replace(/#/g,"%23") +
             "&query=" + $("#ipt_query").val().replace(/#/g,"%23") +
             "&url_query=" + $("#ipt_url_query").val().replace(/#/g,"%23") +
 <?php if (dbserver_has_geo_functions()) { ?>
