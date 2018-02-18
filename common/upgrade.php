@@ -374,6 +374,7 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
                     `indice_start` int(11),
                     `indice_end` int(11),
                     PRIMARY KEY (`id`, `tweet_id`),
+                            KEY `tweet_id` (`tweet_id`),
                             KEY `media_url_https` (`media_url_https`),
                             KEY `media_type` (`media_type`),
                             KEY `photo_size_width` (`photo_size_width`),
