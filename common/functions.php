@@ -119,7 +119,9 @@ function create_tweet_cache() {
         if ($res['Value'] < 1024 * 1024 * 1024 * 3) {
             $sufficient_memory = FALSE;
         }
-    } 
+    }
+    // NOTICE (TODO: configurable): for safety we always chose on disk temporary tables now
+    $sufficient_memory = FALSE;
     if ($sufficient_memory) {
         $sql = "CREATE TEMPORARY TABLE $tweet_cache (id BIGINT PRIMARY KEY) ENGINE=Memory";
     } else {
