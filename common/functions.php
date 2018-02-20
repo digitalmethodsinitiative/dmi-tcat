@@ -103,8 +103,16 @@ function create_tweet_cache() {
     $res = $rec->fetch(PDO::FETCH_ASSOC);
     if ($res['Value'] < 1024 * 1024 * 1024 * 3) {
         $sufficient_memory = FALSE;
+        // We need to ensure we have are allowed to create big temporary tables, whether in memory or not
+        try {
+            $sql = "SET GLOBAL tmp_table_size = 1024 * 1024 * 1024 * 3";
+            $q = $dbh->prepare($sql);
+            $q->execute();
+        } catch (PDOException $Exception) {
+            pdo_error_report($Exception);
+        }
     } else {
-        $sql = "SHOW VARIABLES WHERE Variable_name = 'tmp_table_size'";
+        $sql = "SHOW VARIABLES WHERE Variable_name = 'max_heap_table_size'";
         $rec = $dbh->prepare($sql);
         $rec->execute();
         $res = $rec->fetch(PDO::FETCH_ASSOC);

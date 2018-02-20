@@ -444,7 +444,6 @@ if (defined('ANALYSIS_URL'))
 
             /* The destruction of the temporary memory cache table occurs here */
 
-            // TODO: if we are using MyISAM disk tables, cleanup should be more robust
             $sql = "DROP TABLE $tweet_cache";
             try {
                 $drop = $dbh->prepare($sql);
