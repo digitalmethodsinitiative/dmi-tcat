@@ -91,22 +91,39 @@ function validate_capture_phrases($keywords) {
 
 /*
  * Create a temporary memory-based cache table to store tweets.
- * TODO: use a meta table to cleanup memory tables, or use callback function on script exit
- * TODO: handle PDO exception and fall-back to disk tables
- * TODO EXPLAIN/FIX: Database access error occured. Code: HY000 Msg: SQLSTATE[HY000]: General error
  */
 function create_tweet_cache() {
     global $dbh;
     $uniqid = substr(md5(uniqid("", true)), 0, 15);
     $tweet_cache = "tcat_cache_memory_$uniqid";
-    $sql = "CREATE TABLE $tweet_cache (id BIGINT PRIMARY KEY) ENGINE=Memory";
+    $sufficient_memory = TRUE;
+    $sql = "SHOW VARIABLES WHERE Variable_name = 'tmp_table_size'";
+    $rec = $dbh->prepare($sql);
+    $rec->execute();
+    $res = $rec->fetch(PDO::FETCH_ASSOC);
+    if ($res['Value'] < 1024 * 1024 * 1024 * 3) {
+        $sufficient_memory = FALSE;
+    } else {
+        $sql = "SHOW VARIABLES WHERE Variable_name = 'tmp_table_size'";
+        $rec = $dbh->prepare($sql);
+        $rec->execute();
+        $res = $rec->fetch(PDO::FETCH_ASSOC);
+        if ($res['Value'] < 1024 * 1024 * 1024 * 3) {
+            $sufficient_memory = FALSE;
+        }
+    } 
+    if ($sufficient_memory) {
+        $sql = "CREATE TEMPORARY TABLE $tweet_cache (id BIGINT PRIMARY KEY) ENGINE=Memory";
+    } else {
+        $sql = "CREATE TEMPORARY TABLE $tweet_cache (id BIGINT PRIMARY KEY) ENGINE=MyISAM";
+    }
     try {
         $create = $dbh->prepare($sql);
         $create->execute();
     } catch (PDOException $Exception) {
         /* Fall-back to using disk table */
         pdo_error_report($Exception);
-        $sql = "CREATE TABLE $tweet_cache (id BIGINT PRIMARY KEY) ENGINE=MyISAM";
+        $sql = "CREATE TEMPORARY TABLE $tweet_cache (id BIGINT PRIMARY KEY) ENGINE=MyISAM";
         $create = $dbh->prepare($sql);
         $create->execute();
     }
