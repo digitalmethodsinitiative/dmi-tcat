@@ -422,7 +422,10 @@ function sqlSubset($where = NULL) {
     return $sql;
 }
 
-// here further sqlSubset selection is constructed
+// This is a proof-of-concept function which is not actually used which would replace main query syntax with full text search
+// If we do implement fulltext search, we'd more likely activate it as a separate search field (for which commented out
+// code also exists inside the main sqlSubset() function)
+// The problem with replacing normal query syntax with full text queries is describe below:
 // TODO: handle dynamic stopwords (words with weight 0) and queries with length < 3 et cetera.
 // http://download.nust.na/pub6/mysql/tech-resources/articles/full-text-revealed.html
 function sqlSubsetFulltext($where = NULL) {

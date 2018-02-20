@@ -317,29 +317,16 @@ if (defined('ANALYSIS_URL'))
             $sql = "INSERT IGNORE INTO $tweet_cache SELECT t.id AS id FROM " . $esc['mysql']['dataset'] . "_tweets t ";
             $sql .= sqlSubset();
             $subset = $dbh->prepare($sql);
-//            print "<pre>$sql</pre>";
             $subset->execute();
             $numtweets = $subset->rowCount();
 
-            // count current subsample
-//            $sql = "SELECT count(t.id) as count FROM " . $esc['mysql']['dataset'] . "_tweets t ";
-//            $sql .= sqlSubset();
-//            if ($data = pdo_fastquery($sql, $dbh)) $numtweets = $data["count"];
 
             // count tweets containing links
-//            $sql = "SELECT count(distinct(t.id)) AS count FROM " . $esc['mysql']['dataset'] . "_urls u, " . $esc['mysql']['dataset'] . "_tweets t ";
-//            $where = "u.tweet_id = t.id AND ";
-//            $sql .= sqlSubset($where);
-//            $numlinktweets = 0;
-//            if ($data = pdo_fastquery($sql, $dbh)) $numlinktweets = $data["count"];
             $sql = "SELECT COUNT(DISTINCT(u.tweet_id)) AS count FROM " . $esc['mysql']['dataset'] . "_urls u INNER JOIN $tweet_cache c ON u.tweet_id = c.id";
             $numlinktweets = 0;
             if ($data = pdo_fastquery($sql, $dbh)) $numlinktweets = $data["count"];
 
             // number of users
-//            $sql = "SELECT count(distinct(t.from_user_id)) as count FROM " . $esc['mysql']['dataset'] . "_tweets t ";
-//            $sql .= sqlSubset();
-//            if ($data = pdo_fastquery($sql, $dbh)) $numusers = $data["count"];
             $sql = "SELECT COUNT(DISTINCT(t.from_user_id)) AS count FROM " . $esc['mysql']['dataset'] . "_tweets t INNER JOIN $tweet_cache c ON t.id = c.id";
             if ($data = pdo_fastquery($sql, $dbh)) $numusers = $data["count"];
 
@@ -442,7 +429,7 @@ if (defined('ANALYSIS_URL'))
                 }
             }
 
-            /* The destruction of the temporary memory cache table occurs here */
+            /* The destruction of the temporary memory cache table occurs here  */
 
             $sql = "DROP TABLE $tweet_cache";
             try {
