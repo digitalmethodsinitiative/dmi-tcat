@@ -1290,6 +1290,7 @@ if [ "$URLEXPANDYES" = 'y' ]; then
    tput sgr0
    echo ""
    apt-get install -y build-essential libevent-dev python-all-dev python-mysqldb python-setuptools python-pip
+   pip install cython
    easy_install greenlet
    easy_install gevent 
    pip install requests
