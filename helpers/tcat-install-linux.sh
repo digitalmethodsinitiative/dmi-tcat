@@ -896,6 +896,8 @@ if [ "$BATCH_MODE" != 'y' ]; then
     echo ""
 fi
 
+apt-get -qq install -y git
+
 # Clear any existing TCAT crontab references
 echo "" > /etc/cron.d/tcat
 
@@ -1075,8 +1077,6 @@ tput bold
 echo "Downloading DMI-TCAT from github ..."
 tput sgr0
 echo ""
-
-apt-get -qq install -y git
 
 if [ -z "$TCAT_GIT_BRANCH" ]; then
     # Can do a shallow clone to minimize the data download
