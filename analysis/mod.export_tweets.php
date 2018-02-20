@@ -43,6 +43,22 @@ require_once __DIR__ . '/common/CSV.class.php';
             $header .= ",hashtags";
         $csv->writeheader(explode(',', $header));
 
+        // cache all media data
+        $media_entities = 0;
+        if (array_search("media", $exportSettings) !== false) {
+            $media_data = array();
+            $sql = "SELECT * FROM " . $esc['mysql']['dataset'] . "_media";
+            $rec = $dbh->prepare($sql);
+            $rec->execute();
+            while ($data = $rec->fetch(PDO::FETCH_ASSOC)) {
+                if (!array_key_exists($data['tweet_id'], $media_data)) {
+                    $media_data[$data['tweet_id']] = array();
+                }
+                $media_data[$data['tweet_id']][] = $data;
+                $media_entities++;
+            }
+        }
+
         // make query
         $sql = "SELECT * FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $where = "";
@@ -85,7 +101,29 @@ require_once __DIR__ . '/common/CSV.class.php';
                         $error[] = $res2['error_code'];
                     }
                 }
-                // lookup media from media table
+
+                // lookup media from media table which we have cached
+                if (array_search("media", $exportSettings) !== false) {
+                    if (array_key_exists($id, $media_data)) {
+                        foreach ($media_data[$id] as $res2) {
+                            $urls[] = $res2['url'];
+                            $expanded[] = $res2['url_expanded'];
+                            $followed[] = '';
+                            $domain[] = '';
+                            $error[] = '';
+                            $media_ids[] = $res2['id'];
+                            $media_urls[] = $res2['media_url_https'];
+                            $media_type[] = $res2['media_type'];
+                            $photo_width[] = $res2['photo_size_width'];
+                            $photo_height[] = $res2['photo_size_height'];
+                            $photo_resize[] = $res2['photo_resize'];
+                            $indice_start[] = $res2['indice_start'];
+                            $indice_end[] = $res2['indice_end'];
+                        }
+                    }
+                }
+
+                /*
                 if (array_search("media", $exportSettings) !== false) {
                     $sql2 = "SELECT * FROM " . $esc['mysql']['dataset'] . "_media WHERE tweet_id = " . $id;
                     $rec2 = $dbh->prepare($sql2);
@@ -106,6 +144,7 @@ require_once __DIR__ . '/common/CSV.class.php';
                         $indice_end[] = $res2['indice_end'];
                     }
                 }
+                */
 
                 if (array_search("media", $exportSettings) !== false && array_search("urls", $exportSettings) !== false) {
                     // full export of urls with media information
@@ -171,6 +210,7 @@ require_once __DIR__ . '/common/CSV.class.php';
         exit(0);
     }
     // Rest of script is the HTML page with a link to the cached CSV/TSV file.
+
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
