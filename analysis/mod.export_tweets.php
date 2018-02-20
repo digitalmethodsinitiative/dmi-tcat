@@ -43,11 +43,12 @@ require_once __DIR__ . '/common/CSV.class.php';
             $header .= ",hashtags";
         $csv->writeheader(explode(',', $header));
 
-        // cache all media data
+        // cache relevant media data
         $media_entities = 0;
         if (array_search("media", $exportSettings) !== false) {
             $media_data = array();
-            $sql = "SELECT * FROM " . $esc['mysql']['dataset'] . "_media";
+            $sql = "SELECT * FROM " . $esc['mysql']['dataset'] . "_media m INNER JOIN " . $esc['mysql']['dataset'] . "_tweets t ON m.tweet_id = t.id ";
+            $sql .= sqlSubset(" m.id >= 0 AND ");     // where is needed to trick sqlSubset into not adding a JOIN
             $rec = $dbh->prepare($sql);
             $rec->execute();
             while ($data = $rec->fetch(PDO::FETCH_ASSOC)) {
