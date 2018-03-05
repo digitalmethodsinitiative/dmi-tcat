@@ -156,7 +156,7 @@ ini_set("memory_limit", "4G");
  * Enable URL expander? This script will follow the links of all URLs inside tweets and resolve the final location they point towards.
  * It generates a lot of requests to external hosts, but allows for more detailed URL queries.
  */
-define("ENABLE_URL_EXPANDER", false);
+define('ENABLE_URL_EXPANDER', false);
 
 /* Sysload monitoring. Display a traffic light indicating system load in the analysis panel */
 
