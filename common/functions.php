@@ -79,5 +79,26 @@ function validate_capture_phrases($keywords) {
     return TRUE;
 }
 
+/**
+ *  Is the URL expander enabled?
+ */
+function is_url_expander_enabled() {
+    if (defined('ENABLE_URL_EXPANDER')) {
+        return ENABLE_URL_EXPANDER;
+    } else {
+        /*
+         * ENABLE_URL_EXPANDER is not set as config variable. We attempt to learn via the tcat_status table whether
+         * or not we should run it. The URL expander used to be a separate Python script. If this script was enabled
+         * (via cron) it will be in the tcat_status table.
+         */
+        $dbh = pdo_connect();
+        $sql = "select * from tcat_status where variable = 'enable_url_expander' and value = 'true';";
+        $rec = $dbh->prepare($sql);
+        if ($rec->execute() && $rec->rowCount() > 0) {
+            return true;
+        }
+        return false;
+    }
+}
 
 ?>

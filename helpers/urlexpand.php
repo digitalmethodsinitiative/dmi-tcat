@@ -4,7 +4,7 @@
  * DMI-TCAT URL expander
  *
  * Resolves URLs inside tweets to their final location, if possible.
- * Based on original Python urlexpander.py
+ * Based on original Python urlexpand.py
  *
  * TODO FUTURE IMPROVEMENTS
  *
@@ -19,6 +19,13 @@ require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../capture/query_manager.php';
 require_once __DIR__ . '/../common/functions.php';
 require_once __DIR__ . '/../capture/common/functions.php';
+
+// make sure only one URL expander script is running
+$thislockfp = script_lock('urlexpand');
+if (!is_resource($thislockfp)) {
+    logit("urlexpand.log", "urlexpand.php is already running, not starting a second instance");
+    exit();
+}
 
 global $dbuser, $dbpass, $database, $hostname;
 
@@ -59,6 +66,7 @@ if (isset($argv[1])) {
 } else {
     foreach (getAllBins() as $bin) { $tables_scan[] .= $bin . '_urls'; }
     print "Assembling list of viable tables (this may take a while..)\n";
+    logit("urlexpand.log", "assembling list of viable tables");
 }
 
 // Prefilter tables which are not eligible for processing (because all URLs have been resolved)
@@ -79,6 +87,7 @@ foreach ($tables_scan as $table) {
 $dbh = null;
 
 print "Now starting resolve process\n";
+logit("urlexpand.log", "starting resolve process");
 
 $i = 0;
 while ($i < count($tables)) {
@@ -161,7 +170,9 @@ while ($i < count($tables)) {
                         usleep($child_sleep_normal);
                     }
                 }
-                print "$table handled with " . ($bad + $success) . " updates; $bad bad links and $success successful resolves.\n";
+                $str = "$table handled with " . ($bad + $success) . " updates; $bad bad links and $success successful resolves.\n";
+                print "$str\n";
+                logit("urlexpand.log", $str);
                 exit(0);
             } else {
                 // Nothing to do for this table
@@ -178,4 +189,5 @@ while ($i < count($tables)) {
 }
 
 print "Finished.\n";
+logit("urlexpand.log", "finished for now");
 exit(0);

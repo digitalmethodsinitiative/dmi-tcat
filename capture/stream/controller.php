@@ -145,6 +145,18 @@ if ($upgrade_requested) {
 
 chdir(__DIR__);
 
+if (is_url_expander_enabled()) {
+    // Check if urlexpand.php is running.
+    $running = (script_lock('urlexpand', true) !== true);
+    if (!$running) {
+        logit("controller.log", "starting URL expander");
+        // a forked process may inherit our lock, but we prevent this.
+        flock($thislockfp, LOCK_UN); fclose($thislockfp);
+        passthru(PHP_CLI . " " . __DIR__ . "/../../helpers/urlexpand.php > /dev/null 2>&1 &");
+        $thislockfp = script_lock('controller');
+    }
+}
+
 // now check for each capture role what needs to be done
 foreach ($roles as $role) {
 

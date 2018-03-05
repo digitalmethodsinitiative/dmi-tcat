@@ -1286,18 +1286,12 @@ sed -i "s/example.com\/dmi-tcat\//$SERVERNAME\//g" "$CFG"
 if [ "$URLEXPANDYES" = 'y' ]; then
    echo ""
    tput bold
-   echo "Installation and configuration of the URL expander ..."
+   echo "Enabling URL expander ..."
    tput sgr0
    echo ""
-   apt-get install -y build-essential libevent-dev python-all-dev python-mysqldb python-setuptools python-pip
-   pip install cython
-   easy_install greenlet
-   easy_install gevent 
-   pip install requests
-   CRONLINE="0 *     * * *   $SHELLUSER   (cd \"$TCAT_DIR/helpers\"; sh urlexpand.sh)"
-   echo "" >> /etc/cron.d/tcat
-   echo "# Run DMI-TCAT URL expander every hour" >> /etc/cron.d/tcat
-   echo "$CRONLINE" >> /etc/cron.d/tcat
+   VAR=ENABLE_URL_EXPANDER
+   VALUE="TRUE"
+   sed -i "s|^define('$VAR',[^)]*);|define('$VAR', $VALUE);|" "$CFG"
 fi
 
 echo ""
