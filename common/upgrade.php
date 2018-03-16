@@ -1621,6 +1621,51 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
         }
     }
 
+    // 18/02/2018 Add index for tweet_id in _media tables
+
+    $query = "SHOW TABLES";
+    $rec = $dbh->prepare($query);
+    $rec->execute();
+    $results = $rec->fetchAll(PDO::FETCH_COLUMN);
+    $ans = '';
+    if ($interactive == false) {
+        if ($aulevel >= 0) {
+            $ans = 'a';
+        } else {
+            $ans = 'SKIP';
+        }
+    }
+    if ($ans !== 'SKIP') {
+	    foreach ($results as $k => $v) {
+            if (!preg_match("/_media$/", $v)) continue;
+            if ($single && $v !== $single . '_media') { continue; }
+            $query = "SHOW INDEXES FROM $v";
+            $rec = $dbh->prepare($query);
+            $rec->execute();
+            $indexes = $rec->fetchAll();
+            $update = TRUE;
+            foreach ($indexes as $index) {
+                if ($index['Key_name'] == 'tweet_id' && $index['Column_name'] == 'tweet_id') {
+                    $update = FALSE;
+                    break;
+                }
+            }
+            if ($update && $dry_run) {
+                $suggested = true;
+            }
+            if ($update && $dry_run == false) {
+                if ($ans !== 'a') {
+                    $ans = cli_yesnoall("Add tweet_id index for table $v");
+                }
+                if ($ans == 'a' || $ans == 'y') {
+                    logit($logtarget, "Adding index for tweet_id on table $v");
+                    $query = "CREATE INDEX `tweet_id` ON " . quoteIdent($v) . " (`tweet_id`)";
+                    $rec = $dbh->prepare($query);
+                    $rec->execute();
+                }
+            }
+        }
+    }
 
     // End of upgrades
 
