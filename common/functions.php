@@ -21,6 +21,16 @@ function dbclose() {
 */
 }
 
+function pdo_connect() {
+    global $dbuser, $dbpass, $database, $hostname;
+
+    $dbh = new PDO("mysql:host=$hostname;dbname=$database;charset=utf8mb4", $dbuser, $dbpass, array(PDO::MYSQL_ATTR_INIT_COMMAND => "set sql_mode='ALLOW_INVALID_DATES'"));
+    $dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $dbh->query("set time_zone='+00:00'");
+
+    return $dbh;
+}
+
 function dbserver_has_utf8mb4_support() {
     global $hostname,$database,$dbuser,$dbpass;
     $dbt = new PDO("mysql:host=$hostname;dbname=$database", $dbuser, $dbpass, array(PDO::MYSQL_ATTR_INIT_COMMAND => "set sql_mode='ALLOW_INVALID_DATES'"));
@@ -79,26 +89,55 @@ function validate_capture_phrases($keywords) {
     return TRUE;
 }
 
-/**
- *  Is the URL expander enabled?
+/*
+ * Create a temporary memory-based cache table to store tweets.
  */
-function is_url_expander_enabled() {
-    if (defined('ENABLE_URL_EXPANDER')) {
-        return ENABLE_URL_EXPANDER;
-    } else {
-        /*
-         * ENABLE_URL_EXPANDER is not set as config variable. We attempt to learn via the tcat_status table whether
-         * or not we should run it. The URL expander used to be a separate Python script. If this script was enabled
-         * (via cron) it will be in the tcat_status table.
-         */
-        $dbh = pdo_connect();
-        $sql = "select * from tcat_status where variable = 'enable_url_expander' and value = 'true';";
-        $rec = $dbh->prepare($sql);
-        if ($rec->execute() && $rec->rowCount() > 0) {
-            return true;
+function create_tweet_cache() {
+    global $dbh;
+    $uniqid = substr(md5(uniqid("", true)), 0, 15);
+    $tweet_cache = "tcat_cache_memory_$uniqid";
+    $sufficient_memory = TRUE;
+    $sql = "SHOW VARIABLES WHERE Variable_name = 'tmp_table_size'";
+    $rec = $dbh->prepare($sql);
+    $rec->execute();
+    $res = $rec->fetch(PDO::FETCH_ASSOC);
+    if ($res['Value'] < 1024 * 1024 * 1024 * 3) {
+        $sufficient_memory = FALSE;
+        // We need to ensure we have are allowed to create big temporary tables, whether in memory or not
+        try {
+            $sql = "SET GLOBAL tmp_table_size = 1024 * 1024 * 1024 * 3";
+            $q = $dbh->prepare($sql);
+            $q->execute();
+        } catch (PDOException $Exception) {
+            pdo_error_report($Exception);
         }
-        return false;
+    } else {
+        $sql = "SHOW VARIABLES WHERE Variable_name = 'max_heap_table_size'";
+        $rec = $dbh->prepare($sql);
+        $rec->execute();
+        $res = $rec->fetch(PDO::FETCH_ASSOC);
+        if ($res['Value'] < 1024 * 1024 * 1024 * 3) {
+            $sufficient_memory = FALSE;
+        }
     }
+    // NOTICE (TODO: configurable): for safety we always chose on disk temporary tables now
+    $sufficient_memory = FALSE;
+    if ($sufficient_memory) {
+        $sql = "CREATE TEMPORARY TABLE $tweet_cache (id BIGINT PRIMARY KEY) ENGINE=Memory";
+    } else {
+        $sql = "CREATE TEMPORARY TABLE $tweet_cache (id BIGINT PRIMARY KEY) ENGINE=MyISAM";
+    }
+    try {
+        $create = $dbh->prepare($sql);
+        $create->execute();
+    } catch (PDOException $Exception) {
+        /* Fall-back to using disk table */
+        pdo_error_report($Exception);
+        $sql = "CREATE TEMPORARY TABLE $tweet_cache (id BIGINT PRIMARY KEY) ENGINE=MyISAM";
+        $create = $dbh->prepare($sql);
+        $create->execute();
+    }
+    return array($uniqid, $tweet_cache);
 }
 
 ?>

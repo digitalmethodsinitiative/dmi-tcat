@@ -1020,15 +1020,6 @@ function dbserver_has_geo_functions() {
     return false;
 }
 
-function pdo_connect() {
-    global $dbuser, $dbpass, $database, $hostname;
-
-    $dbh = new PDO("mysql:host=$hostname;dbname=$database;charset=utf8mb4", $dbuser, $dbpass, array(PDO::MYSQL_ATTR_INIT_COMMAND => "set sql_mode='ALLOW_INVALID_DATES'"));
-    $dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-    return $dbh;
-}
-
 function pdo_error_report($Exception) {
     error_log("Database access error occured. Code: " . $Exception->getCode() . " Msg: " . $Exception->getMessage());
 }
