@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . '/../../common/functions.php';   // include common functions file
+
 $connection = false;
 
 // PHP7
