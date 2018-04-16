@@ -1631,11 +1631,26 @@ class Tweet {
             /* running in extended context, text field does not exist in JSON response (default for REST API) */
             $full_text = $data["full_text"];
         } else if (!array_key_exists('extended_tweet', $data)) {
-            /* running in compatibility mode, we have no full text available (this should not happen) */
+            /* running in compatibility mode BUT the 'extended_tweet' JSON field is not available. this means the tweet is <= 140 characters */
             $full_text = $data["text"];
         } else {
-            /* running in compatibility mode with full text in extra structure (default for streaming API) */
+            /*
+             * Running in compatibility mode AND the 'extended_tweet' JSON field is available. this means the tweet is > 140 characters and
+             * Twitter has put all relevant metadata in a separate hierarchy.
+             *
+             * See: https://developer.twitter.com/en/docs/tweets/tweet-updates section 'Compatability mode JSON rendering'
+             * and: https://github.com/digitalmethodsinitiative/dmi-tcat/issues/311)
+             *
+             */
             $full_text = $data["extended_tweet"]["full_text"];
+            // TODO IMPORTANT EXPERIMENTAL VERIFY: can we do this, can we assume extended_entities always contains the complete set indeed?
+            $data["entities"] = $data["extended_tweet"]["entities"];
+            // Debugging messages
+            if (strpos($full_text, '#') !== false) {
+                logit(CAPTURE . ".error.log", "long tweet " . $this->id . " contained extended_tweet structure and using entities thereof (which contains at least one hashtag)");
+            } else {
+                logit(CAPTURE . ".error.log", "long tweet " . $this->id . " contained extended_tweet structure and using entities thereof");
+            }
         }
         
         $store_text = $full_text;
@@ -1653,18 +1668,6 @@ class Tweet {
             }
         }
 
-        /* calculate string length as it will be seen by MySQL */
-//        if (mb_strlen($store_text, '8bit') > 254) {
-//            /* the effective storage limit of 254 bytes is being exceeded */
-//            $this->truncated = 1;
-//            if (array_key_exists('extended_tweet', $data)) {
-//                /* We only retain the displayable text */
-//                $store_text = mb_substr($data['extended_tweet']['full_text'], $data['extended_tweet']['display_text_range'][0], $data['extended_tweet']['display_text_range'][1] - $data['extended_tweet']['display_text_range'][0], '8bit');
-//            } else {
-//                /* We truncate the string manually */
-//                $store_text = mb_substr($store_text, 0, 254, '8bit');
-//            }
-//        }
         $this->text = $store_text;
 
         $this->retweet_id = null;
