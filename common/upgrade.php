@@ -27,6 +27,8 @@ if (upg_env_is_cli()) {
     include_once __DIR__ . '/../common/constants.php';
     include __DIR__ . '/functions.php';
     include __DIR__ . '/../capture/common/functions.php';
+
+    require __DIR__ . '/../capture/common/tmhOAuth/tmhOAuth.php';
 }
 
 function get_all_bins() {
@@ -1621,6 +1623,129 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
         }
     }
 
+    // 16/04/2018 Extract complete set of extended entities from full text of longer tweets
+
+    $query = "SHOW TABLES";
+    $rec = $dbh->prepare($query);
+    $rec->execute();
+    $results = $rec->fetchAll(PDO::FETCH_COLUMN);
+    $ans = '';
+    if ($interactive == false) {
+        // require auto-upgrade level 0
+        if ($aulevel >= 0) {
+            $ans = 'a';
+        } else {
+            $ans = 'SKIP';
+        }
+    }
+    if ($ans !== 'SKIP') {
+        // Verify which (if any) bins we've already processed
+        $processed = array();
+        if ($have_tcat_status) {
+            $sql2 = "SELECT value FROM tcat_status WHERE variable = 'upgrade_entities'";
+            $rec2 = $dbh->prepare($sql2);
+            $rec2->execute();
+            $results2 = $rec2->fetch(PDO::FETCH_ASSOC);
+            if (is_array($results2)) {
+                $processed = json_decode($results2['value'], TRUE);
+            }
+        }
+        foreach ($results as $k => $v) {
+            if (!preg_match("/_tweets$/", $v)) continue;
+            if ($single && $v !== $single . '_tweets') {
+                continue;
+            }
+            $bin_name = preg_replace("/_tweets$/", "", $v);
+            if (in_array($bin_name, $processed)) { continue; }
+            $bin_type = getBinType($bin_name);
+            if ($bin_type !== "track" && $bin_type !== "geotrack" && $bin_type !== "follow" && $bin_type !== "onepercent" && $bin_type !== "other") {
+                // The timeline, search and lookup bin types are not affected
+                continue;
+            }
+            $update = FALSE;
+            // NOTICE: this heuristic would fail in a theoretical scenario where a dataset would only contain @mentions or URLs
+            // and no or near zero hashtags. In the query below, the 'ORDER BY created_at ASC' is critical, as we would otherwise
+            // break on newly captured tweets which are correct as soon as TCAT is updated.
+            $sql = "SELECT id, text FROM $v WHERE " .
+                    "                LENGTH(text) > 140 AND " .
+                    "                created_at >= '2017-11-01 00:00:00' AND " .
+                    "                LENGTH(text) - LENGTH(REPLACE(text, '#', '')) > 0 " .
+                    "                ORDER BY created_at ASC";
+            $rec = $dbh->prepare($sql);
+            $rec->execute();
+            while ($res = $rec->fetch()) {
+                $start_of_hashtag = mb_strrpos($res['text'], '#');
+                $hashtag = '';
+                for ($c = $start_of_hashtag + 1; $c < mb_strlen($res['text']); $c++) {
+                    $character = mb_substr($res['text'], $c, 1);
+                    if ($character == ' ') { break; }
+                    $hashtag .= $character;
+                }
+                if ($hashtag !== '') {
+                    $hashtag = mb_ereg_replace('\W','', $hashtag);     // Remove non-word characters
+                    $sql = "SELECT id FROM $bin_name" . "_hashtags WHERE tweet_id = :tweet_id AND text = :hashtag";
+                    $rec2 = $dbh->prepare($sql);
+                    $rec2->bindParam(":tweet_id", $res['id'], PDO::PARAM_STR);
+                    $rec2->bindParam(":hashtag", $hashtag, PDO::PARAM_STR);
+                    $rec2->execute();
+                    if ($rec2->rowCount() > 0) {
+                        // The hashtag was properly recovered. This bin seems to be okay!
+                        logit($logtarget, "Could not find extended entity issues with bin $bin_name. It appears to be okay.");
+                        break;
+                    } else {
+                        // TODO: this strict checking could potentially yield issues with false positives?
+                        // We need to somehow allow more than one failure, probably.
+                        logit($logtarget, "Bin $bin_name may need updating in relation to extended entities. Our evidence is tweet id " . $res['id'] . " with missing hashtag '" . $hashtag . "'");
+                        $update = TRUE;
+                        break;
+                    }
+                }
+            }
+            if ($update) {
+                if ($ans !== 'a') {
+                    $ans = cli_yesnoall("Extract complete set of extended entities from full text of longer tweets for bin $bin_name", 0, "93e8f653a134c1f5bdd8a44f987818b0bfa4fd10");
+                }
+                if ($ans == 'a' || $ans == 'y') {
+                     logit($logtarget, "Starting work on $bin_name");
+                     $sql = "SELECT id, text FROM $v WHERE " .
+                            "                        LENGTH(text) > 140 AND " .
+                            "                        created_at >= '2017-11-01 00:00:00' AND " .
+                            "                        ( LENGTH(text) - LENGTH(REPLACE(text, '#', '')) > 0 OR " .
+                            "                          LENGTH(text) - LENGTH(REPLACE(text, '@', '')) > 0 OR " .
+                            "                          text LIKE '%http%' )";
+                    $rec = $dbh->prepare($sql);
+                    $rec->execute();
+                    $schedule = array();
+                    while ($res = $rec->fetch()) {
+                        $tweet_id = $res['id'];
+                        $text = $res['text'];
+                        if (mb_strrpos($text, '#') >= 140 ||
+                            mb_strrpos($text, '@') >= 140 ||
+                            mb_strrpos($text, 'http') >= 136) {
+                            $schedule[] = $tweet_id;
+                            if (count($schedule) == 3000) {
+                                upgrade_perform_lookups($bin_name, $schedule);
+                                $schedule = array();
+                            }
+                        }
+                    }
+                    if (count($schedule) > 0) {
+                        upgrade_perform_lookups($bin_name, $schedule);
+                    }
+                    $processed[] = $bin_name;
+                    // Update tcat_status
+                    $sql = "DELETE FROM tcat_status WHERE variable = 'upgrade_entities'";
+                    $rec = $dbh->prepare($sql);
+                    $rec->execute();
+                    $sql = "INSERT INTO tcat_status ( variable, value ) VALUES ( 'upgrade_entities', :value )";
+                    $json = json_encode($processed);
+                    $rec = $dbh->prepare($sql);
+                    $rec->bindParam(":value", $json, PDO::PARAM_STR);
+                    $rec->execute();
+                }
+            }
+        }
+    }
 
     // End of upgrades
 
@@ -1683,6 +1808,110 @@ if (env_is_cli()) {
     upgrades(false, $interactive, $aulevel, $single);
 
     controller_restart_roles($logtarget);
+
+}
+
+function upgrade_perform_lookups($bin_name, $ids) {
+    global $logtarget, $twitter_keys, $current_key;
+
+    logit($logtarget, "performing lookup for " . count($ids) . " tweets");
+
+    $keyinfo = getRESTKey(0);
+    $current_key = $keyinfo['key'];
+    $ratefree = $keyinfo['remaining'];
+
+    $retries = 0;
+
+    $tweetQueue = new TweetQueue();
+
+    $tmhOAuth = new tmhOAuth(array(
+        'consumer_key' => $twitter_keys[$current_key]['twitter_consumer_key'],
+        'consumer_secret' => $twitter_keys[$current_key]['twitter_consumer_secret'],
+        'token' => $twitter_keys[$current_key]['twitter_user_token'],
+        'secret' => $twitter_keys[$current_key]['twitter_user_secret'],
+    ));
+
+    for ($i = 0; $i < count($ids); $i += 100) {
+
+        $lookups = 0;
+
+        logit($logtarget, "current key $current_key ratefree $ratefree");
+
+        while ($ratefree <= 0) {
+            $keyinfo = getRESTKey($current_key);
+            $current_key = $keyinfo['key'];
+            $ratefree = $keyinfo['remaining'];
+            sleep(1);
+        }
+        $subset = array_slice($ids, $i, 100);
+        $param_list = implode(",", $subset);
+
+        $params = array(
+            'id' => $param_list,
+            'tweet_mode' => 'extended',
+        );
+
+        $code = $tmhOAuth->user_request(array(
+            'method' => 'GET',
+            'url' => $tmhOAuth->url('1.1/statuses/lookup'),
+            'params' => $params
+                ));
+
+	    $ratefree--;
+
+        $reset_connection = false;
+
+        if ($tmhOAuth->response['code'] == 200) {
+            $data = json_decode($tmhOAuth->response['response'], true);
+            if (is_array($data) && empty($data)) {
+                // all tweets in set are deleted
+                continue;
+            }
+            $tweets = $data;
+            foreach ($tweets as $tweet) {
+                $t = new Tweet();
+                $t->fromJSON($tweet);
+                $t->deleteFromBin($bin_name);
+                $tweetQueue->push($t, $bin_name);
+                $lookups++;
+            }
+            usleep(250000);
+            $retries = 0;   // reset retry counter on success
+        } else if ($retries < 4 && $tmhOAuth->response['code'] == 503) {
+            /* this indicates problems on the Twitter side, such as overcapacity. we slow down and retry the connection */
+            sleep(7);
+            $i -= 100;  // rewind
+            $retries++;
+            $reset_connection = true;
+        } else if ($retries < 4) {
+            logit($logtarget, "Twitter REST failure with code " . $tmhOAuth->response['response']['code']);
+            logit($logtarget, "The error may not be permanent; we will sleep and retry the request.");
+            sleep(7);
+            $i -= 100;  // rewind
+            $retries++;
+            $reset_connection = true;
+        } else {
+            logit($logtarget, "Permanent error when querying the Twitter API. Please investigate the error output. Now stopping.");
+            return false;
+        }
+
+        if ($reset_connection) {
+            logit($logtarget, "Reconnecting to API.");
+            $tmhOAuth = new tmhOAuth(array(
+                        'consumer_key' => $twitter_keys[$current_key]['twitter_consumer_key'],
+                        'consumer_secret' => $twitter_keys[$current_key]['twitter_consumer_secret'],
+                        'token' => $twitter_keys[$current_key]['twitter_user_token'],
+                        'secret' => $twitter_keys[$current_key]['twitter_user_secret'],
+                    ));
+            $reset_connection = false;
+        } else {
+            $tweetQueue->insertDB();
+            logit($logtarget, "Updated $lookups tweets in $bin_name");
+        }
+
+    }
+
+    return true;
 
 }
 
