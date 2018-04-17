@@ -1638,18 +1638,14 @@ class Tweet {
              * Running in compatibility mode AND the 'extended_tweet' JSON field is available. this means the tweet is > 140 characters and
              * Twitter has put all relevant metadata in a separate hierarchy.
              *
-             * See: https://developer.twitter.com/en/docs/tweets/tweet-updates section 'Compatability mode JSON rendering'
+             * See: https://developer.twitter.com/en/docs/tweets/tweet-updates section 'Compatibility mode JSON rendering'
              * and: https://github.com/digitalmethodsinitiative/dmi-tcat/issues/311)
              *
              */
             $full_text = $data["extended_tweet"]["full_text"];
-            // TODO IMPORTANT EXPERIMENTAL VERIFY: can we do this, can we assume extended_entities always contains the complete set indeed?
             $data["entities"] = $data["extended_tweet"]["entities"];
-            // Debugging messages
-            if (strpos($full_text, '#') !== false) {
-                logit(CAPTURE . ".error.log", "long tweet " . $this->id . " contained extended_tweet structure and using entities thereof (which contains at least one hashtag)");
-            } else {
-                logit(CAPTURE . ".error.log", "long tweet " . $this->id . " contained extended_tweet structure and using entities thereof");
+            if (array_key_exists("extended_entities", $data["extended_tweet"])) {
+                $data["extended_entities"] = $data["extended_tweet"]["extended_entities"];
             }
         }
         
@@ -1666,6 +1662,13 @@ class Tweet {
             } else {
                 $store_text = "RT @" . $data["retweeted_status"]["user"]["screen_name"] . ": " . $data["retweeted_status"]["text"];
             }
+            /*
+             * CAVEAT: if the RT text is > 280 characters, the final segment of the original tweet could contain an entity.
+             * The Twitter API will remove that entity from the main tweet and store it only in the retweeted_status hierarchy.
+             * On the other hand, the main tweet hierarchy will contain one mention more, namely the retweeted user.
+             * We do not at the moment import the entities from the retweeted status hierarchy (although that could be argued for)
+             * because 1) they are not visible to the end-user, 2) it would complicate entity processing even more.
+             */
         }
 
         $this->text = $store_text;
