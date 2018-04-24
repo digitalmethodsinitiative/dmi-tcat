@@ -1671,10 +1671,12 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
                     "                created_at >= '2017-11-01 00:00:00' AND " .
                     "                LENGTH(text) - LENGTH(REPLACE(text, '#', '')) > 0 " .
                     "                ORDER BY created_at ASC";
+            logit($logtarget, $sql);
             $rec = $dbh->prepare($sql);
             $rec->execute();
             while ($res = $rec->fetch()) {
                 $start_of_hashtag = mb_strrpos($res['text'], '#');
+                if ($start_of_hashtag < 140) { continue; }
                 $hashtag = '';
                 for ($c = $start_of_hashtag + 1; $c < mb_strlen($res['text']); $c++) {
                     $character = mb_substr($res['text'], $c, 1);
@@ -1690,7 +1692,7 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
                     $rec2->execute();
                     if ($rec2->rowCount() > 0) {
                         // The hashtag was properly recovered. This bin seems to be okay!
-                        logit($logtarget, "Could not find extended entity issues with bin $bin_name. It appears to be okay.");
+                        logit($logtarget, "Could not find extended entity issues with bin $bin_name. It appears to be okay. Evidence is hashtag '$hashtag' in tweet id " . $res['id']);
                         break;
                     } else {
                         // TODO: this strict checking could potentially yield issues with false positives?
