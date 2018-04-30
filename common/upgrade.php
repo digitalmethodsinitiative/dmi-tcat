@@ -1671,7 +1671,6 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
                     "                created_at >= '2017-11-01 00:00:00' AND " .
                     "                LENGTH(text) - LENGTH(REPLACE(text, '#', '')) > 0 " .
                     "                ORDER BY created_at ASC";
-            logit($logtarget, $sql);
             $rec = $dbh->prepare($sql);
             $rec->execute();
             while ($res = $rec->fetch()) {
@@ -1692,58 +1691,65 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
                     $rec2->execute();
                     if ($rec2->rowCount() > 0) {
                         // The hashtag was properly recovered. This bin seems to be okay!
-                        logit($logtarget, "Could not find extended entity issues with bin $bin_name. It appears to be okay. Evidence is hashtag '$hashtag' in tweet id " . $res['id']);
+                        if (!$dry_run) {
+                            logit($logtarget, "Could not find extended entity issues with bin $bin_name. It appears to be okay. Evidence is hashtag '$hashtag' in tweet id " . $res['id']);
+                        }
                         break;
                     } else {
-                        // TODO: this strict checking could potentially yield issues with false positives?
                         // We need to somehow allow more than one failure, probably.
-                        logit($logtarget, "Bin $bin_name may need updating in relation to extended entities. Our evidence is tweet id " . $res['id'] . " with missing hashtag '" . $hashtag . "'");
+                        if (!$dry_run) {
+                            logit($logtarget, "Bin $bin_name may need updating in relation to extended entities. Our evidence is tweet id " . $res['id'] . " with missing hashtag '" . $hashtag . "'");
+                        }
                         $update = TRUE;
                         break;
                     }
                 }
             }
             if ($update) {
-                if ($ans !== 'a') {
-                    $ans = cli_yesnoall("Extract complete set of extended entities from full text of longer tweets for bin $bin_name", 0, "93e8f653a134c1f5bdd8a44f987818b0bfa4fd10");
-                }
-                if ($ans == 'a' || $ans == 'y') {
-                     logit($logtarget, "Starting work on $bin_name");
-                     $sql = "SELECT id, text FROM $v WHERE " .
+                if ($dry_run) {
+                    $required = TRUE;
+                } else {
+                    if ($ans !== 'a') {
+                        $ans = cli_yesnoall("Extract complete set of extended entities from full text of longer tweets for bin $bin_name", 0, "93e8f653a134c1f5bdd8a44f987818b0bfa4fd10");
+                    }
+                    if ($ans == 'a' || $ans == 'y') {
+                        logit($logtarget, "Starting work on $bin_name");
+                        $sql = "SELECT id, text FROM $v WHERE " .
                             "                        LENGTH(text) > 140 AND " .
                             "                        created_at >= '2017-11-01 00:00:00' AND " .
                             "                        ( LENGTH(text) - LENGTH(REPLACE(text, '#', '')) > 0 OR " .
                             "                          LENGTH(text) - LENGTH(REPLACE(text, '@', '')) > 0 OR " .
                             "                          text LIKE '%http%' )";
-                    $rec = $dbh->prepare($sql);
-                    $rec->execute();
-                    $schedule = array();
-                    while ($res = $rec->fetch()) {
-                        $tweet_id = $res['id'];
-                        $text = $res['text'];
-                        if (mb_strrpos($text, '#') >= 140 ||
-                            mb_strrpos($text, '@') >= 140 ||
-                            mb_strrpos($text, 'http') >= 136) {
-                            $schedule[] = $tweet_id;
-                            if (count($schedule) == 3000) {
-                                upgrade_perform_lookups($bin_name, $schedule);
-                                $schedule = array();
+                        $rec = $dbh->prepare($sql);
+                        $rec->execute();
+                        $schedule = array();
+                        while ($res = $rec->fetch()) {
+                            $tweet_id = $res['id'];
+                            $text = $res['text'];
+                            if (mb_strrpos($text, '#') >= 140 ||
+                                mb_strrpos($text, '@') >= 140 ||
+                                mb_strrpos($text, 'http') >= 136) {
+                                $schedule[] = $tweet_id;
+                                if (count($schedule) == 3000) {
+                                    upgrade_perform_lookups($bin_name, $schedule);
+                                    $schedule = array();
+                                }
                             }
                         }
+                        if (count($schedule) > 0) {
+                            upgrade_perform_lookups($bin_name, $schedule);
+                        }
+                        $processed[] = $bin_name;
+                        // Update tcat_status
+                        $sql = "DELETE FROM tcat_status WHERE variable = 'upgrade_entities'";
+                        $rec = $dbh->prepare($sql);
+                        $rec->execute();
+                        $sql = "INSERT INTO tcat_status ( variable, value ) VALUES ( 'upgrade_entities', :value )";
+                        $json = json_encode($processed);
+                        $rec = $dbh->prepare($sql);
+                        $rec->bindParam(":value", $json, PDO::PARAM_STR);
+                        $rec->execute();
                     }
-                    if (count($schedule) > 0) {
-                        upgrade_perform_lookups($bin_name, $schedule);
-                    }
-                    $processed[] = $bin_name;
-                    // Update tcat_status
-                    $sql = "DELETE FROM tcat_status WHERE variable = 'upgrade_entities'";
-                    $rec = $dbh->prepare($sql);
-                    $rec->execute();
-                    $sql = "INSERT INTO tcat_status ( variable, value ) VALUES ( 'upgrade_entities', :value )";
-                    $json = json_encode($processed);
-                    $rec = $dbh->prepare($sql);
-                    $rec->bindParam(":value", $json, PDO::PARAM_STR);
-                    $rec->execute();
                 }
             }
         }
