@@ -1714,6 +1714,7 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
                     }
                     if ($ans == 'a' || $ans == 'y') {
                         logit($logtarget, "Starting work on $bin_name");
+                        $dbh = null; $dbh = pdo_connect();
                         $sql = "SELECT id, text FROM $v WHERE " .
                             "                        LENGTH(text) > 140 AND " .
                             "                        created_at >= '2017-11-01 00:00:00' AND " .
@@ -1741,6 +1742,7 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
                         }
                         $processed[] = $bin_name;
                         // Update tcat_status
+                        $dbh = null; $dbh = pdo_connect();
                         $sql = "DELETE FROM tcat_status WHERE variable = 'upgrade_entities'";
                         $rec = $dbh->prepare($sql);
                         $rec->execute();
