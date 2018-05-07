@@ -1631,8 +1631,8 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
     $results = $rec->fetchAll(PDO::FETCH_COLUMN);
     $ans = '';
     if ($interactive == false) {
-        // require auto-upgrade level 0
-        if ($aulevel >= 0) {
+        // require auto-upgrade level 1
+        if ($aulevel >= 1) {
             $ans = 'a';
         } else {
             $ans = 'SKIP';
@@ -1714,6 +1714,7 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
                     }
                     if ($ans == 'a' || $ans == 'y') {
                         logit($logtarget, "Starting work on $bin_name");
+                        disable_keys_for_bin($bin_name);
                         $dbh = null; $dbh = pdo_connect();
                         $sql = "SELECT id, text FROM $v WHERE " .
                             "                        LENGTH(text) > 140 AND " .
@@ -1751,6 +1752,7 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
                         $rec = $dbh->prepare($sql);
                         $rec->bindParam(":value", $json, PDO::PARAM_STR);
                         $rec->execute();
+                        enable_keys_for_bin($bin_name);
                     }
                 }
             }
@@ -1819,6 +1821,59 @@ if (env_is_cli()) {
 
     controller_restart_roles($logtarget);
 
+}
+
+/*
+ * This function disables indexes for a specific bin. This is useful when you will be performing many updates.
+ * After your update step, use the enable_keys_for_bin() to start using the indexes again.
+ */
+function disable_keys_for_bin($bin_name) {
+    global $logtarget;
+    $dbh = pdo_connect();
+    logit($logtarget, "Disabling keys for bin $bin_name");
+    $query = "SHOW TABLES";
+    $rec = $dbh->prepare($query);
+    $rec->execute();
+    $results = $rec->fetchAll(PDO::FETCH_COLUMN);
+    foreach ($results as $k => $v) {
+        $exts = array ( 'tweets', 'hashtags', 'mentions', 'urls', 'media', 'places', 'withheld' );
+        foreach ($exts as $ext) {
+            $search = $bin_name . '_' . $ext;
+            if ($v == $search) {
+                $query = "ALTER TABLE $v DISABLE KEYS";
+                $rec = $dbh->prepare($query);
+                $rec->execute();
+            }
+        }
+    }
+}
+
+/*
+ * This function enables indexes for a specific bin. After enabling the indexes, am OPTIMIZE TABLE
+ * is performed. This step will interrupt capture.
+ */
+function enable_keys_for_bin($bin_name) {
+    global $logtarget;
+    $dbh = pdo_connect();
+    logit($logtarget, "Enabling keys for bin $bin_name");
+    $query = "SHOW TABLES";
+    $rec = $dbh->prepare($query);
+    $rec->execute();
+    $results = $rec->fetchAll(PDO::FETCH_COLUMN);
+    foreach ($results as $k => $v) {
+        $exts = array ( 'tweets', 'hashtags', 'mentions', 'urls', 'media', 'places', 'withheld' );
+        foreach ($exts as $ext) {
+            $search = $bin_name . '_' . $ext;
+            if ($v == $search) {
+                $query = "ALTER TABLE $v ENABLE KEYS";
+                $rec = $dbh->prepare($query);
+                $rec->execute();
+                $query = "OPTIMIZE TABLE $v";
+                $rec = $dbh->prepare($query);
+                $rec->execute();
+            }
+        }
+    }
 }
 
 function upgrade_perform_lookups($bin_name, $ids) {
