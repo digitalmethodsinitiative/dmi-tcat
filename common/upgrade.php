@@ -1710,11 +1710,12 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
                     $required = TRUE;
                 } else {
                     if ($ans !== 'a') {
-                        $ans = cli_yesnoall("Extract complete set of extended entities from full text of longer tweets for bin $bin_name", 0, "93e8f653a134c1f5bdd8a44f987818b0bfa4fd10");
+                        $ans = cli_yesnoall("Extract complete set of extended entities from full text of longer tweets for bin $bin_name", 1, "93e8f653a134c1f5bdd8a44f987818b0bfa4fd10");
                     }
                     if ($ans == 'a' || $ans == 'y') {
                         logit($logtarget, "Starting work on $bin_name");
                         disable_keys_for_bin($bin_name);
+                        logit($logtarget, "Preparing list of candidate tweets");
                         $dbh = null; $dbh = pdo_connect();
                         $sql = "SELECT id, text FROM $v WHERE " .
                             "                        LENGTH(text) > 140 AND " .
@@ -1728,9 +1729,9 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
                         while ($res = $rec->fetch()) {
                             $tweet_id = $res['id'];
                             $text = $res['text'];
-                            if (mb_strrpos($text, '#') >= 140 ||
-                                mb_strrpos($text, '@') >= 140 ||
-                                mb_strrpos($text, 'http') >= 136) {
+                            if (mb_strrpos($text, '#') >= 120 ||
+                                mb_strrpos($text, '@') >= 120 ||
+                                mb_strrpos($text, 'http') >= 120) {
                                 $schedule[] = $tweet_id;
                                 if (count($schedule) == 3000) {
                                     upgrade_perform_lookups($bin_name, $schedule);
