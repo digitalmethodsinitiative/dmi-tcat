@@ -1625,7 +1625,7 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
 
     // 16/04/2018 Extract complete set of extended entities from full text of longer tweets
 
-    $query = "SHOW TABLES";
+    $sql = "SELECT table_name FROM information_schema.tables WHERE table_schema = '$database' ORDER BY data_length";
     $rec = $dbh->prepare($query);
     $rec->execute();
     $results = $rec->fetchAll(PDO::FETCH_COLUMN);
