@@ -136,11 +136,11 @@ if (defined('ANALYSIS_URL'))
     function getExportSettings() {
         var exportSettings = "&exportSettings=";
         $('input:checkbox').each(function () {
-            if(this.checked) 
+            if(this.checked)
                 exportSettings += $(this).val() + ",";
         });
         return exportSettings;
-        
+
     }
     $(document).ready(function(){
         $('#form').submit(function(){
@@ -676,14 +676,14 @@ foreach ($linedata as $key => $value) {
                     <div class="txt_link"> &raquo;  <a href="index.php?" onclick="var minf = askFrequency(); $('#whattodo').val('source&minf='+minf+getInterval()); sendUrl('index.php');return false;">launch</a></div>
 
                     <hr />
-                    
+
                     <h3>Twitter client (source) stats (overall)</h3>
                     <div class="txt_desc">Contains the min, max, average, Q1, median, Q3, and trimmed mean for: number of tweets per source, urls per source</div>
                     <div class="txt_desc">Use: get a better feel for the sources in your data set.</div>
                     <div class="txt_link"> &raquo;  <a href="" onclick="$('#whattodo').val('source.stats'+getInterval()); sendUrl('mod.source.stats.php');return false;">launch</a></div>
 
                     <hr />
-                    
+
                     <h3>Twitter client (source) stats (individual)</h3>
                     <div class="txt_desc">Lists sources and their number of tweets, retweets, hashtags, URLs and mentions.</div>
                     <div class="txt_desc">Use: get a better feel for the sources in your data set.</div>
@@ -916,9 +916,9 @@ foreach ($linedata as $key => $value) {
                         The more often they appear together, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>").</div>
                     <div class="txt_desc">Use: explore the relational <i>activity</i> between mentioned users and hashtags, find and analyze which users are considered experts around which topics.</div>
                     <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('mention_hashtags');sendUrl('mod.mention_hashtags.php');return false;">launch</a></div>
-                    
+
                     <hr/>
-                    
+
                     <h3>Bipartite hashtag-source graph</h3>
                     <div class="txt_desc">Produces a <a href="http://en.wikipedia.org/wiki/Bipartite_graph">bipartite graph</a> based on co-occurence of hashtags and "sources" (the client a
                         tweet was sent from is its source) . If a hashtag is tweeted from a particular client, there will be a link between that client and the hashtag.
@@ -927,7 +927,7 @@ foreach ($linedata as $key => $value) {
                     <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('mod.sources_hashtags');sendUrl('mod.sources_hashtags.php');return false;">launch</a></div>
 
                     <hr/>
-                    
+
                     <h3>Bipartite user-source graph</h3>
                     <div class="txt_desc">Produces a <a href="http://en.wikipedia.org/wiki/Bipartite_graph">bipartite graph</a> based on co-occurence of users and "sources" (the client a
                         tweet was sent from is its source) . If a users tweets from a particular client, there will be a link between that client and the user.
@@ -935,19 +935,19 @@ foreach ($linedata as $key => $value) {
                     <div class="txt_desc">Use: explore the relations between clients and users, find and analyze which users use which clients.</div>
                     <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('mod.sources_users');sendUrl('mod.sources_users.php');return false;">launch</a></div>
 
-                    
-                    
+
+
                     <?php if ($show_url_export) { ?>
-                    
+
                         <hr/>
-                    
+
                         <h3>Bipartite domain-source graph</h3>
                         <div class="txt_desc">Produces a <a href="http://en.wikipedia.org/wiki/Bipartite_graph">bipartite graph</a> based on co-occurence of (URL-)domains and "sources" (the client a
                             tweet was sent from is its source) . If a domain is tweeted from a particular client, there will be a link between that client and the domain.
                             The more often they appear together, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>").</div>
                         <div class="txt_desc">Use: explore the relations between domains and hashtags, find and analyze which domains are related to which sources.</div>
                         <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('mod.sources_hosts');sendUrl('mod.sources_hosts.php');return false;">launch</a></div>
-                    
+
                         <hr />
                         <h3>Bipartite URL-user graph</h3>
                         <div class="txt_desc">Produces a <a href="http://en.wikipedia.org/wiki/Bipartite_graph">bipartite graph</a> based on co-occurence of URLS and users. If a user wrote a tweet with a certain URL, there will be a link between that user and the URL.
@@ -999,6 +999,13 @@ foreach ($linedata as $key => $value) {
                     <div class="txt_desc">Produces an associational profile as well as a time-encoded co-hashtag network.</div>
                     <div class="txt_desc">Use: explore shifts in hashtags associations.</div>
                     <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('hashtag_variability');sendUrl('mod.hashtag_variability.php');return false;">launch</a></div>
+
+                    <hr/>
+
+                    <h3>Modulation Sequencer (URL)</h3>
+                    <div class="txt_desc">The tool allows one to qualitatively examine how a URL is shared on Twitter over time. See Moats and Borra (2018) for a full explanation.</div>
+                    <div class="txt_desc">Use: enter a (part of a) URL in the data selection field at the top and click 'update overview'. Then launch this tool.</div>
+                    <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('modulation_sequencer');sendUrl('mod.modulation_sequencer.php');return false;">launch</a></div>
 
                     <?php
                             // The next two experimental modules are currently in archived mode. They may be resurrected in the future, or should be removed from the source tree.
