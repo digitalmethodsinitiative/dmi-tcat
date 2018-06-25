@@ -40,8 +40,8 @@ $minf = isset($_GET['minf']) ? $minf = $_GET['minf'] : 1;
         $tempfile = tmpfile();
         fputs($tempfile, chr(239) . chr(187) . chr(191));
 
-        $sql = "SELECT m.media_url_https as url, " . sqlInterval() . " FROM " . $esc['mysql']['dataset'] . "_tweets t, " .
-                $esc['mysql']['dataset'] . "_media m ";
+        $sql = "SELECT m.media_url_https as url, " . sqlInterval() . " FROM " . $esc['mysql']['dataset'] . "_media m, " .
+                $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
         $sql .= " AND m.tweet_id = t.id ";
         $sql .= " ORDER BY datepart ASC";

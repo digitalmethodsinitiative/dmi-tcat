@@ -10,7 +10,7 @@ require_once __DIR__ . '/common/functions.php';
         $filename = get_filename_for_export("ids");
         $stream_to_open = export_start($filename, $outputformat);
 
-        $sql = "SELECT id FROM " . $esc['mysql']['dataset'] . "_tweets t ";
+        $sql = "SELECT t.id as tweetid FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
 
         $out = "";
@@ -18,11 +18,8 @@ require_once __DIR__ . '/common/functions.php';
         $rec = $dbh->prepare($sql);
         $rec->execute();
         while ($data = $rec->fetch(PDO::FETCH_ASSOC)) {
-            if (preg_match("/_urls/", $sql))
-                $id = $data['tweet_id'];
-            else
-                $id = $data['id'];
-            $out .= $id . "\n";
+           $id = $data['tweetid'];
+           $out .= $id . "\n";
         }
 
         $fp = fopen($stream_to_open, 'w');

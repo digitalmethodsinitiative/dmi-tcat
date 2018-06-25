@@ -30,6 +30,10 @@ if (isset($_GET['url_query']) && !empty($_GET['url_query']))
     $url_query = urldecode($_GET['url_query']);
 else
     $url_query = "";
+if (isset($_GET['media_url_query']) && !empty($_GET['media_url_query']))
+    $media_url_query = urldecode($_GET['media_url_query']);
+else
+    $media_url_query = "";
 if (isset($_GET['geo_query']) && !empty($_GET['geo_query'])) {
     $geo_query = urldecode($_GET['geo_query']);
     if (preg_match("/[^\-\,\.0-9 ]/", $geo_query)) {
@@ -230,7 +234,9 @@ function sqlSubset($where = NULL) {
     $collation = current_collation();
     $sql = "";
     if (!empty($esc['mysql']['url_query']) && strstr($where, "u.") == false)
-        $sql .= ", " . $esc['mysql']['dataset'] . "_urls u";
+        $sql .= " INNER JOIN " . $esc['mysql']['dataset'] . "_urls u ON u.tweet_id = t.id ";
+    if (!empty($esc['mysql']['media_url_query']) && strstr($where, "med.") == false)
+        $sql .= " INNER JOIN " . $esc['mysql']['dataset'] . "_media med ON med.tweet_id = t.id ";
     $sql .= " WHERE ";
     if (!empty($where))
         $sql .= $where;
@@ -303,8 +309,6 @@ function sqlSubset($where = NULL) {
         }
     }
     if (!empty($esc['mysql']['url_query'])) {
-        if (strstr($where, "u.") == false)
-            $sql .= " u.tweet_id = t.id AND ";
         if (strstr($esc['mysql']['url_query'], "AND") !== false) {
             $subqueries = explode(" AND ", $esc['mysql']['url_query']);
             foreach ($subqueries as $subquery) {
@@ -330,6 +334,38 @@ function sqlSubset($where = NULL) {
             $sql .= "(";
             $sql .= "(LOWER(u.url_followed COLLATE $collation) LIKE LOWER('%" . $subquery . "%' COLLATE $collation)) OR ";
             $sql .= "(LOWER(u.url_expanded COLLATE $collation) LIKE LOWER('%" . $subquery . "%' COLLATE $collation))";
+            $sql .= ") AND ";
+        }
+    }
+    if (!empty($esc['mysql']['media_url_query'])) {
+        if (strstr($esc['mysql']['media_url_query'], "AND") !== false) {
+            $subqueries = explode(" AND ", $esc['mysql']['media_url_query']);
+            foreach ($subqueries as $subquery) {
+                $sql .= "(";
+                $sql .= "(LOWER(med.url COLLATE $collation) LIKE LOWER('%" . $subquery . "%' COLLATE $collation)) OR ";
+                $sql .= "(LOWER(med.media_url_https COLLATE $collation) LIKE LOWER('%" . $subquery . "%' COLLATE $collation)) OR ";
+                $sql .= "(LOWER(med.url_expanded COLLATE $collation) LIKE LOWER('%" . $subquery . "%' COLLATE $collation))";
+                $sql .= ")";
+                $sql .= " AND ";
+            }
+        } elseif (strstr($esc['mysql']['media_url_query'], "OR") !== false) {
+            $subqueries = explode(" OR ", $esc['mysql']['media_url_query']);
+            $sql .= "(";
+            foreach ($subqueries as $subquery) {
+                $sql .= "(";
+                $sql .= "(LOWER(med.url COLLATE $collation) LIKE LOWER('%" . $subquery . "%' COLLATE $collation)) OR ";
+                $sql .= "(LOWER(med.media_url_https COLLATE $collation) LIKE LOWER('%" . $subquery . "%' COLLATE $collation)) OR ";
+                $sql .= "(LOWER(med.url_expanded COLLATE $collation) LIKE LOWER('%" . $subquery . "%' COLLATE $collation))";
+                $sql .= ")";
+                $sql .= " OR ";
+            }
+            $sql = substr($sql, 0, -3) . ") AND ";
+        } else {
+            $subquery = $esc['mysql']['media_url_query'];
+            $sql .= "(";
+            $sql .= "(LOWER(med.url COLLATE $collation) LIKE LOWER('%" . $subquery . "%' COLLATE $collation)) OR ";
+            $sql .= "(LOWER(med.media_url_https COLLATE $collation) LIKE LOWER('%" . $subquery . "%' COLLATE $collation)) OR ";
+            $sql .= "(LOWER(med.url_expanded COLLATE $collation) LIKE LOWER('%" . $subquery . "%' COLLATE $collation))";
             $sql .= ") AND ";
         }
     }
@@ -474,7 +510,7 @@ function generate($what, $filename) {
         // get other things
     } else {
         // @todo, this could also use database grouping
-        $sql = "SELECT id,text COLLATE $collation as text,created_at,source, from_user_name COLLATE $collation as from_user_name FROM " . $esc['mysql']['dataset'] . "_tweets t ";
+        $sql = "SELECT t.id,text COLLATE $collation as text,created_at,source, from_user_name COLLATE $collation as from_user_name FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
 
         // get slice and its min and max time
@@ -737,11 +773,12 @@ function decodeAndFlatten($text) {
 // make sure that we have all the right types and values
 // also make sure one cannot do a mysql injection attack
 function validate_all_variables() {
-    global $esc, $query, $url_query, $geo_query, $dataset, $exclude, $from_user_name, $exclude_from_user_name, $from_user_description, $from_source, $startdate, $enddate, $interval, $databases, $connection, $keywords, $database, $minf, $topu, $from_user_lang, $outputformat;
+    global $esc, $query, $url_query, $media_url_query, $geo_query, $dataset, $exclude, $from_user_name, $exclude_from_user_name, $from_user_description, $from_source, $startdate, $enddate, $interval, $databases, $connection, $keywords, $database, $minf, $topu, $from_user_lang, $outputformat;
 
     $esc['mysql']['dataset'] = validate($dataset, "mysql-literal");
     $esc['mysql']['query'] = validate($query, "mysql-literal");
     $esc['mysql']['url_query'] = validate($url_query, "mysql-literal");
+    $esc['mysql']['media_url_query'] = validate($media_url_query, "mysql-literal");
     $esc['mysql']['geo_query'] = validate($geo_query, "mysql-literal");
     $esc['mysql']['exclude'] = validate($exclude, "mysql-literal");
     $esc['mysql']['from_source'] = validate($from_source, "mysql-literal");
@@ -753,6 +790,7 @@ function validate_all_variables() {
     $esc['shell']['dataset'] = validate($dataset, "shell");
     $esc['shell']['query'] = validate($query, "shell");
     $esc['shell']['url_query'] = validate($url_query, "shell");
+    $esc['shell']['media_url_query'] = validate($media_url_query, "shell");
     $esc['shell']['geo_query'] = validate($geo_query, "shell");
     $esc['shell']['exclude'] = validate($exclude, "shell");
     $esc['shell']['from_source'] = validate($from_source, "shell");
@@ -839,7 +877,7 @@ function get_status($variable) {
     return null;
 }
 
-// Output format: {dataset}-{startdate}-{enddate}-{query}-{exclude}-{from_user_name}-{exclude_from_user_name}-{from_user_description}-{from_user_lang}-{url_query}-{module_name}-{module_settings}-{hash}.{filetype}
+// Output format: {dataset}-{startdate}-{enddate}-{query}-{exclude}-{from_user_name}-{exclude_from_user_name}-{from_user_description}-{from_user_lang}-{url_query}-{media_url_query}--{module_name}-{module_settings}-{hash}.{filetype}
 function get_filename_for_export($module, $settings = "", $filetype = "csv") {
     global $resultsdir, $esc;
 
@@ -864,6 +902,7 @@ function get_filename_for_export($module, $settings = "", $filetype = "csv") {
     $filename .= "-" . $esc['shell']["from_user_description"];
     $filename .= "-" . $esc['shell']["from_user_lang"];
     $filename .= "-" . $esc['shell']["url_query"];
+    $filename .= "-" . $esc['shell']["media_url_query"];
     $filename .= "-" . str_replace(",", "_", str_replace(" ", "x", $esc['shell']["geo_query"]));
     $filename .= "-" . $module;
     $filename .= "-" . $settings;

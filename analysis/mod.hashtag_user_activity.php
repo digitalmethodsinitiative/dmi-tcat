@@ -31,7 +31,7 @@ require_once __DIR__ . '/common/CSV.class.php';
         $csv = new CSV($filename, $outputformat);
 
         // select nr of users in subset
-        $sql = "SELECT count(id) AS count FROM " . $esc['mysql']['dataset'] . "_tweets t ";
+        $sql = "SELECT count(t.id) AS count FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
 
         $rec = $dbh->prepare($sql);

@@ -15,7 +15,7 @@ require_once __DIR__ . '/common/CSV.class.php';
 
         $csv->writeheader(array('tweet_id', 'user_from_id', 'user_from_name', 'user_to_id', 'user_to_name', 'mention_type'));
 
-        $sql = "SELECT t.id as id, t.text as text, m.from_user_id as user_from_id, m.from_user_name as user_from_name, m.to_user_id as user_to_id, m.to_user as user_to_name FROM " . $esc['mysql']['dataset'] . "_tweets t, " . $esc['mysql']['dataset'] . "_mentions m ";
+        $sql = "SELECT t.id as id, t.text as text, m.from_user_id as user_from_id, m.from_user_name as user_from_name, m.to_user_id as user_to_id, m.to_user as user_to_name FROM " . $esc['mysql']['dataset'] . "_mentions m, " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
         $sql .= " AND m.tweet_id = t.id ORDER BY id";
 

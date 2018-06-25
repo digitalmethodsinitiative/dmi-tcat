@@ -46,6 +46,7 @@ if (defined('ANALYSIS_URL'))
             "?dataset=" + $("#ipt_dataset").val() +
             "&query=" + $("#ipt_query").val().replace(/#/g,"%23") +
             "&url_query=" + $("#ipt_url_query").val().replace(/#/g,"%23") +
+            "&media_url_query=" + $("#ipt_media_url_query").val().replace(/#/g,"%23") +
 <?php if (dbserver_has_geo_functions()) { ?>
             "&geo_query=" + $("#ipt_geo_query").val()  +
 <?php } ?>
@@ -262,6 +263,9 @@ if (defined('ANALYSIS_URL'))
                         <tr>
                             <td class="tbl_head">(Part of) URL: </td><td><input type="text" id="ipt_url_query" size="60" name="url_query"  value="<?php echo $url_query; ?>" /> (empty: any or all URLs*)</td>
                         </tr>
+                        <tr>
+                            <td class="tbl_head">(Part of) media URL: </td><td><input type="text" id="ipt_media_url_query" size="60" name="media_url_query"  value="<?php echo $media_url_query; ?>" /> (empty: any or all media URLs*)</td>
+                        </tr>
                         <?php if (dbserver_has_geo_functions()) { ?>
                             <tr>
                                 <td class="tbl_head">GEO bounding polygon: </td><td><input type="text" id="ipt_geo_query" size="60" name="geo_query"  value="<?php echo $geo_query; ?>" /> (POLYGON in <a href='http://en.wikipedia.org/wiki/Well-known_text'>WKT</a> format.)</td>
@@ -461,6 +465,9 @@ if (defined('ANALYSIS_URL'))
                             <tr>
                                 <td class="tbl_head">(Part of) URL:</td><td><?php echo $esc['mysql']['url_query']; ?></td>
                             </tr>
+                            <tr>
+                                <td class="tbl_head">(Part of) media URL:</td><td><?php echo $esc['mysql']['media_url_query']; ?></td>
+                            </tr>
                             <?php if (dbserver_has_geo_functions()) { ?>
                                 <tr>
                                     <td class="tbl_head">GEO polygon:</td><td><?php echo $esc['mysql']['geo_query']; ?></td>
@@ -603,7 +610,7 @@ foreach ($linedata as $key => $value) {
 
                 <legend>Export selected data</legend>
 
-                <p class="txt_desc">All exports have the following filename convention: {dataset}-{startdate}-{enddate}-{query}-{exclude}-{from_user_name}-{exclude_from_user_name}-{from_user_lang}-{url_query}-{module_name}-{module_settings}-{dmi-tcat_version}.{filetype}</p>
+                <p class="txt_desc">All exports have the following filename convention: {dataset}-{startdate}-{enddate}-{query}-{exclude}-{from_user_name}-{exclude_from_user_name}-{from_user_lang}-{url_query}-{media_url_query}--{module_name}-{module_settings}-{dmi-tcat_version}.{filetype}</p>
 
                 <p>
                     <div class='txt_desc' style='background-color: #eee; padding: 5px;'>Output format for tables:

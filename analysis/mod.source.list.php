@@ -112,7 +112,7 @@ require_once __DIR__ . '/common/CSV.class.php';
         // urls per source
         $sql = "SELECT t.source COLLATE $collation as source, count(u.url_followed) as count, ";
         $sql .= sqlInterval();
-        $sql .= " FROM " . $esc['mysql']['dataset'] . "_tweets t, " . $esc['mysql']['dataset'] . "_urls u ";
+        $sql .= " FROM " . $esc['mysql']['dataset'] . "_urls u, " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
         $sql .= " AND u.tweet_id = t.id ";
         $sql .= "GROUP BY datepart, source";
@@ -126,7 +126,7 @@ require_once __DIR__ . '/common/CSV.class.php';
         // tweets with urls, per source
         $sql = "SELECT t.source COLLATE $collation as source, count(distinct(u.tweet_id)) as count, ";
         $sql .= sqlInterval();
-        $sql .= " FROM " . $esc['mysql']['dataset'] . "_tweets t, " . $esc['mysql']['dataset'] . "_urls u ";
+        $sql .= " FROM " . $esc['mysql']['dataset'] . "_urls u, " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
         $sql .= " AND u.tweet_id = t.id ";
         $sql .= "GROUP BY datepart, source";
@@ -142,7 +142,7 @@ require_once __DIR__ . '/common/CSV.class.php';
         // mentions per source
         $sql = "SELECT t.source COLLATE $collation as source, count(m.to_user) as count, ";
         $sql .= sqlInterval();
-        $sql .= " FROM " . $esc['mysql']['dataset'] . "_tweets t, " . $esc['mysql']['dataset'] . "_mentions m ";
+        $sql .= " FROM " . $esc['mysql']['dataset'] . "_mentions m, " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
         $sql .= " AND m.tweet_id = t.id ";
         $sql .= "GROUP BY datepart, source";
@@ -156,7 +156,7 @@ require_once __DIR__ . '/common/CSV.class.php';
         // tweets with mentions, per source
         $sql = "SELECT t.source COLLATE $collation as source, count(distinct(m.tweet_id)) as count, ";
         $sql .= sqlInterval();
-        $sql .= " FROM " . $esc['mysql']['dataset'] . "_tweets t, " . $esc['mysql']['dataset'] . "_mentions m ";
+        $sql .= " FROM " . $esc['mysql']['dataset'] . "_mentions m, " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
         $sql .= " AND m.tweet_id = t.id ";
         $sql .= "GROUP BY datepart, source";

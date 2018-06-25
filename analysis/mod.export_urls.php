@@ -36,11 +36,11 @@ require_once __DIR__ . '/common/CSV.class.php';
 
         $csv->writeheader(array('tweet_id', 'url', 'url_expanded', 'url_followed'));
 
-        $sql = "SELECT t.id as id, u.url as url, u.url_expanded as url_expanded, u.url_followed as url_followed FROM " . $esc['mysql']['dataset'] . "_tweets t, " . $esc['mysql']['dataset'] . "_urls u ";
+        $sql = "SELECT t.id as id, u.url as url, u.url_expanded as url_expanded, u.url_followed as url_followed FROM " . $esc['mysql']['dataset'] . "_urls u, " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
         $sql .= " AND u.tweet_id = t.id ORDER BY id";
 
-        $out = ""
+        $out = "";
 
         $rec = $dbh->prepare($sql);
         $rec->execute();
