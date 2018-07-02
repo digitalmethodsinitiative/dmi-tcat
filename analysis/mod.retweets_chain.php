@@ -121,7 +121,7 @@ require_once __DIR__ . '/common/CSV.class.php';
                     $mentions = array();
                     $rec2 = $dbh->prepare($sql2);
                     $rec2->execute();
-                    while ($res2 = $rec2->fetch(pdo::fetch_assoc)) {
+                    while ($res2 = $rec2->fetch(PDO::FETCH_ASSOC)) {
                         $mentions[] = $res2['to_user'];
                     }
                     $csv->addfield(implode("; ", $mentions));
@@ -131,7 +131,7 @@ require_once __DIR__ . '/common/CSV.class.php';
                     $hashtags = array();
                     $rec2 = $dbh->prepare($sql2);
                     $rec2->execute();
-                    while ($res2 = $rec2->fetch(pdo::fetch_assoc)) {
+                    while ($res2 = $rec2->fetch(PDO::FETCH_ASSOC)) {
                         $hashtags[] = $res2['text'];
                     }
                     $csv->addfield(implode("; ", $hashtags));

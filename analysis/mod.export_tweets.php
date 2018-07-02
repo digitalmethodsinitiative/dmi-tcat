@@ -52,7 +52,7 @@ require_once __DIR__ . '/common/CSV.class.php';
         if (isset($_GET['random']) && $_GET['random'] == 1)
             $sql .= "ORDER BY RAND() LIMIT " . $samplesize;
         else
-            $sql .= " ORDER BY id";
+            $sql .= " ORDER BY t.id";
 
         // loop over results and write to file
         $rec = $dbh->prepare($sql);

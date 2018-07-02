@@ -90,6 +90,9 @@ require_once __DIR__ . '/common/CSV.class.php';
         }
 
         // number of tweets with media uploads
+        // NOTICE: if the query itself contains a query by media-URL the sqlSubset() function will also join
+        // on the media table, but under a different name (.med). In such a scenario, the query should obviously
+        // yield 100% tweets with media
         $sql = "SELECT count(distinct(m.tweet_id)) as count, ";
         $sql .= sqlInterval();
         $sql .= " FROM " . $esc['mysql']['dataset'] . "_media m, " . $esc['mysql']['dataset'] . "_tweets t ";
@@ -103,7 +106,7 @@ require_once __DIR__ . '/common/CSV.class.php';
         }
 
         // number of retweets 
-        $sql = "SELECT count(id) as count, ";
+        $sql = "SELECT count(t.id) as count, ";
         $sql .= sqlInterval();
         $sql .= " FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
@@ -116,7 +119,7 @@ require_once __DIR__ . '/common/CSV.class.php';
         }
 
         // number of replies 
-        $sql = "SELECT count(id) as count, ";
+        $sql = "SELECT count(t.id) as count, ";
         $sql .= sqlInterval();
         $sql .= " FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();

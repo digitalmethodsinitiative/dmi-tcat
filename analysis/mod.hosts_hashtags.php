@@ -38,7 +38,7 @@ require_once __DIR__ . '/common/CSV.class.php';
         $collation = current_collation();
 
         $sql = "SELECT COUNT(LOWER(h.text COLLATE $collation)) AS frequency, LOWER(h.text COLLATE $collation) AS hashtag, u.domain COLLATE $collation AS domain FROM ";
-        $sql .= $esc['mysql']['dataset'] . "_tweets t, " . $esc['mysql']['dataset'] . "_hashtags h, " . $esc['mysql']['dataset'] . "_urls u ";
+        $sql .= $esc['mysql']['dataset'] . "_hashtags h, " . $esc['mysql']['dataset'] . "_urls u, " . $esc['mysql']['dataset'] . "_tweets t ";
         $where = "t.id = h.tweet_id AND h.tweet_id = u.tweet_id AND u.url_followed !='' AND ";
         $sql .= sqlSubset($where);
         $sql .= " GROUP BY u.domain COLLATE $collation, LOWER(h.text COLLATE $collation) ORDER BY frequency DESC";

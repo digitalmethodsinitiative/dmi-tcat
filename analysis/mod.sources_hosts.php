@@ -38,7 +38,7 @@ require_once __DIR__ . '/common/Gexf.class.php';
 		//print_r($_GET);
 
         $sql = "SELECT LOWER(t.source COLLATE $collation) AS source, LOWER(u.domain COLLATE $collation) AS host FROM ";
-        $sql .= $esc['mysql']['dataset'] . "_tweets t, " . $esc['mysql']['dataset'] . "_urls u ";
+        $sql .= $esc['mysql']['dataset'] . "_urls u, " . $esc['mysql']['dataset'] . "_tweets t ";
         $where = "t.id = u.tweet_id AND ";
         $sql .= sqlSubset($where);
 

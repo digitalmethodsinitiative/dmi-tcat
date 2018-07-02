@@ -38,7 +38,7 @@ require_once __DIR__ . '/common/Gexf.class.php';
         $collation = current_collation();
 
         // get all tweets which have in_reply_to_status_id set
-        $sql = "SELECT id, created_at, from_user_name COLLATE $collation as from_user_name, text COLLATE $collation as text, in_reply_to_status_id, from_user_lang, from_user_tweetcount, from_user_followercount, from_user_friendcount, from_user_listed, source COLLATE $collation as source, geo_lng, geo_lat  FROM " . $esc['mysql']['dataset'] . "_tweets t ";
+        $sql = "SELECT t.id, created_at, from_user_name COLLATE $collation as from_user_name, text COLLATE $collation as text, in_reply_to_status_id, from_user_lang, from_user_tweetcount, from_user_followercount, from_user_friendcount, from_user_listed, source COLLATE $collation as source, geo_lng, geo_lat  FROM " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
         $sql .= " AND in_reply_to_status_id != '' ORDER BY id ";
 

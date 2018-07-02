@@ -15,7 +15,7 @@ require_once __DIR__ . '/common/CSV.class.php';
 
         $csv->writeheader(array('tweet_id', 'hashtag'));
 
-        $sql = "SELECT t.id as id, h.text as hashtag FROM " . $esc['mysql']['dataset'] . "_tweets t, " . $esc['mysql']['dataset'] . "_hashtags h ";
+        $sql = "SELECT t.id as id, h.text as hashtag FROM " . $esc['mysql']['dataset'] . "_hashtags h, " . $esc['mysql']['dataset'] . "_tweets t ";
         $sql .= sqlSubset();
         $sql .= " AND h.tweet_id = t.id ORDER BY id";
 

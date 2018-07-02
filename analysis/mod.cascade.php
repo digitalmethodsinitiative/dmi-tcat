@@ -11,12 +11,12 @@ $collation = current_collation();
 
 $exc = (empty($esc['shell']["exclude"])) ? "" : "-" . $esc['shell']["exclude"];
 
-$select = "id, from_user_name COLLATE $collation as from_user_name, text COLLATE $collation as text, created_at, retweet_id";
+$select = "t.id, from_user_name COLLATE $collation as from_user_name, text COLLATE $collation as text, created_at, retweet_id";
 
 if (isset($_GET['minf'])&&!empty($_GET['minf'])) {
     if(!preg_match("/^\d+$/",$_GET['minf'])) die('minf not a number');
     $minf = $_GET['minf'];
-    $sql = "SELECT count(id) as cnt, from_user_name COLLATE $collation as from_user_name FROM " . $esc['mysql']['dataset'] . "_tweets t ";
+    $sql = "SELECT count(t.id) as cnt, from_user_name COLLATE $collation as from_user_name FROM " . $esc['mysql']['dataset'] . "_tweets t ";
     $sql .= sqlSubset();
     $sql .= " GROUP BY from_user_name COLLATE $collation"; 
     $rec = $dbh->prepare($sql);

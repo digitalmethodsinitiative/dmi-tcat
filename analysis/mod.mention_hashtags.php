@@ -36,7 +36,7 @@ require_once __DIR__ . '/common/Gexf.class.php';
         $filename = get_filename_for_export("mentionHashtags", "", "gexf");
 
         $sql = "SELECT m.to_user COLLATE $collation AS user, LOWER(h.text COLLATE $collation) AS hashtag FROM ";
-        $sql .= $esc['mysql']['dataset'] . "_mentions m, " . $esc['mysql']['dataset'] . "_tweets t, " . $esc['mysql']['dataset'] . "_hashtags h ";
+        $sql .= $esc['mysql']['dataset'] . "_mentions m, " . $esc['mysql']['dataset'] . "_hashtags h, " . $esc['mysql']['dataset'] . "_tweets t ";
         $where = "t.id = m.tweet_id AND m.tweet_id = h.tweet_id AND LENGTH(h.text)>1 AND ";
         $sql .= sqlSubset($where);
         //print $sql."<Br>";

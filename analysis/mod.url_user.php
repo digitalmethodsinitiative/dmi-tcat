@@ -37,7 +37,7 @@ require_once __DIR__ . '/common/CSV.class.php';
         $csv = new CSV($filename, $outputformat);
 
         $sql = "SELECT COUNT(LOWER(t.from_user_name COLLATE $collation)) AS frequency, LOWER(t.from_user_name COLLATE $collation) AS username, u.url_followed AS url, u.domain AS domain, u.error_code AS status_code FROM ";
-        $sql .= $esc['mysql']['dataset'] . "_tweets t, " . $esc['mysql']['dataset'] . "_urls u ";
+        $sql .= $esc['mysql']['dataset'] . "_urls u, " . $esc['mysql']['dataset'] . "_tweets t ";
         $where = "t.id = u.tweet_id AND u.url_followed !='' AND ";
         $sql .= sqlSubset($where);
         $sql .= " GROUP BY u.url_followed, LOWER(t.from_user_name) ORDER BY frequency DESC";
