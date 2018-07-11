@@ -27,7 +27,7 @@ $uselocalresults = false;   // @todo used as hack for experiment in first issue 
         validate_all_variables();
         $dbh = pdo_connect();
         pdo_unbuffered($dbh);
-        if (empty($esc['shell']['minf']))
+		if ($esc['shell']['minf'] != 0 && empty($esc['shell']['minf']))
             $esc['shell']['minf'] = 4;
         if (empty($esc['shell']['topu']))
             $esc['shell']['topu'] = 0;
