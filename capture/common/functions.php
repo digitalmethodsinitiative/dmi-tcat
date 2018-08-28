@@ -1652,16 +1652,27 @@ class Tweet {
         $store_text = $full_text;
 
         if (isset($data["retweeted_status"])) {
+
             /*
              * Incorporate full retweet text from retweeted_status to cope with possible truncated due to character limit.
              * This fix makes the stored text more closely resemble the tweet a shown to the end-user.
              * See the discussion here: https://github.com/digitalmethodsinitiative/dmi-tcat/issues/74
              */
-            if (array_key_exists('full_text', $data["retweeted_status"])) {
-                $store_text = "RT @" . $data["retweeted_status"]["user"]["screen_name"] . ": " . $data["retweeted_status"]["full_text"];
+
+            // Determine the full, untruncated retweet text using a similar mechanism as used for non-retweets
+            if (!isset($data["retweeted_status"]["text"])) {
+                /* running in extended context */
+                $retweet_text = $data["retweeted_status"]["full_text"];
+            } else if (!array_key_exists('extended_tweet', $data["retweeted_status"])) {
+                /* running in compatibility mode BUT the 'extended_tweet' JSON field is not available. this means the retweet is <= 140 characters */
+                $retweet_text = $data["retweeted_status"]["text"];
             } else {
-                $store_text = "RT @" . $data["retweeted_status"]["user"]["screen_name"] . ": " . $data["retweeted_status"]["text"];
+                /* Running in compatibility mode AND the 'extended_tweet' JSON field is available. this means the retweet is > 140 characters */
+                $retweet_text = $data["retweeted_status"]["extended_tweet"]["full_text"];
             }
+
+            $store_text = "RT @" . $data["retweeted_status"]["user"]["screen_name"] . ": " . $retweet_text;
+
             /*
              * CAVEAT: if the RT text is > 280 characters, the final segment of the original tweet could contain an entity.
              * The Twitter API will remove that entity from the main tweet and store it only in the retweeted_status hierarchy.
