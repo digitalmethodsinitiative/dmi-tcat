@@ -2660,6 +2660,11 @@ function processtweets($capturebucket) {
 
             $found = false;
 
+            // Create a Tweet object from the raw JSON
+
+            $tweet = new Tweet();
+            $tweet->fromJSON($data);
+
             if (CAPTURE == "track") {
 
                 // we check for every query in the bin if they fit
@@ -2791,7 +2796,7 @@ function processtweets($capturebucket) {
                             $all = true;
 
                             foreach ($tmplist as $tmp) {
-                                if (stripos($data["text"], $tmp) == FALSE) {
+                                if (stripos($tweet->text, $tmp) == FALSE) {
                                     $all = false;
                                     break;
                                 }
@@ -2805,7 +2810,7 @@ function processtweets($capturebucket) {
 
                             // treat quoted queries as single words
                             $query = preg_replace("/'/", "", $query);
-                            if (stripos($data["text"], $query) !== FALSE) {
+                            if (stripos($tweet->text, $query) !== FALSE) {
                                 $pass = true;
                             }
                         }
@@ -2835,8 +2840,6 @@ function processtweets($capturebucket) {
                 continue;
             }
 
-            $tweet = new Tweet();
-            $tweet->fromJSON($data);
             $tweetQueue->push($tweet, $binname);
         }
     }
