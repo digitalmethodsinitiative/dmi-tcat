@@ -1982,25 +1982,6 @@ function upgrade_perform_lookups($bin_name, $ids) {
 }
 
 /*
- * Helper function to restart all active capture roles via the controller and optionally wait a minute to ensure the tracking is refreshed
- */
-function controller_restart_roles($logtarget = "cli", $wait = false) {
-    global $logtarget;
-    $dbh = pdo_connect();
-    $roles = unserialize(CAPTUREROLES);
-    foreach ($roles as $role) {
-        logit($logtarget, "Restarting active capture role: $role");
-        $query = "INSERT INTO tcat_controller_tasklist ( task, instruction ) values ( '$role', 'reload' )";
-        $rec = $dbh->prepare($query);
-        $rec->execute();
-    }
-    if ($wait) {
-        /* TODO: more intelligent wait procedure by checking if roles have attained a new PID */
-        sleep(90);
-    }
-}
-
-/*
  * Attempt to retrieve available disk space (in megabytes) for MySQL. Returns null if information is not available.
  */
 function get_available_mysql_disk_space($logtarget = "cli") {

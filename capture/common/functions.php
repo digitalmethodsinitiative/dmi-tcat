@@ -91,6 +91,17 @@ function create_error_logs() {
         $insert->execute();
     }
 
+    // Some GIT updates (such as fixes for important bug) may require an immediate restart of capture roles
+    $sql = "select value from tcat_status where variable = 'retweetbug_fixed_since'";
+    $test = $dbh->prepare($sql);
+    $test->execute();
+    if ($test->rowCount() == 0) {
+        $sql = "insert into tcat_status ( variable, value ) values ( 'retweetbug_fixed_since', now() )";
+        $insert = $dbh->prepare($sql);
+        $insert->execute();
+        controller_restart_roles();
+    }
+
 }
 
 // Enclose identifier in backticks; escape backticks inside by doubling them.

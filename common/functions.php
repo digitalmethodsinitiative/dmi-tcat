@@ -76,6 +76,26 @@ function is_admin(){
     return true;
 }
 
+
+/*
+ * Helper function to restart all active capture roles via the controller and optionally wait a minute to ensure the tracking is refreshed
+ */
+function controller_restart_roles($logtarget = "cli", $wait = false) {
+    global $logtarget;
+    $dbh = pdo_connect();
+    $roles = unserialize(CAPTUREROLES);
+    foreach ($roles as $role) {
+        logit($logtarget, "Restarting active capture role: $role");
+        $query = "INSERT INTO tcat_controller_tasklist ( task, instruction ) values ( '$role', 'reload' )";
+        $rec = $dbh->prepare($query);
+        $rec->execute();
+    }
+    if ($wait) {
+        /* TODO: more intelligent wait procedure by checking if roles have attained a new PID */
+        sleep(90);
+    }
+}
+
 /**
  * Validates a given list of keywords, as entered as a parameter in capture/search/search.php for example
  */
