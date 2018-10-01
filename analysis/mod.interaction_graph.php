@@ -235,7 +235,7 @@ require_once __DIR__ . '/common/Gexf.class.php';
             if ($id2 !== false && isset($gexf->nodeObjects[$id2]))
                 $node2 = $gexf->nodeObjects[$id2];
             $node2->addNodeAttribute('tweet_id', $tweet_id, 'string');
-            $node2->addNodeAttribute('tweet_id', $tweets[$tweet_id]['created_at'], 'string');
+            $node2->addNodeAttribute('created_at', $tweets[$tweet_id]['created_at'], 'string');
             $node2->addNodeAttribute('in_reply_to_status_id', $in_reply_to_status_id, 'string');
             $node2->addNodeAttribute('tweet', $tweets[$tweet_id]['text'], 'string');
             $node2->addNodeAttribute('user', $tweets[$tweet_id]['from_user_name'], 'string');
