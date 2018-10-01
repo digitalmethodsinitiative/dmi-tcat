@@ -52,6 +52,14 @@ function create_new_bin($params) {
         echo '{"msg":"This capturing type is not defined in the config file"}';
         return;
     }
+    if($type == 'track') {
+        foreach($phrases as $phrase) {
+            if(strlen($phrase) > 60) {
+                echo '{"msg":"Cannot add query because a phrase is too long."}';
+                return;
+            }
+        }
+    }
     $comments = trim($params['newbin_comments']);
 
     // check whether the main query management tables are there, if not, create
