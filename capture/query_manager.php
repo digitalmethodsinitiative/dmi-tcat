@@ -53,6 +53,8 @@ function create_new_bin($params) {
         return;
     }
     if($type == 'track') {
+        $phrases = explode(",", $params["newbin_phrases"]);
+        $phrases = array_trim_and_unique($phrases);
         foreach($phrases as $phrase) {
             if(strlen($phrase) > 60) {
                 echo '{"msg":"Cannot add query because a phrase is too long."}';
