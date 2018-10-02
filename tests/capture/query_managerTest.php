@@ -73,7 +73,7 @@ class testQuery_manager extends TestCase
                  "type" => "track",
                  "newbin_comments" => "",
                  "newbin_phrases" => "kitten,lizard,aarvark,anteater"]],
-            'Barrely short enough phrases' => [
+            'Barely short enough phrases' => [
                 ["newbin_name" => "a_new_bin",
                  "type" => "track",
                  "newbin_comments" => "",
