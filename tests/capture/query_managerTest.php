@@ -26,9 +26,9 @@ class testQuery_manager extends TestCase
      * codebase and long, coupled functions. But not relying on this
      * fact would be preferable. Anyway...
      *
-     * @dataProvider newQUeryBinWithShortEnoughPhrasesProvider
+     * @dataProvider newQueryBinWithShortEnoughPhrasesProvider
      */
-    public function test_short_enough_query_phrases_should_proceed($params)
+    public function test_create_new_bin_with_short_enough_query_phrases_should_proceed($params)
     {
         $this->expectException(PDOException::class);
         $this->expectExceptionMessage("1046 No database selected");
@@ -38,11 +38,31 @@ class testQuery_manager extends TestCase
     /**
      * @dataProvider newQueryBinWithTooLongPhrasesProvider
      */
-    public function test_long_query_phrase_should_throw($params)
+    public function test_create_new_bin_long_query_phrase_should_throw($params)
     {
         $this->expectException(LengthException::class);
         $this->expectExceptionMessage("exceeds 60 chrs");
         create_new_bin($params);
+    }
+
+    /**
+     * @dataProvider modifiedQueryBinWithShortEnoughPhrasesProvider
+     */
+    public function test_modify_bin_with_short_enough_query_phrases_should_proceed($params)
+    {
+        $this->expectException(PDOException::class);
+        $this->expectExceptionMessage("1046 No database selected");
+        modify_bin($params);
+    }
+
+    /**
+     * @dataProvider modifiedQueryBinWithTooLongPhrasesProvider
+     */
+    public function test_modify_bin_long_query_phrase_should_throw($params)
+    {
+        $this->expectException(LengthException::class);
+        $this->expectExceptionMessage("exceeds 60 chrs");
+        modify_bin($params);
     }
 
     /**
@@ -78,6 +98,39 @@ class testQuery_manager extends TestCase
                  "type" => "track",
                  "newbin_comments" => "",
                  "newbin_phrases" => "kitten,lizard,aarvark,012345678901234567890123456789012345678901234567890123456789"]]
+        ];
+    }
+
+    public function modifiedQueryBinWithTooLongPhrasesProvider()
+    {
+        return [
+            'Way too long phrase' => [
+                ["type" => "track",
+                 "bin" => "a_new_bin",
+                 "newphrases" => "kitten,lizard,aarvark,012345678901234567890123456789012345678901234567890123456789aaaaaaaaaaaaaaaaaaaaa",
+                 "comments" => "",
+                 "active" => true]],
+            'Still too long phrases' => [
+                ["bin" => "a_new_bin",
+                 "type" => "track",
+                 "comments" => "",
+                 "newphrases" => "kitten,lizard,aarvark,012345678901234567890123456789012345678901234567890123456789a"]]
+        ];
+    }
+
+    public function modifiedQueryBinWithShortEnoughPhrasesProvider()
+    {
+        return [
+            'Short enough phrases' => [
+                ["bin" => "a_new_bin",
+                 "type" => "track",
+                 "comments" => "",
+                 "newphrases" => "kitten,lizard,aarvark,anteater"]],
+            'Barely short enough phrases' => [
+                ["bin" => "a_new_bin",
+                 "type" => "track",
+                 "comments" => "",
+                 "newphrases" => "kitten,lizard,aarvark,012345678901234567890123456789012345678901234567890123456789"]]
         ];
     }
 }

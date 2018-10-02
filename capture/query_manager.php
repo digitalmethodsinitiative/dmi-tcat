@@ -448,6 +448,19 @@ function modify_bin_comments($querybin_id, $params) {
 function modify_bin($params) {
     global $captureroles, $now;
 
+    $type = $params['type'];
+    if($type == 'track') {
+        $phrases = explode(",", $params["newphrases"]);
+        $phrases = array_trim_and_unique($phrases);
+        foreach($phrases as $phrase) {
+            if(strlen($phrase) > 60) {
+                echo '{"msg":"Cannot add query because a phrase is too long."}';
+                throw new LengthException('A query phrase exceeds 60 chrs.');
+                return;
+            }
+        }
+    }
+
     if (!table_id_exists($params["bin"])) {
         echo '{"msg":"The bin ' . $params['bin'] . ' does not seem to exist"}';
         return;
@@ -456,7 +469,6 @@ function modify_bin($params) {
 
     if (array_key_exists('comments', $params) && $params['comments'] !== '') return modify_bin_comments($querybin_id, $params);
 
-    $type = $params['type'];
     if (array_search($type, $captureroles) === false && ($type !== 'geotrack' || array_search('track', $captureroles) === false)) {
         echo '{"msg":"This capturing type is not defined in the config file"}';
         return;
