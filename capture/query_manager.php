@@ -58,6 +58,7 @@ function create_new_bin($params) {
         foreach($phrases as $phrase) {
             if(strlen($phrase) > 60) {
                 echo '{"msg":"Cannot add query because a phrase is too long."}';
+                throw new LengthException('A query phrase exceeds 60 chrs.');
                 return;
             }
         }
