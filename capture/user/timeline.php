@@ -24,7 +24,7 @@ $type = 'timeline'; // specify 'timeline' if you want this to be a standalone bi
 
 $all_ints = true;
 foreach ($user_ids as $user_id) {
-    if (!is_int($user_id)) {
+    if (!preg_match("/^[0-9]+$/", $user_id)) {
         $all_ints = false;
         break;
     }
@@ -77,7 +77,7 @@ if ($all_ints) {
 $tweetQueue = new TweetQueue();
 
 foreach ($user_ids as $user_id) {
-    if (is_int($user_id))
+    if (preg_match("/^[0-9]+$/", $user_id))
         get_timeline($user_id, "user_id");
     else
         get_timeline($user_id, "screen_name");
