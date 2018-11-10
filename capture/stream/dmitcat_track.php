@@ -29,7 +29,4 @@ if (dbserver_has_utf8mb4_support() == false) {
     exit();
 }
 
-// ----- connection -----
-dbconnect();      // connect to database @todo, rewrite mysql calls with pdo
-
 tracker_run();

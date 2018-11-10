@@ -1,26 +1,5 @@
 <?php
 
-/* TODO: remove this function. */
-function dbconnect() {
-	return true;
-/*
-        global $hostname,$database,$dbuser,$dbpass,$db;
-        $db = mysql_connect($hostname,$dbuser,$dbpass) or die("Database error");
-        mysql_select_db($database, $db);
-        mysql_set_charset('utf8mb4',$db);
-        mysql_query("set sql_mode='ALLOW_INVALID_DATES'");
-*/
-}
-
-/* TODO: remove this function. */
-function dbclose() {
-	return true;
-/*
-        global $db;
-        mysql_close($db);
-*/
-}
-
 function pdo_connect() {
     global $dbuser, $dbpass, $database, $hostname;
 

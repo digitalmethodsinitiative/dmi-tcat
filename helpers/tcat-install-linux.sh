@@ -25,6 +25,7 @@
 # - Ubuntu 16.10
 # - Ubuntu 17.04
 # - Ubuntu 17.10
+# - Ubuntu 18.04
 # - Debian 8.*
 # - Debian 9.*
 #
@@ -352,7 +353,7 @@ if [ "$DISTRIBUTION_ID" = 'Ubuntu' ]; then
 	echo "$PROG: error: unexpected Ubuntu version: $UBUNTU_VERSION" >&2
 	exit 1
     fi
-    if [ "$UBUNTU_VERSION" != '14.04' -a "$UBUNTU_VERSION" != '15.04' -a "$UBUNTU_VERSION" != '15.10' -a "$UBUNTU_VERSION" != '16.04' -a "$UBUNTU_VERSION" != '16.10' -a "$UBUNTU_VERSION" != '17.04' ]; then
+    if [ "$UBUNTU_VERSION" != '14.04' -a "$UBUNTU_VERSION" != '15.04' -a "$UBUNTU_VERSION" != '15.10' -a "$UBUNTU_VERSION" != '16.04' -a "$UBUNTU_VERSION" != '16.10' -a "$UBUNTU_VERSION" != '17.04' -a "$UBUNTU_VERSION" != '17.10' -a "$UBUNTU_VERSION" != '18.04' ]; then
 	if [ -z "$FORCE_INSTALL" ]; then
 	    echo "$PROG: error: unsupported distribution: Ubuntu $UBUNTU_VERSION" >&2
 	    exit 1
@@ -1233,7 +1234,7 @@ fi
 
 echo ""
 tput bold
-echo "Configuring MySQL server for TCAT ..."
+echo "Configuring MySQL server for TCAT (authentication) ..."
 tput sgr0
 echo ""
 
@@ -1370,70 +1371,74 @@ sed -i "s/^define('$VARIABLE',[^)]*);/define('$VARIABLE', $VALUE);/g" "$CFG"
 
 apt-get -y install debsums
 
-# Note: previously this checked /etc/mysql/my.cnf, but that is a symlink
-# to /etc/alternatives/my.cnf which itself is symlink to /etc/mysql/mysql.cnf.
-# If modified, debsums reports that /etc/mysql/mysql.cnf has changed, but does
-# not report /etc/mysql/my.cnf has changed.
+# TCAT will not function fully on modern versions of MySQL without some modified settings
 
-if debsums -ce | grep "/etc/mysql/mysql.cnf" >/dev/null; then
-    # The MySQL config file was not changed: can attempt to fix memory profile
+echo "[mysqld]" > /etc/mysql/conf.d/tcat-autoconfigured.cnf
 
-    if [ "$DB_CONFIG_MEMORY_PROFILE" = "y" ]; then
-        echo ""
-        tput bold
-        echo "Attempting to adjust MySQL server profile ..."
-        tput sgr0
-        echo ""
-        MAXMEM=`free -m | head -n 2 | tail -n 1 | tr -s ' ' | cut -d ' ' -f 2`
-        # Make this an integer, and non-empty for bash
-        MAXMEM=${MAXMEM//[^[:digit:]]/0}
-        MAXMEM=${MAXMEM//^$/0}
-        echo "Maximum machine memory detected: $MAXMEM Mb"
-        if [ "$MAXMEM" -lt "1024" ]; then
-            echo "This machine has a limited ammount of memory; leaving system defaults in place."
+echo ""
+tput bold
+echo "Configuring MySQL server (compatibility) ..."
+tput sgr0
+echo ""
+
+if [[ -n "$UBUNTU_VERSION" && "$UBUNTU_VERSION_MAJOR" -gt 17 ]]; then
+    echo "show_compatibility_56=ON" >> /etc/mysql/conf.d/tcat-autoconfigured.cnf
+fi
+echo "sql-mode=\"NO_AUTO_VALUE_ON_ZERO,ALLOW_INVALID_DATES\"" >> /etc/mysql/conf.d/tcat-autoconfigured.cnf
+
+if [ "$DB_CONFIG_MEMORY_PROFILE" = "y" ]; then
+    echo ""
+    tput bold
+    echo "Configuring MySQL server (memory profile) ..."
+    tput sgr0
+    echo ""
+    MAXMEM=`free -m | head -n 2 | tail -n 1 | tr -s ' ' | cut -d ' ' -f 2`
+    # Make this an integer, and non-empty for bash
+    MAXMEM=${MAXMEM//[^[:digit:]]/0}
+    MAXMEM=${MAXMEM//^$/0}
+    echo "Maximum machine memory detected: $MAXMEM Mb"
+    if [ "$MAXMEM" -lt "1024" ]; then
+        echo "This machine has a limited ammount of memory; leaving system defaults in place."
+    else
+        # Set the key buffer to 1/3 of system memory
+        SIZE=$(($MAXMEM/3))
+        echo "key_buffer_size         = $SIZE""M" >> /etc/mysql/conf.d/tcat-autoconfigured.cnf
+        if [ "$MAXMEM" -gt "1024" ]; then
+            # Set the query cache limit to 128 Mb
+            echo "query_cache_limit       = 128M" >> /etc/mysql/conf.d/tcat-autoconfigured.cnf
         else
-            echo "[mysqld]" > /etc/mysql/conf.d/tcat-autoconfigured.cnf
-            # Set the key buffer to 1/3 of system memory
-            SIZE=$(($MAXMEM/3))
-            echo "key_buffer              = $SIZE""M" >> /etc/mysql/conf.d/tcat-autoconfigured.cnf
-            if [ "$MAXMEM" -gt "1024" ]; then
-                # Set the query cache limit to 128 Mb
-                echo "query_cache_limit       = 128M" >> /etc/mysql/conf.d/tcat-autoconfigured.cnf
-            else
-                # For machines with 1G memory or less, set the query cache limit to 64 Mb
-                echo "query_cache_limit       = 64M" >> /etc/mysql/conf.d/tcat-autoconfigured.cnf
-            fi
-            # Set the total query cache size to 1/8 of systemn emory
-            SIZE=$(($MAXMEM/8))
-            echo "query_cache_size        = $SIZE""M" >> /etc/mysql/conf.d/tcat-autoconfigured.cnf
-            # Increase sizes of temporary tables (memory sort tables for doing a GROUP BY) for machines with sufficient memory
-            if [ "$MAXMEM" -gt "7168" ]; then
-                echo "tmp_table_size          = 1G" >> /etc/mysql/conf.d/tcat-autoconfigured.cnf
-                echo "max_heap_table_size     = 1G" >> /etc/mysql/conf.d/tcat-autoconfigured.cnf
-            elif [ "$MAXMEM" -gt "3072" ]; then
-                echo "tmp_table_size          = 256M" >> /etc/mysql/conf.d/tcat-autoconfigured.cnf
-                echo "max_heap_table_size     = 256M" >> /etc/mysql/conf.d/tcat-autoconfigured.cnf
-            fi
-            # Unless we have a machine capable of performing many heavy queries simultaneously,
-            # it is sensible to restrict the maximum number of client connections. This will reduce the overcommitment of memory.
-            # The default max_connections for MySQL 5.6 is 150. In any case, even 80 is still a high figure.
-            if [ "$MAXMEM" -lt "31744" ]; then
-                echo "max_connections         = 80" >> /etc/mysql/conf.d/tcat-autoconfigured.cnf
-            fi
-            echo "Memory profile adjusted"
+            # For machines with 1G memory or less, set the query cache limit to 64 Mb
+            echo "query_cache_limit       = 64M" >> /etc/mysql/conf.d/tcat-autoconfigured.cnf
+        fi
+        # Set the total query cache size to 1/8 of systemn emory
+        SIZE=$(($MAXMEM/8))
+        echo "query_cache_size        = $SIZE""M" >> /etc/mysql/conf.d/tcat-autoconfigured.cnf
+        # Increase sizes of temporary tables (memory sort tables for doing a GROUP BY) for machines with sufficient memory
+        if [ "$MAXMEM" -gt "7168" ]; then
+            echo "tmp_table_size          = 1G" >> /etc/mysql/conf.d/tcat-autoconfigured.cnf
+            echo "max_heap_table_size     = 1G" >> /etc/mysql/conf.d/tcat-autoconfigured.cnf
+        elif [ "$MAXMEM" -gt "3072" ]; then
+            echo "tmp_table_size          = 256M" >> /etc/mysql/conf.d/tcat-autoconfigured.cnf
+            echo "max_heap_table_size     = 256M" >> /etc/mysql/conf.d/tcat-autoconfigured.cnf
+        fi
+        # Unless we have a machine capable of performing many heavy queries simultaneously,
+        # it is sensible to restrict the maximum number of client connections. This will reduce the overcommitment of memory.
+        # The default max_connections for MySQL 5.6 is 150. In any case, even 80 is still a high figure.
+        if [ "$MAXMEM" -lt "31744" ]; then
+            echo "max_connections         = 80" >> /etc/mysql/conf.d/tcat-autoconfigured.cnf
+        fi
+        echo "Memory profile adjusted"
 
-            # Finally, reload MySQL server configuration
+        # Finally, reload MySQL server configuration
 
-	    if [ -n "$UBUNTU_VERSION" ]; then
-		echo "Restarting service ... "
-		/etc/init.d/mysql restart
-	    elif [ -n "$DEBIAN_VERSION" ]; then
-		echo "Reloading service ..."
-		systemctl reload mysql
-	    else
-		echo "$PROG: internal error: unexpected OS" >&2
-		exit 3
-	    fi
+        echo "Restarting service ..."
+        if [ -n "$UBUNTU_VERSION" ]; then
+            /etc/init.d/mysql restart
+        elif [ -n "$DEBIAN_VERSION" ]; then
+            systemctl restart mysql
+        else
+            echo "$PROG: internal error: unexpected OS" >&2
+            exit 3
         fi
     fi
 fi
