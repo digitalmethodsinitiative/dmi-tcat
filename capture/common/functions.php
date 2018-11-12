@@ -2807,7 +2807,7 @@ function processtweets($capturebucket) {
                             $all = true;
 
                             foreach ($tmplist as $tmp) {
-                                if (stripos($tweet->text, $tmp) == FALSE) {
+                                if (tweet_contains_phrase($data["text"], $tmp) == FALSE) {
                                     $all = false;
                                     break;
                                 }
@@ -2821,7 +2821,7 @@ function processtweets($capturebucket) {
 
                             // treat quoted queries as single words
                             $query = preg_replace("/'/", "", $query);
-                            if (stripos($tweet->text, $query) !== FALSE) {
+                            if (tweet_contains_phrase($data["text"], $query)) {
                                 $pass = true;
                             }
                         }
