@@ -10,7 +10,7 @@ use PHPUnit\Framework\TestCase;
 define('CAPTUREROLES', serialize(array('track')));
 require_once __DIR__ . '../../../capture/query_manager.php';
 
-class TestQuery_Manager extends TestCase
+class Test_query_manager extends TestCase
 {
     public function setUp()
     {
