@@ -130,6 +130,11 @@ class Test_functions extends TestCase
             ],
             'Too long with space in the end' => [
                 "                                                       aardvark", "                                                       ,aardvark"
+            ],
+            'Too long with space in the middle' => [
+                "a                                                            b",
+                "a,                                                            b",
+                "a                                                            ,b"
             ]
         ];
     }
