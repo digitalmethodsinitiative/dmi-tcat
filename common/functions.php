@@ -86,7 +86,7 @@ function validate_capture_phrases($keywords) {
             $valid = false;
         }
     }
-    foreach ((explode(',', $keywords)) as $keyword) {
+    foreach ((explode(' OR ', $keywords)) as $keyword) {
         $keyword = trim($keyword);
         $keyword = preg_replace('/\s+/', ' ', $keyword);
         if (strlen($keyword) > 60) {
