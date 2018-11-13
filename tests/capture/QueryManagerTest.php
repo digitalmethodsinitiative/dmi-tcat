@@ -8,9 +8,9 @@
 use PHPUnit\Framework\TestCase;
 
 define('CAPTUREROLES', serialize(array('track')));
-include_once __DIR__ . '../../../capture/query_manager.php';
+require_once __DIR__ . '../../../capture/query_manager.php';
 
-class testQuery_manager extends TestCase
+class TestQuery_Manager extends TestCase
 {
     public function setUp()
     {
@@ -28,7 +28,7 @@ class testQuery_manager extends TestCase
      *
      * @dataProvider newQueryBinWithShortEnoughPhrasesProvider
      */
-    public function test_create_new_bin_with_short_enough_query_phrases_should_proceed($params)
+    public function testCreateNewBinWithShortEnoughQueryPhrasesShouldProceed($params)
     {
         $this->expectException(PDOException::class);
         $this->expectExceptionMessage("1046 No database selected");
@@ -38,7 +38,7 @@ class testQuery_manager extends TestCase
     /**
      * @dataProvider newQueryBinWithTooLongPhrasesProvider
      */
-    public function test_create_new_bin_long_query_phrase_should_throw($params)
+    public function testCreateNewBinLongQueryPhraseShouldThrow($params)
     {
         $this->expectException(LengthException::class);
         $this->expectExceptionMessage("exceeds 60 chrs");
@@ -48,7 +48,7 @@ class testQuery_manager extends TestCase
     /**
      * @dataProvider modifiedQueryBinWithShortEnoughPhrasesProvider
      */
-    public function test_modify_bin_with_short_enough_query_phrases_should_proceed($params)
+    public function testModifyBinWithShortEnoughQueryPhrasesShouldProceed($params)
     {
         $this->expectException(PDOException::class);
         $this->expectExceptionMessage("1046 No database selected");
@@ -58,7 +58,7 @@ class testQuery_manager extends TestCase
     /**
      * @dataProvider modifiedQueryBinWithTooLongPhrasesProvider
      */
-    public function test_modify_bin_long_query_phrase_should_throw($params)
+    public function testModifyBinLongQueryPhraseShouldThrow($params)
     {
         $this->expectException(LengthException::class);
         $this->expectExceptionMessage("exceeds 60 chrs");
