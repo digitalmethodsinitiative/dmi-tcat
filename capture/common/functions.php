@@ -2541,6 +2541,11 @@ function tracker_run() {
 
 function tracker_streamCallback($data, $length, $metrics) {
     global $capturebucket, $lastinsert;
+
+    if (defined('ENABLE_JSON_DUMP') && ENABLE_JSON_DUMP) {
+        file_put_contents(BASE_FILE . 'logs/stream.dump.json', $data . ",\n", FILE_APPEND|LOCK_EX);
+    }
+
     $now = time();
     $data = json_decode($data, true);
 

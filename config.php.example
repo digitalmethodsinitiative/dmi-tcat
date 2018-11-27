@@ -206,5 +206,10 @@ define('DISABLE_INSERT_IGNORE', false);
  * You will want to change this only when you have forked the repository.
  */
 define('REPOSITORY_URL', 'https://github.com/digitalmethodsinitiative/dmi-tcat.git');
+
+/*
+ * Enable producing a (huge) JSON dump with raw Tweet contents for debugging purposes.
+ */
+define('ENABLE_JSON_DUMP', false);
  
 ?>
