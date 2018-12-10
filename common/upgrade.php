@@ -85,8 +85,10 @@ function cli_yesnoall($update, $time_indication = 1, $commit = null) {
  * @return array in dry run mode, ie. an associational array with two boolean keys for 'suggested' and 'required'; otherwise void
  */
 function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single = null) {
+    return array( 'suggested' => false, 'required' => false );
     global $database;
     global $all_bins;
+    
     $all_bins = get_all_bins();
     $dbh = pdo_connect();
     $logtarget = $interactive ? "cli" : "controller.log";

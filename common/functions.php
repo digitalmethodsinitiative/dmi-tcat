@@ -1,9 +1,13 @@
 <?php
 
 function pdo_connect() {
+    return pdo_connect_set_charset('utf8mb4');
+}
+
+function pdo_connect_set_charset($charset) {
     global $dbuser, $dbpass, $database, $hostname;
 
-    $dbh = new PDO("mysql:host=$hostname;dbname=$database;charset=utf8mb4", $dbuser, $dbpass, array(PDO::MYSQL_ATTR_INIT_COMMAND => "set sql_mode='ALLOW_INVALID_DATES'"));
+    $dbh = new PDO("mysql:host=$hostname;dbname=$database;charset=$charset", $dbuser, $dbpass, array(PDO::MYSQL_ATTR_INIT_COMMAND => "set sql_mode='ALLOW_INVALID_DATES'"));
     $dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $dbh->query("set time_zone='+00:00'");
 

@@ -201,6 +201,12 @@ function get_file($what) {
 function frequencyTable($table, $toget) {
     global $esc, $intervalDates;
     $dbh = pdo_connect();
+    $collation = current_collation();
+    if ($collation == 'utf8_bin') {
+        $dbh = false;
+        $dbh = pdo_connect_set_charset('utf8');
+        $dbh->exec("SET NAMES utf8");
+    }
     pdo_unbuffered($dbh);
     $results = array();
     $sql = "SELECT COUNT($table.$toget) AS count, $table.$toget AS toget, ";
@@ -489,11 +495,16 @@ function generate($what, $filename) {
     $tweets = $times = $from_user_names = $results = $urls = $urls_expanded = $hosts = $hashtags = array();
     $csv = new CSV($filename, $outputformat);
     $collation = current_collation();
+    if ($collation == 'utf8_bin') {
+        $dbh = false;
+        $dbh = pdo_connect_set_charset('utf8');
+        $dbh->exec("SET NAMES utf8");
+    }
 
     // determine interval
     $sql = "SELECT MIN(t.created_at) AS min, MAX(t.created_at) AS max FROM " . $esc['mysql']['dataset'] . "_tweets t ";
     $sql .= sqlSubset();
-    //print $sql . "<bR>";
+//    print $sql . "<bR>"; exit();
     $rec = $dbh->prepare($sql);
     $rec->execute();
     $res = $rec->fetch(PDO::FETCH_ASSOC);
@@ -845,15 +856,16 @@ function current_collation() {
             break;
         }
     }
-    if ($is_utf8mb4)
+    if ($is_utf8mb4) {
         $collation = 'utf8mb4_bin';
-    if ($is_utf8mb4 == false) {
+        if ($re_use == false) {
+	        $dbh = false;
+        }
+    } else  {
         // When the table has columns with collation of utf8 (as opposed to utf8mb4)
         // fall back the current connection character set to utf8 as well, otherwise queries with 'COLLATE utf8_bin' will fail.
+        $dbh = pdo_connect_set_charset('utf8');
         $dbh->exec("SET NAMES utf8");
-    }
-    if ($re_use == false) {
-	$dbh = false;
     }
     return $collation;
 }
