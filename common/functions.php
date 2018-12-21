@@ -93,6 +93,7 @@ function validate_capture_phrases($keywords) {
  * the concept of a word boundary in a way that makes sense for tweets.
  */
 function tweet_contains_phrase($text, $keyword) {
+    $keyword = mb_strtolower($keyword);
     $quoted = preg_quote($keyword);
     if (mb_eregi("^$quoted$", $text) || mb_eregi("^$quoted\W", $text) || mb_eregi("\W$quoted$", $text) ||
         mb_eregi("\W$quoted\W", $text)) {
