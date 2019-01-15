@@ -93,9 +93,14 @@ else
     $keywordToTrack = "";
 
 if (isset($_GET['from_user_lang']) && !empty($_GET['from_user_lang']))
-    $from_user_lang = trim(strtolower($_GET['from_user_lang']));
+    $from_user_lang = trim($_GET['from_user_lang']);
 else
     $from_user_lang = "";
+
+if (isset($_GET['lang']) && !empty($_GET['lang']))
+    $lang = trim($_GET['lang']);
+else
+    $lang = "";
 
 if (isset($_GET['minimumCowordFrequencyOverall']))
     $minimumCowordFrequencyOverall = $_GET['minimumCowordFrequencyOverall'];
@@ -427,6 +432,25 @@ function sqlSubset($where = NULL) {
             $sql .= "from_user_lang = '" . $esc['mysql']['from_user_lang'] . "' AND ";
         }
     }
+    if (!empty($esc['mysql']['lang'])) {
+        if (strstr($esc['mysql']['lang'], "AND") !== false) {
+            $subqueries = explode(" AND ", $esc['mysql']['lang']);
+            foreach ($subqueries as $subquery) {
+                $sql .= "lang = '" . $subquery . "' AND ";
+            }
+        } elseif (strstr($esc['mysql']['lang'], "OR") !== false) {
+            $subqueries = explode(" OR ", $esc['mysql']['lang']);
+            $sql .= "(";
+            foreach ($subqueries as $subquery) {
+                $sql .= "lang = '" . $subquery . "' OR ";
+            }
+            $sql = substr($sql, 0, -3) . ") AND ";
+        } else {
+            $sql .= "lang = '" . $esc['mysql']['lang'] . "' AND ";
+        }
+    }
+
+
 
     $sql .= " t.created_at >= '" . $esc['datetime']['startdate'] . "' AND t.created_at <= '" . $esc['datetime']['enddate'] . "' ";
     //print $sql."<br>"; die;
@@ -773,7 +797,7 @@ function decodeAndFlatten($text) {
 // make sure that we have all the right types and values
 // also make sure one cannot do a mysql injection attack
 function validate_all_variables() {
-    global $esc, $query, $url_query, $media_url_query, $geo_query, $dataset, $exclude, $from_user_name, $exclude_from_user_name, $from_user_description, $from_source, $startdate, $enddate, $interval, $databases, $connection, $keywords, $database, $minf, $topu, $from_user_lang, $outputformat;
+    global $esc, $query, $url_query, $media_url_query, $geo_query, $dataset, $exclude, $from_user_name, $exclude_from_user_name, $from_user_description, $from_source, $startdate, $enddate, $interval, $databases, $connection, $keywords, $database, $minf, $topu, $from_user_lang, $lang, $outputformat;
 
     $esc['mysql']['dataset'] = validate($dataset, "mysql-literal");
     $esc['mysql']['query'] = validate($query, "mysql-literal");
@@ -786,6 +810,7 @@ function validate_all_variables() {
     $esc['mysql']['exclude_from_user_name'] = validate($exclude_from_user_name, "mysql-literal");
     $esc['mysql']['from_user_description'] = validate($from_user_description, "mysql-literal");
     $esc['mysql']['from_user_lang'] = validate($from_user_lang, "mysql-literal");
+    $esc['mysql']['lang'] = validate($lang, "mysql-literal");
 
     $esc['shell']['dataset'] = validate($dataset, "shell");
     $esc['shell']['query'] = validate($query, "shell");
@@ -798,6 +823,7 @@ function validate_all_variables() {
     $esc['shell']['exclude_from_user_name'] = validate($exclude_from_user_name, "shell");
     $esc['shell']['from_user_description'] = validate($from_user_description, "shell");
     $esc['shell']['from_user_lang'] = validate($from_user_lang, "shell");
+    $esc['shell']['lang'] = validate($lang, "shell");
     $esc['shell']['datasetname'] = validate($dataset, "shell");
 
     $esc['shell']['minf'] = validate($minf, 'frequency');
@@ -877,7 +903,7 @@ function get_status($variable) {
     return null;
 }
 
-// Output format: {dataset}-{startdate}-{enddate}-{query}-{exclude}-{from_user_name}-{exclude_from_user_name}-{from_user_description}-{from_user_lang}-{url_query}-{media_url_query}--{module_name}-{module_settings}-{hash}.{filetype}
+// Output format: {dataset}-{startdate}-{enddate}-{query}-{exclude}-{from_user_name}-{exclude_from_user_name}-{from_user_description}-{from_user_lang}-{lang}-{url_query}-{media_url_query}--{module_name}-{module_settings}-{hash}.{filetype}
 function get_filename_for_export($module, $settings = "", $filetype = "csv") {
     global $resultsdir, $esc;
 
@@ -901,6 +927,7 @@ function get_filename_for_export($module, $settings = "", $filetype = "csv") {
     $filename .= "-" . substr($esc['shell']["exclude_from_user_name"],0,20);
     $filename .= "-" . $esc['shell']["from_user_description"];
     $filename .= "-" . $esc['shell']["from_user_lang"];
+    $filename .= "-" . $esc['shell']["lang"];
     $filename .= "-" . $esc['shell']["url_query"];
     $filename .= "-" . $esc['shell']["media_url_query"];
     $filename .= "-" . str_replace(",", "_", str_replace(" ", "x", $esc['shell']["geo_query"]));

@@ -21,7 +21,7 @@ require_once __DIR__ . '/common/CSV.class.php';
             $module = "geoTweets";
         $filename = get_filename_for_export($module, implode("_", $exportSettings));
         $stream_to_open = export_start($filename, $outputformat);
-	
+
         $csv = new CSV($stream_to_open, $outputformat);
 
         // write header
@@ -59,7 +59,7 @@ require_once __DIR__ . '/common/CSV.class.php';
         $rec->execute();
         while ($data = $rec->fetch(PDO::FETCH_ASSOC)) {
             $csv->newrow();
-            if (preg_match("/_urls/", $sql))
+            if (preg_match("/_urls/", $sql) || preg_match("/_media/", $sql) || preg_match("/_mentions/", $sql))
                 $id = $data['tweet_id'];
             else
                 $id = $data['id'];
