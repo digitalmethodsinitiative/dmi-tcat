@@ -90,7 +90,20 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
     $all_bins = get_all_bins();
     $dbh = pdo_connect();
     $logtarget = $interactive ? "cli" : "controller.log";
-    
+
+    if ($dry_run) {
+        /*
+         * NOTICE (work in progress): due to several costly checks, we cannot perform live checks all the way back to 2014
+         *
+         * The last upgrade step was added April 2018. Currently, no notices will be displayed to users for installation which have
+         * not upgraded/performed the ancient steps [which is perfectly possible, because some upgrade steps may take too much time
+         * on multi-million tweet datasets]. Upgrading using the command-line still works, however.
+         *
+         * See issue #347 (TODO)
+         */
+        return array( 'suggested' => false, 'required' => false );
+    }
+
     // Tracker whether an update is suggested, or even required during a dry run.
     // These values are ONLY tracked when doing a dry run; do not use them for CLI feedback.
     $suggested = false; $required = false;
