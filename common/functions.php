@@ -94,6 +94,7 @@ function validate_capture_phrases($keywords) {
  */
 function tweet_contains_phrase($text, $keyword) {
     $keyword = mb_strtolower($keyword);
+    $text = mb_strtolower($text);
     $quoted = preg_quote($keyword);
     if (mb_eregi("^$quoted$", $text) || mb_eregi("^$quoted\W", $text) || mb_eregi("\W$quoted$", $text) ||
         mb_eregi("\W$quoted\W", $text)) {
