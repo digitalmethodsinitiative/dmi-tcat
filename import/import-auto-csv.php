@@ -1,8 +1,19 @@
 <?php
 
-// Expandable generic purpose CSV file -> TCAT importer
+/*
+ * Expandable generic purpose CSV file -> TCAT importer
+ *
+ * This is a script which should help you map fields and attributes of an existing Twitter data dump (as a CSV file) into TCAT fields so
+ * a TCAT bin could be constructed. It should support the export formats of several published dataset relating to the Internet Research Agency
+ * controversy out of the box. Hopefully the existing script will help you expand it to your own dataset. Study the assumptions() function
+ * in particular.
+ *
+ * The script supports either extracting mentions, urls etc. directly from the tweet text, or from CSV fields if they have been provided.
+ *
+ * TODO: by default, perform a dry-run
+ *
+ */
 
-// TODO: by default, do dry-run
 
 if ($argc < 2) {
     print "Usage: import-auto-csv.php <CSV file> <bin name>\n";
@@ -28,8 +39,6 @@ if (!file_exists($file)) {
 create_bin($bin_name);
 
 $fp = fopen($file, "r");
-
-#"tweetid","userid","user_display_name","user_screen_name","user_reported_location","user_profile_description","user_profile_url","follower_count","following_count","account_creation_date","account_language","tweet_language","tweet_text","tweet_time","tweet_client_name","in_reply_to_tweetid","in_reply_to_userid","quoted_tweet_tweetid","is_retweet","retweet_userid","retweet_tweetid","latitude","longitude","quote_count","reply_count","like_count","retweet_count","hashtags","urls","user_mentions","poll_choices"
 
 // Get default assumptions (i.e. CSV header to TCAT field mappings)
 
