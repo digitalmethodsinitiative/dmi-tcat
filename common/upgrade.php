@@ -1644,7 +1644,7 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
     $results = $rec->fetchAll(PDO::FETCH_COLUMN);
     $ans = '';
     if ($interactive == false) {
-        // require auto-upgrade level 1
+        // require auto-upgrade level 2
         if ($aulevel >= 1) {
             $ans = 'a';
         } else {
@@ -1676,98 +1676,108 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
                 continue;
             }
             $update = FALSE;
-            // NOTICE: this heuristic would fail in a theoretical scenario where a dataset would only contain @mentions or URLs
-            // and no or near zero hashtags. In the query below, the 'ORDER BY created_at ASC' is critical, as we would otherwise
-            // break on newly captured tweets which are correct as soon as TCAT is updated.
-            $sql = "SELECT id, text FROM $v WHERE " .
-                    "                LENGTH(text) > 140 AND " .
-                    "                created_at >= '2017-11-01 00:00:00' AND " .
-                    "                LENGTH(text) - LENGTH(REPLACE(text, '#', '')) > 0 " .
-                    "                ORDER BY created_at ASC";
+            $sql = "SELECT COUNT(*) AS cnt FROM $v";
             $rec = $dbh->prepare($sql);
             $rec->execute();
-            while ($res = $rec->fetch()) {
-                $start_of_hashtag = mb_strrpos($res['text'], '#');
-                if ($start_of_hashtag < 140) { continue; }
-                $hashtag = '';
-                for ($c = $start_of_hashtag + 1; $c < mb_strlen($res['text']); $c++) {
-                    $character = mb_substr($res['text'], $c, 1);
-                    if ($character == ' ') { break; }
-                    $hashtag .= $character;
-                }
-                if ($hashtag !== '') {
-                    $hashtag = mb_ereg_replace('\W','', $hashtag);     // Remove non-word characters
-                    $sql = "SELECT id FROM $bin_name" . "_hashtags WHERE tweet_id = :tweet_id AND text = :hashtag";
-                    $rec2 = $dbh->prepare($sql);
-                    $rec2->bindParam(":tweet_id", $res['id'], PDO::PARAM_STR);
-                    $rec2->bindParam(":hashtag", $hashtag, PDO::PARAM_STR);
-                    $rec2->execute();
-                    if ($rec2->rowCount() > 0) {
-                        // The hashtag was properly recovered. This bin seems to be okay!
-                        if (!$dry_run) {
-                            logit($logtarget, "Could not find extended entity issues with bin $bin_name. It appears to be okay. Evidence is hashtag '$hashtag' in tweet id " . $res['id']);
+            if ($res = $rec->fetch()) {
+                $count = $res['cnt'];
+                if ($count <= 1000000) {
+                    // NOTICE: this heuristic would fail in a theoretical scenario where a dataset would only contain @mentions or URLs
+                    // and no or near zero hashtags. In the query below, the 'ORDER BY created_at ASC' is critical, as we would otherwise
+                    // break on newly captured tweets which are correct as soon as TCAT is updated.
+                    $sql = "SELECT id, text FROM $v WHERE " .
+                            "                LENGTH(text) > 140 AND " .
+                            "                created_at >= '2017-11-01 00:00:00' AND " .
+                            "                LENGTH(text) - LENGTH(REPLACE(text, '#', '')) > 0 " .
+                            "                ORDER BY created_at ASC";
+                    $rec = $dbh->prepare($sql);
+                    $rec->execute();
+                    while ($res = $rec->fetch()) {
+                        $start_of_hashtag = mb_strrpos($res['text'], '#');
+                        if ($start_of_hashtag < 140) { continue; }
+                        $hashtag = '';
+                        for ($c = $start_of_hashtag + 1; $c < mb_strlen($res['text']); $c++) {
+                            $character = mb_substr($res['text'], $c, 1);
+                            if ($character == ' ') { break; }
+                            $hashtag .= $character;
                         }
-                        break;
-                    } else {
-                        // We need to somehow allow more than one failure, probably.
-                        if (!$dry_run) {
-                            logit($logtarget, "Bin $bin_name may need updating in relation to extended entities. Our evidence is tweet id " . $res['id'] . " with missing hashtag '" . $hashtag . "'");
-                        }
-                        $update = TRUE;
-                        break;
-                    }
-                }
-            }
-            if ($update) {
-                if ($dry_run) {
-                    $required = TRUE;
-                } else {
-                    if ($ans !== 'a') {
-                        $ans = cli_yesnoall("Extract complete set of extended entities from full text of longer tweets for bin $bin_name", 1, "93e8f653a134c1f5bdd8a44f987818b0bfa4fd10");
-                    }
-                    if ($ans == 'a' || $ans == 'y') {
-                        logit($logtarget, "Starting work on $bin_name");
-                        disable_keys_for_bin($bin_name);
-                        logit($logtarget, "Preparing list of candidate tweets");
-                        $dbh = null; $dbh = pdo_connect();
-                        $sql = "SELECT id, text FROM $v WHERE " .
-                            "                        LENGTH(text) > 140 AND " .
-                            "                        created_at >= '2017-11-01 00:00:00' AND " .
-                            "                        ( LENGTH(text) - LENGTH(REPLACE(text, '#', '')) > 0 OR " .
-                            "                          LENGTH(text) - LENGTH(REPLACE(text, '@', '')) > 0 OR " .
-                            "                          text LIKE '%http%' )";
-                        $rec = $dbh->prepare($sql);
-                        $rec->execute();
-                        $schedule = array();
-                        while ($res = $rec->fetch()) {
-                            $tweet_id = $res['id'];
-                            $text = $res['text'];
-                            if (mb_strrpos($text, '#') >= 120 ||
-                                mb_strrpos($text, '@') >= 120 ||
-                                mb_strrpos($text, 'http') >= 120) {
-                                $schedule[] = $tweet_id;
-                                if (count($schedule) == 3000) {
-                                    upgrade_perform_lookups($bin_name, $schedule);
-                                    $schedule = array();
+                        if ($hashtag !== '') {
+                            $hashtag = mb_ereg_replace('\W','', $hashtag);     // Remove non-word characters
+                            $sql = "SELECT id FROM $bin_name" . "_hashtags WHERE tweet_id = :tweet_id AND text = :hashtag";
+                            $rec2 = $dbh->prepare($sql);
+                            $rec2->bindParam(":tweet_id", $res['id'], PDO::PARAM_STR);
+                            $rec2->bindParam(":hashtag", $hashtag, PDO::PARAM_STR);
+                            $rec2->execute();
+                            if ($rec2->rowCount() > 0) {
+                                // The hashtag was properly recovered. This bin seems to be okay!
+                                if (!$dry_run) {
+                                    logit($logtarget, "Could not find extended entity issues with bin $bin_name. It appears to be okay. Evidence is hashtag '$hashtag' in tweet id " . $res['id']);
                                 }
+                                break;
+                            } else {
+                                // We need to somehow allow more than one failure, probably.
+                                if (!$dry_run) {
+                                    logit($logtarget, "Bin $bin_name may need updating in relation to extended entities. Our evidence is tweet id " . $res['id'] . " with missing hashtag '" . $hashtag . "'");
+                                }
+                                $update = TRUE;
+                                break;
                             }
                         }
-                        if (count($schedule) > 0) {
-                            upgrade_perform_lookups($bin_name, $schedule);
-                        }
-                        $processed[] = $bin_name;
-                        // Update tcat_status
-                        $dbh = null; $dbh = pdo_connect();
-                        $sql = "DELETE FROM tcat_status WHERE variable = 'upgrade_entities'";
-                        $rec = $dbh->prepare($sql);
-                        $rec->execute();
-                        $sql = "INSERT INTO tcat_status ( variable, value ) VALUES ( 'upgrade_entities', :value )";
-                        $json = json_encode($processed);
-                        $rec = $dbh->prepare($sql);
-                        $rec->bindParam(":value", $json, PDO::PARAM_STR);
-                        $rec->execute();
-                        enable_keys_for_bin($bin_name);
                     }
+                    if ($update) {
+                        if ($dry_run) {
+                            $required = TRUE;
+                        } else {
+                            if ($ans !== 'a') {
+                                $ans = cli_yesnoall("Extract complete set of extended entities from full text of longer tweets for bin $bin_name", 1, "93e8f653a134c1f5bdd8a44f987818b0bfa4fd10");
+                            }
+                            if ($ans == 'a' || $ans == 'y') {
+                                logit($logtarget, "Starting work on $bin_name");
+                                disable_keys_for_bin($bin_name);
+                                logit($logtarget, "Preparing list of candidate tweets");
+                                $dbh = null; $dbh = pdo_connect();
+                                $sql = "SELECT id, text FROM $v WHERE " .
+                                    "                        LENGTH(text) > 140 AND " .
+                                    "                        created_at >= '2017-11-01 00:00:00' AND " .
+                                    "                        ( LENGTH(text) - LENGTH(REPLACE(text, '#', '')) > 0 OR " .
+                                    "                          LENGTH(text) - LENGTH(REPLACE(text, '@', '')) > 0 OR " .
+                                    "                          text LIKE '%http%' )";
+                                $rec = $dbh->prepare($sql);
+                                $rec->execute();
+                                $schedule = array();
+                                while ($res = $rec->fetch()) {
+                                    $tweet_id = $res['id'];
+                                    $text = $res['text'];
+                                    if (mb_strrpos($text, '#') >= 120 ||
+                                        mb_strrpos($text, '@') >= 120 ||
+                                        mb_strrpos($text, 'http') >= 120) {
+                                        $schedule[] = $tweet_id;
+                                        if (count($schedule) == 3000) {
+                                            upgrade_perform_lookups($bin_name, $schedule);
+                                            $schedule = array();
+                                        }
+                                    }
+                                }
+                                if (count($schedule) > 0) {
+                                    upgrade_perform_lookups($bin_name, $schedule);
+                                }
+                                $processed[] = $bin_name;
+                                // Update tcat_status
+                                $dbh = null; $dbh = pdo_connect();
+                                $sql = "DELETE FROM tcat_status WHERE variable = 'upgrade_entities'";
+                                $rec = $dbh->prepare($sql);
+                                $rec->execute();
+                                $sql = "INSERT INTO tcat_status ( variable, value ) VALUES ( 'upgrade_entities', :value )";
+                                $json = json_encode($processed);
+                                $rec = $dbh->prepare($sql);
+                                $rec->bindParam(":value", $json, PDO::PARAM_STR);
+                                $rec->execute();
+                                enable_keys_for_bin($bin_name);
+                            }
+                        }
+                    }
+                } else {
+                    // Cannot investigate bin due to size
                 }
             }
         }
