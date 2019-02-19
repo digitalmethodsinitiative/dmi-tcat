@@ -52,7 +52,6 @@ function create_new_bin($params) {
         echo '{"msg":"This capturing type is not defined in the config file"}';
         return;
     }
-    // $comments = trim($params['newbin_comments']);
     $comments = sanitize_comments($params['newbin_comments']);
 
     // check whether the main query management tables are there, if not, create
@@ -426,10 +425,11 @@ function rename_bin($params) {
 
 function modify_bin_comments($querybin_id, $params) {
     $dbh = pdo_connect();
+    $comments = sanitize_comments($params['comments']);
     $sql = "UPDATE tcat_query_bins SET comments = :comments WHERE id = :querybin_id";
     $rec = $dbh->prepare($sql);
     $rec->bindParam(":querybin_id", $querybin_id, PDO::PARAM_INT);
-    $rec->bindParam(":comments", $params['comments'], PDO::PARAM_STR);
+    $rec->bindParam(":comments", $comments, PDO::PARAM_STR);
     $rec->execute();
     $dbh = false;
     echo '{"msg": "The comments have been modified"}';
@@ -570,9 +570,13 @@ function array_trim_and_unique($array) {
 }
 
 function sanitize_comments($comments) {
-    $comments = trim($comments);
-    $comments = filter_var($comments, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-    return $comments;
+    try {
+        $comments = trim($comments);
+        $comments = htmlspecialchars($comments, ENT_QUOTES);
+        return $comments;
+    } catch (Exception $e) {
+        throw $e;
+    }
 }
 
 function get_phrases_from_geoquery($query) {

@@ -7,13 +7,13 @@ require_once __DIR__ . '../../../capture/query_manager.php';
 
 class Test_sanitize_comments extends TestCase
 {
-    public function testEmptyCommentShouldPass()
+    public function testEmptyCommentShouldBeFine()
     {
         $input = '';
         $this->assertEquals(sanitize_comments($input), '');
     }
 
-    public function testShortCommentShouldPass() {
+    public function testShortCommentShouldBeFine() {
         $input = 'A short comment.';
         $this->assertEquals(sanitize_comments($input), 'A short comment.');
     }
@@ -23,7 +23,7 @@ class Test_sanitize_comments extends TestCase
         $this->assertEquals(sanitize_comments($input), 'Has leading space.');
     }
 
-    public function testCommentWithTrailingSpaceShouldBeTrimmer() {
+    public function testCommentWithTrailingSpaceShouldBeTrimmed() {
         $input = 'Has trailing space. ';
         $this->assertEquals(sanitize_comments($input), 'Has trailing space.');
     }
@@ -40,7 +40,7 @@ class Test_sanitize_comments extends TestCase
 
     public function testHtmlEntityShouldBeEncoded() {
         $input = 'This &lt; is already encoded';
-        $this->assertEquals(sanitize_comments($input), 'This &lt; is already encoded');
+        $this->assertEquals(sanitize_comments($input), 'This &amp;lt; is already encoded');
     }
 
     public function testCommentWithAmpersandShouldBeEncoded() {
@@ -56,5 +56,22 @@ class Test_sanitize_comments extends TestCase
     public function testCommentWithSingleQuoteShouldBeEncoded() {
         $input = 'A \'clever\' comment';
         $this->assertEquals(sanitize_comments($input), 'A &#039;clever&#039; comment');
+    }
+
+    public function testCommentOutsideLatin1ShouldBeFine() {
+        $input = 'It is 2019, øæøæøæ is fine';
+        $this->assertEquals(sanitize_comments($input), $input);
+    }
+
+    public function testCommentWithEmojiShouldBeFine() {
+        // Hoping the database is UTF-8, of course
+        $input = 'It is 2019, 🦄 is fine in comments. What a time to be alive';
+        $this->assertEquals(sanitize_comments($input), $input);
+    }
+
+    public function testCommentArrayShouldThrowTypeException() {
+        $input = [];
+        $this->expectException(PHPUnit\Framework\Error\Error::class);
+        sanitize_comments($input);
     }
 }
