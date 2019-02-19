@@ -74,4 +74,24 @@ class Test_sanitize_comments extends TestCase
         $this->expectException(PHPUnit\Framework\Error\Error::class);
         sanitize_comments($input);
     }
+
+    /**
+     * Example case from
+     * https://github.com/digitalmethodsinitiative/dmi-tcat/issues/350
+     */
+    public function testReportedCommentWithEmailShouldBeEncoded() {
+        $input = 'A query for Firstname Lastname <firstname.lastname@instituti.on>, expected to run until 2019-02-28. set up by Mace Ojala on 2018-11-27';
+        $this->assertEquals(sanitize_comments($input), 'A query for Firstname Lastname &lt;firstname.lastname@instituti.on&gt;, expected to run until 2019-02-28. set up by Mace Ojala on 2018-11-27');
+    }
+
+    /**
+     * Example case from
+     * https://github.com/digitalmethodsinitiative/dmi-tcat/issues/350
+     * . I have not properly thought about and investigated very hard
+     * where the problem with this one actually is.
+     */
+    public function testReportedCommentWithDanishShouldFine() {
+        $input = 'helse tværspor added 23-04-2017 (JMB)';
+        $this->assertEquals(sanitize_comments($input), $input);
+    }
 }
