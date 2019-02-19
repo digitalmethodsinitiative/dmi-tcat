@@ -52,7 +52,8 @@ function create_new_bin($params) {
         echo '{"msg":"This capturing type is not defined in the config file"}';
         return;
     }
-    $comments = trim($params['newbin_comments']);
+    // $comments = trim($params['newbin_comments']);
+    $comments = sanitize_comments($params['newbin_comments']);
 
     // check whether the main query management tables are there, if not, create
     create_admin();
@@ -566,6 +567,12 @@ function array_trim_and_unique($array) {
             $array[$k] = $v;
     }
     return $array;
+}
+
+function sanitize_comments($comments) {
+    $comments = trim($comments);
+    $comments = filter_var($comments, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+    return $comments;
 }
 
 function get_phrases_from_geoquery($query) {
