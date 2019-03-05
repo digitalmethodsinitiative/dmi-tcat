@@ -99,7 +99,7 @@ set -u # fail on attempts to expand undefined variables
 # These can be changed using the -R and -B command line options
 
 TCAT_GIT_REPOSITORY=https://github.com/digitalmethodsinitiative/dmi-tcat.git
-TCAT_GIT_BRANCH= # empty string means use shallow clone of 'master' branch
+TCAT_GIT_BRANCH=tokudb # empty string means use shallow clone of 'master' branch
                  # non-empty string means use a full clone of the named branch
 
 # Where the MySQL defaults files are written
