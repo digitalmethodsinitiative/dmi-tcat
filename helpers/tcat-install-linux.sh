@@ -412,6 +412,11 @@ if [ -n "$DEBIAN_VERSION" ]; then
     apt-get install -y debian-archive-keyring debian-keyring
 fi
 
+# Disable Linux HugePage support (needed for TokuDB)
+# This does not persist across reboots
+echo never > /sys/kernel/mm/transparent_hugepage/enabled
+echo never > /sys/kernel/mm/transparent_hugepage/defrag
+
 # MySQL server package name for apt-get
 
 if [ -n "$UBUNTU_VERSION" ]; then
@@ -1068,6 +1073,9 @@ elif [ -n "$DEBIAN_VERSION" ]; then
 
     fi
 
+    # Install the TokuDUB storage engine (TODO: not available in older/ancient distributions; handle this)
+    apt-get -y install mariadb-plugin-tokudb
+
 else
     echo "$PROG: internal error: unexpected OS" >&2
     exit 3
@@ -1478,5 +1486,10 @@ echo "The following steps are recommended, but not mandatory"
 echo ""
 echo " * Set-up your systems e-mail (sendmail)"
 echo ""
+# TODO: automate
+echo "WARNING! This is an experimental branch which uses the TokuDB MySQL storage engine"
+echo "You'll need to ensure your server does NOT enable Linux transparant HugePage support - which never kernels DO"
+echo "Steps on disabling this feature are documented here. We should automate such disabling later, obviously"
+echo "Please see: https://mariadb.com/kb/en/library/installing-tokudb/#check-for-transparent-hugepage-support-on-linux"
 
 exit 0
