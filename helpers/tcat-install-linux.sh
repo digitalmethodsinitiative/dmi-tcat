@@ -1073,8 +1073,12 @@ elif [ -n "$DEBIAN_VERSION" ]; then
 
     fi
 
-    # Install the TokuDUB storage engine (TODO: not available in older/ancient distributions; handle this)
+    # Install the TokuDB storage engine (TODO: not available in older/ancient distributions; handle this)
     apt-get -y install mariadb-plugin-tokudb
+    # Enable the TokuDB storage engine
+    sed -i 's/^#plugin-load-add=ha_tokudb.so/plugin-load-add=ha_tokudb.so/g' /etc/mysql/mariadb.conf.d/tokudb.cnf
+    # Restart mariadb
+    systemctl restart mariadb
 
 else
     echo "$PROG: internal error: unexpected OS" >&2
