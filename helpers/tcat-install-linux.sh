@@ -413,9 +413,13 @@ if [ -n "$DEBIAN_VERSION" ]; then
 fi
 
 # Disable Linux HugePage support (needed for TokuDB)
-# This does not persist across reboots
+tput setaf 1
+echo "$PROG: error: disabling Linux kernel transparant HugePage support" 1>&2
+tput sgr0
 echo never > /sys/kernel/mm/transparent_hugepage/enabled
 echo never > /sys/kernel/mm/transparent_hugepage/defrag
+sed -E -i 's/^GRUB_CMDLINE_LINUX_DEFAULT="(.*)"$/GRUB_CMDLINE_LINUX_DEFAULT="\1 transparent_hugepage=never"/' /etc/default/grub
+update-grub
 
 # MySQL server package name for apt-get
 
