@@ -678,6 +678,8 @@ while [ "$BATCH_MODE" != "y" ]; do
 	fi
 
 	DBPASS=`promptPassword "MySQL admin account password"`; echo
+    echo "The MySQL root password is: $DBPASS"
+    echo "Remember to use the IDENTICAL root password during installation of Percona MySQL server"
 
     # Advanced parameters
 
@@ -991,6 +993,11 @@ elif [ -n "$DEBIAN_VERSION" ]; then
 
     # Install Percona MySQL server
 
+    echo
+    echo "PLEASE NOTE: During installation, retype the IDENTICAL MySQL root password you've generated earlier."
+    echo "PLEASE ALSO NOTE: Use the option to support LEGACY MySQL passwords or TCAT will not function"
+    DUMMY=$(promptStr "Press enter to continue" $DUMMY)
+
     apt-get -y install debsums zlib1g-dev libjemalloc1 libjemalloc-dev libaio1 libevent-2.0-5 libevent-dev libevent-extra-2.0-5 libmecab2 libnuma1
     mkdir /tmp/percona
     wget "https://www.percona.com/downloads/Percona-Server-LATEST/Percona-Server-8.0.15-5/binary/debian/stretch/x86_64/Percona-Server-8.0.15-5-rf8a9e99-stretch-x86_64-bundle.tar" -O /tmp/percona/percona-stretch.tar
@@ -1250,7 +1257,8 @@ mysql_tzinfo_to_sql /usr/share/zoneinfo | mysql --defaults-file="$MYSQL_USER_ADM
 # Create twittercapture database
 
 echo "CREATE DATABASE IF NOT EXISTS twittercapture DEFAULT CHARACTER SET utf8mb4 DEFAULT COLLATE utf8mb4_unicode_ci;" | mysql --defaults-file="$MYSQL_USER_ADMIN_CNF"
-echo "GRANT CREATE, DROP, LOCK TABLES, ALTER, DELETE, INDEX, INSERT, SELECT, UPDATE, CREATE TEMPORARY TABLES ON twittercapture.* TO '$TCATMYSQLUSER'@'localhost' IDENTIFIED BY '$TCATMYSQLPASS';" | mysql --defaults-file="$MYSQL_USER_ADMIN_CNF"
+echo "CREATE USER '$TCATMYSQLUSER'@'localhost' IDENTIFIED WITH mysql_native_password BY '$TCATMYSQLPASS';"
+echo "GRANT CREATE, DROP, LOCK TABLES, ALTER, DELETE, INDEX, INSERT, SELECT, UPDATE, CREATE TEMPORARY TABLES ON twittercapture.* TO '$TCATMYSQLUSER'@'localhost';" | mysql --defaults-file="$MYSQL_USER_ADMIN_CNF"
 echo "FLUSH PRIVILEGES;" | mysql --defaults-file="$MYSQL_USER_ADMIN_CNF"
 sed -i "s/dbuser = \"\"/dbuser = \"$TCATMYSQLUSER\"/g" "$CFG"
 sed -i "s/dbpass = \"\"/dbpass = \"$TCATMYSQLPASS\"/g" "$CFG"
