@@ -99,7 +99,7 @@ set -u # fail on attempts to expand undefined variables
 # These can be changed using the -R and -B command line options
 
 TCAT_GIT_REPOSITORY=https://github.com/digitalmethodsinitiative/dmi-tcat.git
-TCAT_GIT_BRANCH=tokudb # empty string means use shallow clone of 'master' branch
+TCAT_GIT_BRANCH=percona # empty string means use shallow clone of 'master' branch
                  # non-empty string means use a full clone of the named branch
 
 # Where the MySQL defaults files are written
@@ -1021,9 +1021,11 @@ if [ -n "$UBUNTU_VERSION" ]; then
     /etc/init.d/apparmor restart
 
 elif [ -n "$DEBIAN_VERSION" ]; then
-    echo "$PROG: installing MySQL for Debian"
+    echo "$PROG: installing Percona MySQL server for Debian"
 
     if [ "$DEBIAN_VERSION_MAJOR" != '9' ]; then
+
+        # TODO: do not support
 
         # On Debian 8, we use the MySQL repository, because it contains a version we need
         # to have GEO functionality.
@@ -1038,7 +1040,26 @@ elif [ -n "$DEBIAN_VERSION" ]; then
 
     fi
 
-    apt-get -y install mariadb-server
+    # Install Percona MySQL server
+
+    apt-get -y install debsums zlib1g-dev
+    mkdir /tmp/percona
+    wget "https://www.percona.com/downloads/Percona-Server-LATEST/Percona-Server-8.0.15-5/binary/debian/stretch/x86_64/Percona-Server-8.0.15-5-rf8a9e99-stretch-x86_64-bundle.tar" -O /tmp/percona/percona-stretch.tar
+    cd /tmp/percona
+    tar xf percona-stretch.tar
+    # First need common components, do not install dev packages
+    dpkg -i percona-server-common_*.deb
+    dpkg -i libperconaserverclient21_*.deb
+    dpkg -i percona-server-client_*.deb
+    dpkg -i percona-server-rocksdb_*.deb
+    dpkg -i percona-server-server_*.deb
+    dpkg -i percona-server-tokudb_*.deb
+
+    dpkg -i *.deb
+    rm *.deb
+    rm percona-stretch.tar
+    cd /tmp
+    rmdir /tmp/percona
 
     echo "$PROG: installing Apache for Debian"
 
@@ -1076,13 +1097,6 @@ elif [ -n "$DEBIAN_VERSION" ]; then
         phpenmod geos
 
     fi
-
-    # Install the TokuDB storage engine (TODO: not available in older/ancient distributions; handle this)
-    apt-get -y install mariadb-plugin-tokudb
-    # Enable the TokuDB storage engine
-    sed -i 's/^#plugin-load-add=ha_tokudb.so/plugin-load-add=ha_tokudb.so/g' /etc/mysql/mariadb.conf.d/tokudb.cnf
-    # Restart mariadb
-    systemctl restart mariadb
 
 else
     echo "$PROG: internal error: unexpected OS" >&2
