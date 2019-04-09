@@ -18,15 +18,6 @@
 # Run with -h for help.
 #
 # Supported distributions:
-# TODO: limit this list to only the most recent Ubuntu/Debian versions
-# - Ubuntu 14.04
-# - Ubuntu 15.04
-# - Ubuntu 15.10
-# - Ubuntu 16.04
-# - Ubuntu 16.10
-# - Ubuntu 17.04
-# - Ubuntu 17.10
-# - Ubuntu 18.04
 # - Debian 9.*
 #
 #----------------------------------------------------------------
@@ -328,6 +319,15 @@ if [ $(id -u) -ne 0 ]; then
    exit 1
 fi
 
+# Batch mode is currently not supported
+if [ "$BATCH_MODE" = "y" ]; then
+   tput setaf 1
+   echo "$PROG: error: we don't support batched installations at this time (until we fix setting the Percona root password automatically)" 1>&2
+   tput sgr0
+   exit 1
+fi
+
+
 # Expected OS version
 
 OS=`uname -s`
@@ -344,39 +344,8 @@ fi
 DISTRIBUTION_ID=`lsb_release -i -s`
 
 if [ "$DISTRIBUTION_ID" = 'Ubuntu' ]; then
-    UBUNTU_VERSION=`lsb_release -r -s`
-    DEBIAN_VERSION=
-    UBUNTU_VERSION_MAJOR=$(echo $UBUNTU_VERSION |
-	awk -F . '{if (match($1, /^[0-9]+$/)) print $1}')
-
-    if [ -z "$UBUNTU_VERSION_MAJOR" ]; then
-	echo "$PROG: error: unexpected Ubuntu version: $UBUNTU_VERSION" >&2
-	exit 1
-    fi
-    if [ "$UBUNTU_VERSION" != '14.04' -a "$UBUNTU_VERSION" != '15.04' -a "$UBUNTU_VERSION" != '15.10' -a "$UBUNTU_VERSION" != '16.04' -a "$UBUNTU_VERSION" != '16.10' -a "$UBUNTU_VERSION" != '17.04' -a "$UBUNTU_VERSION" != '17.10' -a "$UBUNTU_VERSION" != '18.04' ]; then
-	if [ -z "$FORCE_INSTALL" ]; then
-	    echo "$PROG: error: unsupported distribution: Ubuntu $UBUNTU_VERSION" >&2
-	    exit 1
-	fi
-    fi
-
-    if [ "$UBUNTU_VERSION_MAJOR" -lt 15 ]; then
-	echo "Warning: no geographical search on Ubuntu $UBUNTU_VERSION < 15.x"
-
-	if [ "$GEO_SEARCH" = 'y' ]; then
-	    if [ "$BATCH_MODE" = 'y' ]; then
-		echo "$PROG: aborted (use -G to leave out geo search)" >&2
-		exit 1
-	    else
-		if ! promptYN "Continue install without geographical search";
-		then
-		    echo "$PROG: aborted by user"
-		    exit 1
-		fi
-	    fi
-	fi
-    fi
-
+    echo "$PROG: error: sorry, Ubuntu is not supported at this time" >&2
+    exit 1
 elif [ "$DISTRIBUTION_ID" = 'Debian' ]; then
     DEBIAN_VERSION=`lsb_release -r -s`
     UBUNTU_VERSION=
@@ -413,8 +382,8 @@ if [ -n "$DEBIAN_VERSION" ]; then
 fi
 
 # Disable Linux HugePage support (needed for TokuDB)
-tput setaf 1
-echo "$PROG: error: disabling Linux kernel transparant HugePage support" 1>&2
+tput bold
+echo "$PROG: disabling Linux kernel transparant HugePage support" 1>&2
 tput sgr0
 echo never > /sys/kernel/mm/transparent_hugepage/enabled
 echo never > /sys/kernel/mm/transparent_hugepage/defrag
@@ -695,6 +664,21 @@ while [ "$BATCH_MODE" != "y" ]; do
 	fi
     done
 
+	# MySQL admin user's password
+    # TODO NOTICE: this used to be an advanced parameter, but at this time we don't set the Percona MySQL servers
+    # root password automatically
+
+	if [ "$FIRST_PASS" = 'y' ]; then
+	    echo
+	    echo "The password for the MySQL admin account (called \"root\")."
+        echo "Do NOT leave this blank and specify an IDENTICAL root password during the Percona MySQL server installation"
+# TODO: randomly generating a password is not support until we can provide it to Percona during installation
+#	    echo "Leave this blank to use a long randomly generated password (recommended)."
+	    echo
+	fi
+
+	DBPASS=`promptPassword "MySQL admin account password"`; echo
+
     # Advanced parameters
 
     if [ "$FIRST_PASS" = 'y' ]; then
@@ -748,17 +732,6 @@ while [ "$BATCH_MODE" != "y" ]; do
 		SHELLGROUP=$DEFAULT
 	    fi
 	fi
-
-	# MySQL admin user's password
-
-	if [ "$FIRST_PASS" = 'y' ]; then
-	    echo
-	    echo "The password for the MySQL admin account (called \"root\")."
-	    echo "Leave this blank to use a long randomly generated password (recommended)."
-	    echo
-	fi
-
-	DBPASS=`promptPassword "MySQL admin account password"`; echo
 
 	# MySQL TCAT user
 
@@ -950,16 +923,6 @@ echo "Installing MySQL server and Apache webserver ..."
 tput sgr0
 echo ""
 
-# Set MySQL root password to avoid prompt during "apt-get install" MySQL server
-
-# TODO VERIFY: This does *NOT* work with Percona MySQL server? Currently we have to repeat the exact same password
-# during the installation procedure
-
-echo "mysql-server mysql-server/root_password password $DBPASS" |
-debconf-set-selections
-echo "mysql-server mysql-server/root_password_again password $DBPASS" |
-debconf-set-selections
-
 echo "$PROG: installing Apache and PHP"
 
 if [ -n "$UBUNTU_VERSION" ]; then
@@ -1026,23 +989,6 @@ if [ -n "$UBUNTU_VERSION" ]; then
 elif [ -n "$DEBIAN_VERSION" ]; then
     echo "$PROG: installing Percona MySQL server for Debian"
 
-    if [ "$DEBIAN_VERSION_MAJOR" != '9' ]; then
-
-        # TODO: do not support
-
-        # On Debian 8, we use the MySQL repository, because it contains a version we need
-        # to have GEO functionality.
-
-        apt-get -qq -y install wget
-
-        wget http://dev.mysql.com/get/mysql-apt-config_0.3.5-1debian8_all.deb
-
-        # Note: this prompts the user to choose the MySQL product to configure :-(
-        # TODO: find a debconf-set-selections setting to avoid user interaction
-        dpkg -i mysql-apt-config_0.3.5-1debian8_all.deb
-
-    fi
-
     # Install Percona MySQL server
 
     apt-get -y install debsums zlib1g-dev libjemalloc1 libjemalloc-dev libaio1 libevent-2.0-5 libevent-dev libevent-extra-2.0-5 libmecab2 libnuma1
@@ -1068,40 +1014,31 @@ elif [ -n "$DEBIAN_VERSION" ]; then
 
     echo "$PROG: installing Apache for Debian"
 
-    if [ "$DEBIAN_VERSION_MAJOR" != '9' ]; then
-        apt-get -y install \
-        apache2-mpm-prefork apache2-utils \
-        libapache2-mod-php5 \
-        php5-mysql php5-curl php5-cli php5-geos php-patchwork-utf8
-        php5enmod geos
-    else
-        apt-get -y install \
-        apache2-utils \
-        libapache2-mod-php7.0 \
-        php7.0-mysql php7.0-curl php7.0-cli php-patchwork-utf8 php7.0-mbstring
+    apt-get -y install \
+    apache2-utils \
+    libapache2-mod-php7.0 \
+    php7.0-mysql php7.0-curl php7.0-cli php-patchwork-utf8 php7.0-mbstring
 
-        # Build and enable PHP GEOS module for PHP 7.0
+    # Build and enable PHP GEOS module for PHP 7.0
 
-        apt-get install -y build-essential automake make gcc g++ php7.0-dev
-        wget http://download.osgeo.org/geos/geos-3.6.2.tar.bz2
-        tar -xjf geos-3.6.2.tar.bz2
-        cd geos-3.6.2/
-        ./configure --enable-php
-        make -j 4
-        make install
-        ldconfig
-        cd ../
-        git clone https://git.osgeo.org/gogs/geos/php-geos.git --depth 1
-        cd php-geos
-        sh autogen.sh
-        ./configure
-        make -j 4
-        make install
-        cd ../
-        echo "extension=geos.so" > /etc/php/7.0/mods-available/geos.ini
-        phpenmod geos
-
-    fi
+    apt-get install -y build-essential automake make gcc g++ php7.0-dev
+    wget http://download.osgeo.org/geos/geos-3.6.2.tar.bz2
+    tar -xjf geos-3.6.2.tar.bz2
+    cd geos-3.6.2/
+    ./configure --enable-php
+    make -j 4
+    make install
+    ldconfig
+    cd ../
+    git clone https://git.osgeo.org/gogs/geos/php-geos.git --depth 1
+    cd php-geos
+    sh autogen.sh
+    ./configure
+    make -j 4
+    make install
+    cd ../
+    echo "extension=geos.so" > /etc/php/7.0/mods-available/geos.ini
+    phpenmod geos
 
 else
     echo "$PROG: internal error: unexpected OS" >&2
