@@ -18,6 +18,7 @@
 # Run with -h for help.
 #
 # Supported distributions:
+# TODO: limit this list to only the most recent Ubuntu/Debian versions
 # - Ubuntu 14.04
 # - Ubuntu 15.04
 # - Ubuntu 15.10
@@ -26,7 +27,6 @@
 # - Ubuntu 17.04
 # - Ubuntu 17.10
 # - Ubuntu 18.04
-# - Debian 8.*
 # - Debian 9.*
 #
 #----------------------------------------------------------------
@@ -387,7 +387,7 @@ elif [ "$DISTRIBUTION_ID" = 'Debian' ]; then
 	echo "$PROG: error: unexpected Debian version: $DEBIAN_VERSION" >&2
 	exit 1
     fi
-    if [ "$DEBIAN_VERSION_MAJOR" != '8' -a "$DEBIAN_VERSION_MAJOR" != '9' ]; then
+    if [ "$DEBIAN_VERSION_MAJOR" != '9' ]; then
 	if [ -z "$FORCE_INSTALL" ]; then
 	    echo "$PROG: error: unsupported distribution: Debian $DEBIAN_VERSION" >&2
 	    exit 1
@@ -952,6 +952,9 @@ echo ""
 
 # Set MySQL root password to avoid prompt during "apt-get install" MySQL server
 
+# TODO VERIFY: This does *NOT* work with Percona MySQL server? Currently we have to repeat the exact same password
+# during the installation procedure
+
 echo "mysql-server mysql-server/root_password password $DBPASS" |
 debconf-set-selections
 echo "mysql-server mysql-server/root_password_again password $DBPASS" |
@@ -1042,7 +1045,7 @@ elif [ -n "$DEBIAN_VERSION" ]; then
 
     # Install Percona MySQL server
 
-    apt-get -y install debsums zlib1g-dev
+    apt-get -y install debsums zlib1g-dev libjemalloc1 libjemalloc-dev libaio1 libevent-2.0-5 libevent-dev libevent-extra-2.0-5 libmecab2 libnuma1
     mkdir /tmp/percona
     wget "https://www.percona.com/downloads/Percona-Server-LATEST/Percona-Server-8.0.15-5/binary/debian/stretch/x86_64/Percona-Server-8.0.15-5-rf8a9e99-stretch-x86_64-bundle.tar" -O /tmp/percona/percona-stretch.tar
     cd /tmp/percona
@@ -1051,15 +1054,17 @@ elif [ -n "$DEBIAN_VERSION" ]; then
     dpkg -i percona-server-common_*.deb
     dpkg -i libperconaserverclient21_*.deb
     dpkg -i percona-server-client_*.deb
-    dpkg -i percona-server-rocksdb_*.deb
     dpkg -i percona-server-server_*.deb
+    dpkg -i percona-server-rocksdb_*.deb
     dpkg -i percona-server-tokudb_*.deb
-
-    dpkg -i *.deb
     rm *.deb
     rm percona-stretch.tar
     cd /tmp
     rmdir /tmp/percona
+    # Enable RocksDB storage engine
+    ps-admin --enable-rocksdb -u root -p$DBPASS
+    # Enable TokuDB storage engine
+    ps-admin --enable-tokudb -u root -p$DBPASS
 
     echo "$PROG: installing Apache for Debian"
 
