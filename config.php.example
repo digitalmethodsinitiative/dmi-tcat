@@ -182,6 +182,11 @@ mb_internal_encoding("UTF-8");
 define('PHP_CLI', '/usr/bin/php');
 
 /*
+ * Set the default database storage engine type (EXPERTS ONLY)
+ */
+define('MYSQL_ENGINE', 'TokuDB');
+
+/*
  * Use mysql INSERT DELAYED statements to insert data into the MySQL database.
  * Recommended only for high-load sites, who may have nightly backupscripts locking database tables.
  * Make sure to adjust the MySQL server variables delayed_queue_size, max_delayed_threads to an appropriate sizes.

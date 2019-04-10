@@ -27,3 +27,8 @@ if (!defined('TCAT_CONFIG_DEPRECATED_TIMEZONE')) {
     }
 
 }
+
+if (!defined('MYSQL_ENGINE')) {
+    // Set TokuDB as the default MySQL storage engine
+    define('MYSQL_ENGINE', 'TokuDB');
+}
