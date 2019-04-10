@@ -996,7 +996,7 @@ elif [ -n "$DEBIAN_VERSION" ]; then
     echo
     echo "PLEASE NOTE: During installation, retype the IDENTICAL MySQL root password you've generated earlier."
     echo "PLEASE ALSO NOTE: Use the option to support LEGACY MySQL passwords or TCAT will not function"
-    DUMMY=$(promptStr "Press enter to continue" $DUMMY)
+    read -p "Press enter to continue"
 
     apt-get -y install debsums zlib1g-dev libjemalloc1 libjemalloc-dev libaio1 libevent-2.0-5 libevent-dev libevent-extra-2.0-5 libmecab2 libnuma1
     mkdir /tmp/percona
@@ -1257,7 +1257,7 @@ mysql_tzinfo_to_sql /usr/share/zoneinfo | mysql --defaults-file="$MYSQL_USER_ADM
 # Create twittercapture database
 
 echo "CREATE DATABASE IF NOT EXISTS twittercapture DEFAULT CHARACTER SET utf8mb4 DEFAULT COLLATE utf8mb4_unicode_ci;" | mysql --defaults-file="$MYSQL_USER_ADMIN_CNF"
-echo "CREATE USER '$TCATMYSQLUSER'@'localhost' IDENTIFIED WITH mysql_native_password BY '$TCATMYSQLPASS';"
+echo "CREATE USER '$TCATMYSQLUSER'@'localhost' IDENTIFIED BY '$TCATMYSQLPASS';"  | mysql --defaults-file="$MYSQL_USER_ADMIN_CNF"
 echo "GRANT CREATE, DROP, LOCK TABLES, ALTER, DELETE, INDEX, INSERT, SELECT, UPDATE, CREATE TEMPORARY TABLES ON twittercapture.* TO '$TCATMYSQLUSER'@'localhost';" | mysql --defaults-file="$MYSQL_USER_ADMIN_CNF"
 echo "FLUSH PRIVILEGES;" | mysql --defaults-file="$MYSQL_USER_ADMIN_CNF"
 sed -i "s/dbuser = \"\"/dbuser = \"$TCATMYSQLUSER\"/g" "$CFG"
@@ -1383,16 +1383,6 @@ if [ "$DB_CONFIG_MEMORY_PROFILE" = "y" ]; then
         # Set the key buffer to 1/3 of system memory
         SIZE=$(($MAXMEM/3))
         echo "key_buffer_size         = $SIZE""M" >> /etc/mysql/conf.d/tcat-autoconfigured.cnf
-        if [ "$MAXMEM" -gt "1024" ]; then
-            # Set the query cache limit to 128 Mb
-            echo "query_cache_limit       = 128M" >> /etc/mysql/conf.d/tcat-autoconfigured.cnf
-        else
-            # For machines with 1G memory or less, set the query cache limit to 64 Mb
-            echo "query_cache_limit       = 64M" >> /etc/mysql/conf.d/tcat-autoconfigured.cnf
-        fi
-        # Set the total query cache size to 1/8 of systemn emory
-        SIZE=$(($MAXMEM/8))
-        echo "query_cache_size        = $SIZE""M" >> /etc/mysql/conf.d/tcat-autoconfigured.cnf
         # Increase sizes of temporary tables (memory sort tables for doing a GROUP BY) for machines with sufficient memory
         if [ "$MAXMEM" -gt "7168" ]; then
             echo "tmp_table_size          = 1G" >> /etc/mysql/conf.d/tcat-autoconfigured.cnf
