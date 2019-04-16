@@ -995,7 +995,7 @@ elif [ -n "$DEBIAN_VERSION" ]; then
 
     echo
     echo "PLEASE NOTE: During installation, retype the IDENTICAL MySQL root password you've generated earlier."
-    echo "PLEASE ALSO NOTE: Use the option to support LEGACY MySQL passwords or TCAT will not function"
+    echo "PLEASE ALSO NOTE: Select the option to support LEGACY MySQL passwords or TCAT will not function"
     read -p "Press enter to continue"
 
     apt-get -y install debsums zlib1g-dev libjemalloc1 libjemalloc-dev libaio1 libevent-2.0-5 libevent-dev libevent-extra-2.0-5 libmecab2 libnuma1
@@ -1016,8 +1016,8 @@ elif [ -n "$DEBIAN_VERSION" ]; then
     rmdir /tmp/percona
     # Enable RocksDB storage engine
     ps-admin --enable-rocksdb -u root -p$DBPASS
-    # Enable TokuDB storage engine
-    ps-admin --enable-tokudb -u root -p$DBPASS
+    systemctl stop mysql
+    systemctl start mysql
 
     echo "$PROG: installing Apache for Debian"
 
@@ -1254,6 +1254,12 @@ echo "$PROG: account details saved: $FILE"
 
 mysql_tzinfo_to_sql /usr/share/zoneinfo | mysql --defaults-file="$MYSQL_USER_ADMIN_CNF" mysql 
 
+# Enable TokuDB storage engine
+
+ps-admin --enable-tokudb -u root -p$DBPASS
+systemctl stop mysql
+systemctl start mysql
+
 # Create twittercapture database
 
 echo "CREATE DATABASE IF NOT EXISTS twittercapture DEFAULT CHARACTER SET utf8mb4 DEFAULT COLLATE utf8mb4_unicode_ci;" | mysql --defaults-file="$MYSQL_USER_ADMIN_CNF"
@@ -1448,10 +1454,5 @@ echo "The following steps are recommended, but not mandatory"
 echo ""
 echo " * Set-up your systems e-mail (sendmail)"
 echo ""
-# TODO: automate
-echo "WARNING! This is an experimental branch which uses the TokuDB MySQL storage engine"
-echo "You'll need to ensure your server does NOT enable Linux transparant HugePage support - which never kernels DO"
-echo "Steps on disabling this feature are documented here. We should automate such disabling later, obviously"
-echo "Please see: https://mariadb.com/kb/en/library/installing-tokudb/#check-for-transparent-hugepage-support-on-linux"
 
 exit 0
