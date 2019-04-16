@@ -26,7 +26,6 @@
 # - Ubuntu 17.04
 # - Ubuntu 17.10
 # - Ubuntu 18.04
-# - Debian 8.*
 # - Debian 9.*
 #
 #----------------------------------------------------------------
@@ -387,7 +386,7 @@ elif [ "$DISTRIBUTION_ID" = 'Debian' ]; then
 	echo "$PROG: error: unexpected Debian version: $DEBIAN_VERSION" >&2
 	exit 1
     fi
-    if [ "$DEBIAN_VERSION_MAJOR" != '8' -a "$DEBIAN_VERSION_MAJOR" != '9' ]; then
+    if [ -a "$DEBIAN_VERSION_MAJOR" != '9' ]; then
 	if [ -z "$FORCE_INSTALL" ]; then
 	    echo "$PROG: error: unsupported distribution: Debian $DEBIAN_VERSION" >&2
 	    exit 1
@@ -413,8 +412,9 @@ if [ -n "$DEBIAN_VERSION" ]; then
 fi
 
 # Disable Linux HugePage support (needed for TokuDB)
-tput setaf 1
-echo "$PROG: error: disabling Linux kernel transparant HugePage support" 1>&2
+
+tput bold
+echo "Disabling Linux kernel transparant HugePage support" 1>&2
 tput sgr0
 echo never > /sys/kernel/mm/transparent_hugepage/enabled
 echo never > /sys/kernel/mm/transparent_hugepage/defrag
@@ -1023,61 +1023,38 @@ if [ -n "$UBUNTU_VERSION" ]; then
 elif [ -n "$DEBIAN_VERSION" ]; then
     echo "$PROG: installing MySQL for Debian"
 
-    if [ "$DEBIAN_VERSION_MAJOR" != '9' ]; then
-
-        # On Debian 8, we use the MySQL repository, because it contains a version we need
-        # to have GEO functionality.
-
-        apt-get -qq -y install wget
-
-        wget http://dev.mysql.com/get/mysql-apt-config_0.3.5-1debian8_all.deb
-
-        # Note: this prompts the user to choose the MySQL product to configure :-(
-        # TODO: find a debconf-set-selections setting to avoid user interaction
-        dpkg -i mysql-apt-config_0.3.5-1debian8_all.deb
-
-    fi
-
     apt-get -y install mariadb-server
 
     echo "$PROG: installing Apache for Debian"
 
-    if [ "$DEBIAN_VERSION_MAJOR" != '9' ]; then
-        apt-get -y install \
-        apache2-mpm-prefork apache2-utils \
-        libapache2-mod-php5 \
-        php5-mysql php5-curl php5-cli php5-geos php-patchwork-utf8
-        php5enmod geos
-    else
-        apt-get -y install \
-        apache2-utils \
-        libapache2-mod-php7.0 \
-        php7.0-mysql php7.0-curl php7.0-cli php-patchwork-utf8 php7.0-mbstring
+    apt-get -y install \
+    apache2-utils \
+    libapache2-mod-php7.0 \
+    php7.0-mysql php7.0-curl php7.0-cli php-patchwork-utf8 php7.0-mbstring
 
-        # Build and enable PHP GEOS module for PHP 7.0
+    # Build and enable PHP GEOS module for PHP 7.0
 
-        apt-get install -y build-essential automake make gcc g++ php7.0-dev
-        wget http://download.osgeo.org/geos/geos-3.6.2.tar.bz2
-        tar -xjf geos-3.6.2.tar.bz2
-        cd geos-3.6.2/
-        ./configure --enable-php
-        make -j 4
-        make install
-        ldconfig
-        cd ../
-        git clone https://git.osgeo.org/gogs/geos/php-geos.git --depth 1
-        cd php-geos
-        sh autogen.sh
-        ./configure
-        make -j 4
-        make install
-        cd ../
-        echo "extension=geos.so" > /etc/php/7.0/mods-available/geos.ini
-        phpenmod geos
+    apt-get install -y build-essential automake make gcc g++ php7.0-dev
+    wget http://download.osgeo.org/geos/geos-3.6.2.tar.bz2
+    tar -xjf geos-3.6.2.tar.bz2
+    cd geos-3.6.2/
+    ./configure --enable-php
+    make -j 4
+    make install
+    ldconfig
+    cd ../
+    git clone https://git.osgeo.org/gogs/geos/php-geos.git --depth 1
+    cd php-geos
+    sh autogen.sh
+    ./configure
+    make -j 4
+    make install
+    cd ../
+    echo "extension=geos.so" > /etc/php/7.0/mods-available/geos.ini
+    phpenmod geos
 
-    fi
+    # Install the TokuDB storage engine
 
-    # Install the TokuDB storage engine (TODO: not available in older/ancient distributions; handle this)
     apt-get -y install mariadb-plugin-tokudb
     # Enable the TokuDB storage engine
     sed -i 's/^#plugin-load-add=ha_tokudb.so/plugin-load-add=ha_tokudb.so/g' /etc/mysql/mariadb.conf.d/tokudb.cnf
