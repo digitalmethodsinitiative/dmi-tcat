@@ -28,9 +28,7 @@ if ($argc == 1) {
 }
 
 for ($i = 1; $i < $argc; $i++) {
-    // TODO: safety checks (i.e. does bin exist, is it MyISAM?) and backups
     $bin = $argv[$i];
-    // TODO: escape
     $sql = "ALTER TABLE $bin" . "_tweets DISABLE KEYS";
     print $sql . ";\n";
     $sql = "ALTER TABLE $bin" . "_tweets DROP INDEX `from_user_description`";

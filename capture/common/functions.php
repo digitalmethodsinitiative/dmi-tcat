@@ -43,11 +43,11 @@ function create_error_logs() {
         $creating_tables_for_fresh_install = true;
     }
 
-    $sql = 'create table if not exists tcat_error_ratelimit ( id bigint auto_increment, type varchar(32), start datetime not null, end datetime not null, tweets bigint not null, primary key(id), index(type), index(start), index(end) ) ENGINE=TokuDB COMPRESSION=TOKUDB_LZMA';
+    $sql = 'create table if not exists tcat_error_ratelimit ( id bigint auto_increment, type varchar(32), start datetime not null, end datetime not null, tweets bigint not null, primary key(id), index(type), index(start), index(end) ) ' . MYSQL_ENGINE_OPTIONS;
     $h = $dbh->prepare($sql);
     $h->execute();
 
-    $sql = 'create table if not exists tcat_error_gap ( id bigint auto_increment, type varchar(32), start datetime not null, end datetime not null, primary key(id), index(type), index(start), index(end) ) ENGINE=TokuDB COMPRESSION=TOKUDB_LZMA';
+    $sql = 'create table if not exists tcat_error_gap ( id bigint auto_increment, type varchar(32), start datetime not null, end datetime not null, primary key(id), index(type), index(start), index(end) ) ' . MYSQL_ENGINE_OPTIONS;
     $h = $dbh->prepare($sql);
     $h->execute();
 
@@ -63,7 +63,7 @@ function create_error_logs() {
     `value` varchar(1024),
     PRIMARY KEY `variable` (`variable`),
             KEY `value` (`value`)
-    ) ENGINE=TokuDB COMPRESSION=TOKUDB_LZMA DEFAULT CHARSET=utf8mb4";
+    ) " . MYSQL_ENGINE_OPTIONS . " DEFAULT CHARSET=utf8mb4";
     $create = $dbh->prepare($sql);
     $create->execute();
 
@@ -140,7 +140,7 @@ function create_bin($bin_name, $dbh = false) {
                     KEY `tweet_id` (`tweet_id`),
                     KEY `text` (`text`),
                     KEY `from_user_name` (`from_user_name`)
-            ) ENGINE=TokuDB COMPRESSION=TOKUDB_LZMA  DEFAULT CHARSET=utf8mb4";
+            ) " . MYSQL_ENGINE_OPTIONS . " DEFAULT CHARSET=utf8mb4";
         $create_hashtags = $dbh->prepare($sql);
         $create_hashtags->execute();
 
@@ -153,7 +153,7 @@ function create_bin($bin_name, $dbh = false) {
                     KEY `user_id` (`user_id`),
                     KEY `tweet_id` (`tweet_id`),
                     KEY `country` (`country`)
-            ) ENGINE=TokuDB COMPRESSION=TOKUDB_LZMA  DEFAULT CHARSET=utf8mb4";
+            ) " . MYSQL_ENGINE_OPTIONS . " DEFAULT CHARSET=utf8mb4";
 
         $create_withheld = $dbh->prepare($sql);
         $create_withheld->execute();
@@ -163,7 +163,7 @@ function create_bin($bin_name, $dbh = false) {
             `id` varchar(32) NOT NULL,
             `tweet_id` bigint(20) NOT NULL,
             PRIMARY KEY (`id`, `tweet_id`)
-            ) ENGINE=TokuDB COMPRESSION=TOKUDB_LZMA  DEFAULT CHARSET=utf8mb4";
+            ) " . MYSQL_ENGINE_OPTIONS . " DEFAULT CHARSET=utf8mb4";
 
         $create_places = $dbh->prepare($sql);
         $create_places->execute();
@@ -185,7 +185,7 @@ function create_bin($bin_name, $dbh = false) {
                     KEY `from_user_id` (`from_user_id`),
                     KEY `to_user` (`to_user`),
                     KEY `to_user_id` (`to_user_id`)
-            ) ENGINE=TokuDB COMPRESSION=TOKUDB_LZMA  DEFAULT CHARSET=utf8mb4";
+            ) " . MYSQL_ENGINE_OPTIONS . " DEFAULT CHARSET=utf8mb4";
 
         $create_mentions = $dbh->prepare($sql);
         $create_mentions->execute();
@@ -241,7 +241,7 @@ function create_bin($bin_name, $dbh = false) {
                     KEY `withheld_scope` (`withheld_scope`),
                     KEY `from_user_description` (`from_user_description`(32)),
                     KEY `text` (`text`(32))
-                    ) ENGINE=TokuDB COMPRESSION=TOKUDB_LZMA DEFAULT CHARSET=utf8mb4";
+                    ) " . MYSQL_ENGINE_OPTIONS . " DEFAULT CHARSET=utf8mb4";
 
 	$create_tweets = $dbh->prepare($sql);
         $create_tweets->execute();
@@ -263,7 +263,7 @@ function create_bin($bin_name, $dbh = false) {
                     KEY `from_user_id` (`from_user_id`),
                     KEY `url_followed` (`url_followed`),
                     KEY `url_expanded` (`url_expanded`)
-            ) ENGINE=TokuDB COMPRESSION=TOKUDB_LZMA  DEFAULT CHARSET=utf8mb4";
+            ) " . MYSQL_ENGINE_OPTIONS . " DEFAULT CHARSET=utf8mb4";
 
         $create_urls = $dbh->prepare($sql);
         $create_urls->execute();
@@ -286,7 +286,7 @@ function create_bin($bin_name, $dbh = false) {
                     KEY `photo_size_width` (`photo_size_width`),
                     KEY `photo_size_height` (`photo_size_height`),
                     KEY `photo_resize` (`photo_resize`)
-            ) ENGINE=TokuDB COMPRESSION=TOKUDB_LZMA  DEFAULT CHARSET=utf8mb4";
+            ) " . MYSQL_ENGINE_OPTIONS . " DEFAULT CHARSET=utf8mb4";
 
         $create_media = $dbh->prepare($sql);
         $create_media->execute();
@@ -312,7 +312,7 @@ function create_admin() {
     KEY `querybin` (`querybin`),
     KEY `type` (`type`),
     KEY `active` (`active`)
-    ) ENGINE = TokuDB COMPRESSION=TOKUDB_LZMA DEFAULT CHARSET = utf8mb4";
+    ) " . MYSQL_ENGINE_OPTIONS . " DEFAULT CHARSET = utf8mb4";
     $create = $dbh->prepare($sql);
     $create->execute();
 
@@ -325,7 +325,7 @@ function create_admin() {
     KEY `querybin_id` (`querybin_id`),
     KEY `starttime` (`starttime`),
     KEY `endtime` (`endtime`)
-    ) ENGINE = TokuDB COMPRESSION=TOKUDB_LZMA DEFAULT CHARSET = utf8mb4";
+    ) " . MYSQL_ENGINE_OPTIONS . " DEFAULT CHARSET = utf8mb4";
     $create = $dbh->prepare($sql);
     $create->execute();
 
@@ -334,7 +334,7 @@ function create_admin() {
     `phrase` VARCHAR(255) NOT NULL,
     PRIMARY KEY (`id`),
     KEY `phrase` (`phrase`)
-    ) ENGINE = TokuDB COMPRESSION=TOKUDB_LZMA DEFAULT CHARSET = utf8mb4";
+    ) " . MYSQL_ENGINE_OPTIONS . " DEFAULT CHARSET = utf8mb4";
     $create = $dbh->prepare($sql);
     $create->execute();
 
@@ -342,7 +342,7 @@ function create_admin() {
     `id` bigint NOT NULL,
     `user_name` varchar(255),
     PRIMARY KEY `id` (`id`)
-    ) ENGINE = TokuDB COMPRESSION=TOKUDB_LZMA DEFAULT CHARSET = utf8mb4";
+    ) " . MYSQL_ENGINE_OPTIONS . " DEFAULT CHARSET = utf8mb4";
     $create = $dbh->prepare($sql);
     $create->execute();
 
@@ -357,7 +357,7 @@ function create_admin() {
     KEY `endtime` (`endtime`),
     KEY `phrase_id` (`phrase_id`),
     KEY `querybin_id` (`querybin_id`)
-    ) ENGINE = TokuDB COMPRESSION=TOKUDB_LZMA DEFAULT CHARSET = utf8mb4";
+    ) " . MYSQL_ENGINE_OPTIONS . " DEFAULT CHARSET = utf8mb4";
     $create = $dbh->prepare($sql);
     $create->execute();
 
@@ -372,7 +372,7 @@ function create_admin() {
     KEY `endtime` (`endtime`),
     KEY `user_id` (`user_id`),
     KEY `querybin_id` (`querybin_id`)
-    ) ENGINE = TokuDB COMPRESSION=TOKUDB_LZMA DEFAULT CHARSET = utf8mb4";
+    ) " . MYSQL_ENGINE_OPTIONS . " DEFAULT CHARSET = utf8mb4";
     $create = $dbh->prepare($sql);
     $create->execute();
 
@@ -381,7 +381,7 @@ function create_admin() {
     `task` VARCHAR(32) NOT NULL,
     `instruction` VARCHAR(255) NOT NULL,
     `ts_issued` timestamp DEFAULT current_timestamp,
-    primary key(id) ) ENGINE = TokuDB COMPRESSION=TOKUDB_LZMA DEFAULT CHARSET = utf8mb4";
+    primary key(id) ) " . MYSQL_ENGINE_OPTIONS . " DEFAULT CHARSET = utf8mb4";
     $create = $dbh->prepare($sql);
     $create->execute();
 
@@ -441,7 +441,7 @@ function create_admin() {
     `phrase_id` BIGINT(20) NOT NULL,
     `created_at` DATETIME NOT NULL,
     PRIMARY KEY (`tweet_id`, `phrase_id`),
-    KEY `created_at` (`created_at`) ) ENGINE = TokuDB COMPRESSION=TOKUDB_LZMA DEFAULT CHARSET = utf8mb4";
+    KEY `created_at` (`created_at`) ) " . MYSQL_ENGINE_OPTIONS . " DEFAULT CHARSET = utf8mb4";
     $create = $dbh->prepare($sql);
     $create->execute();
 
@@ -2313,7 +2313,7 @@ class TwitterRelations {
                 user2_realname varchar(255),
 		KEY `user1_id` (`user1_id`), 
                 KEY `user2_id` (`user2_id`)
-		) ENGINE=TokuDB COMPRESSION=TOKUDB_LZMA DEFAULT CHARSET=utf8mb4";
+		) " . MYSQL_ENGINE_OPTIONS . " DEFAULT CHARSET=utf8mb4";
 
         if ($dbh->exec($sql)) {
             return TRUE;

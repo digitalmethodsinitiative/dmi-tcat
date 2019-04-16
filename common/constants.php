@@ -11,8 +11,10 @@ if (!defined('TCAT_QUERYBIN_ACCESS_OK')) {
     define('TCAT_QUERYBIN_ACCESS_INVISIBLE', 3);
 }
 
-// Always make UTC the default timezone inside PHP
-// This effectively ignores any date_default_timezone_set() in config.php (which is deprecated)
+/*
+ * Always make UTC the default timezone inside PHP
+ * This effectively ignores any date_default_timezone_set() in config.php (which is deprecated)
+ */
 
 if (!defined('TCAT_CONFIG_DEPRECATED_TIMEZONE')) {
 
@@ -26,4 +28,15 @@ if (!defined('TCAT_CONFIG_DEPRECATED_TIMEZONE')) {
         define('TCAT_CONFIG_DEPRECATED_TIMEZONE_CONFIGURED', '');
     }
 
+}
+
+
+/*
+ * Historically, TCAT exclusively supported the MyISAM storage engine. New deployments of TCAT switched from MyISAM to TokuDB and
+ * other storage engines (options) may be configured as well. To not break existing installations, we use MyISAM unless the config.php
+ * file explicitely tells us otherwise.
+ */
+
+if (!defined('MYSQL_ENGINE_OPTIONS')) {
+    define('MYSQL_ENGINE_OPTIONS', 'ENGINE=MyISAM');
 }
