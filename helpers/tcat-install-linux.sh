@@ -1471,10 +1471,5 @@ echo "The following steps are recommended, but not mandatory"
 echo ""
 echo " * Set-up your systems e-mail (sendmail)"
 echo ""
-# TODO: automate
-echo "WARNING! This is an experimental branch which uses the TokuDB MySQL storage engine"
-echo "You'll need to ensure your server does NOT enable Linux transparant HugePage support - which never kernels DO"
-echo "Steps on disabling this feature are documented here. We should automate such disabling later, obviously"
-echo "Please see: https://mariadb.com/kb/en/library/installing-tokudb/#check-for-transparent-hugepage-support-on-linux"
 
 exit 0
