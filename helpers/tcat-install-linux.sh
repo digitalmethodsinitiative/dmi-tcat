@@ -404,16 +404,6 @@ if [ -n "$DEBIAN_VERSION" ]; then
     apt-get install -y debian-archive-keyring debian-keyring
 fi
 
-# Disable Linux HugePage support (needed for TokuDB)
-
-tput bold
-echo "Disabling Linux kernel transparant HugePage support" 1>&2
-tput sgr0
-echo never > /sys/kernel/mm/transparent_hugepage/enabled
-echo never > /sys/kernel/mm/transparent_hugepage/defrag
-sed -E -i 's/^GRUB_CMDLINE_LINUX_DEFAULT="(.*)"$/GRUB_CMDLINE_LINUX_DEFAULT="\1 transparent_hugepage=never"/' /etc/default/grub
-update-grub
-
 # MySQL server package name for apt-get
 
 if [ -n "$UBUNTU_VERSION" ]; then
@@ -1014,6 +1004,16 @@ else
     exit 3
 fi
 
+# Disable Linux HugePage support (needed for TokuDB)
+
+tput bold
+echo "Disabling Linux kernel transparant HugePage support" 1>&2
+tput sgr0
+echo never > /sys/kernel/mm/transparent_hugepage/enabled
+echo never > /sys/kernel/mm/transparent_hugepage/defrag
+sed -E -i 's/^GRUB_CMDLINE_LINUX_DEFAULT="(.*)"$/GRUB_CMDLINE_LINUX_DEFAULT="\1 transparent_hugepage=never"/' /etc/default/grub
+update-grub
+
 # Install the TokuDB storage engine
 
 tput bold
@@ -1334,9 +1334,6 @@ echo "Configuring MySQL server (compatibility) ..."
 tput sgr0
 echo ""
 
-if [[ -n "$UBUNTU_VERSION" && "$UBUNTU_VERSION_MAJOR" -gt 17 ]]; then
-    echo "show_compatibility_56=ON" >> /etc/mysql/conf.d/tcat-autoconfigured.cnf
-fi
 echo "sql-mode=\"NO_AUTO_VALUE_ON_ZERO,ALLOW_INVALID_DATES\"" >> /etc/mysql/conf.d/tcat-autoconfigured.cnf
 
 if [ "$DB_CONFIG_MEMORY_PROFILE" = "y" ]; then
