@@ -214,7 +214,7 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
                                 KEY `user_id` (`user_id`),
                                 KEY `tweet_id` (`user_id`),
                                 KEY `country` (`country`)
-                    ) ENGINE=MyISAM  DEFAULT CHARSET=utf8mb4";
+                    ) ENGINE=TokuDB COMPRESSION=TOKUDB_LZMA  DEFAULT CHARSET=utf8mb4";
             $create_withheld = $dbh->prepare($sql);
             $create_withheld->execute();
         }
@@ -241,7 +241,7 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
                     `id` varchar(32) NOT NULL,
                     `tweet_id` bigint(20) NOT NULL,
                         PRIMARY KEY (`id`, `tweet_id`)
-                    ) ENGINE=MyISAM  DEFAULT CHARSET=utf8mb4";
+                    ) ENGINE=TokuDB COMPRESSION=TOKUDB_LZMA  DEFAULT CHARSET=utf8mb4";
             $create_places = $dbh->prepare($sql);
             $create_places->execute();
         }
@@ -394,7 +394,7 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
                             KEY `photo_size_width` (`photo_size_width`),
                             KEY `photo_size_height` (`photo_size_height`),
                             KEY `photo_resize` (`photo_resize`)
-                    ) ENGINE=MyISAM  DEFAULT CHARSET=utf8mb4";
+                    ) ENGINE=TokuDB COMPRESSION=TOKUDB_LZMA  DEFAULT CHARSET=utf8mb4";
                 $rec = $dbh->prepare($query);
                 $rec->execute();
             }
@@ -819,7 +819,7 @@ function upgrades($dry_run = false, $interactive = true, $aulevel = 2, $single =
                          *
                          */
 
-                        $sql = "create temporary table if not exists tcat_error_ratelimit_upgrade ( id bigint, `type` varchar(32), start datetime not null, end datetime not null, tweets bigint not null, primary key(id, type), index(type), index(start), index(end) ) ENGINE=MyISAM";
+                        $sql = "create temporary table if not exists tcat_error_ratelimit_upgrade ( id bigint, `type` varchar(32), start datetime not null, end datetime not null, tweets bigint not null, primary key(id, type), index(type), index(start), index(end) ) ENGINE=TokuDB COMPRESSION=TOKUDB_LZMA";
                         $rec = $dbh->prepare($sql);
                         $rec->execute();
 

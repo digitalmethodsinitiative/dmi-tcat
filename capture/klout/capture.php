@@ -40,7 +40,7 @@ while (1) {
           KEY `from_user_id` (`from_user_id`),
           KEY `kloutid` (`kloutid`),
           KEY `last_updated` (`last_updated`)
-          ) ENGINE=MyISAM  DEFAULT CHARSET=utf8";
+          ) ENGINE=TokuDB COMPRESSION=TOKUDB_LZMA  DEFAULT CHARSET=utf8";
           $sqlresults = mysql_query($sql) or die(mysql_error());
           }
 

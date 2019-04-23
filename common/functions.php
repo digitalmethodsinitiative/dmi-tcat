@@ -180,7 +180,7 @@ function create_tweet_cache() {
     if ($sufficient_memory) {
         $sql = "CREATE TEMPORARY TABLE $tweet_cache (id BIGINT PRIMARY KEY) ENGINE=Memory";
     } else {
-        $sql = "CREATE TEMPORARY TABLE $tweet_cache (id BIGINT PRIMARY KEY) ENGINE=MyISAM";
+        $sql = "CREATE TEMPORARY TABLE $tweet_cache (id BIGINT PRIMARY KEY) ENGINE=TokuDB COMPRESSION=TOKUDB_LZMA";
     }
     try {
         $create = $dbh->prepare($sql);
@@ -188,7 +188,7 @@ function create_tweet_cache() {
     } catch (PDOException $Exception) {
         /* Fall-back to using disk table */
         pdo_error_report($Exception);
-        $sql = "CREATE TEMPORARY TABLE $tweet_cache (id BIGINT PRIMARY KEY) ENGINE=MyISAM";
+        $sql = "CREATE TEMPORARY TABLE $tweet_cache (id BIGINT PRIMARY KEY) ENGINE=TokuDB COMPRESSION=TOKUDB_LZMA";
         $create = $dbh->prepare($sql);
         $create->execute();
     }
