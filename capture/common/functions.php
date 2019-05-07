@@ -1666,19 +1666,45 @@ class Tweet {
             /*
              * Incorporate full retweet text from retweeted_status to cope with possible truncated due to character limit.
              * This fix makes the stored text more closely resemble the tweet a shown to the end-user.
-             * See the discussion here: https://github.com/digitalmethodsinitiative/dmi-tcat/issues/74
+             * See the discussions here: https://github.com/digitalmethodsinitiative/dmi-tcat/issues/74
+             * See the discussions here: https://github.com/digitalmethodsinitiative/dmi-tcat/issues/363
+             *
+             * WARNING: this procedure invalidates character indices for usernames inside the tweet text (i.e. where does the username does show up)
+             * That data is currently discarded by TCAT however.
              */
 
             // Determine the full, untruncated retweet text using a similar mechanism as used for non-retweets
             if (!isset($data["retweeted_status"]["text"])) {
                 /* running in extended context */
                 $retweet_text = $data["retweeted_status"]["full_text"];
+
+                /* add the retweeting user to the user mentions */
+                if (!empty($data["retweeted_status"]["entities"]["user_mentions"])) {
+                    array_unshift($data["retweeted_status"]["entities"]["user_mentions"], $data["entities"]["user_mentions"][0]);
+                } else {
+                    $data["retweeted_status"]["entities"]["user_mentions"] = $data["entities"]["user_mentions"];
+                }
+                /* pull the entities up from the retweeted status */
+                $data["entities"] = $data["retweeted_status"]["entities"];
+
+
             } else if (!array_key_exists('extended_tweet', $data["retweeted_status"])) {
                 /* running in compatibility mode BUT the 'extended_tweet' JSON field is not available. this means the retweet is <= 140 characters */
                 $retweet_text = $data["retweeted_status"]["text"];
             } else {
                 /* Running in compatibility mode AND the 'extended_tweet' JSON field is available. this means the retweet is > 140 characters */
                 $retweet_text = $data["retweeted_status"]["extended_tweet"]["full_text"];
+
+                /* add the retweeting user to the user mentions */
+                if (!empty($data["retweeted_status"]["extended_tweet"]["entities"]["user_mentions"])) {
+                    array_unshift($data["retweeted_status"]["extended_tweet"]["entities"]["user_mentions"], $data["entities"]["user_mentions"][0]);
+                } else {
+                    $data["retweeted_status"]["extended_tweet"]["entities"]["user_mentions"] = $data["entities"]["user_mentions"];
+                }
+                /* pull the entities up from the retweeted status */
+                $data["entities"] = $data["retweeted_status"]["extended_tweet"]["entities"];
+
+
             }
 
             $store_text = "RT @" . $data["retweeted_status"]["user"]["screen_name"] . ": " . $retweet_text;
@@ -1796,6 +1822,10 @@ class Tweet {
                 $media[] = $m;
             }
         }
+
+
+        // The JSON double encode/decode trick to convert a PHP object to a nested associative array is described here:
+        // https://stackoverflow.com/a/16111687
 
         $this->urls = json_decode(json_encode($urls, FALSE));
         $this->media = json_decode(json_encode($media, FALSE));
