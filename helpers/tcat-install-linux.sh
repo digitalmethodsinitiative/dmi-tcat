@@ -59,6 +59,8 @@ TCATMYSQLPASS=
 
 DB_CONFIG_MEMORY_PROFILE=y
 
+LETSENCRYPT=n
+
 # TCAT Web user interface logins (blank password means randomly generate it)
 
 TCATADMINUSER=admin
@@ -535,7 +537,7 @@ while [ "$BATCH_MODE" != "y" ]; do
 	esac
 
 	echo "  Expands URLs in tweets: $URLEXPANDYES"
-	echo "  Server: $SERVERNAME (TCAT will be at http://$SERVERNAME/)"
+	echo "  Server: $SERVERNAME (TCAT will be at http://$SERVERNAME/ or https://$SERVERNAME/ when using Let's Encrypt)"
 
 	if [ $TCAT_AUTO_UPDATE = '0' ]; then
 	    echo "  Automatically update TCAT: (not enabled)"
@@ -648,6 +650,21 @@ while [ "$BATCH_MODE" != "y" ]; do
 	    fi
 	fi
     done
+
+    # Estimate whether it should be possible to use Let's Encrypt
+
+    ALLOW_LETSENCRYPT=false
+    # Notice Let's Encrypt cannot be used on Amazon elastic cloud
+    if [[ "$SERVERNAME" =~ [a-zA-Z] && ! "$SERVERNAME" =~ amazonaws.com$ && ! "$SERVERNAME" =~ [:] && "$SERVERNAME" != "localhost" ]]; then
+        ALLOW_LETSENCRYPT=true
+    fi
+    if [ "$ALLOW_LETSENCRYPT" = true ]; then
+        if promptYN "Install Let's Encrypt (free TLS certificate). Requires publicly accessible host name" 'y'; then
+        	LETSENCRYPT=y
+        else
+	        LETSENCRYPT=n
+        fi
+    fi
 
     # Automatic updates
 
@@ -1185,6 +1202,13 @@ else
     exit 3
 fi
 
+# Install Let's Encrypt via certbot
+if [ "$LETSENCRYPT" = 'y' ]; then
+    apt-get install -y certbot python-certbot-apache
+    certbot --apache -d $SERVERNAME
+    apache2ctl restart
+fi
+
 echo ""
 tput bold
 echo "Configuring MySQL server for TCAT (authentication) ..."
@@ -1236,6 +1260,9 @@ echo "FLUSH PRIVILEGES;" | mysql --defaults-file="$MYSQL_USER_ADMIN_CNF"
 sed -i "s/dbuser = \"\"/dbuser = \"$TCATMYSQLUSER\"/g" "$CFG"
 sed -i "s/dbpass = \"\"/dbpass = \"$TCATMYSQLPASS\"/g" "$CFG"
 sed -i "s/example.com\/dmi-tcat\//$SERVERNAME\//g" "$CFG"
+if [ "$LETSENCRYPT" = 'y' ]; then
+    sed -i "s/http:\/\//https:\/\//g" "$CFG"
+fi
 
 if [ "$URLEXPANDYES" = 'y' ]; then
    echo ""
@@ -1400,8 +1427,13 @@ tput sgr0
 echo ""
 
 echo "Please visit this TCAT installation at these URLs:"
-echo "  http://$SERVERNAME/capture/"
-echo "  http://$SERVERNAME/analysis/"
+if [ "$LETSENCRYPT" = 'y' ]; then
+    echo "  https://$SERVERNAME/capture/"
+    echo "  https://$SERVERNAME/analysis/"
+else
+    echo "  http://$SERVERNAME/capture/"
+    echo "  http://$SERVERNAME/analysis/"
+fi
 echo
 echo "TCAT administrator login (for capture setup and analysis):"
 echo "  Username: $TCATADMINUSER"
