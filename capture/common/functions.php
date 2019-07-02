@@ -2382,7 +2382,12 @@ function insert_captured_phrase_ids($captured_phrase_ids) {
     if (count($captured_phrase_ids) > 3) {
         $moresets = count($captured_phrase_ids) / 3 - 1;
     }
-    $sql = "INSERT DELAYED IGNORE INTO tcat_captured_phrases ( tweet_id, phrase_id, created_at ) VALUES ( ?, ?, ? )" . str_repeat(", (?, ?, ?)", $moresets);
+    if (defined('USE_INSERT_DELAYED') && USE_INSERT_DELAYED) {
+        $extra = 'DELAYED';
+    } else {
+        $extra = '';
+    }
+    $sql = "INSERT $extra IGNORE INTO tcat_captured_phrases ( tweet_id, phrase_id, created_at ) VALUES ( ?, ?, ? )" . str_repeat(", (?, ?, ?)", $moresets);
     $h = $dbh->prepare($sql);
     for ($i = 0; $i < count($captured_phrase_ids); $i++) {
         // bindParam() expects its first parameter ( index of the ? placeholder ) to start with 1
