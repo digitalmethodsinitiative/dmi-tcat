@@ -177,7 +177,7 @@ function do_rate_info()
     $response_mediatype = choose_mediatype(['application/json', 'text/html',
                                             'text/plain']);
 
-    $notweets = 200000;
+    $limit = 200000;
     $dbh = pdo_connect();
     $sql = 'SELECT date(t.created_at) AS date, count(*) AS count FROM (SELECT * FROM tcat_captured_phrases ORDER BY created_at DESC LIMIT 200000) AS t GROUP BY date(t.created_at)';
     $rec = $dbh->prepare($sql);
@@ -188,7 +188,7 @@ function do_rate_info()
 
     switch ($response_mediatype) {
         case 'application/json':
-            $obj = array('notweets' => $notweets, 'counts' => $rates);
+            $obj = array('limit' => $limit, 'counts' => $rates);
             respond_with_json($obj);
             break;
         case 'text/html':
