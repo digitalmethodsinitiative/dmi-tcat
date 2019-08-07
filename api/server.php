@@ -162,6 +162,39 @@ function do_ratelimit_info()
 }
 
 //----------------------------------------------------------------
+// Display rate information for this server
+//
+// Returns variable for JSON output or title+html for HTML output.
+
+function do_rate_info()
+{
+    global $datasets; // from require_once "../analysis/common/functions.php"
+
+    if (!isset($datasets)) {
+        $datasets = []; // database tables not yet initialized
+    }
+
+    $response_mediatype = choose_mediatype(['application/json', 'text/html',
+                                            'text/plain']);
+
+    switch ($response_mediatype) {
+        case 'application/json':
+            $obj = array( 'rate' => 'something here' ); //$datasets );
+            respond_with_json($obj);
+            break;
+        case 'text/html':
+            html_begin("Rate info here");
+            html_end();
+            break;
+        case 'text/plain':
+        default:
+            // TODO
+            break;
+    }
+
+}
+
+//----------------------------------------------------------------
 // Main function
 //
 // This is a function to avoid unexpected clashes with global variables.
@@ -210,6 +243,8 @@ function main()
         } else {
             if (is_null($aspect)) {
                 $action = 'server-info';     // implicit action
+            } else if ($aspect == 'rateinfo') {
+                $action = 'rate-info';
             } else if ($aspect == 'ratelimits') {
                 $action = 'ratelimit-info';  // implicit action
             } else {
@@ -284,6 +319,9 @@ END;
             break;
         case 'ratelimit-info':
             do_ratelimit_info();
+            break;
+        case 'rate-info':
+            do_rate_info();
             break;
         default:
             abort_with_error(500, "Internal error: unexpected action: $action");
