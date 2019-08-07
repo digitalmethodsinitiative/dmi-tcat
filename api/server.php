@@ -183,7 +183,7 @@ function do_rate_info()
     $rec = $dbh->prepare($sql);
     $rec->execute();
     while ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
-        $rates[$res['date']] = $res['count'];
+        $rates[$res['date']] = +$res['count'];
     }
 
     switch ($response_mediatype) {
