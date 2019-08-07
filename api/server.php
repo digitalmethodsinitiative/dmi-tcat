@@ -177,25 +177,28 @@ function do_rate_info()
     $response_mediatype = choose_mediatype(['application/json', 'text/html',
                                             'text/plain']);
 
+    $notweets = 200000;
     $dbh = pdo_connect();
-
-    $sql = 'SELECT year(tcp.created_at) AS year,month(tcp.created_at) AS month, day(tcp.created_at) AS day,count(*) AS count FROM (SELECT * FROM tcat_captured_phrases ORDER BY created_at DESC LIMIT 50000) AS tcp GROUP BY year(tcp.created_at),month(created_at),day(tcp.created_at)';
+    $sql = 'SELECT date(t.created_at) AS date, count(*) AS count FROM (SELECT * FROM tcat_captured_phrases ORDER BY created_at DESC LIMIT 200000) AS t GROUP BY date(t.created_at)';
     $rec = $dbh->prepare($sql);
     $rec->execute();
     while ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
-        //$rates[[res['year'][res['month']res['day']] = $res['count'];
-        $rates[$res['year']][$res['month']][$res['day']] = +$res['count'];
+        $rates[$res['date']] = $res['count'];
     }
-    // $rates = $rec->fetchAll();
 
     switch ($response_mediatype) {
         case 'application/json':
-            $obj = array ('rate' => $rates );
+            $obj = array('notweets' => $notweets, 'counts' => $rates);
             respond_with_json($obj);
             break;
         case 'text/html':
-            html_begin("Rate info here");
-            print($rates);
+            // html_begin("Rate info here", [["Rate information"]]);
+            echo "<table>";
+            echo "<tr><th>date</th><th>count</th></tr>";
+            foreach($rates as $date => $count) {
+                echo "<tr><td class='date'>$date</td><td class='count'>$count</tr>";
+            }
+            echo "</table>";
             html_end();
             break;
         case 'text/plain':
