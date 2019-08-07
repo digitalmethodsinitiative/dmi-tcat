@@ -179,7 +179,8 @@ function do_rate_info()
 
     switch ($response_mediatype) {
         case 'application/json':
-            $obj = array( 'rate' => 'something here' ); //$datasets );
+            // $obj = array( 'rate' => 'something here' );
+            $obj = array ('rate' => $datasets );
             respond_with_json($obj);
             break;
         case 'text/html':
