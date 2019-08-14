@@ -188,11 +188,11 @@ function do_rate_info()
          'text/plain']
     );
 
-    $limit = 100000;
+    $days = 30;
     $dbh = pdo_connect();
-    $sql = 'SELECT date(t.created_at) AS date, count(*) AS count FROM (SELECT * FROM tcat_captured_phrases ORDER BY created_at DESC LIMIT :limit) AS t GROUP BY date(t.created_at)';
+    $sql = 'SELECT date(t.created_at) AS date, count(*) AS count FROM (SELECT * FROM tcat_captured_phrases WHERE created_at >= CURDATE() - INTERVAL :days DAY) AS t GROUP BY date(t.created_at)';
     $rec = $dbh->prepare($sql);
-    $rec->bindValue(':limit', $limit, PDO::PARAM_INT);
+    $rec->bindValue(':days', $days, PDO::PARAM_INT);
     $rec->execute();
     while ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
         $rates[$res['date']] = +$res['count'];
@@ -200,7 +200,7 @@ function do_rate_info()
 
     switch ($response_mediatype) {
         case 'application/json':
-            $obj = array('limit' => $limit, 'counts' => $rates);
+            $obj = ['days' => $days, 'counts' => $rates];
             respond_with_json($obj);
             break;
         case 'text/html':
