@@ -166,6 +166,14 @@ function do_ratelimit_info()
 //
 // Returns variable for JSON output or title+html for HTML output.
 
+/**
+ * Print historical capture rate information.
+ *
+ * Based on the tcat_captured_phrases table, and output format is
+ * figured out from the HTTP request.
+ *
+ * @return void
+ */
 function do_rate_info()
 {
     global $datasets; // from require_once "../analysis/common/functions.php"
@@ -174,13 +182,17 @@ function do_rate_info()
         $datasets = []; // database tables not yet initialized
     }
 
-    $response_mediatype = choose_mediatype(['application/json', 'text/html',
-                                            'text/plain']);
+    $response_mediatype = choose_mediatype(
+        ['application/json',
+         'text/html',
+         'text/plain']
+    );
 
-    $limit = 200000;
+    $limit = 100000;
     $dbh = pdo_connect();
-    $sql = 'SELECT date(t.created_at) AS date, count(*) AS count FROM (SELECT * FROM tcat_captured_phrases ORDER BY created_at DESC LIMIT 200000) AS t GROUP BY date(t.created_at)';
+    $sql = 'SELECT date(t.created_at) AS date, count(*) AS count FROM (SELECT * FROM tcat_captured_phrases ORDER BY created_at DESC LIMIT :limit) AS t GROUP BY date(t.created_at)';
     $rec = $dbh->prepare($sql);
+    $rec->bindValue(':limit', $limit, PDO::PARAM_INT);
     $rec->execute();
     while ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
         $rates[$res['date']] = +$res['count'];
@@ -192,10 +204,9 @@ function do_rate_info()
             respond_with_json($obj);
             break;
         case 'text/html':
-            // html_begin("Rate info here", [["Rate information"]]);
             echo "<table>";
             echo "<tr><th>date</th><th>count</th></tr>";
-            foreach($rates as $date => $count) {
+            foreach ($rates as $date => $count) {
                 echo "<tr><td class='date'>$date</td><td class='count'>$count</tr>";
             }
             echo "</table>";
