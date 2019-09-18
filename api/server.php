@@ -214,7 +214,10 @@ function do_rate_info()
             break;
         case 'text/plain':
         default:
-            // TODO
+            echo "date" . "," . "count" . PHP_EOL;
+            foreach ($rates as $date => $count) {
+                echo $date . "," . $count . PHP_EOL;
+            }
             break;
     }
 
