@@ -172,9 +172,11 @@ function do_ratelimit_info()
  * Based on the tcat_captured_phrases table, and output format is
  * figured out from the HTTP request.
  *
+ * @param bool $report_missing_days Explicitly report missing days.
+ *
  * @return void
  */
-function do_rate_info()
+function do_rate_info($report_missing_days = TRUE)
 {
     global $datasets; // from require_once "../analysis/common/functions.php"
 
@@ -198,18 +200,20 @@ function do_rate_info()
         $rates[$res['date']] = +$res['count'];
     }
 
-    // Create an array of dates null value, and left merge it with the
-    // rates from database. This way also empty days will be included
-    // in the results and usefully reported.
-    $dates = array();
-    foreach(iterator_to_array(
-        new DatePeriod(
-            new DateTime($days_back * -1 . ' days'),
-            new DateInterval('P1D'),
-            new DateTime)) as $date) {
-        $dates[$date->format('Y-m-d')] = NULL;
+    if($report_missing_days) {
+        // Create an array of dates null value, and left merge it with the
+        // rates from database. This way also empty days will be included
+        // in the results and usefully reported.
+        $dates = array();
+        foreach(iterator_to_array(
+            new DatePeriod(
+                new DateTime($days_back * -1 . ' days'),
+                new DateInterval('P1D'),
+                new DateTime)) as $date) {
+            $dates[$date->format('Y-m-d')] = NULL;
+        }
+        $rates = array_merge($dates, $rates);
     }
-    $rates = array_merge($dates, $rates);
 
     switch ($response_mediatype) {
         case 'application/json':
