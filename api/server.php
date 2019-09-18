@@ -172,11 +172,12 @@ function do_ratelimit_info()
  * Based on the tcat_captured_phrases table, and output format is
  * figured out from the HTTP request.
  *
+ * @param int  $days_back           Number of days of history to report.
  * @param bool $report_missing_days Explicitly report missing days.
  *
  * @return void
  */
-function do_rate_info($report_missing_days = true)
+function do_rate_info($days_back = 30, $report_missing_days = true)
 {
     global $datasets; // from require_once "../analysis/common/functions.php"
 
@@ -190,7 +191,6 @@ function do_rate_info($report_missing_days = true)
          'text/plain']
     );
 
-    $days_back = 30;
     $dbh = pdo_connect();
     $sql = 'SELECT date(t.created_at) AS date, count(*) AS count FROM (SELECT * FROM tcat_captured_phrases WHERE created_at >= CURDATE() - INTERVAL :days_back DAY) AS t GROUP BY date(t.created_at)';
     $rec = $dbh->prepare($sql);
