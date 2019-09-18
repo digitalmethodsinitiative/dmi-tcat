@@ -198,6 +198,19 @@ function do_rate_info()
         $rates[$res['date']] = +$res['count'];
     }
 
+    // Create an array of dates null value, and left merge it with the
+    // rates from database. This way also empty days will be included
+    // in the results and usefully reported.
+    $dates = array();
+    foreach(iterator_to_array(
+        new DatePeriod(
+            new DateTime($days_back * -1 . ' days'),
+            new DateInterval('P1D'),
+            new DateTime)) as $date) {
+        $dates[$date->format('Y-m-d')] = NULL;
+    }
+    $rates = array_merge($dates, $rates);
+
     switch ($response_mediatype) {
         case 'application/json':
             $obj = ['days_back' => $days_back, 'counts' => $rates];
