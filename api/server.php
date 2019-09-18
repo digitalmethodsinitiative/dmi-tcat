@@ -176,7 +176,7 @@ function do_ratelimit_info()
  *
  * @return void
  */
-function do_rate_info($report_missing_days = TRUE)
+function do_rate_info($report_missing_days = true)
 {
     global $datasets; // from require_once "../analysis/common/functions.php"
 
@@ -200,17 +200,19 @@ function do_rate_info($report_missing_days = TRUE)
         $rates[$res['date']] = +$res['count'];
     }
 
-    if($report_missing_days) {
+    if ($report_missing_days) {
         // Create an array of dates null value, and left merge it with the
         // rates from database. This way also empty days will be included
         // in the results and usefully reported.
         $dates = array();
-        foreach(iterator_to_array(
+        foreach (iterator_to_array(
             new DatePeriod(
                 new DateTime($days_back * -1 . ' days'),
                 new DateInterval('P1D'),
-                new DateTime)) as $date) {
-            $dates[$date->format('Y-m-d')] = NULL;
+                new DateTime
+            )
+        ) as $date) {
+            $dates[$date->format('Y-m-d')] = null;
         }
         $rates = array_merge($dates, $rates);
     }
