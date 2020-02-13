@@ -1,9 +1,6 @@
 name: Docker Image CI
 
-on: 
-  push:    
-    branches:
-      - docker
+on: [push, pull_request]
 
 jobs:
 
@@ -15,7 +12,7 @@ jobs:
     - name: Decrypt config file
       run: ./docker/decryptsecret.sh
       env:
-        CONFIG_PASSPHRASE: ${{ secrets.CONFIG_PASSPHRASE }
+        CONFIG_PASSPHRASE: ${{ secrets.CONFIG_PASSPHRASE }}
         
     - name: Build the Docker image
       run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
