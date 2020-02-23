@@ -87,7 +87,11 @@ putenv('LANG=en_US.UTF-8');
 putenv('LANGUAGE=en_US.UTF-8');
 putenv('MYSQL_PWD=' . $dbpass);     /* this avoids having to put the password on the command-line */
 
-$cmd = "$bin_zcat $file | $bin_mysql --default-character-set=utf8mb4 -u$dbuser -h $hostname $database";
+/* Convert MyISAM storage definitions to TokuDB ones, and convert to utf8mb4 on-the-fly as well */ 
+$engine_options = MYSQL_ENGINE_OPTIONS;
+$hot_conversion = "sed -e 's/^  FULLTEXT KEY `from_user_description` (`from_user_description`),/  KEY `from_user_description` (`from_user_description`(32)),/g' | sed -e 's/^  FULLTEXT KEY `text` (`text`)/  KEY `text` (`text`(32))/g' | sed -e 's/^  FULLTEXT KEY `url_followed` (`url_followed`)/   KEY `url_followed` (`url_followed`(32))/g' | sed -e 's/^) ENGINE=MyISAM /) $engine_options /g' | sed -e 's/DEFAULT CHARSET=utf8;$/DEFAULT CHARSET=utf8mb4;/g'";
+
+$cmd = "$bin_zcat $file | $hot_conversion | $bin_mysql --default-character-set=utf8mb4 -u$dbuser -h $hostname $database";
 system($cmd, $return_code);
 
 if ($return_code == 0) {

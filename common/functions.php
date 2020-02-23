@@ -97,6 +97,40 @@ function validate_capture_phrases($keywords) {
 }
 
 /**
+ * Can a phrase be found inside a tweet? This function is a wrapper around a regular expression which interprets
+ * the concept of a word boundary in a way that makes sense for tweets.
+ */
+function tweet_contains_phrase($text, $keyword) {
+    $keyword = mb_strtolower($keyword);
+    $text = mb_strtolower($text);
+    $quoted = preg_quote($keyword);
+    if (mb_eregi("^$quoted$", $text) || mb_eregi("^$quoted\W", $text) || mb_eregi("\W$quoted$", $text) ||
+        mb_eregi("\W$quoted\W", $text)) {
+        /*
+         * NOTICE: With regards to hashtags and mentions. As '@' and '#' are considered non-word characters by the regular expression engine, the
+         * 'globalwarming' will match in '#globalwarming' as documented (in the FAQ).
+         * 'America' will match in '@america' as should be documented (but has been the historical behaviour? TODO: RESEARCH).
+         * 'global' will NOT match 'globalwarming', as documented.
+         * 'Love!' will however match 'Love!?sick' and we accept that.
+         *
+         * We could opt to manually look for whitespaces etc. but this is very error prone due to UTF8(MB4) issues. We'd basically be designing
+         * our own word boundary scheme. If someone now immediately follows up 'Love!' with a heart emojij for example, our current check would
+         * include that tweet (as is desired, because an emojij is normally seen as a distinct entity) but if we'd look for whitespaces and comma's
+         * etc. it would actually fail on that content.
+         */
+        return TRUE;
+    } else if ((substr($keyword, 0, 1) == '#' || substr($keyword, 0, 1) == '@') &&
+        mb_eregi("$quoted\W", $text)) {
+        /*
+         * The check works because we know our keyword STARTS with '#' or '@' and therefore we cannot match some substring of a different hashtag
+         * or twitter handle.
+         */
+        return TRUE;
+    }
+    return FALSE;
+}
+
+/**
  *  Is the URL expander enabled?
  */
 function is_url_expander_enabled() {
@@ -154,7 +188,7 @@ function create_tweet_cache() {
     if ($sufficient_memory) {
         $sql = "CREATE TEMPORARY TABLE $tweet_cache (id BIGINT PRIMARY KEY) ENGINE=Memory";
     } else {
-        $sql = "CREATE TEMPORARY TABLE $tweet_cache (id BIGINT PRIMARY KEY) ENGINE=MyISAM";
+        $sql = "CREATE TEMPORARY TABLE $tweet_cache (id BIGINT PRIMARY KEY) ENGINE=TokuDB COMPRESSION=TOKUDB_LZMA";
     }
     try {
         $create = $dbh->prepare($sql);
@@ -162,7 +196,7 @@ function create_tweet_cache() {
     } catch (PDOException $Exception) {
         /* Fall-back to using disk table */
         pdo_error_report($Exception);
-        $sql = "CREATE TEMPORARY TABLE $tweet_cache (id BIGINT PRIMARY KEY) ENGINE=MyISAM";
+        $sql = "CREATE TEMPORARY TABLE $tweet_cache (id BIGINT PRIMARY KEY) ENGINE=TokuDB COMPRESSION=TOKUDB_LZMA";
         $create = $dbh->prepare($sql);
         $create->execute();
     }

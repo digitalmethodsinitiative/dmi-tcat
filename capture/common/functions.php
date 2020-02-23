@@ -43,11 +43,11 @@ function create_error_logs() {
         $creating_tables_for_fresh_install = true;
     }
 
-    $sql = 'create table if not exists tcat_error_ratelimit ( id bigint auto_increment, type varchar(32), start datetime not null, end datetime not null, tweets bigint not null, primary key(id), index(type), index(start), index(end) ) ENGINE=MyISAM';
+    $sql = 'create table if not exists tcat_error_ratelimit ( id bigint auto_increment, type varchar(32), start datetime not null, end datetime not null, tweets bigint not null, primary key(id), index(type), index(start), index(end) ) ' . MYSQL_ENGINE_OPTIONS;
     $h = $dbh->prepare($sql);
     $h->execute();
 
-    $sql = 'create table if not exists tcat_error_gap ( id bigint auto_increment, type varchar(32), start datetime not null, end datetime not null, primary key(id), index(type), index(start), index(end) ) ENGINE=MyISAM';
+    $sql = 'create table if not exists tcat_error_gap ( id bigint auto_increment, type varchar(32), start datetime not null, end datetime not null, primary key(id), index(type), index(start), index(end) ) ' . MYSQL_ENGINE_OPTIONS;
     $h = $dbh->prepare($sql);
     $h->execute();
 
@@ -63,7 +63,7 @@ function create_error_logs() {
     `value` varchar(1024),
     PRIMARY KEY `variable` (`variable`),
             KEY `value` (`value`)
-    ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4";
+    ) " . MYSQL_ENGINE_OPTIONS . " DEFAULT CHARSET=utf8mb4";
     $create = $dbh->prepare($sql);
     $create->execute();
 
@@ -140,8 +140,7 @@ function create_bin($bin_name, $dbh = false) {
                     KEY `tweet_id` (`tweet_id`),
                     KEY `text` (`text`),
                     KEY `from_user_name` (`from_user_name`)
-            ) ENGINE=MyISAM  DEFAULT CHARSET=utf8mb4";
-
+            ) " . MYSQL_ENGINE_OPTIONS . " DEFAULT CHARSET=utf8mb4";
         $create_hashtags = $dbh->prepare($sql);
         $create_hashtags->execute();
 
@@ -154,7 +153,7 @@ function create_bin($bin_name, $dbh = false) {
                     KEY `user_id` (`user_id`),
                     KEY `tweet_id` (`tweet_id`),
                     KEY `country` (`country`)
-            ) ENGINE=MyISAM  DEFAULT CHARSET=utf8mb4";
+            ) " . MYSQL_ENGINE_OPTIONS . " DEFAULT CHARSET=utf8mb4";
 
         $create_withheld = $dbh->prepare($sql);
         $create_withheld->execute();
@@ -164,7 +163,7 @@ function create_bin($bin_name, $dbh = false) {
             `id` varchar(32) NOT NULL,
             `tweet_id` bigint(20) NOT NULL,
             PRIMARY KEY (`id`, `tweet_id`)
-            ) ENGINE=MyISAM  DEFAULT CHARSET=utf8mb4";
+            ) " . MYSQL_ENGINE_OPTIONS . " DEFAULT CHARSET=utf8mb4";
 
         $create_places = $dbh->prepare($sql);
         $create_places->execute();
@@ -186,7 +185,7 @@ function create_bin($bin_name, $dbh = false) {
                     KEY `from_user_id` (`from_user_id`),
                     KEY `to_user` (`to_user`),
                     KEY `to_user_id` (`to_user_id`)
-            ) ENGINE=MyISAM  DEFAULT CHARSET=utf8mb4";
+            ) " . MYSQL_ENGINE_OPTIONS . " DEFAULT CHARSET=utf8mb4";
 
         $create_mentions = $dbh->prepare($sql);
         $create_mentions->execute();
@@ -240,11 +239,11 @@ function create_bin($bin_name, $dbh = false) {
                     KEY `possibly_sensitive` (`possibly_sensitive`),
                     KEY `withheld_copyright` (`withheld_copyright`),
                     KEY `withheld_scope` (`withheld_scope`),
-                    FULLTEXT KEY `from_user_description` (`from_user_description`),
-                    FULLTEXT KEY `text` (`text`)
-                    ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4";
+                    KEY `from_user_description` (`from_user_description`(32)),
+                    KEY `text` (`text`(32))
+                    ) " . MYSQL_ENGINE_OPTIONS . " DEFAULT CHARSET=utf8mb4";
 
-        $create_tweets = $dbh->prepare($sql);
+	$create_tweets = $dbh->prepare($sql);
         $create_tweets->execute();
 
         $sql = "CREATE TABLE IF NOT EXISTS " . quoteIdent($bin_name . "_urls") . " (
@@ -264,7 +263,7 @@ function create_bin($bin_name, $dbh = false) {
                     KEY `from_user_id` (`from_user_id`),
                     KEY `url_followed` (`url_followed`),
                     KEY `url_expanded` (`url_expanded`)
-            ) ENGINE=MyISAM  DEFAULT CHARSET=utf8mb4";
+            ) " . MYSQL_ENGINE_OPTIONS . " DEFAULT CHARSET=utf8mb4";
 
         $create_urls = $dbh->prepare($sql);
         $create_urls->execute();
@@ -287,7 +286,7 @@ function create_bin($bin_name, $dbh = false) {
                     KEY `photo_size_width` (`photo_size_width`),
                     KEY `photo_size_height` (`photo_size_height`),
                     KEY `photo_resize` (`photo_resize`)
-            ) ENGINE=MyISAM  DEFAULT CHARSET=utf8mb4";
+            ) " . MYSQL_ENGINE_OPTIONS . " DEFAULT CHARSET=utf8mb4";
 
         $create_media = $dbh->prepare($sql);
         $create_media->execute();
@@ -313,7 +312,7 @@ function create_admin() {
     KEY `querybin` (`querybin`),
     KEY `type` (`type`),
     KEY `active` (`active`)
-    ) ENGINE = MyISAM DEFAULT CHARSET = utf8mb4";
+    ) " . MYSQL_ENGINE_OPTIONS . " DEFAULT CHARSET = utf8mb4";
     $create = $dbh->prepare($sql);
     $create->execute();
 
@@ -326,7 +325,7 @@ function create_admin() {
     KEY `querybin_id` (`querybin_id`),
     KEY `starttime` (`starttime`),
     KEY `endtime` (`endtime`)
-    ) ENGINE = MyISAM DEFAULT CHARSET = utf8mb4";
+    ) " . MYSQL_ENGINE_OPTIONS . " DEFAULT CHARSET = utf8mb4";
     $create = $dbh->prepare($sql);
     $create->execute();
 
@@ -335,7 +334,7 @@ function create_admin() {
     `phrase` VARCHAR(255) NOT NULL,
     PRIMARY KEY (`id`),
     KEY `phrase` (`phrase`)
-    ) ENGINE = MyISAM DEFAULT CHARSET = utf8mb4";
+    ) " . MYSQL_ENGINE_OPTIONS . " DEFAULT CHARSET = utf8mb4";
     $create = $dbh->prepare($sql);
     $create->execute();
 
@@ -343,7 +342,7 @@ function create_admin() {
     `id` bigint NOT NULL,
     `user_name` varchar(255),
     PRIMARY KEY `id` (`id`)
-    ) ENGINE = MyISAM DEFAULT CHARSET = utf8mb4";
+    ) " . MYSQL_ENGINE_OPTIONS . " DEFAULT CHARSET = utf8mb4";
     $create = $dbh->prepare($sql);
     $create->execute();
 
@@ -358,7 +357,7 @@ function create_admin() {
     KEY `endtime` (`endtime`),
     KEY `phrase_id` (`phrase_id`),
     KEY `querybin_id` (`querybin_id`)
-    ) ENGINE = MyISAM DEFAULT CHARSET = utf8mb4";
+    ) " . MYSQL_ENGINE_OPTIONS . " DEFAULT CHARSET = utf8mb4";
     $create = $dbh->prepare($sql);
     $create->execute();
 
@@ -373,7 +372,7 @@ function create_admin() {
     KEY `endtime` (`endtime`),
     KEY `user_id` (`user_id`),
     KEY `querybin_id` (`querybin_id`)
-    ) ENGINE = MyISAM DEFAULT CHARSET = utf8mb4";
+    ) " . MYSQL_ENGINE_OPTIONS . " DEFAULT CHARSET = utf8mb4";
     $create = $dbh->prepare($sql);
     $create->execute();
 
@@ -382,7 +381,7 @@ function create_admin() {
     `task` VARCHAR(32) NOT NULL,
     `instruction` VARCHAR(255) NOT NULL,
     `ts_issued` timestamp DEFAULT current_timestamp,
-    primary key(id) ) ENGINE = MyISAM DEFAULT CHARSET = utf8mb4";
+    primary key(id) ) " . MYSQL_ENGINE_OPTIONS . " DEFAULT CHARSET = utf8mb4";
     $create = $dbh->prepare($sql);
     $create->execute();
 
@@ -442,7 +441,7 @@ function create_admin() {
     `phrase_id` BIGINT(20) NOT NULL,
     `created_at` DATETIME NOT NULL,
     PRIMARY KEY (`tweet_id`, `phrase_id`),
-    KEY `created_at` (`created_at`) ) ENGINE = MyISAM DEFAULT CHARSET = utf8mb4";
+    KEY `created_at` (`created_at`) ) " . MYSQL_ENGINE_OPTIONS . " DEFAULT CHARSET = utf8mb4";
     $create = $dbh->prepare($sql);
     $create->execute();
 
@@ -1667,19 +1666,45 @@ class Tweet {
             /*
              * Incorporate full retweet text from retweeted_status to cope with possible truncated due to character limit.
              * This fix makes the stored text more closely resemble the tweet a shown to the end-user.
-             * See the discussion here: https://github.com/digitalmethodsinitiative/dmi-tcat/issues/74
+             * See the discussions here: https://github.com/digitalmethodsinitiative/dmi-tcat/issues/74
+             * See the discussions here: https://github.com/digitalmethodsinitiative/dmi-tcat/issues/363
+             *
+             * WARNING: this procedure invalidates character indices for usernames inside the tweet text (i.e. where does the username does show up)
+             * That data is currently discarded by TCAT however.
              */
 
             // Determine the full, untruncated retweet text using a similar mechanism as used for non-retweets
             if (!isset($data["retweeted_status"]["text"])) {
                 /* running in extended context */
                 $retweet_text = $data["retweeted_status"]["full_text"];
+
+                /* add the retweeting user to the user mentions */
+                if (!empty($data["retweeted_status"]["entities"]["user_mentions"])) {
+                    array_unshift($data["retweeted_status"]["entities"]["user_mentions"], $data["entities"]["user_mentions"][0]);
+                } else {
+                    $data["retweeted_status"]["entities"]["user_mentions"] = $data["entities"]["user_mentions"];
+                }
+                /* pull the entities up from the retweeted status */
+                $data["entities"] = $data["retweeted_status"]["entities"];
+
+
             } else if (!array_key_exists('extended_tweet', $data["retweeted_status"])) {
                 /* running in compatibility mode BUT the 'extended_tweet' JSON field is not available. this means the retweet is <= 140 characters */
                 $retweet_text = $data["retweeted_status"]["text"];
             } else {
                 /* Running in compatibility mode AND the 'extended_tweet' JSON field is available. this means the retweet is > 140 characters */
                 $retweet_text = $data["retweeted_status"]["extended_tweet"]["full_text"];
+
+                /* add the retweeting user to the user mentions */
+                if (!empty($data["retweeted_status"]["extended_tweet"]["entities"]["user_mentions"])) {
+                    array_unshift($data["retweeted_status"]["extended_tweet"]["entities"]["user_mentions"], $data["entities"]["user_mentions"][0]);
+                } else {
+                    $data["retweeted_status"]["extended_tweet"]["entities"]["user_mentions"] = $data["entities"]["user_mentions"];
+                }
+                /* pull the entities up from the retweeted status */
+                $data["entities"] = $data["retweeted_status"]["extended_tweet"]["entities"];
+
+
             }
 
             $store_text = "RT @" . $data["retweeted_status"]["user"]["screen_name"] . ": " . $retweet_text;
@@ -1797,6 +1822,10 @@ class Tweet {
                 $media[] = $m;
             }
         }
+
+
+        // The JSON double encode/decode trick to convert a PHP object to a nested associative array is described here:
+        // https://stackoverflow.com/a/16111687
 
         $this->urls = json_decode(json_encode($urls, FALSE));
         $this->media = json_decode(json_encode($media, FALSE));
@@ -2314,7 +2343,7 @@ class TwitterRelations {
                 user2_realname varchar(255),
 		KEY `user1_id` (`user1_id`), 
                 KEY `user2_id` (`user2_id`)
-		) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4";
+		) " . MYSQL_ENGINE_OPTIONS . " DEFAULT CHARSET=utf8mb4";
 
         if ($dbh->exec($sql)) {
             return TRUE;
@@ -2353,7 +2382,12 @@ function insert_captured_phrase_ids($captured_phrase_ids) {
     if (count($captured_phrase_ids) > 3) {
         $moresets = count($captured_phrase_ids) / 3 - 1;
     }
-    $sql = "INSERT DELAYED IGNORE INTO tcat_captured_phrases ( tweet_id, phrase_id, created_at ) VALUES ( ?, ?, ? )" . str_repeat(", (?, ?, ?)", $moresets);
+    if (defined('USE_INSERT_DELAYED') && USE_INSERT_DELAYED) {
+        $extra = 'DELAYED';
+    } else {
+        $extra = '';
+    }
+    $sql = "INSERT $extra IGNORE INTO tcat_captured_phrases ( tweet_id, phrase_id, created_at ) VALUES ( ?, ?, ? )" . str_repeat(", (?, ?, ?)", $moresets);
     $h = $dbh->prepare($sql);
     for ($i = 0; $i < count($captured_phrase_ids); $i++) {
         // bindParam() expects its first parameter ( index of the ? placeholder ) to start with 1
@@ -2541,6 +2575,11 @@ function tracker_run() {
 
 function tracker_streamCallback($data, $length, $metrics) {
     global $capturebucket, $lastinsert;
+
+    if (defined('ENABLE_JSON_DUMP') && ENABLE_JSON_DUMP) {
+        file_put_contents(BASE_FILE . 'logs/stream.dump.json', $data . ",\n", FILE_APPEND|LOCK_EX);
+    }
+
     $now = time();
     $data = json_decode($data, true);
 
@@ -2807,7 +2846,7 @@ function processtweets($capturebucket) {
                             $all = true;
 
                             foreach ($tmplist as $tmp) {
-                                if (stripos($tweet->text, $tmp) == FALSE) {
+                                if (tweet_contains_phrase($data["text"], $tmp) == FALSE) {
                                     $all = false;
                                     break;
                                 }
@@ -2821,7 +2860,7 @@ function processtweets($capturebucket) {
 
                             // treat quoted queries as single words
                             $query = preg_replace("/'/", "", $query);
-                            if (stripos($tweet->text, $query) !== FALSE) {
+                            if (tweet_contains_phrase($data["text"], $query)) {
                                 $pass = true;
                             }
                         }

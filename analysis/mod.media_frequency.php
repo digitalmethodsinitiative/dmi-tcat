@@ -70,6 +70,9 @@ $minf = isset($_GET['minf']) ? $minf = $_GET['minf'] : 1;
         foreach ($media_url_count as $datepart => $url_count) {
             arsort($url_count);
             foreach ($url_count as $url => $count) {
+                if ($minf > 0 && $count < $minf) {
+                    continue;
+                }
                 $csv->newrow();
                 $csv->addfield($datepart);
                 $csv->addfield($url);

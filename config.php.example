@@ -176,6 +176,15 @@ define('TCAT_SYSLOAD_MAXIMUM', 55);
 mb_internal_encoding("UTF-8");
 
 /*
+ * Set default MySQL storage engine for the creation of new tables
+ *
+ * Historically, TCAT used the MyISAM storage engine exclusively, but newer versions may support multiple engines.
+ * Since April 2019 the preferred engine for new TCAT deployments is TokuDB. 
+ * (EXPERTS ONLY)
+ */
+define('MYSQL_ENGINE_OPTIONS', 'ENGINE=TokuDB COMPRESSION=TOKUDB_LZMA');
+
+/*
  * set location of php
  * find the location by typing 'which php' on the command line of your terminal
  */
@@ -206,5 +215,10 @@ define('DISABLE_INSERT_IGNORE', false);
  * You will want to change this only when you have forked the repository.
  */
 define('REPOSITORY_URL', 'https://github.com/digitalmethodsinitiative/dmi-tcat.git');
+
+/*
+ * Enable producing a (huge) JSON dump with raw Tweet contents for debugging purposes.
+ */
+define('ENABLE_JSON_DUMP', false);
  
 ?>

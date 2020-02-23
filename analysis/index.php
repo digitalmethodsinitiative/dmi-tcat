@@ -53,6 +53,7 @@ if (defined('ANALYSIS_URL'))
         "&exclude=" + $("#ipt_exclude").val().replace(/#/g,"%23") +
             "&from_user_name=" + $("#ipt_from_user").val() +
             "&from_user_lang=" + $("#ipt_user_lang").val() +
+            "&lang=" + $("#ipt_lang").val() +
             "&exclude_from_user_name=" + $("#ipt_exclude_from_user").val() +
             "&from_user_description=" + $("#ipt_user_bio").val() +
             "&from_source=" + $("#ipt_from_source").val().replace(/#/g,"%23") +
@@ -93,6 +94,10 @@ if (defined('ANALYSIS_URL'))
     }
     function askFrequency() {
         var minf = parseInt(prompt("Specify the minimum frequency for data to be included in the export:","2"), 10);
+        return minf;
+    }
+    function askMediaFrequency() {
+        var minf = parseInt(prompt("Specify the minimum frequency for data to be included in the export:","0"), 10);
         return minf;
     }
     function askRetweetFrequency() {
@@ -255,6 +260,9 @@ if (defined('ANALYSIS_URL'))
                         </tr>
                         <tr>
                             <td class="tbl_head">User language: </td><td><input type="text" id="ipt_user_lang" size="60" name="from_user_lang"  value="<?php echo $from_user_lang; ?>" /> (empty: any language*)</td>
+                        </tr>
+                        <tr>
+                            <td class="tbl_head">Tweet language: </td><td><input type="text" id="ipt_lang" size="60" name="lang"  value="<?php echo $lang; ?>" /> (empty: any language*)</td>
                         </tr>
 
                         <tr>
@@ -610,7 +618,7 @@ foreach ($linedata as $key => $value) {
 
                 <legend>Export selected data</legend>
 
-                <p class="txt_desc">All exports have the following filename convention: {dataset}-{startdate}-{enddate}-{query}-{exclude}-{from_user_name}-{exclude_from_user_name}-{from_user_lang}-{url_query}-{media_url_query}--{module_name}-{module_settings}-{dmi-tcat_version}.{filetype}</p>
+                <p class="txt_desc">All exports have the following filename convention: {dataset}-{startdate}-{enddate}-{query}-{exclude}-{from_user_name}-{exclude_from_user_name}-{from_user_lang}-{lang}-{url_query}-{media_url_query}--{module_name}-{module_settings}-{dmi-tcat_version}.{filetype}</p>
 
                 <p>
                     <div class='txt_desc' style='background-color: #eee; padding: 5px;'>Output format for tables:
@@ -759,7 +767,7 @@ foreach ($linedata as $key => $value) {
                     <h3>Media frequency</h3>
                     <div class="txt_desc">Contains media URLs and the number of times they have been used.</div>
                     <div class="txt_desc">Use: get a grasp of the most popular media.</div>
-                    <div class="txt_link"> &raquo;  <a href="" onclick="var minf = askFrequency(); $('#whattodo').val('media_frequency&minf='+minf+getInterval());sendUrl('mod.media_frequency.php');return false;">launch</a></div>
+                    <div class="txt_link"> &raquo;  <a href="" onclick="var minf = askMediaFrequency(); $('#whattodo').val('media_frequency&minf='+minf+getInterval());sendUrl('mod.media_frequency.php');return false;">launch</a></div>
 
 <!--                    <hr/> -->
 
@@ -963,6 +971,17 @@ foreach ($linedata as $key => $value) {
                         <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('url_user');sendUrl('mod.url_user.php');return false;">launch</a></div>
 
                         <hr />
+
+                        <hr />
+                        <h3>Bipartite Host-user graph</h3>
+                        <div class="txt_desc">Produces a <a href="http://en.wikipedia.org/wiki/Bipartite_graph">bipartite graph</a> based on co-occurence of hostnames and users. If a user wrote a tweet with a certain hostname, there will be a link between that user and the hostname.
+                            The more often they appear together, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>").</div>
+                        <div class="txt_desc">Use: explore the relations between users and hosts, find and analyze which users group around which hosts.</div>
+                        <div class="txt_link"> &raquo; <a href="" onclick="$('#whattodo').val('host_user');sendUrl('mod.host_user.php');return false;">launch</a></div>
+
+                        <hr />
+
+
 
                         <h3>Bipartite hashtag-URL graph</h3>
                         <div class="txt_desc">Creates a .csv file that contains URLs and the number of times they have co-occured with a particular hashtag.</div>

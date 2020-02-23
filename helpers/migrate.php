@@ -329,7 +329,7 @@ function create_bin_def($bin_name) {
 		KEY `tweet_id` (`tweet_id`),
 		KEY `text` (`text`),
                 KEY `from_user_name` (`from_user_name`)
-		) ENGINE=MyISAM  DEFAULT CHARSET=utf8;" . PHP_EOL;
+		) ENGINE=TokuDB COMPRESSION=TOKUDB_LZMA  DEFAULT CHARSET=utf8;" . PHP_EOL;
     $sql .= "CREATE TABLE IF NOT EXISTS " . $bin_name . "_mentions (
 		id int(11) NOT NULL AUTO_INCREMENT,
 		tweet_id bigint(20) NOT NULL,
@@ -345,7 +345,7 @@ function create_bin_def($bin_name) {
                 KEY `from_user_id` (`from_user_id`),
                 KEY `to_user` (`to_user`),
                 KEY `to_user_id` (`to_user_id`)
-		) ENGINE=MyISAM  DEFAULT CHARSET=utf8;" . PHP_EOL;
+		) ENGINE=TokuDB COMPRESSION=TOKUDB_LZMA  DEFAULT CHARSET=utf8;" . PHP_EOL;
     $sql .= "CREATE TABLE IF NOT EXISTS " . $bin_name . "_tweets (
 		id bigint(20) NOT NULL,
                 created_at datetime NOT NULL,
@@ -384,7 +384,7 @@ function create_bin_def($bin_name) {
                 KEY `in_reply_to_status_id` (`in_reply_to_status_id`),
                 FULLTEXT KEY `from_user_description` (`from_user_description`),
                 FULLTEXT KEY `text` (`text`)
-                ) ENGINE=MyISAM DEFAULT CHARSET=utf8;" . PHP_EOL;
+                ) ENGINE=TokuDB COMPRESSION=TOKUDB_LZMA DEFAULT CHARSET=utf8;" . PHP_EOL;
     $sql .= "CREATE TABLE IF NOT EXISTS " . $bin_name . "_urls (
 		id int(11) NOT NULL AUTO_INCREMENT,
 		tweet_id bigint(20) NOT NULL,
@@ -402,7 +402,7 @@ function create_bin_def($bin_name) {
                 KEY `from_user_id` (`from_user_id`),
                 FULLTEXT KEY `url_followed` (`url_followed`),
                 KEY `url_expanded` (`url_expanded`)
-		) ENGINE=MyISAM  DEFAULT CHARSET=utf8;" . PHP_EOL;
+		) ENGINE=TokuDB COMPRESSION=TOKUDB_LZMA  DEFAULT CHARSET=utf8;" . PHP_EOL;
     return $sql;
 }
 
