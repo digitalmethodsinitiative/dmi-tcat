@@ -526,11 +526,6 @@ while [ "$BATCH_MODE" != "y" ]; do
 	echo
 	echo "Install DMI TCAT with these parameters:"
 
-	echo "  Twitter consumer key: $CONSUMERKEY"
-	echo "  Twitter consumer secret: $CONSUMERSECRET"
-	echo "  Twitter user token: $USERTOKEN"
-	echo "  Twitter user secret: $USERSECRET"
-
 	case "$CAPTURE_MODE" in
 	    1) echo "  Tweet capture mode: track phrases and keywords";;
 	    2) echo "  Tweet capture mode: follow Twitter users";;
