@@ -21,8 +21,6 @@ RUN /bin/bash ./tcat-install-linux.sh -y -c config.txt
 #expose port
 EXPOSE 80
 
-#start sql
-CMD sudo /usr/sbin/mysqld -u mysql
 
-#start apache
-CMD apachectl -D FOREGROUND
+#start apache and mysql
+CMD sudo service mysql start && apachectl -D FOREGROUND
