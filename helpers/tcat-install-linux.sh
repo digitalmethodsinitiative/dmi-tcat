@@ -1025,8 +1025,12 @@ fi
 tput bold
 echo "Disabling Linux kernel transparant HugePage support" 1>&2
 tput sgr0
-sudo apt install hugepages
-sudo hugeadm --thp-never
+if test -f /sys/kernel/mm/transparent_hugepage/enabled; then
+   echo never > /sys/kernel/mm/transparent_hugepage/enabled
+fi
+if test -f /sys/kernel/mm/transparent_hugepage/defrag; then
+   echo never > /sys/kernel/mm/transparent_hugepage/defrag
+fi
 
 # Install the TokuDB storage engine
 
