@@ -875,7 +875,8 @@ fi
 #----------------------------------------------------------------
 # Generate random passwords, if they are a blank string.
 
-apt-get -qq install -y openssl
+apt-get update
+apt-get -qq install -y openssl apt-utils
 
 if [ -z "$DBPASS" ]; then
     DBPASS=`openssl rand -base64 32 | tr -c -d 0-9A-Za-z | tr -d O01iIl`
@@ -993,12 +994,12 @@ elif [ -n "$DEBIAN_VERSION" ]; then
 
     apt-get -y install \
     apache2-utils \
-    libapache2-mod-php7.0 \
-    php7.0-mysql php7.0-curl php7.0-cli php-patchwork-utf8 php7.0-mbstring
+    libapache2-mod-php7.2 \
+    php7.2-mysql php7.3-curl php7.2-cli php-patchwork-utf8 php7.2-mbstring
 
     # Build and enable PHP GEOS module for PHP 7.0
-
-    apt-get install -y build-essential automake make gcc g++ php7.0-dev
+    echo "asd"
+    apt-get install -y build-essential automake make gcc g++ php7.2-dev
     wget http://download.osgeo.org/geos/geos-3.6.2.tar.bz2
     tar -xjf geos-3.6.2.tar.bz2
     cd geos-3.6.2/
