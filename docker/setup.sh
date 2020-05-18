@@ -994,12 +994,12 @@ elif [ -n "$DEBIAN_VERSION" ]; then
 
     apt-get -y install \
     apache2-utils \
-    libapache2-mod-php7.2 \
-    php7.2-mysql php7.3-curl php7.2-cli php-patchwork-utf8 php7.2-mbstring
+    libapache2-mod-php7.3 \
+    php7.3-mysql php7.3-curl php7.3-cli php-patchwork-utf8 php7.3-mbstring
 
     # Build and enable PHP GEOS module for PHP 7.0
     echo "asd"
-    apt-get install -y build-essential automake make gcc g++ php7.2-dev
+    apt-get install -y build-essential automake make gcc g++ php7.3-dev
     wget http://download.osgeo.org/geos/geos-3.6.2.tar.bz2
     tar -xjf geos-3.6.2.tar.bz2
     cd geos-3.6.2/
