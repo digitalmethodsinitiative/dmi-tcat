@@ -21,8 +21,6 @@ require_once __DIR__ . '/common/functions.php';
 
         <script type="text/javascript">
 
-            google.load("visualization", "1", {packages:["corechart"]});
-
             function sendUrl(_file) {
                 var _d1 = $("#ipt_startdate").val();
                 var _d2 = $("#ipt_enddate").val();
@@ -501,17 +499,22 @@ if (defined('ANALYSIS_URL'))
 
                     <script type="text/javascript">
 
-                        var data = new google.visualization.DataTable();
-                        data.addColumn('string', 'Slice');
-                        data.addColumn('number', 'Percent');
-                        data.addRows(2);
-                        data.setValue(0, 0, 'Tweets containing links');
-                        data.setValue(0, 1, <?php echo $numlinktweets; ?>);
-                        data.setValue(1, 0, 'Tweets containing no links');
-                        data.setValue(1, 1, <?php echo $numtweets - $numlinktweets; ?>);
+                        google.load("visualization", "1", {packages:["corechart"]});
+                        google.setOnLoadCallback(drawPieChart);
 
-                        var chart = new google.visualization.PieChart(document.getElementById('if_panel_linkchart'));
-                        chart.draw(data, {width: 380, height: 160});
+                        function drawPieChart() {
+                            var data = new google.visualization.DataTable();
+                            data.addColumn('string', 'Slice');
+                            data.addColumn('number', 'Percent');
+                            data.addRows(2);
+                            data.setValue(0, 0, 'Tweets containing links');
+                            data.setValue(0, 1, <?php echo $numlinktweets; ?>);
+                            data.setValue(1, 0, 'Tweets containing no links');
+                            data.setValue(1, 1, <?php echo $numtweets - $numlinktweets; ?>);
+
+                            var chart = new google.visualization.PieChart(document.getElementById('if_panel_linkchart'));
+                            chart.draw(data, {width: 380, height: 160});
+                        }
 
                     </script>
 
@@ -530,33 +533,49 @@ if (defined('ANALYSIS_URL'))
 
                 <script type="text/javascript">
 
-                    var data = new google.visualization.DataTable();
+                    google.setOnLoadCallback(drawLineChart);
 
-                    data.addColumn('string', 'Date');
-                    data.addColumn('number', 'Tweets');
-                    data.addColumn('number', 'Users');
-                    data.addColumn('number', 'Locations');
-                    data.addColumn('number', 'Geo coded');
+                    function drawLineChart() {
+                        var data = new google.visualization.DataTable();
 
-<?php
-echo "data.addRows(" . count($linedata) . ");";
+                        data.addColumn('string', 'Date');
+                        data.addColumn('number', 'Tweets');
+                        data.addColumn('number', 'Users');
+                        data.addColumn('number', 'Locations');
+                        data.addColumn('number', 'Geo coded');
 
-$counter = 0;
+                        <?php
+                        echo "data.addRows(" . count($linedata) . ");";
 
-foreach ($linedata as $key => $value) {
+                        $counter = 0;
 
-    echo "data.setValue(" . $counter . ", 0, '" . $key . "');";
-    echo "data.setValue(" . $counter . ", 1, " . $value["tweets"] . ");";
-    echo "data.setValue(" . $counter . ", 2, " . $value["users"] . ");";
-    echo "data.setValue(" . $counter . ", 3, " . $value["locations"] . ");";
-    echo "data.setValue(" . $counter . ", 4, " . $value["geolocs"] . ");";
+                        foreach ($linedata as $key => $value) {
 
-    $counter++;
-}
-?>
+                            echo "data.setValue(" . $counter . ", 0, '" . $key . "');";
+                            echo "data.setValue(" . $counter . ", 1, " . $value["tweets"] . ");";
+                            echo "data.setValue(" . $counter . ", 2, " . $value["users"] . ");";
+                            echo "data.setValue(" . $counter . ", 3, " . $value["locations"] . ");";
+                            echo "data.setValue(" . $counter . ", 4, " . $value["geolocs"] . ");";
 
-    var chart = new google.visualization.LineChart(document.getElementById('if_panel_linegraph'));
-    chart.draw(data, {width:1000, height:390, fontSize:9, lineWidth:1, hAxis:{slantedTextAngle:90, slantedText:true}, chartArea:{left:50,top:10,width:850,height:300}});
+                            $counter++;
+                        }
+                        ?>
+
+                        var chart = new google.visualization.LineChart(document.getElementById('if_panel_linegraph'));
+                        chart.draw(data, {
+                            width: 1000,
+                            height: 390,
+                            fontSize: 9,
+                            lineWidth: 1,
+                            hAxis: {slantedTextAngle: 90, slantedText: true},
+                            chartArea: {
+                                left: 50,
+                                top: 10,
+                                width: 850,
+                                height: 300
+                            }
+                        })
+                    }
 
                 </script>
 
