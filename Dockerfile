@@ -1,5 +1,5 @@
 #
-FROM jrei/systemd-ubuntu:19.10
+FROM jrei/systemd-ubuntu:18.04
 
 RUN apt-get update
 RUN apt-get install -y lsb-release iproute2 sudo
