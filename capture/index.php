@@ -220,7 +220,7 @@ $lastRateLimitHit = getLastRateLimitHit();
                                 <div class='if_row_header' style='height: 100px;'>Users to track:</div>
                                 <div class='if_row_content'>
                                     <input id="newbin_users" name="newbin_users" type="text"/><br/>
-                                    Specify a comma-separated list of user IDs, indicating the users whose Tweets should be captured. See the <a href='https://dev.twitter.com/docs/streaming-apis/parameters#follow' target='_blank'>follow parameter documentation</a> for what tweets will be collected using this method.<br><Br>Note that you can only follow a maximum of 5000 user ids at the same time (for all query bins combined). 
+                                    Specify a comma-separated list of user IDs, indicating the users whose Tweets should be captured. See the <a href='https://developer.twitter.com/en/docs/tweets/filter-realtime/guides/basic-stream-parameters#track' target='_blank'>follow parameter documentation</a> for what tweets will be collected using this method.<br><Br>Note that you can only follow a maximum of 5000 user ids at the same time (for all query bins combined). 
                                     <br/><br>
                                     Example bin: 1304933132,1286333395,856010760,381660841,381453862,224572743
                                 </div>
