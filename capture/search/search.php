@@ -52,7 +52,7 @@ $ratefree = 0;
 
 queryManagerCreateBinFromExistingTables($bin_name, $querybin_id, $type, explode("OR", $keywords));
 
-search($keywords);
+while(search($keywords));
 if ($tweetQueue->length() > 0) {
     $tweetQueue->insertDB();
 }
@@ -61,9 +61,10 @@ queryManagerSetPeriodsOnCreation($bin_name, explode("OR", $keywords));
 
 // TODO: see timeline.php for an improvement making it easier for users to start a bin immediatly after running a CLU script, and adept the method for this script
 
-function search($keywords, $max_id = null) {
+function search($keywords) {
     global $twitter_keys, $current_key, $ratefree, $bin_name, $dbh, $tweetQueue;
-
+    static $max_id = null
+        
     $ratefree--;
     if ($ratefree < 1 || $ratefree % 10 == 0) {
         $keyinfo = getRESTKey($current_key, 'search', 'tweets');
@@ -122,12 +123,12 @@ function search($keywords, $max_id = null) {
             return false;
         }
         sleep(1);
-        search($keywords, $max_id);
+        return true;
     } else {
         echo $tmhOAuth->response['response'] . "\n";
         if ($tmhOAuth->response['response']['errors']['code'] == 130) { // over capacity
             sleep(1);
-            search($keywords, $max_id);
+            return true;
         }
     }
 }
