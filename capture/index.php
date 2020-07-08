@@ -762,6 +762,11 @@ foreach ($bins as $id => $bin)
             return false;
         }
         if(type == 'track') {
+            if(query.split(',').some(subq => subq.length > 60)) {
+                alert("Query phrases should not exceed 60 characters each. Please shorten your query phrases.");
+                return false;
+            };
+
             // if literal phrase, there should be no comma's in between
             if(query.indexOf("'")==-1) {
                 return true;

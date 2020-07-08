@@ -52,6 +52,17 @@ function create_new_bin($params) {
         echo '{"msg":"This capturing type is not defined in the config file"}';
         return;
     }
+    if($type == 'track') {
+        $phrases = explode(",", $params["newbin_phrases"]);
+        $phrases = array_trim_and_unique($phrases);
+        foreach($phrases as $phrase) {
+            if(strlen($phrase) > 60) {
+                echo '{"msg":"Cannot add query because a phrase is too long."}';
+                throw new LengthException('A query phrase exceeds 60 chrs.');
+                return;
+            }
+        }
+    }
     $comments = sanitize_comments($params['newbin_comments']);
 
     // check whether the main query management tables are there, if not, create
@@ -182,71 +193,77 @@ function remove_bin($params) {
         $bin_name = $results['querybin'];
     }
 
-    // delete tcat_query_bin table
-    $sql = "DELETE FROM tcat_query_bins WHERE id = :id";
-    $delete_querybin = $dbh->prepare($sql);
-    $delete_querybin->bindParam(':id', $bin_id, PDO::PARAM_INT);
-    $delete_querybin->execute();
+    $dbh->beginTransaction();
+    try {
+        // delete tcat_query_bin table
+        $sql = "DELETE FROM tcat_query_bins WHERE id = :id";
+        $delete_querybin = $dbh->prepare($sql);
+        $delete_querybin->bindParam(':id', $bin_id, PDO::PARAM_INT);
+        $delete_querybin->execute();
 
-    // delete periods associated with the query bin
-    $sql = "DELETE FROM tcat_query_bins_periods WHERE querybin_id = :id";
-    $delete_querybin_periods = $dbh->prepare($sql);
-    $delete_querybin_periods->bindParam(':id', $bin_id, PDO::PARAM_INT);
-    $delete_querybin_periods->execute();
+        // delete periods associated with the query bin
+        $sql = "DELETE FROM tcat_query_bins_periods WHERE querybin_id = :id";
+        $delete_querybin_periods = $dbh->prepare($sql);
+        $delete_querybin_periods->bindParam(':id', $bin_id, PDO::PARAM_INT);
+        $delete_querybin_periods->execute();
 
-    // delete phrase references associated with the query bin
-    $sql = "DELETE FROM tcat_query_bins_phrases WHERE querybin_id = :id";
-    $delete_query_bins_phrases = $dbh->prepare($sql);
-    $delete_query_bins_phrases->bindParam(":id", $bin_id, PDO::PARAM_INT);
-    $delete_query_bins_phrases->execute();
+        // delete phrase references associated with the query bin
+        $sql = "DELETE FROM tcat_query_bins_phrases WHERE querybin_id = :id";
+        $delete_query_bins_phrases = $dbh->prepare($sql);
+        $delete_query_bins_phrases->bindParam(":id", $bin_id, PDO::PARAM_INT);
+        $delete_query_bins_phrases->execute();
 
-    // delete orphaned phrases
-    $sql = "DELETE FROM tcat_query_phrases where id not in ( select phrase_id from tcat_query_bins_phrases )";
-    $delete_query_phrases = $dbh->prepare($sql);
-    $delete_query_phrases->execute();
+        // delete orphaned phrases
+        $sql = "DELETE FROM tcat_query_phrases where id not in ( select phrase_id from tcat_query_bins_phrases )";
+        $delete_query_phrases = $dbh->prepare($sql);
+        $delete_query_phrases->execute();
 
-    // delete user references associated with the query bin
-    $sql = "DELETE FROM tcat_query_bins_users WHERE querybin_id = :id";
-    $delete_query_bins_users = $dbh->prepare($sql);
-    $delete_query_bins_users->bindParam(":id", $bin_id, PDO::PARAM_INT);
-    $delete_query_bins_users->execute();
+        // delete user references associated with the query bin
+        $sql = "DELETE FROM tcat_query_bins_users WHERE querybin_id = :id";
+        $delete_query_bins_users = $dbh->prepare($sql);
+        $delete_query_bins_users->bindParam(":id", $bin_id, PDO::PARAM_INT);
+        $delete_query_bins_users->execute();
 
-    // delete orphaned users
-    $sql = "DELETE FROM tcat_query_users where id not in ( select user_id from tcat_query_bins_users )";
-    $delete_query_users = $dbh->prepare($sql);
-    $delete_query_users->execute();
+        // delete orphaned users
+        $sql = "DELETE FROM tcat_query_users where id not in ( select user_id from tcat_query_bins_users )";
+        $delete_query_users = $dbh->prepare($sql);
+        $delete_query_users->execute();
 
-    $sql = "DROP TABLE " . $bin_name . "_tweets";
-    $delete_table = $dbh->prepare($sql);
-    $delete_table->execute();
+        $sql = "DROP TABLE " . $bin_name . "_tweets";
+        $delete_table = $dbh->prepare($sql);
+        $delete_table->execute();
 
-    $sql = "DROP TABLE " . $bin_name . "_mentions";
-    $delete_table = $dbh->prepare($sql);
-    $delete_table->execute();
+        $sql = "DROP TABLE " . $bin_name . "_mentions";
+        $delete_table = $dbh->prepare($sql);
+        $delete_table->execute();
 
-    $sql = "DROP TABLE " . $bin_name . "_hashtags";
-    $delete_table = $dbh->prepare($sql);
-    $delete_table->execute();
+        $sql = "DROP TABLE " . $bin_name . "_hashtags";
+        $delete_table = $dbh->prepare($sql);
+        $delete_table->execute();
 
-    $sql = "DROP TABLE " . $bin_name . "_urls";
-    $delete_table = $dbh->prepare($sql);
-    $delete_table->execute();
+        $sql = "DROP TABLE " . $bin_name . "_urls";
+        $delete_table = $dbh->prepare($sql);
+        $delete_table->execute();
 
-    $sql = "DROP TABLE " . $bin_name . "_withheld";
-    $delete_table = $dbh->prepare($sql);
-    $delete_table->execute();
+        $sql = "DROP TABLE " . $bin_name . "_withheld";
+        $delete_table = $dbh->prepare($sql);
+        $delete_table->execute();
 
-    $sql = "DROP TABLE " . $bin_name . "_places";
-    $delete_table = $dbh->prepare($sql);
-    $delete_table->execute();
+        $sql = "DROP TABLE " . $bin_name . "_places";
+        $delete_table = $dbh->prepare($sql);
+        $delete_table->execute();
 
-    $sql = "DROP TABLE " . $bin_name . "_media";
-    $delete_table = $dbh->prepare($sql);
-    $delete_table->execute();
+        $sql = "DROP TABLE " . $bin_name . "_media";
+        $delete_table = $dbh->prepare($sql);
+        $delete_table->execute();
 
-    echo '{"msg":"Query bin [' . $bin_name . ']has been deleted"}';
+        $dbh->commit();
 
-    $dbh = false;
+        echo '{"msg":"Query bin [' . $bin_name . ']has been deleted"}';
+    } catch (PDOException $e) {
+        error_log("Unable to remove bin '" . $bin_name . "': " . $e->getMessage());
+        $dbh->rollBack();
+    }
 }
 
 function pause_bin($params) {
@@ -438,6 +455,19 @@ function modify_bin_comments($querybin_id, $params) {
 function modify_bin($params) {
     global $captureroles, $now;
 
+    $type = $params['type'];
+    if($type == 'track') {
+        $phrases = explode(",", $params["newphrases"]);
+        $phrases = array_trim_and_unique($phrases);
+        foreach($phrases as $phrase) {
+            if(strlen($phrase) > 60) {
+                echo '{"msg":"Cannot add query because a phrase is too long."}';
+                throw new LengthException('A query phrase exceeds 60 chrs.');
+                return;
+            }
+        }
+    }
+
     if (!table_id_exists($params["bin"])) {
         echo '{"msg":"The bin ' . $params['bin'] . ' does not seem to exist"}';
         return;
@@ -446,7 +476,6 @@ function modify_bin($params) {
 
     if (array_key_exists('comments', $params) && $params['comments'] !== '') return modify_bin_comments($querybin_id, $params);
 
-    $type = $params['type'];
     if (array_search($type, $captureroles) === false && ($type !== 'geotrack' || array_search('track', $captureroles) === false)) {
         echo '{"msg":"This capturing type is not defined in the config file"}';
         return;
@@ -785,9 +814,14 @@ function getBins() {
         $querybins[$bin->id]->nrOfTweets = 0;
         $sql = "SELECT count(id) AS count FROM " . $bin->name . "_tweets";
         $res = $dbh->prepare($sql);
-        if ($res->execute() && $res->rowCount()) {
-            $result = $res->fetch();
-            $querybins[$bin->id]->nrOfTweets = $result['count'];
+        try {
+            if ($res->execute() && $res->rowCount()) {
+                $result = $res->fetch();
+                $querybins[$bin->id]->nrOfTweets = $result['count'];
+            }
+        } catch (PDOException $e) {
+            error_log("Error retrieving tweet info for bin '" . $bin->name . "': " . $e->getMessage());
+            unset($querybins[$bin->id]);
         }
     }
     $dbh = false;

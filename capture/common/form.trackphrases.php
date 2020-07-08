@@ -19,6 +19,9 @@ if (!is_admin())
         <li> exact phrases: ['global warming'] will get only tweets with the exact phrase. Beware, however that due to how the streaming API works, tweets are captured in the same way as in 2, but tweets that do not match the exact phrase are thrown away. This means that you will request many more tweets from the Twitter API than you will see in your query bin - thus increasing the possibility that you will hit a <a href='https://dev.twitter.com/docs/faq#6861' target='_blank'>rate limit</a>. E.g. if you specify a query like ['are we'] all tweets matching both [are] and [we] are retrieved, while DMI-TCAT only retains those with the exact phrase ['are we'].</li>
     </ol>
 
+    The phrases between commas can be maximum 60 characters long.
+    <br/>
+
     You can track a maximum of 400 queries at the same time (for all query bins combined) and the total volume should never exceed 1% of global Twitter volume, at any specific moment in time.
     <br/>
     Example bin: globalwarming,global warming,'climate change'
