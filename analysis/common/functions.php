@@ -866,7 +866,7 @@ function current_collation() {
     $rec = $dbh->prepare($sql);
     $rec->execute();
     while ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
-        if (array_key_exists('Collation', $res) && ($res['Collation'] == 'utf8mb4_unicode_ci' || $res['Collation'] == 'utf8mb4_general_ci')) {
+        if (array_key_exists('Collation', $res) && substr($res['Collation'], 0, 7) === 'utf8mb4') {
             $is_utf8mb4 = true;
             break;
         }
