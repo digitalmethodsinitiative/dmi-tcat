@@ -584,7 +584,7 @@ while [ "$BATCH_MODE" != "y" ]; do
     if [ "$FIRST_PASS" = 'y' ]; then
 	echo
 	echo "Choose a tweet capture mode for TCAT to use:"
-	echo "1. Track pharases and keywords."
+	echo "1. Track phrases and keywords."
 	echo "2. Follow Twitter users."
 	echo "3. Capture a 1% sample of all Twitter traffic."
 	echo
