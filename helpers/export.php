@@ -530,7 +530,7 @@ function print_help($prog, $defaultOutputDir) {
     echo "Options:\n";
     echo "  -a                   export all existing bins\n";
     echo "  -d                   export query phrases AND data (default)\n";
-    echo "  -s                   export structure: query pharases only, no data\n";
+    echo "  -s                   export structure: query phrases only, no data\n";
     echo "  -o file              output file (default: automatically generated)\n";
     echo "  -wt WHERE            MySQL WHERE query for the tweets table. Ex. -wt \"MATCH('text') CONTAINS ('apple')\"\n";
     echo "  -url URL             Export subset based on analysis page URL. Ex. -url \"URL\"\n";
