@@ -162,6 +162,87 @@ function do_ratelimit_info()
 }
 
 //----------------------------------------------------------------
+// Display rate information for this server
+//
+// Returns variable for JSON output or title+html for HTML output.
+
+/**
+ * Print historical capture rate information.
+ *
+ * Based on the tcat_captured_phrases table, and output format is
+ * figured out from the HTTP request.
+ *
+ * @param int  $days_back           Number of days of history to report.
+ * @param bool $report_missing_days Explicitly report missing days.
+ *
+ * @return void
+ */
+function do_rate_info($days_back = 30, $report_missing_days = true)
+{
+    global $datasets; // from require_once "../analysis/common/functions.php"
+
+    if (!isset($datasets)) {
+        $datasets = []; // database tables not yet initialized
+    }
+
+    $response_mediatype = choose_mediatype(
+        ['application/json',
+         'text/html',
+         'text/plain']
+    );
+
+    $dbh = pdo_connect();
+    $sql = 'SELECT date(t.created_at) AS date, count(*) AS count FROM (SELECT * FROM tcat_captured_phrases WHERE created_at >= CURDATE() - INTERVAL :days_back DAY) AS t GROUP BY date(t.created_at)';
+    $rec = $dbh->prepare($sql);
+    $rec->bindValue(':days_back', $days_back, PDO::PARAM_INT);
+    $rec->execute();
+    while ($res = $rec->fetch(PDO::FETCH_ASSOC)) {
+        $rates[$res['date']] = +$res['count'];
+    }
+
+    if ($report_missing_days) {
+        // Create an array of dates null value, and left merge it with the
+        // rates from database. This way also empty days will be included
+        // in the results and usefully reported.
+        $dates = array();
+        foreach (iterator_to_array(
+            new DatePeriod(
+                new DateTime($days_back * -1 . ' days'),
+                new DateInterval('P1D'),
+                new DateTime
+            )
+        ) as $date) {
+            $dates[$date->format('Y-m-d')] = null;
+        }
+        $rates = array_merge($dates, $rates);
+    }
+
+    switch ($response_mediatype) {
+        case 'application/json':
+            $obj = ['days_back' => $days_back, 'counts' => $rates];
+            respond_with_json($obj);
+            break;
+        case 'text/html':
+            echo "<table>";
+            echo "<tr><th>date</th><th>count</th></tr>";
+            foreach ($rates as $date => $count) {
+                echo "<tr><td class='date'>$date</td><td class='count'>$count</tr>";
+            }
+            echo "</table>";
+            html_end();
+            break;
+        case 'text/plain':
+        default:
+            echo "date" . "," . "count" . PHP_EOL;
+            foreach ($rates as $date => $count) {
+                echo $date . "," . $count . PHP_EOL;
+            }
+            break;
+    }
+
+}
+
+//----------------------------------------------------------------
 // Main function
 //
 // This is a function to avoid unexpected clashes with global variables.
@@ -210,6 +291,8 @@ function main()
         } else {
             if (is_null($aspect)) {
                 $action = 'server-info';     // implicit action
+            } else if ($aspect == 'rateinfo') {
+                $action = 'rate-info';
             } else if ($aspect == 'ratelimits') {
                 $action = 'ratelimit-info';  // implicit action
             } else {
@@ -284,6 +367,9 @@ END;
             break;
         case 'ratelimit-info':
             do_ratelimit_info();
+            break;
+        case 'rate-info':
+            do_rate_info();
             break;
         default:
             abort_with_error(500, "Internal error: unexpected action: $action");

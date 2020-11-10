@@ -246,7 +246,7 @@ promptPassword() {
 #----------------------------------------------------------------
 # Process command line
 
-SHORT_OPTS="B:bc:fGhlR:s:U"
+SHORT_OPTS="B:bc:fGhlR:s:U:y"
 if ! getopt $SHORT_OPTS "$@" >/dev/null; then
     echo "$PROG: usage error (use -h for help)" >&2
     exit 2
@@ -271,12 +271,13 @@ while [ $# -gt 0 ]; do
         -b) BATCH_MODE=y;;
 	-c) CONFIG_FILE="$2"; shift;;
 	-f) FORCE_INSTALL=y;;
-	-G) GEO_SEARCH=n;;
+
 	-l) DO_SAVE_TCAT_LOGINS=y;;
         -R) TCAT_GIT_REPOSITORY="$2"; shift;;
         -s) CMD_SERVERNAME="$2"; shift;;
 	-U) DO_UPDATE_UPGRADE=n;;
         -h) HELP='y';;
+    -y) NON_INTERACTIVE=y;;
 	--) break;;
     esac
     shift
@@ -301,6 +302,8 @@ Options:
   -B branch      GIT branch in repository to install (default: master)
   -f             force install attempt on unsupported distributions
                  (for developers only: install or TCAT will probably not work)
+  -y             Automatic yes to prompts; assume "yes" as answer to all prompts and run non-interactively.
+
 EOF
     exit 0
 fi
@@ -316,9 +319,8 @@ fi
 # Script run with root privileges (either as root or with sudo)
 
 if [ $(id -u) -ne 0 ]; then
-   tput setaf 1
    echo "$PROG: error: this script was run without root privileges" 1>&2
-   tput sgr0
+   
    exit 1
 fi
 
@@ -524,11 +526,6 @@ while [ "$BATCH_MODE" != "y" ]; do
 	echo
 	echo "Install DMI TCAT with these parameters:"
 
-	echo "  Twitter consumer key: $CONSUMERKEY"
-	echo "  Twitter consumer secret: $CONSUMERSECRET"
-	echo "  Twitter user token: $USERTOKEN"
-	echo "  Twitter user secret: $USERSECRET"
-
 	case "$CAPTURE_MODE" in
 	    1) echo "  Tweet capture mode: track phrases and keywords";;
 	    2) echo "  Tweet capture mode: follow Twitter users";;
@@ -552,11 +549,16 @@ while [ "$BATCH_MODE" != "y" ]; do
 	echo "    MySQL memory profile auto-configure: $DB_CONFIG_MEMORY_PROFILE"
 	echo "    TCAT admin login name: $TCATADMINUSER"
 	echo "    TCAT standard login name: $TCATUSER"
-	echo
-	if promptYN "Use these values (or \"q\" to quit)"; then
-	    break; # exit while-loop to start installing
-	fi
-	echo
+
+    if [ $NON_INTERACTIVE = 'y' ]; then
+        break;
+    else
+
+        echo
+    	if promptYN "Use these values (or \"q\" to quit)"; then
+    	    break; # exit while-loop to start installing
+    	fi
+    fi
     fi
 
     # Twitter credentials
@@ -908,6 +910,8 @@ fi
 
 apt-get -qq install -y git
 
+
+mkdir -p /etc/cron.d/
 # Clear any existing TCAT crontab references
 echo "" > /etc/cron.d/tcat
 
@@ -922,9 +926,7 @@ sed -i 's/^.*cd \/var\/www\/dmi-tcat\/helpers; sh urlexpand.sh.*$//g' /etc/cront
 #----------------------------------------------------------------
 
 if [ "$DO_UPDATE_UPGRADE" = 'y' ]; then
-    tput bold
     echo "Updating and upgrading ..."
-    tput sgr0
     echo ""
 
     apt-get update
@@ -945,9 +947,7 @@ fi
 
 #----------------------------------------------------------------
 echo
-tput bold
 echo "Installing MySQL server and Apache webserver ..."
-tput sgr0
 echo ""
 
 # Set MySQL root password to avoid prompt during "apt-get install" MySQL server
@@ -977,12 +977,13 @@ if [ -n "$UBUNTU_VERSION" ]; then
     # Installation and autoconfiguration of MySQL will not work with
     # Apparmor profile enabled
 
-    if [ -L /etc/apparmor.d/disable/usr.sbin.mysqld ]; then
-	rm /etc/apparmor.d/disable/usr.sbin.mysqld # remove so "ln" will work
+    if [ -L /etc/init.d/apparmor ]; then 
+        if [ -L /etc/apparmor.d/disable/usr.sbin.mysqld ]; then
+    	rm /etc/apparmor.d/disable/usr.sbin.mysqld # remove so "ln" will work
+        fi
+        ln -s /etc/apparmor.d/usr.sbin.mysqld /etc/apparmor.d/disable/
+        /etc/init.d/apparmor restart
     fi
-    ln -s /etc/apparmor.d/usr.sbin.mysqld /etc/apparmor.d/disable/
-    /etc/init.d/apparmor restart
-
 elif [ -n "$DEBIAN_VERSION" ]; then
     echo "$PROG: installing MySQL for Debian"
 
@@ -1022,32 +1023,32 @@ else
 fi
 
 # Disable Linux HugePage support (needed for TokuDB)
-tput bold
-echo "Disabling Linux kernel transparant HugePage support" 1>&2
-tput sgr0
-if test -f /sys/kernel/mm/transparent_hugepage/enabled; then
-   echo never > /sys/kernel/mm/transparent_hugepage/enabled
-fi
-if test -f /sys/kernel/mm/transparent_hugepage/defrag; then
-   echo never > /sys/kernel/mm/transparent_hugepage/defrag
-fi
+
+#
+#echo "Disabling Linux kernel transparant HugePage support" 1>&2
+#
+#echo never > /sys/kernel/mm/transparent_hugepage/enabled
+#echo never > /sys/kernel/mm/transparent_hugepage/defrag
+#sed -E -i 's/^GRUB_CMDLINE_LINUX_DEFAULT="(.*)"$/GRUB_CMDLINE_LINUX_DEFAULT="\1 transparent_hugepage=never"/' /etc/default/grub
+#update-grub
 
 # Install the TokuDB storage engine
 
-tput bold
+
 echo "Installing TokuDB storage engine ..."
-tput sgr0
+
 
 apt-get -y install mariadb-plugin-tokudb
 # Enable the TokuDB storage engine
 sed -i 's/^#plugin-load-add=ha_tokudb.so/plugin-load-add=ha_tokudb.so/g' /etc/mysql/mariadb.conf.d/tokudb.cnf
 # Restart mariadb
-systemctl restart mariadb
+# systemctl restart mariadb
+#/etc/init.d/mariadb restart
 
 echo ""
-tput bold
+
 echo "Downloading DMI-TCAT from github ..."
-tput sgr0
+
 echo ""
 
 if [ -z "$TCAT_GIT_BRANCH" ]; then
@@ -1070,9 +1071,9 @@ echo "Using branch/tag $TCAT_GIT_BRANCH"
 git -C "$TCAT_DIR" checkout "$TCAT_GIT_BRANCH"
 
 echo ""
-tput bold
+
 echo "Preliminary DMI-TCAT configuration ..."
-tput sgr0
+
 echo ""
 
 # Create unix user and group, if needed
@@ -1097,9 +1098,9 @@ chmod 755 logs
 chmod 755 proc
 
 echo ""
-tput bold
+
 echo "Configuring Apache 2 ..."
-tput sgr0
+
 echo ""
 
 # Save Web UI passwords
@@ -1211,9 +1212,9 @@ if [ "$LETSENCRYPT" = 'y' ]; then
 fi
 
 echo ""
-tput bold
+
 echo "Configuring MySQL server for TCAT (authentication) ..."
-tput sgr0
+
 echo ""
 
 # Save passwords in MySQL defaults-file format
@@ -1238,6 +1239,7 @@ echo "$PROG: account details saved: $FILE"
 # Save MySQL TCAT database user's password
 
 FILE="${MYSQL_CNF_PREFIX}${TCATMYSQLUSER}${MYSQL_CNF_SUFFIX}"
+echo "${MYSQL_CNF_PREFIX}${TCATMYSQLUSER}${MYSQL_CNF_SUFFIX}"
 touch "$FILE"
 chown mysql:mysql "$FILE"
 chmod 600 "$FILE" # secure file before writing password to it
@@ -1249,6 +1251,7 @@ password="${TCATMYSQLPASS}"
 EOF
 echo "$PROG: account details saved: $FILE"
 
+service mysql restart
 # Install MySQL server timezone data
 
 mysql_tzinfo_to_sql /usr/share/zoneinfo | mysql --defaults-file="$MYSQL_USER_ADMIN_CNF" mysql 
@@ -1267,9 +1270,9 @@ fi
 
 if [ "$URLEXPANDYES" = 'y' ]; then
    echo ""
-   tput bold
+   
    echo "Enabling URL expander ..."
-   tput sgr0
+   
    echo ""
    VAR=ENABLE_URL_EXPANDER
    VALUE="TRUE"
@@ -1277,9 +1280,9 @@ if [ "$URLEXPANDYES" = 'y' ]; then
 fi
 
 echo ""
-tput bold
+
 echo "Activating TCAT controller in cron ..."
-tput sgr0
+
 echo ""
 
 CRONLINE="* *     * * *   $SHELLUSER   (cd \"$TCAT_DIR/capture/stream\"; php controller.php)"
@@ -1288,9 +1291,9 @@ echo "# Run TCAT controller every minute" >> /etc/cron.d/tcat
 echo "$CRONLINE" >> /etc/cron.d/tcat
 
 echo ""
-tput bold
+
 echo "Setting up logfile rotation ..."
-tput sgr0
+
 echo ""
 
 cat > /etc/logrotate.d/dmi-tcat <<EOF
@@ -1357,18 +1360,18 @@ apt-get -y install debsums
 echo "[mysqld]" > /etc/mysql/conf.d/tcat-autoconfigured.cnf
 
 echo ""
-tput bold
+
 echo "Configuring MySQL server (compatibility) ..."
-tput sgr0
+
 echo ""
 
 echo "sql-mode=\"NO_AUTO_VALUE_ON_ZERO,ALLOW_INVALID_DATES\"" >> /etc/mysql/conf.d/tcat-autoconfigured.cnf
 
 if [ "$DB_CONFIG_MEMORY_PROFILE" = "y" ]; then
     echo ""
-    tput bold
+    
     echo "Configuring MySQL server (memory profile) ..."
-    tput sgr0
+    
     echo ""
     MAXMEM=`free -m | head -n 2 | tail -n 1 | tr -s ' ' | cut -d ' ' -f 2`
     # Make this an integer, and non-empty for bash
@@ -1411,7 +1414,7 @@ if [ "$DB_CONFIG_MEMORY_PROFILE" = "y" ]; then
 
         echo "Restarting service ..."
         if [ -n "$UBUNTU_VERSION" ]; then
-            /etc/init.d/mysql restart
+            service mysql restart
         elif [ -n "$DEBIAN_VERSION" ]; then
             systemctl restart mysql
         else
@@ -1422,9 +1425,9 @@ if [ "$DB_CONFIG_MEMORY_PROFILE" = "y" ]; then
 fi
 
 echo ""
-tput bold
+
 echo "Done: TCAT installed"
-tput sgr0
+
 echo ""
 
 echo "Please visit this TCAT installation at these URLs:"
