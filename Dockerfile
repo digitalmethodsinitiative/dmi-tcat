@@ -13,6 +13,9 @@ COPY docker/config config.txt
 #create file for crontab
 RUN touch /etc/crontab
 
+#create log file to see whats happening with the crontab
+RUN touch /var/log/cron.log
+
 #run docker setup script
 RUN chmod a+x tcat-install-linux.sh
 RUN /bin/bash ./tcat-install-linux.sh -y -c config.txt
@@ -22,5 +25,5 @@ RUN /bin/bash ./tcat-install-linux.sh -y -c config.txt
 EXPOSE 80
 
 
-#start apache and mysql
-CMD sudo service mysql start && apachectl -D FOREGROUND
+#start apache and mysql and twitter capture stream once (also started as cronjob, but it seem to have issues sometimes)
+CMD sudo service mysql start && apachectl -D FOREGROUND && /usr/bin/php /var/www/dmi-tcat/capture/stream/dmitcat_track.php &
