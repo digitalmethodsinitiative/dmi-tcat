@@ -583,29 +583,33 @@ if (defined('ANALYSIS_URL'))
 
                     <script type="text/javascript">
 
-                        var data = new google.visualization.DataTable();
+                        google.setOnLoadCallback(drawLineChart);
 
-                        data.addColumn('string', 'Date');
-                        data.addColumn('number', 'Norm Query (%)');
+                        function drawLineChart() {
+                            var data = new google.visualization.DataTable();                    
+                            var data = new google.visualization.DataTable();
 
-    <?php
-    echo "data.addRows(" . count($linedata) . ");";
+                            data.addColumn('string', 'Date');
+                            data.addColumn('number', 'Norm Query (%)');
 
-    $counter = 0;
+                        <?php
+                        echo "data.addRows(" . count($linedata) . ");";
 
-    foreach ($linedata as $key => $value) {
+                        $counter = 0;
 
-        $norm = ($value["full"] == 0 || !isset($value['tweets'])) ? 0 : round($value["tweets"] / $value["full"] * 100);
+                        foreach ($linedata as $key => $value) {
 
-        echo "data.setValue(" . $counter . ", 0, '" . $key . "');";
-        echo "data.setValue(" . $counter . ", 1, " . $norm . ");";
+                            $norm = ($value["full"] == 0 || !isset($value['tweets'])) ? 0 : round($value["tweets"] / $value["full"] * 100);
 
-        $counter++;
-    }
-    ?>
+                            echo "data.setValue(" . $counter . ", 0, '" . $key . "');";
+                            echo "data.setValue(" . $counter . ", 1, " . $norm . ");";
 
-        var chart = new google.visualization.LineChart(document.getElementById('if_panel_linegraph_norm'));
-        chart.draw(data, {width:1000, height:190, fontSize:9, lineWidth:1, hAxis:{slantedTextAngle:90, slantedText:true}, vAxis:{minValue:0,maxValue:100}, chartArea:{left:50,top:10,width:850,height:100}});
+                            $counter++;
+                        }
+                        ?>
+
+                        var chart = new google.visualization.LineChart(document.getElementById('if_panel_linegraph_norm'));
+                        chart.draw(data, {width:1000, height:190, fontSize:9, lineWidth:1, hAxis:{slantedTextAngle:90, slantedText:true}, vAxis:{minValue:0,maxValue:100}, chartArea:{left:50,top:10,width:850,height:100}});
 
                     </script>
                     <div class='svglink'>
