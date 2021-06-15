@@ -347,7 +347,7 @@ if [ "$DISTRIBUTION_ID" = 'Ubuntu' ]; then
 	echo "$PROG: error: unexpected Ubuntu version: $UBUNTU_VERSION" >&2
 	exit 1
     fi
-    if [ "$UBUNTU_VERSION" != '18.04' ]; then
+    if [ "$UBUNTU_VERSION" != '18.04' ] && [ "$UBUNTU_VERSION" != '20.04' ]; then
 	if [ -z "$FORCE_INSTALL" ]; then
 	    echo "$PROG: error: unsupported distribution: Ubuntu $UBUNTU_VERSION" >&2
 	    exit 1

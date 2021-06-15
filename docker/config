@@ -1,0 +1,47 @@
+# TCAT Installer parameters
+
+# Convention for Boolean: 'y' true; all other values (e.g. blank or 'n') false
+
+# Twitter API credentials and capture options
+
+CONSUMERKEY=
+CONSUMERSECRET=
+USERTOKEN=
+USERSECRET=
+
+CAPTURE_MODE=1 # 1=track phrases/keywords, 2=follow users, 3=onepercent
+
+URLEXPANDYES=y # install URL Expander or not
+
+# Apache
+
+SERVERNAME= # should default to this machine's IP address (-s overrides)
+
+# TCAT
+TCAT_AUTO_UPDATE=0 # 0=off, 1=trivial, 2=substantial, 3=expensive
+
+# Unix user and group to own the TCAT files
+
+SHELLUSER=root
+SHELLGROUP=root
+
+# MySQL (blank password means randomly generate it)
+
+DBPASS= # password for the MySQL "root" administrator account
+
+TCATMYSQLUSER=tcatdbuser
+TCATMYSQLPASS=
+
+DB_CONFIG_MEMORY_PROFILE=y
+
+LETSENCRYPT=n
+
+# TCAT Web user interface logins (blank password means randomly generate it)
+
+TCATADMINUSER=admin
+TCATADMINPASS=
+
+TCATUSER=tcat
+TCATPASS=
+
+# End of TCAT installer parameters
