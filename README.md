@@ -31,6 +31,10 @@ This Docker image uses a modified version of the installer (helpers/tcat-install
 - The `--progress=plain` tag ensure you can see all the output; important if your config file does not include passwords and they are auto generated.
 3. Run a container with the image:
 `docker container run --publish 80:80 --detach --name tcat tcat:1.0`
+4. In the future, you can stop and start your TCAT container with:
+`docker stop tcat`
+and
+`docker start tcat`
 
 
 ## Issues
