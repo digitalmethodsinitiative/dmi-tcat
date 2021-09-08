@@ -28,7 +28,7 @@ validate_all_variables();
         <script type="text/javascript" src="https://www.google.com/jsapi"></script>
 
         <script type="text/javascript">
-     
+
             google.load("visualization", "1", {packages:["corechart"]});
         </script>
 
@@ -48,7 +48,7 @@ validate_all_variables();
                 <input type="hidden" name="startdate" value="<?php echo $startdate; ?>" />
                 <input type="hidden" name="enddate" value="<?php echo $enddate; ?>" />
                 <input type="hidden" name="interval" value="<?php echo $interval; ?>" />
-                <input type="hidden" name="customInterval" value="<?php if (isset($_GET['customInterval'])) echo $_GET['customInterval']; ?>" />
+                <input type="hidden" name="customInterval" value="<?php if (isset($_GET['customInterval'])) echo htmlentities($_GET['customInterval']); ?>" />
                 <tr>
                     <td>Keyword:</td>
                     <td><input type="text" name="query" value="<?php echo $query; ?>" /></td>
@@ -103,9 +103,9 @@ validate_all_variables();
                     <div style='clear:both'></div>
                     <div id="if_panel_linegraph_score" class="if_panel_box" ></div>
                     <script type="text/javascript">
-                                	
+
                         var data = new google.visualization.DataTable();
-                        data.addRows(<?php echo count($freq); ?>);                                                                          	
+                        data.addRows(<?php echo count($freq); ?>);
                         data.addColumn('string', 'Date');
                         data.addColumn('number', 'Tweets');
     <?php
@@ -118,9 +118,9 @@ validate_all_variables();
     ?>
         var chart = new google.visualization.LineChart(document.getElementById('if_panel_linegraph'));
         chart.draw(data, {width:1000, height:50, fontSize:9, hAxis:{slantedTextAngle:90, slantedText:true}, chartArea:{left:50,top:10,width:850,height:50}});
-                
+
         var data = new google.visualization.DataTable();
-        data.addRows(<?php echo count($freq); ?>);                                                                          	
+        data.addRows(<?php echo count($freq); ?>);
         data.addColumn('string', 'Date');
         data.addColumn('number', 'Score');
     <?php
@@ -137,7 +137,7 @@ validate_all_variables();
     ?>
         var chart = new google.visualization.LineChart(document.getElementById('if_panel_linegraph_score'));
         chart.draw(data, {width:1000, height:150, fontSize:9, hAxis:{slantedTextAngle:90, slantedText:true}, chartArea:{left:50,top:10,width:850,height:50}});
-                    </script>	
+                    </script>
                     <?php
                     print "<div style='clear:both'></div>";
                     print "<table><tr><th>date</th><th>frequency</th><th>score</th></tr>";
