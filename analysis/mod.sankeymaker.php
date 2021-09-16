@@ -129,7 +129,6 @@ require_once __DIR__ . '/common/Gexf.class.php';
 
 
         <?php
-        $dataset = htmlentities($dataset);
         $col1_cutoff = htmlentities($_GET["col1_cutoff"]);
         $col2_cutoff = htmlentities($_GET["col2_cutoff"]);
         $col3_cutoff = htmlentities($_GET["col3_cutoff"]);
@@ -207,7 +206,7 @@ require_once __DIR__ . '/common/Gexf.class.php';
 	        }
 
 			// voting for keeping the SQL output, nice way to trace results for expert users
-	        echo "sql query " . ($runcounter + 1) . ": " . $sql . "<br />";
+	        echo "sql query " . ($runcounter + 1) . ": " . htmlspecialchars($sql) . "<br />";
 
 	        // run through the data once to create item counts for cutting and fusing
 	        $data = array();
