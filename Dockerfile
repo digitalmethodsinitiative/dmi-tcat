@@ -18,9 +18,11 @@ RUN touch /etc/crontab
 RUN chmod a+x tcat-install-linux.sh
 RUN /bin/bash ./tcat-install-linux.sh -y -c config.txt
 
-
 #expose port
 EXPOSE 80
+
+# Set working directory
+WORKDIR /var/www/dmi-tcat
 
 #start apache and mysql
 CMD sudo service cron start && service mysql start && apachectl -D FOREGROUND
