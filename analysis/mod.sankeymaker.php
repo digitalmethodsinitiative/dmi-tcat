@@ -67,14 +67,14 @@ require_once __DIR__ . '/common/Gexf.class.php';
 
         <form action="">
 
-            <input type="hidden" name="dataset" value="<?php echo $_GET["dataset"]; ?>" />
-            <input type="hidden" name="query" value="<?php echo $_GET["query"]; ?>" />
-            <input type="hidden" name="url_query" value="<?php echo $_GET["url_query"]; ?>" />
-            <input type="hidden" name="exclude" value="<?php echo $_GET["exclude"]; ?>" />
-            <input type="hidden" name="from_user_name" value="<?php echo $_GET["from_user_name"]; ?>" />
-            <input type="hidden" name="from_source" value="<?php echo $_GET["from_source"]; ?>" />
-            <input type="hidden" name="startdate" value="<?php echo $_GET["startdate"]; ?>" />
-            <input type="hidden" name="enddate" value="<?php echo $_GET["enddate"]; ?>" />
+            <input type="hidden" name="dataset" value="<?php echo htmlentities($_GET["dataset"]); ?>" />
+            <input type="hidden" name="query" value="<?php echo htmlentities($_GET["query"]); ?>" />
+            <input type="hidden" name="url_query" value="<?php echo htmlentities($_GET["url_query"]); ?>" />
+            <input type="hidden" name="exclude" value="<?php echo htmlentities($_GET["exclude"]); ?>" />
+            <input type="hidden" name="from_user_name" value="<?php echo htmlentities($_GET["from_user_name"]); ?>" />
+            <input type="hidden" name="from_source" value="<?php echo htmlentities($_GET["from_source"]); ?>" />
+            <input type="hidden" name="startdate" value="<?php echo htmlentities($_GET["startdate"]); ?>" />
+            <input type="hidden" name="enddate" value="<?php echo htmlentities($_GET["enddate"]); ?>" />
 
             <div class="form_row">
                 col1:
@@ -86,7 +86,7 @@ require_once __DIR__ . '/common/Gexf.class.php';
                     <option value="domain" <?php echo ($_GET["col1_type"] == "domain") ? "selected" : ""; ?>>domains</option>
                 </select>
 
-                cutoff (0 = all) <input name="col1_cutoff" value="<?php echo ($_GET["col1_cutoff"] == "") ? 0 : $_GET["col1_cutoff"]; ?>" />
+                cutoff (0 = all) <input name="col1_cutoff" value="<?php echo ($_GET["col1_cutoff"] == "") ? 0 : htmlentities($_GET["col1_cutoff"]); ?>" />
             </div>
 
             <div class="form_row">
@@ -99,7 +99,7 @@ require_once __DIR__ . '/common/Gexf.class.php';
                     <option value="domain" <?php echo ($_GET["col2_type"] == "domain") ? "selected" : ""; ?>>domains</option>
                 </select>
 
-                cutoff (0 = all) <input name="col2_cutoff" value="<?php echo ($_GET["col2_cutoff"] == "") ? 0 : $_GET["col2_cutoff"]; ?>" />
+                cutoff (0 = all) <input name="col2_cutoff" value="<?php echo ($_GET["col2_cutoff"] == "") ? 0 : htmlentities($_GET["col2_cutoff"]); ?>" />
             </div>
 
 
@@ -114,7 +114,7 @@ require_once __DIR__ . '/common/Gexf.class.php';
                     <option value="domain" <?php echo ($_GET["col3_type"] == "domain") ? "selected" : ""; ?>>domains</option>
                 </select>
 
-                cutoff (0 = all) <input name="col3_cutoff" value="<?php echo ($_GET["col3_cutoff"] == "") ? 0 : $_GET["col3_cutoff"]; ?>" />
+                cutoff (0 = all) <input name="col3_cutoff" value="<?php echo ($_GET["col3_cutoff"] == "") ? 0 : htmlentities($_GET["col3_cutoff"]); ?>" />
             </div>
 
 
@@ -129,6 +129,9 @@ require_once __DIR__ . '/common/Gexf.class.php';
 
 
         <?php
+        $col1_cutoff = htmlentities($_GET["col1_cutoff"]);
+        $col2_cutoff = htmlentities($_GET["col2_cutoff"]);
+        $col3_cutoff = htmlentities($_GET["col3_cutoff"]);
 
         validate_all_variables();
         dataset_must_exist();
@@ -153,11 +156,11 @@ require_once __DIR__ . '/common/Gexf.class.php';
 		$fulltweetcount = $data["count"];
 
 		// process colums
-		getFlow($_GET["col1_type"],$_GET["col1_cutoff"],$_GET["col2_type"],$_GET["col2_cutoff"],$_GET["discard_other"],0);
+		getFlow($_GET["col1_type"],$col1_cutoff,$_GET["col2_type"],$col2_cutoff,$_GET["discard_other"],0);
 
 		if($_GET["col3_type"] != "none") {
 
-			getFlow($_GET["col2_type"],$_GET["col2_cutoff"],$_GET["col3_type"],$_GET["col3_cutoff"],$_GET["discard_other"],1);
+			getFlow($_GET["col2_type"],$col2_cutoff,$_GET["col3_type"],$col3_cutoff,$_GET["discard_other"],1);
 		}
 
 
@@ -203,7 +206,7 @@ require_once __DIR__ . '/common/Gexf.class.php';
 	        }
 
 			// voting for keeping the SQL output, nice way to trace results for expert users
-	        echo "sql query " . ($runcounter + 1) . ": " . $sql . "<br />";
+	        echo "sql query " . ($runcounter + 1) . ": " . htmlspecialchars($sql) . "<br />";
 
 	        // run through the data once to create item counts for cutting and fusing
 	        $data = array();

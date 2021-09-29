@@ -1385,7 +1385,7 @@ function dataset_must_exist() {
     if (!isset($datasets[$dataset])) {
         http_response_code(404);
         header("Content-Type: text/plain");
-        echo "Error: unknown query bin: $dataset";
+        echo "Error: unknown query bin:" . htmlspecialchars($dataset);
         exit(0);
     }
 }
