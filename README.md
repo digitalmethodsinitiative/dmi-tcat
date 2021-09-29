@@ -26,6 +26,13 @@ This Docker image uses a modified version of the installer (helpers/tcat-install
 
 
 1. Add your Twitter token and key as well as any other needed information to the config file located here: `./docker/config`
+```
+# Update at minimum
+CONSUMERKEY=
+CONSUMERSECRET=
+USERTOKEN=
+USERSECRET=
+```
 2. Build the image:
 `docker image build --progress=plain -t tcat:1.0 .`
 - The `--progress=plain` tag ensure you can see all the output; important if your config file does not include passwords and they are auto generated.
