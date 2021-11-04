@@ -7,14 +7,24 @@ include_once __DIR__ . '/../common/constants.php';
 include_once __DIR__ . '/../common/functions.php';
 include_once __DIR__ . '/../capture/common/functions.php';
 
-// specify the name of the bin here 
-$bin_name = '';
-// specify dir with the user timelines (json)
-$dir = '';
-// set type of dump ('import follow' or 'import track')
-$type = 'import track';
-// if 'import track', specify keywords for which data was captured
-$queries = array();
+if(isset($GLOBALS['import-settings']) > 2) {
+    $type = $GLOBALS['import-settings']['type'];
+    $bin_name = $GLOBALS['import-settings']['bin_name'];
+    $dir = $GLOBALS['import-settings']['dir'];
+    $queries = $GLOBALS['import-settings']['queries'];
+    $all_files = $GLOBALS['import-settings']['files'];
+} else {
+    // set type of dump ('import follow' or 'import track')
+    $type = 'import track';
+    // specify the name of the bin here
+    $bin_name = '';
+    // specify dir with the user timelines (json)
+    $dir = '';
+    // if 'import track', specify keywords for which data was captured
+    $queries = array();
+
+    $all_files = glob("$dir/*.json");
+}
 
 if (empty($bin_name))
     die("bin_name not set\n");
@@ -28,7 +38,6 @@ $dbh = pdo_connect();
 create_bin($bin_name, $dbh);
 queryManagerCreateBinFromExistingTables($bin_name, $querybin_id, $type, $queries);
 
-$all_files = glob("$dir/*.json");
 
 global $tweets_processed, $tweets_failed, $tweets_success,
  $valid_timeline, $empty_timeline, $invalid_timeline, $populated_timeline,
