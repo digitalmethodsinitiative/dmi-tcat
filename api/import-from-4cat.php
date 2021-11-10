@@ -17,7 +17,7 @@
  *
  * To not just accept any file from anyone, you can configure an access token
  * in config.php. If the `token` POST value does not match
- * $GLOBALS['import-token'], the script exits with an error.
+ * $GLOBALS['import_token'], the script exits with an error.
  */
 
 /**
@@ -44,7 +44,7 @@ $url = isset($_POST['url']) ? $_POST['url'] : false;
 $token = isset($_POST['token']) ? $_POST['token'] : false;
 $name = isset($_POST['name']) ? $_POST['name'] : '';
 $query = isset($_POST['query']) ? $_POST['query'] : '';
-$have_token_if_needed = !isset($_GLOBALS['import-token']) || !$GLOBALS['import-token'] || $GLOBALS['import-token'] == $token;
+$have_token_if_needed = !isset($_GLOBALS['import_token']) || !$GLOBALS['import_token'] || $GLOBALS['import_token'] == $token;
 
 if(!$url || !$have_token_if_needed) {
     exit_with_json_error('Need a valid download URL and import token, but none were provided; exiting.');
@@ -60,7 +60,9 @@ $name = str_replace(' ', '_', $name);
 $name = strtolower($name);
 
 // make sure there is a temporary folder to store the file in
-$temp_dir = dirname(dirname(__FILE__)).DIRECTORY_SEPARATOR.'temp';
+$temp_dir = __DIR__.DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR."analysis".DIRECTORY_SEPARATOR;
+// $temp_dir = dirname(dirname(__FILE__)).DIRECTORY_SEPARATOR.'temp';
+error_log($temp_dir);
 if(!is_dir($temp_dir)) {
     mkdir($temp_dir);
 }
@@ -82,7 +84,14 @@ while(file_exists($temp_path)) {
 // download and write to file
 $download = fopen($url, 'rb');
 $output = fopen($temp_path, 'wb');
+
+$startTime = time();
+$timeout = 60;   //timeout in seconds
+
 while('' !== ($chunk = stream_get_contents($download, 1024))) {
+   if(time() > $startTime + $timeout) {
+     exit_with_json_error('Stream exceeded timeout; exiting.');
+   }
     fwrite($output, $chunk);
 }
 fclose($download);
