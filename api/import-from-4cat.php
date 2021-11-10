@@ -60,7 +60,7 @@ $name = str_replace(' ', '_', $name);
 $name = strtolower($name);
 
 // make sure there is a temporary folder to store the file in
-$temp_dir = __DIR__.DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR."analysis".DIRECTORY_SEPARATOR;
+$temp_dir = __DIR__.DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR."analysis".DIRECTORY_SEPARATOR."cache".DIRECTORY_SEPARATOR;
 // $temp_dir = dirname(dirname(__FILE__)).DIRECTORY_SEPARATOR.'temp';
 error_log($temp_dir);
 if(!is_dir($temp_dir)) {
