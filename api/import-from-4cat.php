@@ -80,22 +80,26 @@ while(file_exists($temp_path)) {
     $temp_path = $basepath.'-'.$index.'.json';
     $index += 1;
 }
+//
+// // download and write to file
+// $download = fopen($url, 'rb');
+// $output = fopen($temp_path, 'wb');
+//
+// $startTime = time();
+// $timeout = 60;   //timeout in seconds
+//
+// while('' !== ($chunk = stream_get_contents($download, 1024))) {
+//    if(time() > $startTime + $timeout) {
+//      exit_with_json_error('Stream exceeded timeout; exiting.');
+//    }
+//     fwrite($output, $chunk);
+// }
+// fclose($download);
+// fclose($output);
 
-// download and write to file
-$download = fopen($url, 'rb');
-$output = fopen($temp_path, 'wb');
-
-$startTime = time();
-$timeout = 60;   //timeout in seconds
-
-while('' !== ($chunk = stream_get_contents($download, 1024))) {
-   if(time() > $startTime + $timeout) {
-     exit_with_json_error('Stream exceeded timeout; exiting.');
-   }
-    fwrite($output, $chunk);
+if !(file_put_contents($temp_path, file_get_contents($url))) {
+    exit_with_json_error('Unable to download file, exiting');
 }
-fclose($download);
-fclose($output);
 
 // call import-jsondump.php
 $import_script = dirname(dirname(__FILE__)).DIRECTORY_SEPARATOR.'import'.DIRECTORY_SEPARATOR.'import-jsondump.php';
