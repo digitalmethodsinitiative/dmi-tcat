@@ -97,7 +97,7 @@ while(file_exists($temp_path)) {
 // fclose($download);
 // fclose($output);
 
-if !(file_put_contents($temp_path, file_get_contents($url))) {
+if (!file_put_contents($temp_path, file_get_contents($url))) {
     exit_with_json_error('Unable to download file, exiting');
 }
 
