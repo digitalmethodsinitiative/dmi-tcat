@@ -7,7 +7,8 @@ include_once __DIR__ . '/../common/constants.php';
 include_once __DIR__ . '/../common/functions.php';
 include_once __DIR__ . '/../capture/common/functions.php';
 
-if(isset($GLOBALS['import-settings']) > 2) {
+// Check if import-settings are already set
+if(isset($GLOBALS['import-settings']) and count($GLOBALS['import-settings']) > 2) {
     $type = $GLOBALS['import-settings']['type'];
     $bin_name = $GLOBALS['import-settings']['bin_name'];
     $dir = $GLOBALS['import-settings']['dir'];

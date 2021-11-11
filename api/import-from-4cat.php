@@ -62,7 +62,6 @@ $name = strtolower($name);
 // make sure there is a temporary folder to store the file in
 $temp_dir = __DIR__.DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR."analysis".DIRECTORY_SEPARATOR."cache".DIRECTORY_SEPARATOR;
 // $temp_dir = dirname(dirname(__FILE__)).DIRECTORY_SEPARATOR.'temp';
-error_log($temp_dir);
 if(!is_dir($temp_dir)) {
     mkdir($temp_dir);
 }
@@ -80,23 +79,8 @@ while(file_exists($temp_path)) {
     $temp_path = $basepath.'-'.$index.'.json';
     $index += 1;
 }
-//
-// // download and write to file
-// $download = fopen($url, 'rb');
-// $output = fopen($temp_path, 'wb');
-//
-// $startTime = time();
-// $timeout = 60;   //timeout in seconds
-//
-// while('' !== ($chunk = stream_get_contents($download, 1024))) {
-//    if(time() > $startTime + $timeout) {
-//      exit_with_json_error('Stream exceeded timeout; exiting.');
-//    }
-//     fwrite($output, $chunk);
-// }
-// fclose($download);
-// fclose($output);
 
+error_log("URL to download: ".$url);
 if (!file_put_contents($temp_path, file_get_contents($url))) {
     exit_with_json_error('Unable to download file, exiting');
 }
@@ -109,6 +93,7 @@ if(!file_exists($import_script)) {
 
 ob_start();
 $argc = 2; // not used, but ensures the import script doesn't die
+error_log("Values: bin_name=".$name." query=".$query);
 $GLOBALS['import-settings'] = [
     'type' => 'import 4cat',
     'bin_name' => $name,
