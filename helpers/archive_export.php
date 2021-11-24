@@ -184,7 +184,7 @@ fputs($fh, "\n");
 fclose($fh);
 
 // Instantiate array for bins to be deleted
-$binsToDelete = array();
+$exportedBins = array();
 
 // Export all named bins
 
@@ -196,6 +196,11 @@ foreach ($queryBins as $bin) {
         unlink($filename);
         die("$prog: error: unknown query bin: $bin\n");
     }
+
+    // Create object for metadata and deletion later
+    $binObj = array();
+    $binObj['name'] = $bin;
+    $binObj['type'] = $bintype;
 
     $fh = fopen($filename, "a");
     fputs($fh, "-- Export DMI-TCAT query bin: begin: ${bin} ($bintype)\n");
@@ -329,6 +334,7 @@ foreach ($queryBins as $bin) {
             fputs($fh, $sql . "\n");
         }
 
+        $binObj['phrases'] = array();
         foreach ($phrase_times as $phrase_time) {
             $phrase = $phrase_time['phrase'];
             $starttime = $phrase_time['starttime'];
@@ -400,17 +406,21 @@ foreach ($queryBins as $bin) {
     fputs($fh, "\n");
     fclose($fh);
 
-    // Add object to binsToDelete for later
-    $binObj = array();
-    $binObj['name'] = $bin;
-    $binObj['bintype'] = $bintype;
-    $binObj['phrases'] = $phrases;
-    $binObj['phrase_times'] = $phrase_times;
+    // Get number of tweets
+    $sql = "SELECT count(id) AS count FROM " . $bin . "_tweets";
+    $res = $dbh->prepare($sql);
+    if ($res->execute() && $res->rowCount()) {
+        $result = $res->fetch();
+        $binObj['num_of_tweets'] = $result['count'];
+    } else {
+        $binObj['num_of_tweets'] = 0;
+    }
+
+    // Add bin object to be used later
+    $binObj['phrases'] = $phrase_times;
     $binObj['users'] = $users;
     $binObj['periods'] = $periods;
-    $binObj['captured_phrases'] = $captured_phrases;
-    $binsToDelete[] = $binObj;
-
+    $exportedBins[] = $binObj;
 }
 
 // Finish file
@@ -434,13 +444,16 @@ if (! isset($outfile)) {
     print "URL to download dump: $url_destination\n";
 }
 
-// TODO: Create Metadata file
+// Create Metadata file
+$fp = fopen(str_replace('.sql', '', $filename).'.json', 'w');
+fwrite($fp, json_encode($exportedBins));
+fclose($fp);
 
 // LAST: Delete everything that was archived
 
-foreach ($binsToDelete as $bin) {
+foreach ($exportedBins as $bin) {
     $name = $bin['name'];
-    $bintype = $bin['bintype'];
+    $bintype = $bin['type'];
     print "Deleting query bin: $name\n";
 
     // Connect to database
