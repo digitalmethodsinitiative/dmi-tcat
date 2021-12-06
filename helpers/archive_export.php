@@ -445,8 +445,16 @@ if (! isset($outfile)) {
 }
 
 // Create Metadata file
+$git_info = getGitLocal();
+$export_json = array(
+  'creation_date' => date("Y-m-d H:i:s"),
+  'filename' =>  $filename,
+  'current_git_info' => $git_info,
+  'exported_bins' => $exportedBins,
+);
+
 $fp = fopen(str_replace('.sql', '', $filename).'.json', 'w');
-fwrite($fp, json_encode($exportedBins));
+fwrite($fp, json_encode($export_json));
 fclose($fp);
 
 // LAST: Delete everything that was archived
