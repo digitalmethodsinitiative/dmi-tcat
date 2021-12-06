@@ -80,32 +80,6 @@ require_once __DIR__ . '/common/CSV.class.php';
           $csv->writerow();
         }
 
-        // make query
-        // $sql = "SELECT * FROM tcat_error_gap WHERE type = :type and
-        //                                            start >= :start and end <= :end";
-        // $rec = $dbh->prepare($sql);
-        // $rec->bindParam(":type", $bin_type, PDO::PARAM_STR);
-        // $rec->bindParam(":start", $_GET['startdate'], PDO::PARAM_STR);
-        // $rec->bindParam(":end", $_GET['enddate'], PDO::PARAM_STR);
-        // $rec->execute();
-        //
-        // // loop over results and write to file
-        // while ($data = $rec->fetch(PDO::FETCH_ASSOC)) {
-        //     // the query bin must have been active during the gap period, if we want to report it as a possible gap
-        //     $sql2 = "SELECT count(*) as cnt FROM tcat_query_bins_phrases WHERE querybin_id = $bin_id and
-        //                                                 starttime <= '" . $data["end"] . "' and (endtime >= '" . $data["start"] . "' or endtime is null or endtime = '0000-00-00 00:00:00')";
-        //     $rec2 = $dbh->prepare($sql2);
-        //     $rec2->execute();
-        //     while ($data2 = $rec2->fetch(PDO::FETCH_ASSOC)) {
-        //         if ($data2['cnt'] > 0) {
-        //             $csv->newrow();
-        //             $csv->addfield($data["start"]);
-        //             $csv->addfield($data["end"]);
-        //             $csv->writerow();
-        //             break;
-        //         }
-        //     }
-        // }
         $csv->close();
 
         echo '<fieldset class="if_parameters">';
