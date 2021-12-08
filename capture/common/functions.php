@@ -1089,7 +1089,7 @@ function queryManagerCreateBinFromExistingTables($binname, $querybin_id, $type, 
         }
     }
 
-    if ($type == 'track' || $type == 'search' || $type == "import ytk" || $type == "import track") // insert phrases
+    if ($type == 'track' || $type == 'search' || $type == "import ytk" || $type == "import track" || $type == "import 4cat") // insert phrases
         queryManagerInsertPhrases($querybin_id, $queries, $starttime, $endtime);
     elseif ($type == 'follow' || $type == 'timeline' || $type == 'import timeline') {// insert users
         queryManagerInsertUsers($querybin_id, $queries, $starttime, $endtime);
