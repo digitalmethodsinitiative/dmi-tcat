@@ -57,6 +57,7 @@ if(!$name) {
 
 $name = preg_replace('/[^0-9a-zA-Z_ -]/siU', '', $name);
 $name = str_replace(' ', '_', $name);
+$name = str_replace('-', '_', $name);
 $name = strtolower($name);
 
 // make sure there is a temporary folder to store the file in
@@ -89,6 +90,20 @@ if (!file_put_contents($temp_path, file_get_contents($url))) {
 $import_script = dirname(dirname(__FILE__)).DIRECTORY_SEPARATOR.'import'.DIRECTORY_SEPARATOR.'import-jsondump.php';
 if(!file_exists($import_script)) {
     exit_with_json_error('Import script not found, exiting');
+}
+
+// here we unfortunately need to include some code from TCAT proper
+// we check if the bin already exists, and if so, change the name to
+// create a new one
+include_once __DIR__ . '/../config.php';
+include_once __DIR__ . '/../common/constants.php';
+include_once __DIR__ . '/../common/functions.php';
+
+$index = 1;
+$base_name = $name;
+while(queryManagerBinExists($name, true) !== false) {
+    $name = $base_name.'_'.$index;
+    $index += 1;
 }
 
 ob_start();
