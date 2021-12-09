@@ -192,6 +192,8 @@ if (defined('ANALYSIS_URL'))
                             $ordered_datasets["keyword captures"][$key] = $set;
                         } elseif ($set['type'] == "geotrack") {
                             $ordered_datasets["geo captures"][$key] = $set;
+                        } elseif ($set['type'] == "import 4ca") {
+                            $ordered_datasets["4CAT imports"][$key] = $set;
                         } elseif ($set['type'] == "follow") {
                             $ordered_datasets["user captures"][$key] = $set;
                         } elseif ($set['type'] == "onepercent") {
