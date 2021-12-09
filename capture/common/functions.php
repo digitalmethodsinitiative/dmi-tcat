@@ -1047,6 +1047,19 @@ function getAllBins() {
     return $querybins;
 }
 
+function getAllInactiveBins() {
+    $dbh = pdo_connect();
+    $sql = "select querybin from tcat_query_bins where active = 0";
+    $rec = $dbh->prepare($sql);
+    $querybins = array();
+    if ($rec->execute() && $rec->rowCount() > 0) {
+        while ($res = $rec->fetch()) {
+            $querybins[] = $res['querybin'];
+        }
+    }
+    $dbh = false;
+    return $querybins;
+}
 
 function queryManagerBinExists($binname, $cronjob = false) {
     $dbh = pdo_connect();

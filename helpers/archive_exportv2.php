@@ -14,6 +14,10 @@
 //
 //     export.php -a
 //
+// Export queries and data for all inactive bins (active=0):
+//
+//     export.php -i
+//
 // Export queries and data for the query bin "foobar":
 //
 //     export.php foobar
@@ -53,7 +57,10 @@ $prog = basename($argv[0]);
 // Directory where the export file will be saved (if -o is not used)
 $defaultOutputDir = realpathslash(__DIR__ . "/../analysis/$resultsdir");
 
-$args = array(); $isAllBins = false;
+$args = array();
+$isAllBins = false;
+$isAllInactiveBins = false;
+
 for ($i = 1; $i < $argc; $i++) {
     if (substr($argv[$i], 0, 1) == '-') {
         $opt = substr($argv[$i], 1);
@@ -68,6 +75,9 @@ for ($i = 1; $i < $argc; $i++) {
             case 'a':
                 $isAllBins = true;
                 break;
+            case 'i':
+                $isAllInactiveBins = true;
+                break;
             case 'h':
                 print_help($prog, $defaultOutputDir);
                 exit(0);
@@ -79,21 +89,31 @@ for ($i = 1; $i < $argc; $i++) {
     }
 }
 
-$queryBins = $isAllBins ? array() : $args;
+if ( $isAllBins && $isAllInactiveBins ) {
+    die("Cannot use -a for All bins and -i for All Inactive bins at the same time (-h for help)\n");
+}
 
-if (!$isAllBins && count($queryBins) == 0) {
+// Either empty array or array of bins
+$queryBins = ( $isAllBins || $isAllInactiveBins ) ? array() : $args;
+
+if (!$isAllBins && !$isAllInactiveBins && count($queryBins) == 0) {
     print_help($prog, $defaultOutputDir);
     exit(0);
 }
 
-// All\n query bins
-
+// Collect or validate query bins
 if ($isAllBins) {
     // Export all of the query bins
-
     $queryBins = getAllbins();
     if (count($queryBins) == 0) {
         die("$prog: no query bins exist in this deployment of TCAT)\n");
+    }
+    sort($queryBins);
+} else if ( $isAllInactiveBins ) {
+    // Export all inactive query bins
+    $queryBins = getAllInactiveBins();
+    if (count($queryBins) == 0) {
+        die("$prog: no inactive query bins exist in this deployment of TCAT)\n");
     }
     sort($queryBins);
 } else {
@@ -141,6 +161,8 @@ if (! isset($outfile)) {
         $binAndType = escapeshellcmd($queryBins[0]) . '-' . $bintype;
     } else if ($isAllBins) {
     	$binAndType = 'TCAT_allQueryBins';
+    } else if ($isAllInactiveBins) {
+        $binAndType = 'TCAT_inactiveQueryBins';
     } else {
     	$binAndType = 'TCAT_queryBins';
     }
@@ -174,7 +196,13 @@ if (file_exists($filename . '.gz')) {
 
 $fh = fopen($filename, "a");
 fputs($fh, "-- Export DMI-TCAT: begin ($timestamp)\n");
-fputs($fh, ($isAllBins) ? "-- All Query Bins:\n" : "-- Query Bins:\n");
+if ($isAllBins) {
+    fputs($fh, "-- All Query Bins:\n");
+} else if ($isAllInactiveBins) {
+    fputs($fh, "-- All Inactive Query Bins:\n");
+} else {
+    fputs($fh, "-- Query Bins:\n");
+}
 $n = 0;
 foreach ($queryBins as $bin) {
   $n++;
@@ -239,16 +267,28 @@ foreach ($queryBins as $bin) {
 
     // Collect users
     $users = array();
-    $users_starttime = array(); $users_endtime = array();
-    $sql = "SELECT DISTINCT(u.id) as id, bu.starttime as starttime, bu.endtime as endtime FROM tcat_query_users u, tcat_query_bins_users bu, tcat_query_bins b
+    $sql = "SELECT DISTINCT(u.id) as id FROM tcat_query_users u, tcat_query_bins_users bu, tcat_query_bins b
                                           WHERE u.id = bu.user_id AND bu.querybin_id = b.id AND b.querybin = :querybin";
     $q = $dbh->prepare($sql);
     $q->bindParam(':querybin', $bin, PDO::PARAM_STR);
     $q->execute();
     while ($row = $q->fetch(PDO::FETCH_ASSOC)) {
-        $users[] = $row['id'];
-        $users_starttime[$row['id']] = $row['starttime'];
-        $users_endtime[$row['id']] = fix_endtime_if_not_ended($row['endtime']);
+      $users[] = $row['id'];
+    }
+
+    // Collect user start and end times
+    $user_times = array();
+    $sql = "SELECT u.id as user_id, bu.starttime as starttime, bu.endtime as endtime FROM tcat_query_users u, tcat_query_bins_users bu, tcat_query_bins b
+                                          WHERE u.id = bu.user_id AND bu.querybin_id = b.id AND b.querybin = :querybin";
+    $q = $dbh->prepare($sql);
+    $q->bindParam(':querybin', $bin, PDO::PARAM_STR);
+    $q->execute();
+    while ($row = $q->fetch(PDO::FETCH_ASSOC)) {
+        $obj = array();
+        $obj['user_id'] = $row['user_id'];
+        $obj['starttime'] = $row['starttime'];
+        $obj['endtime'] = fix_endtime_if_not_ended($row['endtime']);
+        $user_times[] = $obj;
     }
 
     // Collect bin periods
@@ -330,7 +370,6 @@ foreach ($queryBins as $bin) {
             fputs($fh, $sql . "\n");
         }
 
-        $binObj['phrases'] = array();
         foreach ($phrase_times as $phrase_time) {
             $phrase = $phrase_time['phrase'];
             $starttime = $phrase_time['starttime'];
@@ -375,17 +414,17 @@ foreach ($queryBins as $bin) {
             fputs($fh, $sql . "\n");
         }
 
-        foreach ($users as $user) {
-            $starttime = $users_starttime[$user];
-            $endtime = $users_endtime[$user];
+        foreach ($user_times as $user_time) {
+            $user_id = $user_time['user_id'];
+            $starttime = $user_time['starttime'];
+            $endtime = $user_time['endtime'];
             $sql = "INSERT INTO tcat_query_bins_users SET " .
                    " starttime = '$starttime', " .
                    " endtime = '$endtime', " .
-                   " user_id = $user, " .
+                   " user_id = ( select MIN(id) from tcat_query_users where id = " . $dbh->Quote($user_id) . " ), " .
                    " querybin_id = ( select MAX(id) from tcat_query_bins );";
             fputs($fh, $sql . "\n");
         }
-
     }
 
     foreach ($periods as $prd) {
@@ -414,7 +453,7 @@ foreach ($queryBins as $bin) {
 
     // Add bin object to be used later
     $binObj['phrases'] = $phrase_times;
-    $binObj['users'] = $users;
+    $binObj['users'] = $user_times;
     $binObj['periods'] = $periods;
     $exportedBins[] = $binObj;
 }
