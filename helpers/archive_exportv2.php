@@ -47,6 +47,14 @@ if (!env_is_cli()) {
     die("Please run this script only from the command-line.\n");
 }
 
+// Hackish way to ignore certain bins when archiving inactive bins
+$ignoreArray = true;
+$binsToIgnore = array('anti_europa_new', 'anti_europa_politici', '4chan', 'blackfriday', 'mh17_track',
+    'gamergate', 'netneutrality', 'refugees_english', 'cop21', 'QAnon', 'antifa_new',
+    'RuPauls_Drag_Race', 'Corona_virus', 'top_ten_users_1');
+
+$time_start = microtime(true);
+
 // Process command line
 // Sets these variables:
 //   $outfile - set if -o specified
@@ -110,8 +118,20 @@ if ($isAllBins) {
     }
     sort($queryBins);
 } else if ( $isAllInactiveBins ) {
-    // Export all inactive query bins
-    $queryBins = getAllInactiveBins();
+    // HACKING
+    if ($ignoreArray) {
+        // Ignore certain bins!
+        $tempBins = getAllInactiveBins();
+        foreach ($tempBins as $bin) {
+            if (!in_array($bin, $binsToIgnore)) {
+                $queryBins[] = $bin;
+            }
+        }
+    } else {
+        // Export all inactive query bins
+        $queryBins = getAllInactiveBins();
+    }
+
     if (count($queryBins) == 0) {
         die("$prog: no inactive query bins exist in this deployment of TCAT)\n");
     }
@@ -213,6 +233,7 @@ fclose($fh);
 
 // Instantiate array for bins to be deleted
 $exportedBins = array();
+$totalTweets = 0;
 
 // Export all named bins
 
@@ -450,6 +471,8 @@ foreach ($queryBins as $bin) {
     } else {
         $binObj['num_of_tweets'] = 0;
     }
+    $totalTweets += $binObj['num_of_tweets'];
+    print "Collected " . $binObj['num_of_tweets'] . " tweets for bin ". $bin ."\n";
 
     // Add bin object to be used later
     $binObj['phrases'] = $phrase_times;
@@ -574,6 +597,8 @@ if (! isset($outfile)) {
 $git_info = getGitLocal();
 $export_json = array(
   'creation_date' => date("Y-m-d H:i:s"),
+  'total_tweets_exported' => $totalTweets,
+  'minutes_to_export' => (microtime(true) - $time_start)/60,
   'filename' =>  $filename,
   'current_git_info' => $git_info,
   'exported_bins' => $exportedBins,
@@ -663,6 +688,11 @@ foreach ($exportedBins as $bin) {
     // tcat_error_gap
     // tcat_error_ratelimit
 }
+
+print "Total Tweets Archived: " .$totalTweets. "\n";
+$time_end = microtime(true);
+$execution_time = ($time_end - $time_start)/60;
+print "Total Execution Time: " .$execution_time. " Mins\n";
 
 function get_executable($binary) {
     $where = `which $binary`;
