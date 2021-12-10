@@ -98,6 +98,7 @@ if(!file_exists($import_script)) {
 include_once __DIR__ . '/../config.php';
 include_once __DIR__ . '/../common/constants.php';
 include_once __DIR__ . '/../common/functions.php';
+include_once __DIR__ . '/../capture/common/functions.php';
 
 $index = 1;
 $base_name = $name;
