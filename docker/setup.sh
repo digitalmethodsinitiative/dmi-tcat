@@ -1035,15 +1035,17 @@ fi
 # Install the TokuDB storage engine
 
 
-echo "Installing TokuDB storage engine ..."
+if [ "$DB_USE_TOKUDB" = 'y' ]; then
+    echo "Installing TokuDB storage engine ..."
 
 
-apt-get -y install mariadb-plugin-tokudb
-# Enable the TokuDB storage engine
-sed -i 's/^#plugin-load-add=ha_tokudb.so/plugin-load-add=ha_tokudb.so/g' /etc/mysql/mariadb.conf.d/tokudb.cnf
-# Restart mariadb
-# systemctl restart mariadb
-#/etc/init.d/mariadb restart
+    apt-get -y install mariadb-plugin-tokudb
+    # Enable the TokuDB storage engine
+    sed -i 's/^#plugin-load-add=ha_tokudb.so/plugin-load-add=ha_tokudb.so/g' /etc/mysql/mariadb.conf.d/tokudb.cnf
+    # Restart mariadb
+    # systemctl restart mariadb
+    #/etc/init.d/mariadb restart
+fi
 
 echo ""
 
@@ -1264,6 +1266,11 @@ echo "FLUSH PRIVILEGES;" | mysql --defaults-file="$MYSQL_USER_ADMIN_CNF"
 sed -i "s/dbuser = \"\"/dbuser = \"$TCATMYSQLUSER\"/g" "$CFG"
 sed -i "s/dbpass = \"\"/dbpass = \"$TCATMYSQLPASS\"/g" "$CFG"
 sed -i "s/example.com\/dmi-tcat\//$SERVERNAME\//g" "$CFG"
+
+if [ "$DB_USE_TOKUDB" = 'n' ]; then
+  sed -i "s|ENGINE=TokuDB COMPRESSION=TOKUDB_LZMA|ENGINE=MYISAM|" "$CFG"
+fi
+
 if [ "$LETSENCRYPT" = 'y' ]; then
     sed -i "s/http:\/\//https:\/\//g" "$CFG"
 fi
