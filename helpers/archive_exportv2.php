@@ -119,9 +119,11 @@ if ($isAllBins) {
     sort($queryBins);
 } else if ( $isAllInactiveBins ) {
     // HACKING
+    $dbh = new PDO("mysql:host=$hostname;dbname=$database;charset=utf8mb4", $dbuser, $dbpass, array(PDO::MYSQL_ATTR_INIT_COMMAND => "set sql_mode='ALLOW_INVALID_DATES'"));
+    $dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     if ($ignoreArray) {
         // Ignore certain bins!
-        $tempBins = getAllInactiveBins();
+        $tempBins = getAllInactiveBins($dbh);
         foreach ($tempBins as $bin) {
             if (!in_array($bin, $binsToIgnore)) {
                 $queryBins[] = $bin;
@@ -129,7 +131,7 @@ if ($isAllBins) {
         }
     } else {
         // Export all inactive query bins
-        $queryBins = getAllInactiveBins();
+        $queryBins = getAllInactiveBins($dbh);
     }
 
     if (count($queryBins) == 0) {
@@ -727,5 +729,20 @@ function print_help($prog, $defaultOutputDir) {
     echo "Default output file is a .sql.gz file in $defaultOutputDir\n";
     echo "Caution: query bin names are case sensitive.\n";
 }
+
+function getAllInactiveBins($dbh) {
+
+    $sql = "select querybin from tcat_query_bins where active = 0";
+    $rec = $dbh->prepare($sql);
+    $querybins = array();
+    if ($rec->execute() && $rec->rowCount() > 0) {
+        while ($res = $rec->fetch()) {
+            $querybins[] = $res['querybin'];
+        }
+    }
+    $dbh = false;
+    return $querybins;
+}
+
 
 ?>
