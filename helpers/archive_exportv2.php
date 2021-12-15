@@ -262,89 +262,11 @@ foreach ($queryBins as $bin) {
     $dbh = new PDO("mysql:host=$hostname;dbname=$database;charset=utf8mb4", $dbuser, $dbpass, array(PDO::MYSQL_ATTR_INIT_COMMAND => "set sql_mode='ALLOW_INVALID_DATES'"));
     $dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-    // Collect phrases
-    $phrases = array();
-    $sql = "SELECT DISTINCT(p.phrase) as phrase FROM tcat_query_phrases p, tcat_query_bins_phrases bp, tcat_query_bins b
-                                          WHERE p.id = bp.phrase_id AND bp.querybin_id = b.id AND b.querybin = :querybin";
-    $q = $dbh->prepare($sql);
-    $q->bindParam(':querybin', $bin, PDO::PARAM_STR);
-    $q->execute();
-    while ($row = $q->fetch(PDO::FETCH_ASSOC)) {
-        $phrases[] = $row['phrase'];
-    }
-
-    // Collect phrase start and end times
-    $phrase_times = array();
-    $sql = "SELECT p.phrase as phrase, bp.starttime as starttime, bp.endtime as endtime FROM tcat_query_phrases p, tcat_query_bins_phrases bp, tcat_query_bins b
-                                          WHERE p.id = bp.phrase_id AND bp.querybin_id = b.id AND b.querybin = :querybin";
-    $q = $dbh->prepare($sql);
-    $q->bindParam(':querybin', $bin, PDO::PARAM_STR);
-    $q->execute();
-    while ($row = $q->fetch(PDO::FETCH_ASSOC)) {
-        $obj = array();
-        $obj['phrase'] = $row['phrase'];
-        $obj['starttime'] = $row['starttime'];
-        $obj['endtime'] = fix_endtime_if_not_ended($row['endtime']);
-        $phrase_times[] = $obj;
-    }
-
-    // Collect users
-    $users = array();
-    $sql = "SELECT DISTINCT(u.id) as id FROM tcat_query_users u, tcat_query_bins_users bu, tcat_query_bins b
-                                          WHERE u.id = bu.user_id AND bu.querybin_id = b.id AND b.querybin = :querybin";
-    $q = $dbh->prepare($sql);
-    $q->bindParam(':querybin', $bin, PDO::PARAM_STR);
-    $q->execute();
-    while ($row = $q->fetch(PDO::FETCH_ASSOC)) {
-      $users[] = $row['id'];
-    }
-
-    // Collect user start and end times
-    $user_times = array();
-    $sql = "SELECT u.id as user_id, bu.starttime as starttime, bu.endtime as endtime FROM tcat_query_users u, tcat_query_bins_users bu, tcat_query_bins b
-                                          WHERE u.id = bu.user_id AND bu.querybin_id = b.id AND b.querybin = :querybin";
-    $q = $dbh->prepare($sql);
-    $q->bindParam(':querybin', $bin, PDO::PARAM_STR);
-    $q->execute();
-    while ($row = $q->fetch(PDO::FETCH_ASSOC)) {
-        $obj = array();
-        $obj['user_id'] = $row['user_id'];
-        $obj['starttime'] = $row['starttime'];
-        $obj['endtime'] = fix_endtime_if_not_ended($row['endtime']);
-        $user_times[] = $obj;
-    }
-
-    // Collect bin periods
-    $periods = array();
-    $sql = "select starttime, endtime from tcat_query_bins_periods prd, tcat_query_bins b where prd.querybin_id = b.id AND b.querybin = :querybin";
-    $q = $dbh->prepare($sql);
-    $q->bindParam(':querybin', $bin, PDO::PARAM_STR);
-    $q->execute();
-    while ($row = $q->fetch(PDO::FETCH_ASSOC)) {
-        $obj = array();
-        $obj['starttime'] = $row['starttime'];
-        $obj['endtime'] = fix_endtime_if_not_ended($row['endtime']);
-        $periods[] = $obj;
-    }
-
-    // Collect tweet_id and phrase data from tcat_captured_phrases table
-    $captured_phrases = array();
-    $sql = "select tweet_id, created_at, phrase from tcat_captured_phrases cp, tcat_query_phrases p, tcat_query_bins_phrases bp, tcat_query_bins b WHERE cp.phrase_id = p.id AND p.id = bp.phrase_id AND bp.querybin_id = b.id AND b.querybin = :querybin";
-    $q = $dbh->prepare($sql);
-    $q->bindParam(':querybin', $bin, PDO::PARAM_STR);
-    $q->execute();
-    while ($row = $q->fetch(PDO::FETCH_ASSOC)) {
-        $obj = array();
-        $obj['tweet_id'] = $row['tweet_id'];
-        $obj['created_at'] = $row['created_at'];
-        $obj['phrase'] = $row['phrase'];
-        $captured_phrases[] = $obj;
-    }
-
     //
-    // Now run the mysqldumps
+    // Add the mysqldumps to the file
     //
 
+    print date("Y-m-d H:i:s")."Beginning MySQL Dumps\n";
     $tables_in_db = array();
     $sql = "show tables";
     $q = $dbh->prepare($sql);
@@ -370,57 +292,97 @@ foreach ($queryBins as $bin) {
     $cmd = "$bin_mysqldump  --lock-tables=false --skip-add-drop-table --default-character-set=utf8mb4 -u$dbuser -h $hostname $database $string | sed -e \"s/SQL_MODE='NO_AUTO_VALUE_ON_ZERO'/SQL_MODE='ALLOW_INVALID_DATES'/g\" >> $filename";
     system($cmd);
 
-    // Now append the dump with TCAT table information
-    // Please note we dump all meta-data (queries and phrases)
+    //
+    // Add selective table entries to file
+    //
+    print date("Y-m-d H:i:s")."Exporting bin specific TCAT data\n";
 
+    // Reopen file
     $fh = fopen($filename, "a");
-
     fputs($fh, "\n");
-
     fputs($fh, "--\n");
     fputs($fh, "-- DMI-TCAT - Update TCAT tables\n");
     fputs($fh, "--\n");
 
-
+    // Insert bin entry to tcat_query_bins
     $sql = "INSERT INTO tcat_query_bins ( querybin, `type`, active, access ) values ( " . $dbh->Quote($bin) . ", " . $dbh->Quote($bintype) . ", 0, 0 );";
     fputs($fh, $sql . "\n");
 
+    // Collect bin periods
+    $periods = array();
+    $sql = "select starttime, endtime from tcat_query_bins_periods prd, tcat_query_bins b where prd.querybin_id = b.id AND b.querybin = :querybin";
+    $q = $dbh->prepare($sql);
+    $q->bindParam(':querybin', $bin, PDO::PARAM_STR);
+    $q->execute();
+    while ($row = $q->fetch(PDO::FETCH_ASSOC)) {
+        $obj = array();
+        $obj['starttime'] = $starttime = $row['starttime'];
+        $obj['endtime'] = $endtime = fix_endtime_if_not_ended($row['endtime']);
+        $periods[] = $obj;
+        $sql = "INSERT INTO tcat_query_bins_periods SET " .
+            " querybin_id = ( select MAX(id) from tcat_query_bins ), " .
+            " starttime = '$starttime', " .
+            " endtime = '$endtime';";
+        fputs($fh, $sql . "\n");
+    }
+    $binObj['periods'] = $periods;
 
+    // Collect and insert user or phrase specific data
     if ($bintype == 'track') {
+        print date("Y-m-d H:i:s")."Exporting phrase data\n";
 
-        foreach ($phrases as $phrase) {
+        // Collect phrases
+        $sql = "SELECT DISTINCT(p.phrase) as phrase FROM tcat_query_phrases p, tcat_query_bins_phrases bp, tcat_query_bins b
+                                          WHERE p.id = bp.phrase_id AND bp.querybin_id = b.id AND b.querybin = :querybin";
+        $q = $dbh->prepare($sql);
+        $q->bindParam(':querybin', $bin, PDO::PARAM_STR);
+        $q->execute();
+        while ($row = $q->fetch(PDO::FETCH_ASSOC)) {
+            // Insert phrases
+            $phrase = $row['phrase'];
             $sql = "INSERT INTO tcat_query_phrases ( phrase ) values ( " . $dbh->Quote($phrase) . " );";
             fputs($fh, $sql . "\n");
         }
 
-        foreach ($phrase_times as $phrase_time) {
-            $phrase = $phrase_time['phrase'];
-            $starttime = $phrase_time['starttime'];
-            $endtime = $phrase_time['endtime'];
+        // Collect phrase start and end times
+        $phrase_times = array();
+        $sql = "SELECT p.phrase as phrase, bp.starttime as starttime, bp.endtime as endtime FROM tcat_query_phrases p, tcat_query_bins_phrases bp, tcat_query_bins b
+                                          WHERE p.id = bp.phrase_id AND bp.querybin_id = b.id AND b.querybin = :querybin";
+        $q = $dbh->prepare($sql);
+        $q->bindParam(':querybin', $bin, PDO::PARAM_STR);
+        $q->execute();
+        while ($row = $q->fetch(PDO::FETCH_ASSOC)) {
+            $obj = array();
+            $obj['phrase'] = $phrase = $row['phrase'];
+            $obj['starttime'] = $starttime = $row['starttime'];
+            $obj['endtime'] = $endtime = fix_endtime_if_not_ended($row['endtime']);
+            $phrase_times[] = $obj;
+            // Insert phrase collection times
             $sql = "INSERT INTO tcat_query_bins_phrases SET " .
-                   " starttime = '$starttime', " .
-                   " endtime = '$endtime', " .
-                   " phrase_id = ( select MIN(id) from tcat_query_phrases where phrase = " . $dbh->Quote($phrase) . " ), " .
-                   " querybin_id = ( select MAX(id) from tcat_query_bins );";
+                " starttime = '$starttime', " .
+                " endtime = '$endtime', " .
+                " phrase_id = ( select MIN(id) from tcat_query_phrases where phrase = " . $dbh->Quote($phrase) . " ), " .
+                " querybin_id = ( select MAX(id) from tcat_query_bins );";
             fputs($fh, $sql . "\n");
         }
+        $binObj['phrases'] = $phrase_times;
 
-        // we could have just now inserted duplicate phrases in the database, the next two queries resolve that problem
-        // This update seems unnecessary since we already set the tcat_query_bins_phrases to MIN(id), but I may be missing something -Dale
-        foreach ($phrases as $phrase) {
-            $sql = "UPDATE tcat_query_bins_phrases as BP inner join tcat_query_phrases as P on BP.phrase_id = P.id set BP.phrase_id = ( select MIN(id) from tcat_query_phrases where phrase = " . $dbh->Quote($phrase) .  " ) where P.phrase = " . $dbh->Quote($phrase) . ';';
-            fputs($fh, $sql . "\n");
-        }
-
+        // Remove any phrases that exist as duplicates
+        // Phrase collections times used MIN(id) and should thus be tied to one entry
+        // Note: this could create overlapping time periods that are unlikely to otherwise exists; unsure how TCAT may handle that
         $sql = "DELETE FROM tcat_query_phrases where id not in ( select phrase_id from tcat_query_bins_phrases );";
         fputs($fh, $sql . "\n");
 
-        // With tcat_query_phrases cleaned up, we can now add tcat_captured_phrases assigning phrase_id to the new id
-        foreach ($captured_phrases as $captured_phrase) {
-            $tweet_id = $captured_phrase['tweet_id'];
-            $created_at = $captured_phrase['created_at'];
-            $phrase = $captured_phrase['phrase'];
-
+        // Collect captured tweets
+        $sql = "select tweet_id, created_at, phrase from tcat_captured_phrases cp, tcat_query_phrases p, tcat_query_bins_phrases bp, tcat_query_bins b WHERE cp.phrase_id = p.id AND p.id = bp.phrase_id AND bp.querybin_id = b.id AND b.querybin = :querybin";
+        $q = $dbh->prepare($sql);
+        $q->bindParam(':querybin', $bin, PDO::PARAM_STR);
+        $q->execute();
+        while ($row = $q->fetch(PDO::FETCH_ASSOC)) {
+            // Insert capture tweet_id tied to specific phrase
+            $tweet_id = $row['tweet_id'];
+            $created_at = $row['created_at'];
+            $phrase = $row['phrase'];
             // Using INSERT IGNORE as it is possible to import this data into a TCAT that has captured the same tweet with the same phrase
             $sql = "INSERT IGNORE INTO tcat_captured_phrases SET " .
                 " tweet_id = '$tweet_id', " .
@@ -429,35 +391,44 @@ foreach ($queryBins as $bin) {
             fputs($fh, $sql . "\n");
         }
 
-
     } else if ($bintype == 'follow') {
+        print date("Y-m-d H:i:s")."Exporting user data\n";
 
-        foreach ($users as $user) {
+        // Collect users
+        $sql = "SELECT DISTINCT(u.id) as id FROM tcat_query_users u, tcat_query_bins_users bu, tcat_query_bins b
+                                          WHERE u.id = bu.user_id AND bu.querybin_id = b.id AND b.querybin = :querybin";
+        $q = $dbh->prepare($sql);
+        $q->bindParam(':querybin', $bin, PDO::PARAM_STR);
+        $q->execute();
+        while ($row = $q->fetch(PDO::FETCH_ASSOC)) {
+            // Insert user
+            $user = $row['id'];
             $sql = "INSERT IGNORE INTO tcat_query_users ( id ) values ( $user );";
             fputs($fh, $sql . "\n");
         }
 
-        foreach ($user_times as $user_time) {
-            $user_id = $user_time['user_id'];
-            $starttime = $user_time['starttime'];
-            $endtime = $user_time['endtime'];
+        // Collect user start and end times
+        $user_times = array();
+        $sql = "SELECT u.id as user_id, bu.starttime as starttime, bu.endtime as endtime FROM tcat_query_users u, tcat_query_bins_users bu, tcat_query_bins b
+                                          WHERE u.id = bu.user_id AND bu.querybin_id = b.id AND b.querybin = :querybin";
+        $q = $dbh->prepare($sql);
+        $q->bindParam(':querybin', $bin, PDO::PARAM_STR);
+        $q->execute();
+        while ($row = $q->fetch(PDO::FETCH_ASSOC)) {
+            $obj = array();
+            $obj['user_id'] = $user_id = $row['user_id'];
+            $obj['starttime'] = $starttime = $row['starttime'];
+            $obj['endtime'] = $endtime = fix_endtime_if_not_ended($row['endtime']);
+            $user_times[] = $obj;
+            // Insert user start and end times
             $sql = "INSERT INTO tcat_query_bins_users SET " .
-                   " starttime = '$starttime', " .
-                   " endtime = '$endtime', " .
-                   " user_id = ( select MIN(id) from tcat_query_users where id = " . $dbh->Quote($user_id) . " ), " .
-                   " querybin_id = ( select MAX(id) from tcat_query_bins );";
+                " starttime = '$starttime', " .
+                " endtime = '$endtime', " .
+                " user_id = ( select MIN(id) from tcat_query_users where id = " . $dbh->Quote($user_id) . " ), " .
+                " querybin_id = ( select MAX(id) from tcat_query_bins );";
             fputs($fh, $sql . "\n");
         }
-    }
-
-    foreach ($periods as $prd) {
-        $starttime = $prd['starttime'];
-        $endtime = $prd['endtime'];
-        $sql = "INSERT INTO tcat_query_bins_periods SET " .
-               " querybin_id = ( select MAX(id) from tcat_query_bins ), " .
-               " starttime = '$starttime', " .
-               " endtime = '$endtime';";
-        fputs($fh, $sql . "\n");
+        $binObj['users'] = $user_times;
     }
 
     fputs($fh, "-- Export DMI-TCAT query bin: end: ${bin}\n");
@@ -476,10 +447,7 @@ foreach ($queryBins as $bin) {
     $totalTweets += $binObj['num_of_tweets'];
     print "Collected " . $binObj['num_of_tweets'] . " tweets for bin ". $bin ."\n";
 
-    // Add bin object to be used later
-    $binObj['phrases'] = $phrase_times;
-    $binObj['users'] = $user_times;
-    $binObj['periods'] = $periods;
+    // Add bin object for metadata and deletion
     $exportedBins[] = $binObj;
 }
 
@@ -730,19 +698,18 @@ function print_help($prog, $defaultOutputDir) {
     echo "Caution: query bin names are case sensitive.\n";
 }
 
-function getAllInactiveBins($dbh) {
-
-    $sql = "select querybin from tcat_query_bins where active = 0";
-    $rec = $dbh->prepare($sql);
-    $querybins = array();
-    if ($rec->execute() && $rec->rowCount() > 0) {
-        while ($res = $rec->fetch()) {
-            $querybins[] = $res['querybin'];
-        }
-    }
-    $dbh = false;
-    return $querybins;
-}
+//function getAllInactiveBins($dbh) {
+//
+//    $sql = "select querybin from tcat_query_bins where active = 0";
+//    $rec = $dbh->prepare($sql);
+//    $querybins = array();
+//    if ($rec->execute() && $rec->rowCount() > 0) {
+//        while ($res = $rec->fetch()) {
+//            $querybins[] = $res['querybin'];
+//        }
+//    }
+//    return $querybins;
+//}
 
 
 ?>
