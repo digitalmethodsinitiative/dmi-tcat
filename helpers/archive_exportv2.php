@@ -53,7 +53,7 @@ $binsToIgnore = array('anti_europa_new', 'anti_europa_politici', '4chan', 'black
     'gamergate', 'netneutrality', 'refugees_english', 'cop21', 'QAnon', 'antifa_new',
     'RuPauls_Drag_Race', 'Corona_virus', 'top_ten_users_1');
 
-$time_start = microtime(true);
+$total_time_start = microtime(true);
 
 // Process command line
 // Sets these variables:
@@ -168,84 +168,84 @@ putenv('LANG=en_US.UTF-8');
 putenv('LANGUAGE=en_US.UTF-8');
 putenv('MYSQL_PWD=' . $dbpass);     /* this avoids having to put the password on the command-line */
 
-// Output file
-
-$timestamp = date("Y-m-d_hi");
-
 if (! isset($outfile)) {
-    // Generate a filename in $defaultOutputDir
-
-    if (count($queryBins) == 1) {
-        $bintype = getBinType($queryBins[0]);
-        if ($bintype === false) {
-            die("$prog: error: unknown query bin: $queryBins[0]\n");
-        }
-        $binAndType = escapeshellcmd($queryBins[0]) . '-' . $bintype;
-    } else if ($isAllBins) {
-    	$binAndType = 'TCAT_allQueryBins';
-    } else if ($isAllInactiveBins) {
-        $binAndType = 'TCAT_inactiveQueryBins';
-    } else {
-    	$binAndType = 'TCAT_queryBins';
-    }
-
     $storedir = $defaultOutputDir;
-    $filepart = $binAndType . '-' . $timestamp . '.sql';
-    $filename = $storedir . str_replace(' ', '_', $filepart);
 } else {
-    // Use the filename specified from the command line
-
-    // Extract the directory name into $storedir
-    $p = (substr($outfile, 0, 1) === '/') ? $outfile :
-          getcwd() . '/' . $outfile;
-    $storedir = dirname($p);
-
-    // Remove .gz suffix (if any) since it will be appended when file is gzipped
-    $filename = preg_replace("/\.gz$/", "", $p);
+    if ( is_dir($outfile) ) {
+        $storedir = $outfile;
+    } else {
+        die("$prog: error: must provide directory when using -o option\n");
+    }
 }
 
 if (!is_writable($storedir)) {
    die("$prog: error: directory not writable: $storedir\n");
 }
-if (file_exists($filename)) {
-    die("$prog: error: file already exists: $filename\n");
-}
-if (file_exists($filename . '.gz')) {
-    die("$prog: error: file already exists: ${filename}.gz\n");
-}
 
-// Start file
+// Extract Error gaps and ratelimits and add to SQL archive
+// TODO: Break into per bin queries; reduce data AND reduce memory usage
+// Currently must hold object in order to write to each bin file
 
-$fh = fopen($filename, "a");
-fputs($fh, "-- Export DMI-TCAT: begin ($timestamp)\n");
-if ($isAllBins) {
-    fputs($fh, "-- All Query Bins:\n");
-} else if ($isAllInactiveBins) {
-    fputs($fh, "-- All Inactive Query Bins:\n");
-} else {
-    fputs($fh, "-- Query Bins:\n");
+$dbh = new PDO("mysql:host=$hostname;dbname=$database;charset=utf8mb4", $dbuser, $dbpass, array(PDO::MYSQL_ATTR_INIT_COMMAND => "set sql_mode='ALLOW_INVALID_DATES'"));
+$dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+// tcat_error_gap table
+$tcat_error_gaps = array();
+$sql = "select * from tcat_error_gap";
+$q = $dbh->prepare($sql);
+$q->execute();
+while ($row = $q->fetch(PDO::FETCH_ASSOC)) {
+    $obj = array();
+    $obj['type'] = $row['type'];
+    $obj['start'] = $row['start'];
+    $obj['end'] = $row['end'];
+    $tcat_error_gaps[] = $obj;
 }
-$n = 0;
-foreach ($queryBins as $bin) {
-  $n++;
-  fputs($fh, "-- $n. $bin\n");
+// tcat_error_ratelimit table
+$tcat_error_ratelimits = array();
+// Only export tweets > 0, i.e. tweets were limited (why do we store tweets = 0?)
+$sql = "select * from tcat_error_ratelimit WHERE tweets > 0";
+$q = $dbh->prepare($sql);
+$q->execute();
+while ($row = $q->fetch(PDO::FETCH_ASSOC)) {
+    $obj = array();
+    $obj['type'] = $row['type'];
+    $obj['start'] = $row['start'];
+    $obj['end'] = $row['end'];
+    $obj['tweets'] = $row['tweets'];
+    $tcat_error_ratelimits[] = $obj;
 }
-fputs($fh, "\n");
-fclose($fh);
 
 // Instantiate array for bins to be deleted
 $exportedBins = array();
 $totalTweets = 0;
 
+$common_prep_time = (microtime(true) - $total_time_start)/60;
+
 // Export all named bins
 
 foreach ($queryBins as $bin) {
-    print "Exporting query bin: $bin\n";
+    $bin_time_start = microtime(true);
+    print date("Y-m-d H:i:s").": Exporting query bin: $bin\n";
 
+    // Check that bin exists
     $bintype = getBinType($bin);
     if ($bintype === false) {
-        unlink($filename);
         die("$prog: error: unknown query bin: $bin\n");
+    }
+
+    // Output file
+    $timestamp = date("Y-m-d_hi");
+    $binAndType = escapeshellcmd($bin) . '-' . $bintype;
+    $filepart = $binAndType . '-' . $timestamp . '.sql';
+    $filename = realpath($storedir) . DIRECTORY_SEPARATOR . str_replace(' ', '_', $filepart);
+
+    // Cannot imagine either of these triggering with $timestamp
+    if (file_exists($filename)) {
+        die("$prog: error: file already exists: $filename\n");
+    }
+    if (file_exists($filename . '.gz')) {
+        die("$prog: error: file already exists: ${filename}.gz\n");
     }
 
     // Create object for metadata and deletion later
@@ -254,7 +254,8 @@ foreach ($queryBins as $bin) {
     $binObj['type'] = $bintype;
 
     $fh = fopen($filename, "a");
-    fputs($fh, "-- Export DMI-TCAT query bin: begin: ${bin} ($bintype)\n");
+    fputs($fh, "-- Export DMI-TCAT: begin ($timestamp)\n");
+    fputs($fh, "-- Export query bin: begin: ${bin} ($bintype)\n");
     fclose($fh);
 
     set_time_limit(0);
@@ -266,7 +267,7 @@ foreach ($queryBins as $bin) {
     // Add the mysqldumps to the file
     //
 
-    print date("Y-m-d H:i:s")."Beginning MySQL Dumps\n";
+    print date("Y-m-d H:i:s").": Beginning MySQL Dumps\n";
     $tables_in_db = array();
     $sql = "show tables";
     $q = $dbh->prepare($sql);
@@ -290,12 +291,15 @@ foreach ($queryBins as $bin) {
     }
 
     $cmd = "$bin_mysqldump  --lock-tables=false --skip-add-drop-table --default-character-set=utf8mb4 -u$dbuser -h $hostname $database $string | sed -e \"s/SQL_MODE='NO_AUTO_VALUE_ON_ZERO'/SQL_MODE='ALLOW_INVALID_DATES'/g\" >> $filename";
-    system($cmd);
+    system($cmd, $mysqldump_result);
+    if ( !$mysqldump_result == 0 ) {
+        die("$prog: mysqldump error: unable to export $bin\n");
+    }
 
     //
     // Add selective table entries to file
     //
-    print date("Y-m-d H:i:s")."Exporting bin specific TCAT data\n";
+    print date("Y-m-d H:i:s").": Exporting bin specific TCAT data\n";
 
     // Reopen file
     $fh = fopen($filename, "a");
@@ -329,7 +333,7 @@ foreach ($queryBins as $bin) {
 
     // Collect and insert user or phrase specific data
     if ($bintype == 'track') {
-        print date("Y-m-d H:i:s")."Exporting phrase data\n";
+        print date("Y-m-d H:i:s").": Exporting phrase data\n";
 
         // Collect phrases
         $sql = "SELECT DISTINCT(p.phrase) as phrase FROM tcat_query_phrases p, tcat_query_bins_phrases bp, tcat_query_bins b
@@ -392,7 +396,7 @@ foreach ($queryBins as $bin) {
         }
 
     } else if ($bintype == 'follow') {
-        print date("Y-m-d H:i:s")."Exporting user data\n";
+        print date("Y-m-d H:i:s").": Exporting user data\n";
 
         // Collect users
         $sql = "SELECT DISTINCT(u.id) as id FROM tcat_query_users u, tcat_query_bins_users bu, tcat_query_bins b
@@ -433,7 +437,78 @@ foreach ($queryBins as $bin) {
 
     fputs($fh, "-- Export DMI-TCAT query bin: end: ${bin}\n");
     fputs($fh, "\n");
+
+    // Add Error Data
+    fputs($fh, "-- Export DMI-TCAT error gap and error ratelimit tables: begin\n");
+
+    // Create new tables (if do not currently exist)
+    $sql = "CREATE TABLE IF NOT EXISTS archive_groups ( id bigint auto_increment, group_id int NULL, querybin_id int NULL, import_date datetime not null, primary key(id), index(group_id), index(querybin_id), index(import_date) ) ;";
+    fputs($fh, $sql . "\n");
+    $sql = "CREATE TABLE IF NOT EXISTS archive_tcat_error_gap ( id bigint auto_increment, group_id int NULL, type varchar(32), start datetime not null, end datetime not null, primary key(id), index(group_id), index(type), index(start), index(end) ) ;";
+    fputs($fh, $sql . "\n");
+    $sql = "CREATE TABLE IF NOT EXISTS archive_tcat_error_ratelimit ( id bigint auto_increment, group_id int NULL, type varchar(32), start datetime not null, end datetime not null, tweets bigint not null, primary key(id), index(group_id), index(type), index(start), index(end) ) ;";
+    fputs($fh, $sql . "\n");
+
+    // Populate data
+    // Grab and increment latest group_id
+    // TODO Verify: This should work on mysql but... other versions may have issue
+    //$sql = "select @group_id:=IFNULL(MAX(group_id), 0)+1 from archive_groups;";
+    $sql = "SET @group_id = ( SELECT IFNULL(MAX(group_id), 0)+1 from archive_groups );";
+    fputs($fh, $sql . "\n");
+
+    // Add bin to archive_groups table
+    $sql = "INSERT INTO archive_groups SET " .
+        " group_id = @group_id, " .
+        " querybin_id = ( select id from tcat_query_bins where querybin = " . $dbh->Quote($bin) . " ), " .
+        " import_date = SYSDATE();";
+    fputs($fh, $sql . "\n");
+
+    // Populate archive_tcat_error_gap table
+    foreach ($tcat_error_gaps as $gap) {
+        $type = $gap['type'];
+        $start = $gap['start'];
+        $end = $gap['end'];
+        $sql = "INSERT INTO archive_tcat_error_gap SET " .
+            " group_id = @group_id, " .
+            " type = '$type', " .
+            " start = '$start', " .
+            " end = '$end';";
+        fputs($fh, $sql . "\n");
+    }
+    // Populate archive_tcat_error_ratelimit table
+    foreach ($tcat_error_ratelimits as $limit) {
+        $type = $limit['type'];
+        $start = $limit['start'];
+        $end = $limit['end'];
+        $tweets = $limit['tweets'];
+        $sql = "INSERT INTO archive_tcat_error_ratelimit SET " .
+            " group_id = @group_id, " .
+            " type = '$type', " .
+            " start = '$start', " .
+            " end = '$end', " .
+            " tweets = '$tweets';";
+        fputs($fh, $sql . "\n");
+    }
+
+    // Finish error data
+    fputs($fh, "-- Export DMI-TCAT error gap and error ratelimit tables: end\n");
+    fputs($fh, "\n");
+
+    // Finish file
+
+    fputs($fh, "-- Export DMI-TCAT: end\n");
     fclose($fh);
+
+    /* Finally gzip the file */
+
+    system("$bin_gzip $filename");
+
+    print "Dump completed and saved on disk: $filename.gz\n";
+
+    if (! isset($outfile)) {
+        $url_destination = BASE_URL . 'analysis/' . $resultsdir . $filepart . '.gz';
+        print "URL to download dump: $url_destination\n";
+    }
 
     // Get number of tweets
     $sql = "SELECT count(id) AS count FROM " . $bin . "_tweets";
@@ -447,136 +522,28 @@ foreach ($queryBins as $bin) {
     $totalTweets += $binObj['num_of_tweets'];
     print "Collected " . $binObj['num_of_tweets'] . " tweets for bin ". $bin ."\n";
 
-    // Add bin object for metadata and deletion
+    // Create Metadata file
+    $git_info = getGitLocal();
+    $bin_total_time = $common_prep_time + ((microtime(true) - $bin_time_start)/60);
+    $export_json = array(
+        'creation_date' => date("Y-m-d H:i:s"),
+        'minutes_to_export' => $bin_total_time,
+        'filename' =>  $filename,
+        'current_git_info' => $git_info,
+        'exported_bin' => $binObj,
+    );
+
+    $fp = fopen(str_replace('.sql', '', $filename).'.json', 'w');
+    fwrite($fp, json_encode($export_json));
+    fclose($fp);
+
+    // Add bin object for deletion
     $exportedBins[] = $binObj;
 }
-
-// Extract Error gaps and ratelimits and add to SQL archive
-
-// Collect data
-$dbh = new PDO("mysql:host=$hostname;dbname=$database;charset=utf8mb4", $dbuser, $dbpass, array(PDO::MYSQL_ATTR_INIT_COMMAND => "set sql_mode='ALLOW_INVALID_DATES'"));
-$dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-// tcat_error_gap table
-$tcat_error_gaps = array();
-$sql = "select * from tcat_error_gap";
-$q = $dbh->prepare($sql);
-$q->execute();
-while ($row = $q->fetch(PDO::FETCH_ASSOC)) {
-    $obj = array();
-    $obj['type'] = $row['type'];
-    $obj['start'] = $row['start'];
-    $obj['end'] = $row['end'];
-    $tcat_error_gaps[] = $obj;
-}
-// tcat_error_ratelimit table
-$tcat_error_ratelimits = array();
-// Only export tweets > 0, i.e. tweets were limited (why do we store tweets = 0?)
-$sql = "select * from tcat_error_ratelimit WHERE tweets > 0";
-$q = $dbh->prepare($sql);
-$q->execute();
-while ($row = $q->fetch(PDO::FETCH_ASSOC)) {
-    $obj = array();
-    $obj['type'] = $row['type'];
-    $obj['start'] = $row['start'];
-    $obj['end'] = $row['end'];
-    $obj['tweets'] = $row['tweets'];
-    $tcat_error_ratelimits[] = $obj;
-}
-
-// Open file to write
-$fh = fopen($filename, "a");
-fputs($fh, "-- Export DMI-TCAT error gap and error ratelimit tables: begin\n");
-
-// Create new tables (if do not currently exist)
-$sql = "CREATE TABLE IF NOT EXISTS archive_groups ( id bigint auto_increment, group_id int NULL, querybin_id int NULL, import_date datetime not null, primary key(id), index(group_id), index(querybin_id), index(import_date) ) ;";
-fputs($fh, $sql . "\n");
-$sql = "CREATE TABLE IF NOT EXISTS archive_tcat_error_gap ( id bigint auto_increment, group_id int NULL, type varchar(32), start datetime not null, end datetime not null, primary key(id), index(group_id), index(type), index(start), index(end) ) ;";
-fputs($fh, $sql . "\n");
-$sql = "CREATE TABLE IF NOT EXISTS archive_tcat_error_ratelimit ( id bigint auto_increment, group_id int NULL, type varchar(32), start datetime not null, end datetime not null, tweets bigint not null, primary key(id), index(group_id), index(type), index(start), index(end) ) ;";
-fputs($fh, $sql . "\n");
-
-// Populate data
-// Grab and increment latest group_id
-// TODO Verify: This should work on mysql but... other versions may have issue
-//$sql = "select @group_id:=IFNULL(MAX(group_id), 0)+1 from archive_groups;";
-$sql = "SET @group_id = ( SELECT IFNULL(MAX(group_id), 0)+1 from archive_groups );";
-fputs($fh, $sql . "\n");
-
-// Add bins to archive_groups table
-foreach ($queryBins as $bin) {
-    $import_date = date("Y-m-d H:i:s");
-    $sql = "INSERT INTO archive_groups SET " .
-        " group_id = @group_id, " .
-        " querybin_id = ( select id from tcat_query_bins where querybin = " . $dbh->Quote($bin) . " ), " .
-        " import_date = '$import_date';";
-    fputs($fh, $sql . "\n");
-}
-// Populate archive_tcat_error_gap table
-foreach ($tcat_error_gaps as $gap) {
-    $type = $gap['type'];
-    $start = $gap['start'];
-    $end = $gap['end'];
-    $sql = "INSERT INTO archive_tcat_error_gap SET " .
-        " group_id = @group_id, " .
-        " type = '$type', " .
-        " start = '$start', " .
-        " end = '$end';";
-    fputs($fh, $sql . "\n");
-}
-// Populate archive_tcat_error_ratelimit table
-foreach ($tcat_error_ratelimits as $limit) {
-    $type = $limit['type'];
-    $start = $limit['start'];
-    $end = $limit['end'];
-    $tweets = $limit['tweets'];
-    $sql = "INSERT INTO archive_tcat_error_ratelimit SET " .
-        " group_id = @group_id, " .
-        " type = '$type', " .
-        " start = '$start', " .
-        " end = '$end', " .
-        " tweets = '$tweets';";
-    fputs($fh, $sql . "\n");
-}
-
-// Finish error data
-fputs($fh, "-- Export DMI-TCAT error gap and error ratelimit tables: end\n");
-fputs($fh, "\n");
-
-// Finish file
-
-fputs($fh, "-- Export DMI-TCAT: end\n");
-fclose($fh);
-
-/* Finally gzip the file */
-
-system("$bin_gzip $filename");
-
-print "Dump completed and saved on disk: $filename.gz\n";
 
 if ($isAllBins) {
     print "Number of query bins exported: " . count($queryBins) . "\n";
 }
-
-if (! isset($outfile)) {
-    $url_destination = BASE_URL . 'analysis/' . $resultsdir . $filepart . '.gz';
-    print "URL to download dump: $url_destination\n";
-}
-
-// Create Metadata file
-$git_info = getGitLocal();
-$export_json = array(
-  'creation_date' => date("Y-m-d H:i:s"),
-  'total_tweets_exported' => $totalTweets,
-  'minutes_to_export' => (microtime(true) - $time_start)/60,
-  'filename' =>  $filename,
-  'current_git_info' => $git_info,
-  'exported_bins' => $exportedBins,
-);
-
-$fp = fopen(str_replace('.sql', '', $filename).'.json', 'w');
-fwrite($fp, json_encode($export_json));
-fclose($fp);
 
 // LAST: Delete everything that was archived
 
@@ -661,7 +628,7 @@ foreach ($exportedBins as $bin) {
 
 print "Total Tweets Archived: " .$totalTweets. "\n";
 $time_end = microtime(true);
-$execution_time = ($time_end - $time_start)/60;
+$execution_time = ($time_end - $total_time_start)/60;
 print "Total Execution Time: " .$execution_time. " Mins\n";
 
 function get_executable($binary) {
@@ -698,18 +665,19 @@ function print_help($prog, $defaultOutputDir) {
     echo "Caution: query bin names are case sensitive.\n";
 }
 
-//function getAllInactiveBins($dbh) {
+// Function exists in capture.common.functions, but can uncomment here to run as script on older versions of TCAT lacking this function
+// function getAllInactiveBins($dbh) {
 //
-//    $sql = "select querybin from tcat_query_bins where active = 0";
-//    $rec = $dbh->prepare($sql);
-//    $querybins = array();
-//    if ($rec->execute() && $rec->rowCount() > 0) {
-//        while ($res = $rec->fetch()) {
-//            $querybins[] = $res['querybin'];
-//        }
-//    }
-//    return $querybins;
-//}
+//     $sql = "select querybin from tcat_query_bins where active = 0";
+//     $rec = $dbh->prepare($sql);
+//     $querybins = array();
+//     if ($rec->execute() && $rec->rowCount() > 0) {
+//         while ($res = $rec->fetch()) {
+//             $querybins[] = $res['querybin'];
+//         }
+//     }
+//     return $querybins;
+// }
 
 
 ?>
