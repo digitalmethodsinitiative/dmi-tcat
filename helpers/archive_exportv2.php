@@ -284,8 +284,8 @@ foreach ($queryBins as $bin) {
         unlink($filename);
         die("$prog: internal error: no tables for bin: $bin (check case is correct)\n");
     }
-
-    $cmd = "$bin_mysqldump  --lock-tables=false --skip-add-drop-table --default-character-set=utf8mb4 --u $dbuser -h $hostname $database $string >> $filename";
+    
+    $cmd = "$bin_mysqldump  --lock-tables=false --skip-add-drop-table --default-character-set=utf8mb4 -u$dbuser -h $hostname $database $string >> $filename";
     $mysqldump_result = system($cmd, $mysqldump_return);
     if ( $mysqldump_return !== 0 ) {
         die("$prog: mysqldump error: unable to export $bin, returned $mysqldump_return\n");
@@ -293,11 +293,12 @@ foreach ($queryBins as $bin) {
         die("$prog: mysqldump error: unable to export $bin, with result 'false'\n");
     }
     // Add sed command from export.php
-    $cmd = "sed -e \"s/SQL_MODE='NO_AUTO_VALUE_ON_ZERO'/SQL_MODE='ALLOW_INVALID_DATES'/g\" >> $filename";
+    $cmd = "sed -i \"s/SQL_MODE='NO_AUTO_VALUE_ON_ZERO'/SQL_MODE='ALLOW_INVALID_DATES'/g\" $filename";
     system($cmd, $return);
     if ( $return !== 0 ) {
         die("$prog: sed error: unable to export $bin\n");
     }
+
     //
     // Add selective table entries to file
     //
