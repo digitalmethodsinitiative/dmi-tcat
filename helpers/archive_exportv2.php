@@ -18,6 +18,10 @@
 //
 //     export.php -i
 //
+// Delete all exported bins:
+//
+//     export.php -d
+//
 // Export queries and data for the query bin "foobar":
 //
 //     export.php foobar
@@ -68,6 +72,7 @@ $defaultOutputDir = realpathslash(__DIR__ . "/../analysis/$resultsdir");
 $args = array();
 $isAllBins = false;
 $isAllInactiveBins = false;
+$deleteBins = false;
 
 for ($i = 1; $i < $argc; $i++) {
     if (substr($argv[$i], 0, 1) == '-') {
@@ -85,6 +90,9 @@ for ($i = 1; $i < $argc; $i++) {
                 break;
             case 'i':
                 $isAllInactiveBins = true;
+                break;
+            case 'd':
+                $deleteBins = true;
                 break;
             case 'h':
                 print_help($prog, $defaultOutputDir);
@@ -556,83 +564,85 @@ if ($isAllBins) {
 
 // LAST: Delete everything that was archived
 
-foreach ($exportedBins as $bin) {
-    $name = $bin['name'];
-    $bintype = $bin['type'];
-    print "Deleting query bin: $name\n";
+if ($deleteBins) {
+    foreach ($exportedBins as $bin) {
+        $name = $bin['name'];
+        $bintype = $bin['type'];
+        print "Deleting query bin: $name\n";
 
-    // Connect to database
-    $dbh = new PDO("mysql:host=$hostname;dbname=$database;charset=utf8mb4", $dbuser, $dbpass, array(PDO::MYSQL_ATTR_INIT_COMMAND => "set sql_mode='ALLOW_INVALID_DATES'"));
-    $dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        // Connect to database
+        $dbh = new PDO("mysql:host=$hostname;dbname=$database;charset=utf8mb4", $dbuser, $dbpass, array(PDO::MYSQL_ATTR_INIT_COMMAND => "set sql_mode='ALLOW_INVALID_DATES'"));
+        $dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-    // Collect bin ID
-    $sql = "SELECT id FROM tcat_query_bins WHERE querybin=:querybinname";
-    $q = $dbh->prepare($sql);
-    $q->bindParam(':querybinname', $name, PDO::PARAM_STR);
-    $q->execute();
-    $row = $q->fetch(PDO::FETCH_ASSOC);
-    $binID = $row['id'];
+        // Collect bin ID
+        $sql = "SELECT id FROM tcat_query_bins WHERE querybin=:querybinname";
+        $q = $dbh->prepare($sql);
+        $q->bindParam(':querybinname', $name, PDO::PARAM_STR);
+        $q->execute();
+        $row = $q->fetch(PDO::FETCH_ASSOC);
+        $binID = $row['id'];
 
-    // Collect existing tables
-    $tables_in_db = array();
-    $sql = "show tables";
-    $q = $dbh->prepare($sql);
-    $q->execute();
-    while ($row = $q->fetch(PDO::FETCH_NUM)) {
-        $tables_in_db[] = $row[0];
-    }
-
-    // Loop through and delete bin specific tables
-    $tables = array('tweets', 'mentions', 'urls', 'hashtags', 'withheld', 'places', 'media');
-    foreach ($tables as $table) {
-        $tablename = "$name" . '_' . $table;
-        if (in_array($tablename, $tables_in_db)) {
-            print "Deleting table: $tablename\n";
-            $sql = "DROP TABLE $tablename";
-            $drop = $dbh->prepare($sql);
-            $drop->execute();
+        // Collect existing tables
+        $tables_in_db = array();
+        $sql = "show tables";
+        $q = $dbh->prepare($sql);
+        $q->execute();
+        while ($row = $q->fetch(PDO::FETCH_NUM)) {
+            $tables_in_db[] = $row[0];
         }
-    }
 
-    // Now to remove specific rows
+        // Loop through and delete bin specific tables
+        $tables = array('tweets', 'mentions', 'urls', 'hashtags', 'withheld', 'places', 'media');
+        foreach ($tables as $table) {
+            $tablename = "$name" . '_' . $table;
+            if (in_array($tablename, $tables_in_db)) {
+                print "Deleting table: $tablename\n";
+                $sql = "DROP TABLE $tablename";
+                $drop = $dbh->prepare($sql);
+                $drop->execute();
+            }
+        }
 
-    // Remove bin from tcat_query_bins
-    $sql = "DELETE FROM tcat_query_bins where querybin=:querybinname";
-    $drop = $dbh->prepare($sql);
-    $drop->bindParam(':querybinname', $name, PDO::PARAM_STR);
-    $drop->execute();
+        // Now to remove specific rows
 
-    // Remove rows from tcat_query_bins_periods associated with bin's ID
-    $sql = "DELETE FROM tcat_query_bins_periods where querybin_id=:querybinid";
-    $drop = $dbh->prepare($sql);
-    $drop->bindParam(':querybinid', $binID, PDO::PARAM_INT);
-    $drop->execute();
+        // Remove bin from tcat_query_bins
+        $sql = "DELETE FROM tcat_query_bins where querybin=:querybinname";
+        $drop = $dbh->prepare($sql);
+        $drop->bindParam(':querybinname', $name, PDO::PARAM_STR);
+        $drop->execute();
 
-    if ($bintype == 'track') {
-        // Remove rows from tcat_query_bins_phrases associated with bin's ID
-        $sql = "DELETE FROM tcat_query_bins_phrases where querybin_id=:querybinid";
+        // Remove rows from tcat_query_bins_periods associated with bin's ID
+        $sql = "DELETE FROM tcat_query_bins_periods where querybin_id=:querybinid";
         $drop = $dbh->prepare($sql);
         $drop->bindParam(':querybinid', $binID, PDO::PARAM_INT);
         $drop->execute();
 
-    } else if ($bintype == 'follow') {
-        // Remove rows from tcat_query_bins_users associated with bin's ID
-        $sql = "DELETE FROM tcat_query_bins_users where querybin_id=:querybinid";
-        $drop = $dbh->prepare($sql);
-        $drop->bindParam(':querybinid', $binID, PDO::PARAM_INT);
-        $drop->execute();
+        if ($bintype == 'track') {
+            // Remove rows from tcat_query_bins_phrases associated with bin's ID
+            $sql = "DELETE FROM tcat_query_bins_phrases where querybin_id=:querybinid";
+            $drop = $dbh->prepare($sql);
+            $drop->bindParam(':querybinid', $binID, PDO::PARAM_INT);
+            $drop->execute();
 
+        } else if ($bintype == 'follow') {
+            // Remove rows from tcat_query_bins_users associated with bin's ID
+            $sql = "DELETE FROM tcat_query_bins_users where querybin_id=:querybinid";
+            $drop = $dbh->prepare($sql);
+            $drop->bindParam(':querybinid', $binID, PDO::PARAM_INT);
+            $drop->execute();
+
+        }
+
+        // TODO: figure out how to remove specific rows from tables
+        // May be used by multiple bins; if not connected with any remaining bins, remove
+        // tcat_query_phrases
+        // tcat_captured_phrases
+        // tcat_query_users
+
+        // Time bound; if do not overlap with remaining bin/phrase periods, remove
+        // tcat_error_gap
+        // tcat_error_ratelimit
     }
-
-    // TODO: figure out how to remove specific rows from tables
-    // May be used by multiple bins; if not connected with any remaining bins, remove
-    // tcat_query_phrases
-    // tcat_captured_phrases
-    // tcat_query_users
-
-    // Time bound; if do not overlap with remaining bin/phrase periods, remove
-    // tcat_error_gap
-    // tcat_error_ratelimit
 }
 
 print "Total Tweets Archived: " .$totalTweets. "\n";
