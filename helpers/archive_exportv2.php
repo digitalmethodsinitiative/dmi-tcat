@@ -457,6 +457,7 @@ foreach ($queryBins as $bin) {
 
     // Add Error Data
     fputs($fh, "-- Export DMI-TCAT error gap and error ratelimit tables: begin\n");
+    print date("Y-m-d H:i:s").": Exporting error gap and ratelimit data\n";
 
     // Create new tables (if do not currently exist)
     $sql = "CREATE TABLE IF NOT EXISTS archive_groups ( id bigint auto_increment, group_id int NULL, querybin_id int NULL, import_date datetime not null, primary key(id), index(group_id), index(querybin_id), index(import_date) ) ;";
@@ -468,8 +469,6 @@ foreach ($queryBins as $bin) {
 
     // Populate data
     // Grab and increment latest group_id
-    // TODO Verify: This should work on mysql but... other versions may have issue
-    //$sql = "select @group_id:=IFNULL(MAX(group_id), 0)+1 from archive_groups;";
     $sql = "SET @group_id = ( SELECT IFNULL(MAX(group_id), 0)+1 from archive_groups );";
     fputs($fh, $sql . "\n");
 
@@ -568,7 +567,7 @@ if ($deleteBins) {
     foreach ($exportedBins as $bin) {
         $name = $bin['name'];
         $bintype = $bin['type'];
-        print "Deleting query bin: $name\n";
+        print date("Y-m-d H:i:s").": Deleting query bin: $name\n";
 
         // Connect to database
         $dbh = new PDO("mysql:host=$hostname;dbname=$database;charset=utf8mb4", $dbuser, $dbpass, array(PDO::MYSQL_ATTR_INIT_COMMAND => "set sql_mode='ALLOW_INVALID_DATES'"));
@@ -605,12 +604,14 @@ if ($deleteBins) {
 
         // Now to remove specific rows
 
+        print date("Y-m-d H:i:s").": Deleting bin from tcat_query_bins\n";
         // Remove bin from tcat_query_bins
         $sql = "DELETE FROM tcat_query_bins where querybin=:querybinname";
         $drop = $dbh->prepare($sql);
         $drop->bindParam(':querybinname', $name, PDO::PARAM_STR);
         $drop->execute();
 
+        print "Deleting bin periods from tcat_query_bins_periods\n";
         // Remove rows from tcat_query_bins_periods associated with bin's ID
         $sql = "DELETE FROM tcat_query_bins_periods where querybin_id=:querybinid";
         $drop = $dbh->prepare($sql);
@@ -618,31 +619,46 @@ if ($deleteBins) {
         $drop->execute();
 
         if ($bintype == 'track') {
+            print date("Y-m-d H:i:s").": Deleting phrase periods tied to $name bin from tcat_query_bins_phrases\n";
             // Remove rows from tcat_query_bins_phrases associated with bin's ID
             $sql = "DELETE FROM tcat_query_bins_phrases where querybin_id=:querybinid";
             $drop = $dbh->prepare($sql);
             $drop->bindParam(':querybinid', $binID, PDO::PARAM_INT);
             $drop->execute();
-
         } else if ($bintype == 'follow') {
+            print date("Y-m-d H:i:s").": Deleting user periods tied to $name bin from tcat_query_bins_users\n";
             // Remove rows from tcat_query_bins_users associated with bin's ID
             $sql = "DELETE FROM tcat_query_bins_users where querybin_id=:querybinid";
             $drop = $dbh->prepare($sql);
             $drop->bindParam(':querybinid', $binID, PDO::PARAM_INT);
             $drop->execute();
-
         }
-
-        // TODO: figure out how to remove specific rows from tables
-        // May be used by multiple bins; if not connected with any remaining bins, remove
-        // tcat_query_phrases
-        // tcat_captured_phrases
-        // tcat_query_users
-
-        // Time bound; if do not overlap with remaining bin/phrase periods, remove
-        // tcat_error_gap
-        // tcat_error_ratelimit
+        print date("Y-m-d H:i:s").": Data from bin $name deleted";
     }
+    // Remove any unused phrases
+    print "Deleting unused phrases from tcat_query_phrases\n";
+    $sql = "DELETE FROM tcat_query_phrases where id not in ( select phrase_id from tcat_query_bins_phrases );";
+    $drop = $dbh->prepare($sql);
+    $drop->execute();
+
+    // Remove any unused tweet_ids
+    print "Deleting unused tweet_ids from tcat_captured_phrases\n";
+    $sql = "DELETE FROM tcat_captured_phrases where phrase_id not in ( select id from tcat_query_phrases );";
+    $drop = $dbh->prepare($sql);
+    $drop->execute();
+
+    // Remove any unused users
+    print "Deleting unused tweet_ids from tcat_query_users\n";
+    $sql = "DELETE FROM tcat_query_users where id not in ( select user_id from tcat_query_bins_users );";
+    $drop = $dbh->prepare($sql);
+    $drop->execute();
+
+    // TODO: figure out how to remove specific rows from tables
+    // Time bound; if do not overlap with remaining bin/phrase periods, remove
+    // tcat_error_gap
+    // tcat_error_ratelimit
+
+    print date("Y-m-d H:i:s").": Deletion of archived data complete\n";
 }
 
 print "Total Tweets Archived: " .$totalTweets. "\n";
