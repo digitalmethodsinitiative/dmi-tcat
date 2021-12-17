@@ -248,11 +248,6 @@ foreach ($queryBins as $bin) {
         die("$prog: error: file already exists: ${filename}.gz\n");
     }
 
-    // Create object for metadata and deletion later
-    $binObj = array();
-    $binObj['name'] = $bin;
-    $binObj['type'] = $bintype;
-
     $fh = fopen($filename, "a");
     fputs($fh, "-- Export DMI-TCAT: begin ($timestamp)\n");
     fputs($fh, "-- Export query bin: begin: ${bin} ($bintype)\n");
@@ -290,15 +285,28 @@ foreach ($queryBins as $bin) {
         die("$prog: internal error: no tables for bin: $bin (check case is correct)\n");
     }
 
-    $cmd = "$bin_mysqldump  --lock-tables=false --skip-add-drop-table --default-character-set=utf8mb4 -u$dbuser -h $hostname $database $string | sed -e \"s/SQL_MODE='NO_AUTO_VALUE_ON_ZERO'/SQL_MODE='ALLOW_INVALID_DATES'/g\" >> $filename";
-    system($cmd, $mysqldump_result);
-    if ( !$mysqldump_result == 0 ) {
-        die("$prog: mysqldump error: unable to export $bin\n");
+    $cmd = "$bin_mysqldump  --lock-tables=false --skip-add-drop-table --default-character-set=utf8mb4 --u $dbuser -h $hostname $database $string >> $filename";
+    $mysqldump_result = system($cmd, $mysqldump_return);
+    if ( $mysqldump_return !== 0 ) {
+        die("$prog: mysqldump error: unable to export $bin, returned $mysqldump_return\n");
+    } else if ( $mysqldump_result === false ) {
+        die("$prog: mysqldump error: unable to export $bin, with result 'false'\n");
     }
-
+    // Add sed command from export.php
+    $cmd = "sed -e \"s/SQL_MODE='NO_AUTO_VALUE_ON_ZERO'/SQL_MODE='ALLOW_INVALID_DATES'/g\" >> $filename";
+    system($cmd, $return);
+    if ( $return !== 0 ) {
+        die("$prog: sed error: unable to export $bin\n");
+    }
     //
     // Add selective table entries to file
     //
+
+    // Create object for metadata and deletion later
+    $binObj = array();
+    $binObj['name'] = $bin;
+    $binObj['type'] = $bintype;
+
     print date("Y-m-d H:i:s").": Exporting bin specific TCAT data\n";
 
     // Reopen file
