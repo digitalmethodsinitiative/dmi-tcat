@@ -30,9 +30,9 @@
 //
 //     export.php foo bar baz
 //
-// Export queries and data for all query bins, saving it to the named file:
+// Set the directory where exported bins will be saved:
 //
-//     export.php -o myexportfile.sql.gz
+//     export.php -o /path/to/dir/
 //
 // Show help message:
 //
