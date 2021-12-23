@@ -693,6 +693,8 @@ function print_help($prog, $defaultOutputDir) {
     echo "Usage: $prog [options] {queryBins...}\n";
     echo "Options:\n";
     echo "  -a                   export all existing bins\n";
+    echo "  -i                   export all inactive bins\n";
+    echo "  -d                   delete bins after exporting\n";
     echo "  -o file              output file (default: automatically generated)\n";
     echo "  -h                   show this help message\n";
     echo "If no queryBins are named and the -a option is not used, this help message is displayed.\n";
