@@ -81,6 +81,15 @@ if (isset($_GET['enddate']) && !empty($_GET['enddate']))
 else
     $enddate = strftime("%Y-%m-%d", date('U') - 86400);
 $u_startdate = $u_enddate = 0;
+//if (isset($_GET['replyto']) && !empty($_GET['replyto']))
+//    $replyto = $_GET['replyto'];
+//else
+//    $replyto = false;
+$replyto = "no";
+if (isset($_REQUEST['replyto'])) {
+    if (in_array($_REQUEST['replyto'], array('yes', 'no')))
+        $replyto = $_REQUEST['replyto'];
+}
 
 if (isset($_GET['whattodo']) && !empty($_GET['whattodo']))
     $whattodo = $_GET['whattodo'];
@@ -450,6 +459,10 @@ function sqlSubset($where = NULL) {
         }
     }
 
+    if ( $esc['mysql']['replyto'] == 'yes' ) {
+        $sql .= "in_reply_to_status_id IS NULL AND ";
+    }
+
 
 
     $sql .= " t.created_at >= '" . $esc['datetime']['startdate'] . "' AND t.created_at <= '" . $esc['datetime']['enddate'] . "' ";
@@ -797,7 +810,7 @@ function decodeAndFlatten($text) {
 // make sure that we have all the right types and values
 // also make sure one cannot do a mysql injection attack
 function validate_all_variables() {
-    global $esc, $query, $url_query, $media_url_query, $geo_query, $dataset, $exclude, $from_user_name, $exclude_from_user_name, $from_user_description, $from_source, $startdate, $enddate, $interval, $databases, $connection, $keywords, $database, $minf, $topu, $from_user_lang, $lang, $outputformat;
+    global $esc, $query, $url_query, $media_url_query, $geo_query, $dataset, $exclude, $from_user_name, $exclude_from_user_name, $from_user_description, $from_source, $startdate, $enddate, $interval, $databases, $connection, $keywords, $database, $minf, $topu, $from_user_lang, $lang, $replyto, $outputformat;
 
     $esc['mysql']['dataset'] = validate($dataset, "mysql-literal");
     $esc['mysql']['query'] = validate($query, "mysql-literal");
@@ -811,6 +824,7 @@ function validate_all_variables() {
     $esc['mysql']['from_user_description'] = validate($from_user_description, "mysql-literal");
     $esc['mysql']['from_user_lang'] = validate($from_user_lang, "mysql-literal");
     $esc['mysql']['lang'] = validate($lang, "mysql-literal");
+    $esc['mysql']['replyto'] = validate($replyto, "mysql-literal");
 
     $esc['shell']['dataset'] = validate($dataset, "shell");
     $esc['shell']['query'] = validate($query, "shell");
@@ -824,6 +838,7 @@ function validate_all_variables() {
     $esc['shell']['from_user_description'] = validate($from_user_description, "shell");
     $esc['shell']['from_user_lang'] = validate($from_user_lang, "shell");
     $esc['shell']['lang'] = validate($lang, "shell");
+    $esc['mysql']['replyto'] = validate($replyto, "shell");
     $esc['shell']['datasetname'] = validate($dataset, "shell");
 
     $esc['shell']['minf'] = validate($minf, 'frequency');
@@ -930,6 +945,7 @@ function get_filename_for_export($module, $settings = "", $filetype = "csv") {
     $filename .= "-" . $esc['shell']["lang"];
     $filename .= "-" . $esc['shell']["url_query"];
     $filename .= "-" . $esc['shell']["media_url_query"];
+    $filename .= "-" . $esc['shell']["replyto"];
     $filename .= "-" . str_replace(",", "_", str_replace(" ", "x", $esc['shell']["geo_query"]));
     $filename .= "-" . $module;
     $filename .= "-" . $settings;

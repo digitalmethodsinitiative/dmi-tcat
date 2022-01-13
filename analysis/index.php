@@ -25,6 +25,7 @@ require_once __DIR__ . '/common/functions.php';
                 var _d1 = $("#ipt_startdate").val();
                 var _d2 = $("#ipt_enddate").val();
                 var outputformat = getOutputformat();
+                var replyto = getReplyto();
 
                 if(!_d1.match(/\d{4}-\d{2}-\d{2}/) || !_d2.match(/\d{4}-\d{2}-\d{2}/)) {
                     alert("Please check the date format!");
@@ -57,6 +58,7 @@ if (defined('ANALYSIS_URL'))
             "&from_source=" + $("#ipt_from_source").val().replace(/#/g,"%23") +
             "&startdate=" + $("#ipt_startdate").val() +
             "&enddate=" + $("#ipt_enddate").val() +
+            "&replyto=" + replyto +
             "&whattodo=" + $("#whattodo").val() +
             "&graph_resolution=" + $("input[name=graph_resolution]:checked").val() +
             "&outputformat=" + outputformat;
@@ -132,6 +134,13 @@ if (defined('ANALYSIS_URL'))
     }
     function getOutputformat() {
         var selected = $('[name="outputformat"]:checked');
+        var selectedValue = undefined;
+        if (selected.length > 0)
+            selectedValue = selected.val();
+        return selectedValue;
+    }
+    function getReplyto() {
+        var selected = $('[name="replyto"]:checked');
         var selectedValue = undefined;
         if (selected.length > 0)
             selectedValue = selected.val();
@@ -285,6 +294,13 @@ if (defined('ANALYSIS_URL'))
 
                         <tr>
                             <td class="tbl_head">Enddate (UTC):</td><td><input type="text" id="ipt_enddate" size="60" name="enddate" value="<?php echo $enddate; ?>" /> (YYYY-MM-DD or YYYY-MM-DD HH:MM:SS)</td>
+                        </tr>
+                        <tr>
+                            <td class="tbl_head">Exclude "in reply to" Tweets:</td>
+                            <td>
+                            <input type='radio' name="replyto" value="yes"<?php if ($replyto == 'yes') print " CHECKED"; ?> id="ipt_replyto_yes"> <label for="ipt_replyto_yes">yes</label>
+                            <input type='radio' name="replyto" value="no"<?php if ($replyto == 'no') print " CHECKED"; ?> id="ipt_replyto_no"> <label for="ipt_replyto_no">no</label>
+                            </td>
                         </tr>
                         <tr>
                             <td valign="middle" style='padding-top: 4px'><input type="submit" value="update overview" /></td>
@@ -488,6 +504,9 @@ if (defined('ANALYSIS_URL'))
                                 <td class="tbl_head">Enddate:</td><td><?php echo $enddate; ?></td>
                             </tr>
                             <tr>
+                                <td class="tbl_head">Exclude "in reply to" Tweets:</td><td><?php echo $replyto; ?></td>
+                            </tr>
+                            <tr>
                                 <td class="tbl_head">Number of tweets:</td><td><?php echo number_format($numtweets, 0, ",", "."); ?></td>
                             </tr>
                             <tr>
@@ -639,7 +658,7 @@ if (defined('ANALYSIS_URL'))
 
                 <legend>Export selected data</legend>
 
-                <p class="txt_desc">All exports have the following filename convention: {dataset}-{startdate}-{enddate}-{query}-{exclude}-{from_user_name}-{exclude_from_user_name}-{from_user_lang}-{lang}-{url_query}-{media_url_query}--{module_name}-{module_settings}-{dmi-tcat_version}.{filetype}</p>
+                <p class="txt_desc">All exports have the following filename convention: {dataset}-{startdate}-{enddate}-{query}-{exclude}-{from_user_name}-{exclude_from_user_name}-{from_user_lang}-{lang}-{url_query}-{media_url_query}-{replyto}-{module_name}-{module_settings}-{dmi-tcat_version}.{filetype}</p>
 
                 <p>
                     <div class='txt_desc' style='background-color: #eee; padding: 5px;'>Output format for tables:
