@@ -124,6 +124,10 @@ if (defined('ANALYSIS_URL'))
         var lower = parseInt(prompt("Do you want to convert all words to lowercase? (enter 0 [=no] or 1 [=yes])", "0"), 10);
         return lower;
     }
+    function askTextQuery() {
+        var keyword_query = prompt("List keywords to match in text seperated by OR (e.g., keyword1 OR keyword2 OR keyword3 ", "");
+        return keyword_query;
+    }
     function getInterval() {
         var selected = $('[name="interval"]:checked');
         var selectedValue = "";
@@ -955,6 +959,14 @@ if (defined('ANALYSIS_URL'))
                     <div class="txt_desc">Use: explore the relations between hashtags, find and analyze sub-issues, distinguish between different types of hashtags (event related, qualifiers, etc.).</div>
                     <div class="txt_link"> &raquo; <a href="" onclick="var minf = askFrequency(); if(minf !== false) { $('#whattodo').val('hashtag_cooc&minf='+minf);sendUrl('mod.hashtag_cooc.php'); } return false;">launch</a> (set minimum frequency)</div><!-- with absolute weighting of cooccurrences</a></div>-->
                     <div class="txt_link"> &raquo; <a href="" onclick="var topu = askTopht(); if(topu !== false) { $('#whattodo').val('hashtag_cooc&topu='+topu);sendUrl('mod.hashtag_cooc.php'); } return false;">launch</a> (get top hashtags)</div>
+
+                    <hr />
+
+                    <h3>User Keyword Usage graph</h3>
+                    <div class="txt_desc">Produces an <a href="http://en.wikipedia.org/wiki/Graph_%28mathematics%29#Undirected_graph">undirected graph</a> based on user and keyword analysis. If a user's tweet contains a given keyword, they are linked.
+                        Each time a user tweet contains a keyword, the weight of a link is increased by 1.</div>
+                    <div class="txt_desc">Use: explore the relations between users and keywords.</div>
+                    <div class="txt_link"> &raquo; <a href="" onclick="var keyword_query = askTextQuery(); if(keyword_query !== false) { $('#whattodo').val('user_keywords&keyword_query='+keyword_query);sendUrl('mod.user_keywords.php'); } return false;">launch</a> (set keyword query)</div>
 
                     <hr />
 

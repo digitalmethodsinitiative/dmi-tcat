@@ -81,15 +81,18 @@ if (isset($_GET['enddate']) && !empty($_GET['enddate']))
 else
     $enddate = strftime("%Y-%m-%d", date('U') - 86400);
 $u_startdate = $u_enddate = 0;
-//if (isset($_GET['replyto']) && !empty($_GET['replyto']))
-//    $replyto = $_GET['replyto'];
-//else
-//    $replyto = false;
+// For use in filtering my reply_to_status_id (i.e. tweets that are in reply to other tweets)
 $replyto = "no";
 if (isset($_REQUEST['replyto'])) {
     if (in_array($_REQUEST['replyto'], array('yes', 'no')))
         $replyto = $_REQUEST['replyto'];
 }
+// For use in mods that use additional keywords for further analysis
+// See mod.user_keywords
+if (isset($_GET['keyword_query']) && !empty($_GET['keyword_query']))
+    $keyword_query = urldecode($_GET['keyword_query']);
+else
+    $keyword_query = "";
 
 if (isset($_GET['whattodo']) && !empty($_GET['whattodo']))
     $whattodo = $_GET['whattodo'];
@@ -810,7 +813,7 @@ function decodeAndFlatten($text) {
 // make sure that we have all the right types and values
 // also make sure one cannot do a mysql injection attack
 function validate_all_variables() {
-    global $esc, $query, $url_query, $media_url_query, $geo_query, $dataset, $exclude, $from_user_name, $exclude_from_user_name, $from_user_description, $from_source, $startdate, $enddate, $interval, $databases, $connection, $keywords, $database, $minf, $topu, $from_user_lang, $lang, $replyto, $outputformat;
+    global $esc, $query, $url_query, $media_url_query, $geo_query, $dataset, $exclude, $from_user_name, $exclude_from_user_name, $from_user_description, $from_source, $startdate, $enddate, $interval, $databases, $connection, $keywords, $database, $minf, $topu, $from_user_lang, $lang, $replyto, $keyword_query, $outputformat;
 
     $esc['mysql']['dataset'] = validate($dataset, "mysql-literal");
     $esc['mysql']['query'] = validate($query, "mysql-literal");
@@ -825,6 +828,7 @@ function validate_all_variables() {
     $esc['mysql']['from_user_lang'] = validate($from_user_lang, "mysql-literal");
     $esc['mysql']['lang'] = validate($lang, "mysql-literal");
     $esc['mysql']['replyto'] = validate($replyto, "mysql-literal");
+    $esc['mysql']['keyword_query'] = validate($keyword_query, "mysql-literal");
 
     $esc['shell']['dataset'] = validate($dataset, "shell");
     $esc['shell']['query'] = validate($query, "shell");
@@ -838,7 +842,8 @@ function validate_all_variables() {
     $esc['shell']['from_user_description'] = validate($from_user_description, "shell");
     $esc['shell']['from_user_lang'] = validate($from_user_lang, "shell");
     $esc['shell']['lang'] = validate($lang, "shell");
-    $esc['mysql']['replyto'] = validate($replyto, "shell");
+    $esc['shell']['replyto'] = validate($replyto, "shell");
+    $esc['shell']['keyword_query'] = validate($keyword_query, "shell");
     $esc['shell']['datasetname'] = validate($dataset, "shell");
 
     $esc['shell']['minf'] = validate($minf, 'frequency');
