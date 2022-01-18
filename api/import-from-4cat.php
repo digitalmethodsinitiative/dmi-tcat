@@ -82,9 +82,35 @@ while(file_exists($temp_path)) {
 }
 
 error_log("URL to download: ".$url);
-if (!file_put_contents($temp_path, file_get_contents($url))) {
-    exit_with_json_error('Unable to download file, exiting');
+
+// Using curl to download file
+set_time_limit(0);
+// Open temporary file
+$fp = fopen ($temp_path, 'w+');
+// Replace spaces with %20 if needed
+$ch = curl_init(str_replace(" ","%20",$url));
+// CURL settings
+curl_setopt($ch, CURLOPT_TIMEOUT, 60);
+// Could be used if there are https issues
+//curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+//curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+// Set temp file to be used by curl
+curl_setopt($ch, CURLOPT_FILE, $fp);
+// May not be needed here, but could help downloading other files
+curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+// Get curl response, close connect, and close file
+curl_exec($ch);
+if(curl_error($ch)) {
+    // return error if necessary
+    exit_with_json_error('Unable to download file, exiting: '. curl_error($ch));
 }
+curl_close($ch);
+fclose($fp);
+
+// Works on files smaller than 2 gigs
+//if (!file_put_contents($temp_path, file_get_contents($url))) {
+//    exit_with_json_error('Unable to download file, exiting');
+//}
 
 // call import-jsondump.php
 $import_script = dirname(dirname(__FILE__)).DIRECTORY_SEPARATOR.'import'.DIRECTORY_SEPARATOR.'import-jsondump.php';
