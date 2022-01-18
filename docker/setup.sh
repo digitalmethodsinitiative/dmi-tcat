@@ -321,7 +321,7 @@ fi
 
 if [ $(id -u) -ne 0 ]; then
    echo "$PROG: error: this script was run without root privileges" 1>&2
-   
+
    exit 1
 fi
 
@@ -978,7 +978,7 @@ if [ -n "$UBUNTU_VERSION" ]; then
     # Installation and autoconfiguration of MySQL will not work with
     # Apparmor profile enabled
 
-    if [ -L /etc/init.d/apparmor ]; then 
+    if [ -L /etc/init.d/apparmor ]; then
         if [ -L /etc/apparmor.d/disable/usr.sbin.mysqld ]; then
     	rm /etc/apparmor.d/disable/usr.sbin.mysqld # remove so "ln" will work
         fi
@@ -1257,7 +1257,7 @@ echo "$PROG: account details saved: $FILE"
 service mysql restart
 # Install MySQL server timezone data
 
-mysql_tzinfo_to_sql /usr/share/zoneinfo | mysql --defaults-file="$MYSQL_USER_ADMIN_CNF" mysql 
+mysql_tzinfo_to_sql /usr/share/zoneinfo | mysql --defaults-file="$MYSQL_USER_ADMIN_CNF" mysql
 
 # Create twittercapture database
 
@@ -1278,9 +1278,9 @@ fi
 
 if [ "$URLEXPANDYES" = 'y' ]; then
    echo ""
-   
+
    echo "Enabling URL expander ..."
-   
+
    echo ""
    VAR=ENABLE_URL_EXPANDER
    VALUE="TRUE"
@@ -1306,12 +1306,12 @@ echo ""
 
 cat > /etc/logrotate.d/dmi-tcat <<EOF
 $TCAT_DIR/logs/controller.log $TCAT_DIR/logs/track.error.log $TCAT_DIR/logs/follow.error.log $TCAT_DIR/logs/onepercent.error.log
-{ 
-   weekly  
-   rotate 8  
-   compress  
-   delaycompress  
-   missingok  
+{
+   weekly
+   rotate 8
+   compress
+   delaycompress
+   missingok
    ifempty
    create 644 $SHELLUSER $SHELLGROUP
 }
@@ -1377,9 +1377,9 @@ echo "sql-mode=\"NO_AUTO_VALUE_ON_ZERO,ALLOW_INVALID_DATES\"" >> /etc/mysql/conf
 
 if [ "$DB_CONFIG_MEMORY_PROFILE" = "y" ]; then
     echo ""
-    
+
     echo "Configuring MySQL server (memory profile) ..."
-    
+
     echo ""
     MAXMEM=`free -m | head -n 2 | tail -n 1 | tr -s ' ' | cut -d ' ' -f 2`
     # Make this an integer, and non-empty for bash
