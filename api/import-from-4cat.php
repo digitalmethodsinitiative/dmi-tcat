@@ -125,5 +125,6 @@ unlink($temp_path);
 echo json_encode([
     'output' => $output,
     'success' => true,
+    'bin_name' => $name,
     'url' => ANALYSIS_URL.'/index.php?dataset='.$name
 ]);
