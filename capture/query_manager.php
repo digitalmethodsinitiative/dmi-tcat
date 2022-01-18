@@ -729,7 +729,15 @@ function getBins() {
         } else {
             $bin = $querybins[$data['id']];
         }
-        $bin->periods[] = $data['bin_starttime'] . " - " . str_replace("0000-00-00 00:00:00", "now", $data['bin_endtime']);
+
+        // Get all bin periods
+        $sql = "SELECT  period.starttime AS bin_starttime, period.endtime AS bin_endtime FROM tcat_query_bins b, tcat_query_bins_periods period WHERE b.id = period.querybin_id AND b.access != " . TCAT_QUERYBIN_ACCESS_INVISIBLE . " AND period.querybin_id = " . $bin->id;
+        $rec = $dbh->prepare($sql);
+        $rec->execute();
+        $bin_period_results = $rec->fetchAll();
+        foreach ($bin_period_results as $result) {
+            $bin->periods[] = $result['bin_starttime'] . " - " . str_replace("0000-00-00 00:00:00", "now", $result['bin_endtime']);
+        }
 
         if ($bin->type == "track" || $bin->type == "geotrack") {
             $sql = "SELECT p.id AS phrase_id, p.phrase, bp.starttime AS phrase_starttime, bp.endtime AS phrase_endtime FROM tcat_query_phrases p, tcat_query_bins_phrases bp WHERE p.id = bp.phrase_id AND bp.querybin_id = " . $bin->id;

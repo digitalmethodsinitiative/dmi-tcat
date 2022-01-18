@@ -19,6 +19,11 @@ if (!env_is_cli()) {
     die("Please run this script only from the command-line.\n");
 }
 
+// Start clock
+$time_start = microtime(true);
+print date("Y-m-d H:i:s").": Starting TCAT import\n";
+
+
 if ($argc !== 2) {
     print "Please provide exactly one argument to this script: the file location of your export dump, ending with .gz\n";
     exit();
@@ -99,6 +104,12 @@ if ($return_code == 0) {
 } else {
     print "There was a problem with importing data into TCAT.\n";
 }
+
+// Stop clock and share results
+$time_end = microtime(true);
+$execution_time = ($time_end - $time_start)/60;
+print "Total Execution Time: " .$execution_time. " Mins\n";
+
 
 function get_executable($binary) {
     $where = `which $binary`;

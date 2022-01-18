@@ -48,36 +48,68 @@ require_once __DIR__ . '/common/CSV.class.php';
             $exportSettings = explode(",", $_GET['exportSettings']);
         $filename = get_filename_for_export($module, implode("_", $exportSettings));
         $csv = new CSV($filename, $outputformat);
-        // write header
-        $header = "start,end";
+        // Add one day to datetime as default is at start of day whic may then exclude most recent gaps
+        $end_date = date('Y-m-d H:i:s', strtotime($_GET['enddate'] . ' +1 day'));
+
+        // Prep header and query depending on bin type
+        if ( $bin_type == 'follow' ) {
+          $header = "user_id,gap_start,gap_end";
+          $sql = "SELECT BU.user_id as query, GAP.start as start, GAP.end as end FROM tcat_error_gap GAP, tcat_query_bins_users BU
+                           WHERE GAP.type = :type and
+                                 GAP.start >= :start and
+                                 GAP.end <= :end and
+                                 BU.querybin_id = :bin_id and
+                                 BU.starttime <= GAP.end and
+                                 ( BU.endtime >= GAP.start or
+                                 BU.endtime is null or
+                                 BU.endtime = '0000-00-00 00:00:00' )";
+        } elseif ( $bin_type == 'track' ) {
+          $header = "phrase,gap_start,gap_end";
+          $sql = "SELECT P.phrase as phrase, GAP.start as start, GAP.end as end FROM tcat_error_gap GAP, tcat_query_bins_phrases BP, tcat_query_phrases P
+                           WHERE GAP.type = :type and
+                                 GAP.start >= :start and
+                                 GAP.end <= :end and
+                                 BP.querybin_id = :bin_id and
+                                 BP.phrase_id = P.id and
+                                 BP.starttime <= GAP.end and
+                                 ( BP.endtime >= GAP.start or
+                                 BP.endtime is null or
+                                 BP.endtime = '0000-00-00 00:00:00' )";
+        } else {
+          // TODO: add gap for 'one-percent'
+          // TODO: verify if other types use phrase; 4CAT imports do use phrase setup
+          $header = "phrase,gap_start,gap_end";
+          $sql = "SELECT P.phrase as phrase, GAP.start as start, GAP.end as end FROM tcat_error_gap GAP, tcat_query_bins_phrases BP, tcat_query_phrases P
+                           WHERE GAP.type = :type and
+                                 GAP.start >= :start and
+                                 GAP.end <= :end and
+                                 BP.querybin_id = :bin_id and
+                                 BP.phrase_id = P.id and
+                                 BP.starttime <= GAP.end and
+                                 ( BP.endtime >= GAP.start or
+                                 BP.endtime is null or
+                                 BP.endtime = '0000-00-00 00:00:00' )";
+        }
+          // write header
         $csv->writeheader(explode(',', $header));
 
-        // make query
-        $sql = "SELECT * FROM tcat_error_gap WHERE type = :type and
-                                                   start >= :start and end <= :end";
+        // Run query
         $rec = $dbh->prepare($sql);
         $rec->bindParam(":type", $bin_type, PDO::PARAM_STR);
         $rec->bindParam(":start", $_GET['startdate'], PDO::PARAM_STR);
-        $rec->bindParam(":end", $_GET['enddate'], PDO::PARAM_STR);
+        $rec->bindParam(":end", $end_date, PDO::PARAM_STR);
+        $rec->bindParam(":bin_id", $bin_id, PDO::PARAM_STR);
         $rec->execute();
 
         // loop over results and write to file
         while ($data = $rec->fetch(PDO::FETCH_ASSOC)) {
-            // the query bin must have been active during the gap period, if we want to report it as a possible gap
-            $sql2 = "SELECT count(*) as cnt FROM tcat_query_bins_phrases WHERE querybin_id = $bin_id and
-                                                        starttime <= '" . $data["end"] . "' and (endtime >= '" . $data["start"] . "' or endtime is null or endtime = '0000-00-00 00:00:00')";
-            $rec2 = $dbh->prepare($sql2);
-            $rec2->execute();
-            while ($data2 = $rec2->fetch(PDO::FETCH_ASSOC)) {
-                if ($data2['cnt'] > 0) {
-                    $csv->newrow();
-                    $csv->addfield($data["start"]);
-                    $csv->addfield($data["end"]);
-                    $csv->writerow();
-                    break;
-                }
-            }
+          $csv->newrow();
+          $csv->addfield($data["query"]);
+          $csv->addfield($data["start"]);
+          $csv->addfield($data["end"]);
+          $csv->writerow();
         }
+
         $csv->close();
 
         echo '<fieldset class="if_parameters">';

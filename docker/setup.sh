@@ -58,6 +58,7 @@ TCATMYSQLUSER=tcatdbuser
 TCATMYSQLPASS=
 
 DB_CONFIG_MEMORY_PROFILE=y
+DB_USE_TOKUDB=n
 
 LETSENCRYPT=n
 
@@ -320,7 +321,7 @@ fi
 
 if [ $(id -u) -ne 0 ]; then
    echo "$PROG: error: this script was run without root privileges" 1>&2
-   
+
    exit 1
 fi
 
@@ -977,7 +978,7 @@ if [ -n "$UBUNTU_VERSION" ]; then
     # Installation and autoconfiguration of MySQL will not work with
     # Apparmor profile enabled
 
-    if [ -L /etc/init.d/apparmor ]; then 
+    if [ -L /etc/init.d/apparmor ]; then
         if [ -L /etc/apparmor.d/disable/usr.sbin.mysqld ]; then
     	rm /etc/apparmor.d/disable/usr.sbin.mysqld # remove so "ln" will work
         fi
@@ -1035,15 +1036,17 @@ fi
 # Install the TokuDB storage engine
 
 
-echo "Installing TokuDB storage engine ..."
+if [ "$DB_USE_TOKUDB" = 'y' ]; then
+    echo "Installing TokuDB storage engine ..."
 
 
-apt-get -y install mariadb-plugin-tokudb
-# Enable the TokuDB storage engine
-sed -i 's/^#plugin-load-add=ha_tokudb.so/plugin-load-add=ha_tokudb.so/g' /etc/mysql/mariadb.conf.d/tokudb.cnf
-# Restart mariadb
-# systemctl restart mariadb
-#/etc/init.d/mariadb restart
+    apt-get -y install mariadb-plugin-tokudb
+    # Enable the TokuDB storage engine
+    sed -i 's/^#plugin-load-add=ha_tokudb.so/plugin-load-add=ha_tokudb.so/g' /etc/mysql/mariadb.conf.d/tokudb.cnf
+    # Restart mariadb
+    # systemctl restart mariadb
+    #/etc/init.d/mariadb restart
+fi
 
 echo ""
 
@@ -1254,7 +1257,7 @@ echo "$PROG: account details saved: $FILE"
 service mysql restart
 # Install MySQL server timezone data
 
-mysql_tzinfo_to_sql /usr/share/zoneinfo | mysql --defaults-file="$MYSQL_USER_ADMIN_CNF" mysql 
+mysql_tzinfo_to_sql /usr/share/zoneinfo | mysql --defaults-file="$MYSQL_USER_ADMIN_CNF" mysql
 
 # Create twittercapture database
 
@@ -1264,15 +1267,20 @@ echo "FLUSH PRIVILEGES;" | mysql --defaults-file="$MYSQL_USER_ADMIN_CNF"
 sed -i "s/dbuser = \"\"/dbuser = \"$TCATMYSQLUSER\"/g" "$CFG"
 sed -i "s/dbpass = \"\"/dbpass = \"$TCATMYSQLPASS\"/g" "$CFG"
 sed -i "s/example.com\/dmi-tcat\//$SERVERNAME\//g" "$CFG"
+
+if [ "$DB_USE_TOKUDB" = 'n' ]; then
+  sed -i "s|ENGINE=TokuDB COMPRESSION=TOKUDB_LZMA|ENGINE=MYISAM|" "$CFG"
+fi
+
 if [ "$LETSENCRYPT" = 'y' ]; then
     sed -i "s/http:\/\//https:\/\//g" "$CFG"
 fi
 
 if [ "$URLEXPANDYES" = 'y' ]; then
    echo ""
-   
+
    echo "Enabling URL expander ..."
-   
+
    echo ""
    VAR=ENABLE_URL_EXPANDER
    VALUE="TRUE"
@@ -1298,12 +1306,12 @@ echo ""
 
 cat > /etc/logrotate.d/dmi-tcat <<EOF
 $TCAT_DIR/logs/controller.log $TCAT_DIR/logs/track.error.log $TCAT_DIR/logs/follow.error.log $TCAT_DIR/logs/onepercent.error.log
-{ 
-   weekly  
-   rotate 8  
-   compress  
-   delaycompress  
-   missingok  
+{
+   weekly
+   rotate 8
+   compress
+   delaycompress
+   missingok
    ifempty
    create 644 $SHELLUSER $SHELLGROUP
 }
@@ -1369,9 +1377,9 @@ echo "sql-mode=\"NO_AUTO_VALUE_ON_ZERO,ALLOW_INVALID_DATES\"" >> /etc/mysql/conf
 
 if [ "$DB_CONFIG_MEMORY_PROFILE" = "y" ]; then
     echo ""
-    
+
     echo "Configuring MySQL server (memory profile) ..."
-    
+
     echo ""
     MAXMEM=`free -m | head -n 2 | tail -n 1 | tr -s ' ' | cut -d ' ' -f 2`
     # Make this an integer, and non-empty for bash
