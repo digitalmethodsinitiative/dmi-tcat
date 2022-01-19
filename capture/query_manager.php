@@ -739,7 +739,7 @@ function getBins() {
             $bin->periods[] = $result['bin_starttime'] . " - " . str_replace("0000-00-00 00:00:00", "now", $result['bin_endtime']);
         }
 
-        if ($bin->type == "track" || $bin->type == "geotrack") {
+        if ($bin->type == "track" || $bin->type == "geotrack" || $bin->type == "import 4ca") {
             $sql = "SELECT p.id AS phrase_id, p.phrase, bp.starttime AS phrase_starttime, bp.endtime AS phrase_endtime FROM tcat_query_phrases p, tcat_query_bins_phrases bp WHERE p.id = bp.phrase_id AND bp.querybin_id = " . $bin->id;
 
             $rec = $dbh->prepare($sql);
