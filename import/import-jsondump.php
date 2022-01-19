@@ -100,8 +100,9 @@ function process_json_file_timeline($filepath, $dbh) {
         $tweetQueue->insertDB();
     }
 }
-
-queryManagerSetPeriodsOnCreation($bin_name);
+// Update periods based on min and max of tweet creation dates
+// NOTE: depending on how data was collected, this could be misleading (e.g. if a search query was for varying periods of time)
+queryManagerSetPeriodsOnCreation($bin_name, $queries);
 
 print "\n\n\n\n";
 print "Number of tweets: " . count($all_tweet_ids) . "\n";

@@ -15,6 +15,9 @@
  * - `name` - Query bin name
  * - `query` - The original query as entered in 4CAT
  *
+ * NOTE: You may need to increase your TIMEOUT parameters in order to accept
+ * large json files from 4CAT (in apache.conf for example).
+ *
  * To not just accept any file from anyone, you can configure an access token
  * in config.php. If the `token` POST value does not match
  * $GLOBALS['import_token'], the script exits with an error.
