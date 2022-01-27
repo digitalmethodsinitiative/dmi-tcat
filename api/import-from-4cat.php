@@ -29,6 +29,7 @@
  * @param string $error  Error message
  */
 function exit_with_json_error($error) {
+    error_log("import-4cat exit error: ".strval($error));
     echo json_encode(['success' => false, 'error' => $error]);
     exit(1);
 }
