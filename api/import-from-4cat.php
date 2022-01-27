@@ -94,7 +94,8 @@ $fp = fopen ($temp_path, 'w+');
 // Replace spaces with %20 if needed
 $ch = curl_init(str_replace(" ","%20",$url));
 // CURL settings
-curl_setopt($ch, CURLOPT_TIMEOUT, 60);
+// curl timeout in second; apache.conf timeout seems more often the culprit
+curl_setopt($ch, CURLOPT_TIMEOUT, 120);
 // Could be used if there are https issues
 //curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
 //curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
