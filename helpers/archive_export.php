@@ -46,6 +46,7 @@ require_once __DIR__ . '/../common/functions.php';
 require_once __DIR__ . '/../capture/common/functions.php';
 
 global $dbuser, $dbpass, $database, $hostname;
+$dbh = null;
 
 if (!env_is_cli()) {
     die("Please run this script only from the command-line.\n");
@@ -127,8 +128,7 @@ if ($isAllBins) {
     sort($queryBins);
 } else if ( $isAllInactiveBins ) {
     // HACKING
-    $dbh = new PDO("mysql:host=$hostname;dbname=$database;charset=utf8mb4", $dbuser, $dbpass, array(PDO::MYSQL_ATTR_INIT_COMMAND => "set sql_mode='ALLOW_INVALID_DATES'"));
-    $dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $dbh = refresh_dbh_connection($dbh, $hostname, $database, $dbuser, $dbpass);
     if ($ignoreArray) {
         // Ignore certain bins!
         $tempBins = getAllInactiveBins($dbh);
@@ -194,8 +194,10 @@ if (!is_writable($storedir)) {
 // TODO: Break into per bin queries; reduce data AND reduce memory usage
 // Currently must hold object in order to write to each bin file
 
-$dbh = new PDO("mysql:host=$hostname;dbname=$database;charset=utf8mb4", $dbuser, $dbpass, array(PDO::MYSQL_ATTR_INIT_COMMAND => "set sql_mode='ALLOW_INVALID_DATES'"));
-$dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+$dbh = refresh_dbh_connection($dbh, $hostname, $database, $dbuser, $dbpass);
+
+//// Troubleshooting: rough check of memory use on error tables
+//$before_memory = memory_get_usage();
 
 // tcat_error_gap table
 $tcat_error_gaps = array();
@@ -224,6 +226,11 @@ while ($row = $q->fetch(PDO::FETCH_ASSOC)) {
     $tcat_error_ratelimits[] = $obj;
 }
 
+//// Troubleshooting: rough check of memory use on error tables
+//$after_memory = memory_get_usage();
+//$error_memory_usage = ($after_memory - $before_memory);
+//print "Estimated memory usage for Error data: " .$error_memory_usage. "\n";
+
 // Instantiate array for bins to be deleted
 $exportedBins = array();
 $totalTweets = 0;
@@ -240,6 +247,11 @@ foreach ($queryBins as $bin) {
     $bintype = getBinType($bin);
     if ($bintype === false) {
         die("$prog: error: unknown query bin: $bin\n");
+    } else if (!in_array($bintype, array('track', 'follow', 'import 4ca'))) {
+        // Different types of bins require different export strategies and should be examined
+        print date("Y-m-d H:i:s").": Bin type $bintype not implemented; Skipping $bin\n";
+        // Skip bin
+        continue;
     }
 
     // Output file
@@ -263,8 +275,7 @@ foreach ($queryBins as $bin) {
 
     set_time_limit(0);
 
-    $dbh = new PDO("mysql:host=$hostname;dbname=$database;charset=utf8mb4", $dbuser, $dbpass, array(PDO::MYSQL_ATTR_INIT_COMMAND => "set sql_mode='ALLOW_INVALID_DATES'"));
-    $dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $dbh = refresh_dbh_connection($dbh, $hostname, $database, $dbuser, $dbpass);
 
     //
     // Add the mysqldumps to the file
@@ -292,7 +303,7 @@ foreach ($queryBins as $bin) {
         unlink($filename);
         die("$prog: internal error: no tables for bin: $bin (check case is correct)\n");
     }
-    
+
     $cmd = "$bin_mysqldump  --lock-tables=false --skip-add-drop-table --default-character-set=utf8mb4 -u$dbuser -h $hostname $database $string >> $filename";
     $mysqldump_result = system($cmd, $mysqldump_return);
     if ( $mysqldump_return !== 0 ) {
@@ -313,6 +324,7 @@ foreach ($queryBins as $bin) {
 
     // Create object for metadata and deletion later
     $binObj = array();
+    $binObj['export_successful'] = false;
     $binObj['name'] = $bin;
     $binObj['type'] = $bintype;
 
@@ -324,6 +336,9 @@ foreach ($queryBins as $bin) {
     fputs($fh, "--\n");
     fputs($fh, "-- DMI-TCAT - Update TCAT tables\n");
     fputs($fh, "--\n");
+
+    // Refresh db connection after mysqldumps
+    $dbh = refresh_dbh_connection($dbh, $hostname, $database, $dbuser, $dbpass);
 
     // Insert bin entry to tcat_query_bins
     $sql = "INSERT INTO tcat_query_bins ( querybin, `type`, active, access ) values ( " . $dbh->Quote($bin) . ", " . $dbh->Quote($bintype) . ", 0, 0 );";
@@ -349,7 +364,7 @@ foreach ($queryBins as $bin) {
     $binObj['periods'] = $periods;
 
     // Collect and insert user or phrase specific data
-    if ($bintype == 'track') {
+    if ( $bintype == 'track' || $bintype == 'import 4ca' ) {
         print date("Y-m-d H:i:s").": Exporting phrase data\n";
 
         // Collect phrases
@@ -412,7 +427,7 @@ foreach ($queryBins as $bin) {
             fputs($fh, $sql . "\n");
         }
 
-    } else if ($bintype == 'follow') {
+    } elseif ($bintype == 'follow') {
         print date("Y-m-d H:i:s").": Exporting user data\n";
 
         // Collect users
@@ -450,6 +465,9 @@ foreach ($queryBins as $bin) {
             fputs($fh, $sql . "\n");
         }
         $binObj['users'] = $user_times;
+    } else {
+        // Should already have been caught; if this triggers, we need to add cleanup
+        die("Bin type: ". $bintype ." not yet implemented.");
     }
 
     fputs($fh, "-- Export DMI-TCAT query bin: end: ${bin}\n");
@@ -517,7 +535,13 @@ foreach ($queryBins as $bin) {
 
     /* Finally gzip the file */
 
-    system("$bin_gzip $filename");
+    system("$bin_gzip $filename", $gzip_return);
+    if ( $gzip_return !== 0 ) {
+        die("$prog: gzip error: unable to zip $filename\n");
+    }
+
+    // Mark bin export as complete; TODO: inspect file?
+    $binObj['export_successful'] = true;
 
     print "Dump completed and saved on disk: $filename.gz\n";
 
@@ -527,9 +551,11 @@ foreach ($queryBins as $bin) {
     }
 
     // Get number of tweets
-    $sql = "SELECT count(id) AS count FROM " . $bin . "_tweets";
+    $dbh = refresh_dbh_connection($dbh, $hostname, $database, $dbuser, $dbpass);
+    $sql = "SELECT count(id) AS count FROM " .$bin . "_tweets";
+    print $sql."\n";
     $res = $dbh->prepare($sql);
-    if ($res->execute() && $res->rowCount()) {
+    if ($res->execute()) {
         $result = $res->fetch();
         $binObj['num_of_tweets'] = $result['count'];
     } else {
@@ -565,75 +591,76 @@ if ($isAllBins) {
 
 if ($deleteBins) {
     foreach ($exportedBins as $bin) {
-        $name = $bin['name'];
-        $bintype = $bin['type'];
-        print date("Y-m-d H:i:s").": Deleting query bin: $name\n";
+        if ($bin['export_successful']) {
+            $name = $bin['name'];
+            $bintype = $bin['type'];
+            print date("Y-m-d H:i:s").": Deleting query bin: $name\n";
 
-        // Connect to database
-        $dbh = new PDO("mysql:host=$hostname;dbname=$database;charset=utf8mb4", $dbuser, $dbpass, array(PDO::MYSQL_ATTR_INIT_COMMAND => "set sql_mode='ALLOW_INVALID_DATES'"));
-        $dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            // Connect to database
+            $dbh = refresh_dbh_connection($dbh, $hostname, $database, $dbuser, $dbpass);
 
-        // Collect bin ID
-        $sql = "SELECT id FROM tcat_query_bins WHERE querybin=:querybinname";
-        $q = $dbh->prepare($sql);
-        $q->bindParam(':querybinname', $name, PDO::PARAM_STR);
-        $q->execute();
-        $row = $q->fetch(PDO::FETCH_ASSOC);
-        $binID = $row['id'];
+            // Collect bin ID
+            $sql = "SELECT id FROM tcat_query_bins WHERE querybin=:querybinname";
+            $q = $dbh->prepare($sql);
+            $q->bindParam(':querybinname', $name, PDO::PARAM_STR);
+            $q->execute();
+            $row = $q->fetch(PDO::FETCH_ASSOC);
+            $binID = $row['id'];
 
-        // Collect existing tables
-        $tables_in_db = array();
-        $sql = "show tables";
-        $q = $dbh->prepare($sql);
-        $q->execute();
-        while ($row = $q->fetch(PDO::FETCH_NUM)) {
-            $tables_in_db[] = $row[0];
-        }
+            // Collect existing tables
+            $tables_in_db = array();
+            $sql = "show tables";
+            $q = $dbh->prepare($sql);
+            $q->execute();
+            while ($row = $q->fetch(PDO::FETCH_NUM)) {
+                $tables_in_db[] = $row[0];
+            }
 
-        // Loop through and delete bin specific tables
-        $tables = array('tweets', 'mentions', 'urls', 'hashtags', 'withheld', 'places', 'media');
-        foreach ($tables as $table) {
-            $tablename = "$name" . '_' . $table;
-            if (in_array($tablename, $tables_in_db)) {
-                print "Deleting table: $tablename\n";
-                $sql = "DROP TABLE $tablename";
+            // Loop through and delete bin specific tables
+            $tables = array('tweets', 'mentions', 'urls', 'hashtags', 'withheld', 'places', 'media');
+            foreach ($tables as $table) {
+                $tablename = "$name" . '_' . $table;
+                if (in_array($tablename, $tables_in_db)) {
+                    print "Deleting table: $tablename\n";
+                    $sql = "DROP TABLE $tablename";
+                    $drop = $dbh->prepare($sql);
+                    $drop->execute();
+                }
+            }
+
+            // Now to remove specific rows
+
+            print date("Y-m-d H:i:s").": Deleting bin from tcat_query_bins\n";
+            // Remove bin from tcat_query_bins
+            $sql = "DELETE FROM tcat_query_bins where querybin=:querybinname";
+            $drop = $dbh->prepare($sql);
+            $drop->bindParam(':querybinname', $name, PDO::PARAM_STR);
+            $drop->execute();
+
+            print "Deleting bin periods from tcat_query_bins_periods\n";
+            // Remove rows from tcat_query_bins_periods associated with bin's ID
+            $sql = "DELETE FROM tcat_query_bins_periods where querybin_id=:querybinid";
+            $drop = $dbh->prepare($sql);
+            $drop->bindParam(':querybinid', $binID, PDO::PARAM_INT);
+            $drop->execute();
+
+            if ($bintype == 'track' || $bintype == 'import 4ca') {
+                print date("Y-m-d H:i:s").": Deleting phrase periods tied to $name bin from tcat_query_bins_phrases\n";
+                // Remove rows from tcat_query_bins_phrases associated with bin's ID
+                $sql = "DELETE FROM tcat_query_bins_phrases where querybin_id=:querybinid";
                 $drop = $dbh->prepare($sql);
+                $drop->bindParam(':querybinid', $binID, PDO::PARAM_INT);
+                $drop->execute();
+            } else if ($bintype == 'follow') {
+                print date("Y-m-d H:i:s").": Deleting user periods tied to $name bin from tcat_query_bins_users\n";
+                // Remove rows from tcat_query_bins_users associated with bin's ID
+                $sql = "DELETE FROM tcat_query_bins_users where querybin_id=:querybinid";
+                $drop = $dbh->prepare($sql);
+                $drop->bindParam(':querybinid', $binID, PDO::PARAM_INT);
                 $drop->execute();
             }
+            print date("Y-m-d H:i:s").": Data from bin $name deleted\n";
         }
-
-        // Now to remove specific rows
-
-        print date("Y-m-d H:i:s").": Deleting bin from tcat_query_bins\n";
-        // Remove bin from tcat_query_bins
-        $sql = "DELETE FROM tcat_query_bins where querybin=:querybinname";
-        $drop = $dbh->prepare($sql);
-        $drop->bindParam(':querybinname', $name, PDO::PARAM_STR);
-        $drop->execute();
-
-        print "Deleting bin periods from tcat_query_bins_periods\n";
-        // Remove rows from tcat_query_bins_periods associated with bin's ID
-        $sql = "DELETE FROM tcat_query_bins_periods where querybin_id=:querybinid";
-        $drop = $dbh->prepare($sql);
-        $drop->bindParam(':querybinid', $binID, PDO::PARAM_INT);
-        $drop->execute();
-
-        if ($bintype == 'track') {
-            print date("Y-m-d H:i:s").": Deleting phrase periods tied to $name bin from tcat_query_bins_phrases\n";
-            // Remove rows from tcat_query_bins_phrases associated with bin's ID
-            $sql = "DELETE FROM tcat_query_bins_phrases where querybin_id=:querybinid";
-            $drop = $dbh->prepare($sql);
-            $drop->bindParam(':querybinid', $binID, PDO::PARAM_INT);
-            $drop->execute();
-        } else if ($bintype == 'follow') {
-            print date("Y-m-d H:i:s").": Deleting user periods tied to $name bin from tcat_query_bins_users\n";
-            // Remove rows from tcat_query_bins_users associated with bin's ID
-            $sql = "DELETE FROM tcat_query_bins_users where querybin_id=:querybinid";
-            $drop = $dbh->prepare($sql);
-            $drop->bindParam(':querybinid', $binID, PDO::PARAM_INT);
-            $drop->execute();
-        }
-        print date("Y-m-d H:i:s").": Data from bin $name deleted";
     }
     // Remove any unused phrases
     print "Deleting unused phrases from tcat_query_phrases\n";
@@ -665,6 +692,19 @@ print "Total Tweets Archived: " .$totalTweets. "\n";
 $time_end = microtime(true);
 $execution_time = ($time_end - $total_time_start)/60;
 print "Total Execution Time: " .$execution_time. " Mins\n";
+
+/**
+ * Closes an existing database connection and establishes a new one.
+ * Attempting to resolve "2006 MySQL server has gone away" issues due to long running script.
+ */
+function refresh_dbh_connection($dbh, $hostname, $database, $dbuser, $dbpass) {
+    $dbh = null;
+    $dbh = new PDO("mysql:host=$hostname;dbname=$database;charset=utf8mb4", $dbuser, $dbpass, array(PDO::MYSQL_ATTR_INIT_COMMAND => "set sql_mode='ALLOW_INVALID_DATES'"));
+    $dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    // This bad-boy should reduce memory usage significantly
+    $dbh->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
+    return $dbh;
+}
 
 function get_executable($binary) {
     $where = `which $binary`;
