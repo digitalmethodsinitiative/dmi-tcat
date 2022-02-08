@@ -23,9 +23,10 @@ curl https://raw.githubusercontent.com/digitalmethodsinitiative/dmi-tcat/master/
 
 ### Docker
 This Docker image uses a modified version of the installer (helpers/tcat-install-linux.sh) as a shortcut for easy deployment with docker.
+1. Clone this repository
+`git clone https://github.com/digitalmethodsinitiative/dmi-tcat.git`
 
-
-1. Add your Twitter token and key as well as any other needed information to the config file located here: `./docker/config`
+2. Add your Twitter token and key as well as any other needed information to the config file located here: `./docker/config`
 ```
 # Update at minimum
 CONSUMERKEY=
@@ -33,12 +34,12 @@ CONSUMERSECRET=
 USERTOKEN=
 USERSECRET=
 ```
-2. Build the image:
+3. Build the image:
 `docker image build --progress=plain -t tcat:1.0 .`
 - The `--progress=plain` tag ensure you can see all the output; important if your config file does not include passwords and they are auto generated.
-3. Run a container with the image:
+4. Run a container with the image:
 `docker container run --publish 80:80 --detach --name tcat tcat:1.0`
-4. In the future, you can stop and start your TCAT container with:
+5. In the future, you can stop and start your TCAT container with:
 `docker stop tcat`
 and
 `docker start tcat`
