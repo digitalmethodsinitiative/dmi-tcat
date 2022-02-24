@@ -553,7 +553,6 @@ foreach ($queryBins as $bin) {
     // Get number of tweets
     $dbh = refresh_dbh_connection($dbh, $hostname, $database, $dbuser, $dbpass);
     $sql = "SELECT count(id) AS count FROM " .$bin . "_tweets";
-    print $sql."\n";
     $res = $dbh->prepare($sql);
     if ($res->execute()) {
         $result = $res->fetch();
