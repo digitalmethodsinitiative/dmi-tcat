@@ -1708,7 +1708,7 @@ class Tweet {
                 /* Running in compatibility mode AND the 'extended_tweet' JSON field is available. this means the retweet is > 140 characters */
                 $retweet_text = $data["retweeted_status"]["extended_tweet"]["full_text"];
 
-                /* add the retweeting user to the user mentions */
+                /* add the retweeted user to the user mentions */
                 if (!empty($data["retweeted_status"]["extended_tweet"]["entities"]["user_mentions"])) {
                     array_unshift($data["retweeted_status"]["extended_tweet"]["entities"]["user_mentions"], $data["entities"]["user_mentions"][0]);
                 } else {
