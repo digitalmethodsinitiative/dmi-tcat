@@ -236,7 +236,11 @@ if (defined('ANALYSIS_URL'))
 
                             $v = ($key == $dataset) ? 'selected="selected"' : "";
 
-                            echo '<option value="' . $key . '" ' . $v . '>' . $set["bin"] . ' --- ' . number_format($set["notweets"], 0, ",", ".") . ' tweets from ' . $set['mintime'] . ' to ' . $set['maxtime'] . '</option>';
+                            //TODO: find out why min and max time are sometimes missing
+                            $mintime = (array_key_exists('mintime', $set)) ? $set['mintime'] : 'NA';
+                            $maxtime = (array_key_exists('maxtime', $set)) ? $set['maxtime'] : 'NA';
+
+                            echo '<option value="' . $key . '" ' . $v . '>' . $set["bin"] . ' --- ' . number_format($set["notweets"], 0, ",", ".") . ' tweets from ' . $mintime . ' to ' . $maxtime . '</option>';
                             $count += $set['notweets'];
                         }
 
