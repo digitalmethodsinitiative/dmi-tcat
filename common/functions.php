@@ -79,13 +79,21 @@ function controller_restart_roles($logtarget = "cli", $wait = false) {
  * Validates a given list of keywords, as entered as a parameter in capture/search/search.php for example
  */
 function validate_capture_phrases($keywords) {
+    $valid = true;
     $illegal_chars = array( "\t", "\n", ";", "(", ")" );
     foreach ($illegal_chars as $c) {
         if (strpos($keywords, $c) !== FALSE) {
-            return FALSE;
+            $valid = false;
         }
     }
-    return TRUE;
+    foreach ((explode(' OR ', $keywords)) as $keyword) {
+        $keyword = trim($keyword);
+        $keyword = preg_replace('/\s+/', ' ', $keyword);
+        if (strlen($keyword) > 60) {
+            $valid = false;
+        }
+    }
+    return $valid;
 }
 
 /**
