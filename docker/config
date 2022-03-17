@@ -15,7 +15,7 @@ URLEXPANDYES=y # install URL Expander or not
 
 # Apache
 
-SERVERNAME= # should default to this machine's IP address (-s overrides)
+SERVERNAME=localhost # Docker requires localhost:port (e.g., 80, 4000, etc.) OR your actual server name (e.g. my_tcat.com/)
 
 # TCAT
 TCAT_AUTO_UPDATE=0 # 0=off, 1=trivial, 2=substantial, 3=expensive

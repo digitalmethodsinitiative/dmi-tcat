@@ -34,6 +34,7 @@ CONSUMERSECRET=
 USERTOKEN=
 USERSECRET=
 ```
+Note: if you intend on using a port other than 80, update `SERVERNAME=localhost` to include the port (e.g. `SERVERNAME=localhost:4000`)
 3. Build the image:
 `docker image build --progress=plain -t tcat:1.0 .`
 - The `--progress=plain` tag ensure you can see all the output; important if your config file does not include passwords and they are auto generated.
