@@ -364,7 +364,8 @@ foreach ($queryBins as $bin) {
     $binObj['periods'] = $periods;
 
     // Collect and insert user or phrase specific data
-    if ( $bintype == 'track' || $bintype == 'import 4ca' ) {
+    // $bintype == 'import 4ca' could be exported here as it follows the 'track' tables schema
+    if ( $bintype == 'track' ) {
         print date("Y-m-d H:i:s").": Exporting phrase data\n";
 
         // Collect phrases
