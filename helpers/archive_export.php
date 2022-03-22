@@ -247,7 +247,7 @@ foreach ($queryBins as $bin) {
     $bintype = getBinType($bin);
     if ($bintype === false) {
         die("$prog: error: unknown query bin: $bin\n");
-    } else if (!in_array($bintype, array('track', 'follow', 'import 4ca'))) {
+    } else if (!in_array($bintype, array('track', 'follow'))) { // can add additional bin types here e.g., 'import 4ca'
         // Different types of bins require different export strategies and should be examined
         print date("Y-m-d H:i:s").": Bin type $bintype not implemented; Skipping $bin\n";
         // Skip bin
