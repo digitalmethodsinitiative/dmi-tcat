@@ -662,11 +662,7 @@ while [ "$BATCH_MODE" != "y" ]; do
         ALLOW_LETSENCRYPT=true
     fi
     if [ "$ALLOW_LETSENCRYPT" = true ]; then
-        if promptYN "Install Let's Encrypt (free TLS certificate). Requires publicly accessible host name" 'y'; then
-        	LETSENCRYPT=y
-        else
-	        LETSENCRYPT=n
-        fi
+        LETSENCRYPT=y
     fi
 
     # Automatic updates
