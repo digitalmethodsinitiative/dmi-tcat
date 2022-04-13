@@ -786,18 +786,27 @@ function getBins() {
         $querybins[$bin->id] = $bin;
     }
 
+    $tables_in_db = array();
+    $sql = "show tables";
+    $q = $dbh->prepare($sql);
+    $q->execute();
+    while ($row = $q->fetch(PDO::FETCH_NUM)) {
+        $tables_in_db[] = $row[0];
+    }
 
 
     // get nr of tweets per bin
     foreach ($querybins as $bin) {
         $querybins[$bin->id]->nrOfTweets = 0;
-        $sql = "SELECT count(id) AS count FROM " . $bin->name . "_tweets";
-        $res = $dbh->prepare($sql);
-        if ($res->execute() && $res->rowCount()) {
-            $result = $res->fetch();
-            $querybins[$bin->id]->nrOfTweets = $result['count'];
+        if (in_array($bin->name . "_tweets", $tables_in_db)) {
+          $sql = "SELECT count(id) AS count FROM " . $bin->name . "_tweets";
+          $res = $dbh->prepare($sql);
+          if ($res->execute() && $res->rowCount()) {
+              $result = $res->fetch();
+              $querybins[$bin->id]->nrOfTweets = $result['count'];
+          }
         }
-    }
+      }
     $dbh = false;
     return $querybins;
 }
