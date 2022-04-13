@@ -1,28 +1,29 @@
-#
 FROM jrei/systemd-ubuntu:18.04
 
-# Combine apt-get update and install per
-# https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#run
+# Volume for mysql database data directory
+VOLUME /var/lib/mysql
+
+# Install necessary packages for setup.sh
 RUN apt-get update && apt-get install -y lsb-release iproute2 sudo cron
 
-#copy docker setup script
+# Copy docker setup.sh script
 COPY docker/setup.sh tcat-install-linux.sh
 
-#copy config
+# Copy config
 COPY docker/config config.txt
 
-#create file for crontab
+# Create crontab file for setup.sh
 RUN touch /etc/crontab
 
-#run docker setup script
+# Run docker setup script
 RUN chmod a+x tcat-install-linux.sh
 RUN /bin/bash ./tcat-install-linux.sh -y -c config.txt
 
-#expose port
+# Expose port
 EXPOSE 80
 
 # Set working directory
 WORKDIR /var/www/dmi-tcat
 
-#start apache and mysql
+# Start apache, mysql, and cron 
 CMD sudo service cron start && service mysql start && apachectl -D FOREGROUND

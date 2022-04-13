@@ -30,7 +30,7 @@ SHELLGROUP=root
 DBPASS= # password for the MySQL "root" administrator account
 
 TCATMYSQLUSER=tcatdbuser
-TCATMYSQLPASS=
+TCATMYSQLPASS=supers3cr3t # must be maintained to access mysql database Docker volume
 
 DB_CONFIG_MEMORY_PROFILE=y
 DB_USE_TOKUDB=n
