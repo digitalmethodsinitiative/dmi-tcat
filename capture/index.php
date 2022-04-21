@@ -267,7 +267,7 @@ $lastRateLimitHit = getLastRateLimitHit();
             $phrasePeriodsList = array();
             $activePhraselist = array();
 
-            if (strstr($bin->type, "track") !== false || strstr($bin->type, "geotrack") !== false || $bin->type == 'search' || $bin->type == 'import ytk') {
+            if (strstr($bin->type, "track") !== false || strstr($bin->type, "geotrack") !== false || $bin->type == 'search' || $bin->type == 'import ytk'|| $bin->type == 'import 4ca') {
                 foreach ($bin->phrases as $phrase) {
                     $phrasePeriodsList[$phrase->id] = array_unique($phrase->periods);
                     $phraseList[$phrase->id] = str_replace("\"", "'", $phrase->phrase);

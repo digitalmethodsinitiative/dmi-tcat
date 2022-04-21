@@ -62,17 +62,17 @@ require_once __DIR__ . '/common/functions.php';
                 $data["to_user"] = strtolower($data["to_user"]);
 
                 if (!isset($users[$data["from_user_name"]])) {
-                    $users[$data["from_user_name"]] = $arrayName = array('id' => count($usersinv), 'notweets' => 1,'nomentions' => 0);
+                    $users[$data["from_user_name"]] = $arrayName = array('id' => count($usersinv), 'mentioned_others' => 1,'mentioned_by_others' => 0);
                     $usersinv[] = $data["from_user_name"];
                 } else {
-                    $users[$data["from_user_name"]]["notweets"]++;
+                    $users[$data["from_user_name"]]["mentioned_others"]++;
                 }
 
                 if (!isset($users[$data["to_user"]])) {
-                    $users[$data["to_user"]] = $arrayName = array('id' => count($usersinv), 'notweets' => 0,'nomentions' => 1);
+                    $users[$data["to_user"]] = $arrayName = array('id' => count($usersinv), 'mentioned_others' => 0,'mentioned_by_others' => 1);
                     $usersinv[] = $data["to_user"];
                 } else {
-                    $users[$data["to_user"]]["nomentions"]++;
+                    $users[$data["to_user"]]["mentioned_by_others"]++;
                 }
 
                 $to = $users[$data["from_user_name"]]["id"] . "," . $users[$data["to_user"]]["id"];
@@ -94,7 +94,7 @@ require_once __DIR__ . '/common/functions.php';
 
 
 		foreach ($users as $key => $user) {
-			$topusers[$key] = $user["nomentions"];
+			$topusers[$key] = $user["mentioned_by_others"];
 		}
 
 		arsort($topusers);
@@ -105,10 +105,10 @@ require_once __DIR__ . '/common/functions.php';
 		//print_r($topusers);
 
 
-        $content = "nodedef>name VARCHAR,label VARCHAR,no_tweets INT,no_mentions INT\n";
+        $content = "nodedef>name VARCHAR,label VARCHAR,mentioned_others INT,mentioned_by_others INT\n";
         foreach ($users as $key => $value) {
         	if(isset($topusers[$key])) {
-            	$content .= $value["id"] . "," . $key . "," . $value["notweets"] . "," . $value["nomentions"] . "\n";
+            	$content .= $value["id"] . "," . $key . "," . $value["mentioned_others"] . "," . $value["mentioned_by_others"] . "\n";
             }
         }
 

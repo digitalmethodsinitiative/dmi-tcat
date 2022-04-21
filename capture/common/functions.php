@@ -1047,6 +1047,19 @@ function getAllBins() {
     return $querybins;
 }
 
+function getAllInactiveBins() {
+    $dbh = pdo_connect();
+    $sql = "select querybin from tcat_query_bins where active = 0";
+    $rec = $dbh->prepare($sql);
+    $querybins = array();
+    if ($rec->execute() && $rec->rowCount() > 0) {
+        while ($res = $rec->fetch()) {
+            $querybins[] = $res['querybin'];
+        }
+    }
+    $dbh = false;
+    return $querybins;
+}
 
 function queryManagerBinExists($binname, $cronjob = false) {
     $dbh = pdo_connect();
@@ -1089,7 +1102,7 @@ function queryManagerCreateBinFromExistingTables($binname, $querybin_id, $type, 
         }
     }
 
-    if ($type == 'track' || $type == 'search' || $type == "import ytk" || $type == "import track") // insert phrases
+    if ($type == 'track' || $type == 'search' || $type == "import ytk" || $type == "import track" || $type == "import 4cat") // insert phrases
         queryManagerInsertPhrases($querybin_id, $queries, $starttime, $endtime);
     elseif ($type == 'follow' || $type == 'timeline' || $type == 'import timeline') {// insert users
         queryManagerInsertUsers($querybin_id, $queries, $starttime, $endtime);
@@ -1695,7 +1708,7 @@ class Tweet {
                 /* Running in compatibility mode AND the 'extended_tweet' JSON field is available. this means the retweet is > 140 characters */
                 $retweet_text = $data["retweeted_status"]["extended_tweet"]["full_text"];
 
-                /* add the retweeting user to the user mentions */
+                /* add the retweeted user to the user mentions */
                 if (!empty($data["retweeted_status"]["extended_tweet"]["entities"]["user_mentions"])) {
                     array_unshift($data["retweeted_status"]["extended_tweet"]["entities"]["user_mentions"], $data["entities"]["user_mentions"][0]);
                 } else {

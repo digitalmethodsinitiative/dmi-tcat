@@ -150,7 +150,7 @@ ini_set("max_execution_time", 3600);
 /*
  * How much memory the script is allowed to take
  */
-ini_set("memory_limit", "4G");
+// ini_set("memory_limit", "4G");
 
 /*
  * Enable URL expander? This script will follow the links of all URLs inside tweets and resolve the final location they point towards.

@@ -58,6 +58,8 @@ TCATMYSQLUSER=tcatdbuser
 TCATMYSQLPASS=
 
 DB_CONFIG_MEMORY_PROFILE=y
+# Use TokuDB instead of MyISAM
+DB_USE_TOKUDB=n
 
 LETSENCRYPT=n
 
@@ -1032,17 +1034,19 @@ if test -f /sys/kernel/mm/transparent_hugepage/defrag; then
    echo never > /sys/kernel/mm/transparent_hugepage/defrag
 fi
 
-# Install the TokuDB storage engine
+if [ "$DB_USE_TOKUDB" = 'y' ]; then
+    # Install the TokuDB storage engine
 
-tput bold
-echo "Installing TokuDB storage engine ..."
-tput sgr0
+    tput bold
+    echo "Installing TokuDB storage engine ..."
+    tput sgr0
 
-apt-get -y install mariadb-plugin-tokudb
-# Enable the TokuDB storage engine
-sed -i 's/^#plugin-load-add=ha_tokudb.so/plugin-load-add=ha_tokudb.so/g' /etc/mysql/mariadb.conf.d/tokudb.cnf
-# Restart mariadb
-systemctl restart mariadb
+    apt-get -y install mariadb-plugin-tokudb
+    # Enable the TokuDB storage engine
+    sed -i 's/^#plugin-load-add=ha_tokudb.so/plugin-load-add=ha_tokudb.so/g' /etc/mysql/mariadb.conf.d/tokudb.cnf
+    # Restart mariadb
+    systemctl restart mariadb
+fi
 
 echo ""
 tput bold
@@ -1251,7 +1255,7 @@ echo "$PROG: account details saved: $FILE"
 
 # Install MySQL server timezone data
 
-mysql_tzinfo_to_sql /usr/share/zoneinfo | mysql --defaults-file="$MYSQL_USER_ADMIN_CNF" mysql 
+mysql_tzinfo_to_sql /usr/share/zoneinfo | mysql --defaults-file="$MYSQL_USER_ADMIN_CNF" mysql
 
 # Create twittercapture database
 
@@ -1261,6 +1265,11 @@ echo "FLUSH PRIVILEGES;" | mysql --defaults-file="$MYSQL_USER_ADMIN_CNF"
 sed -i "s/dbuser = \"\"/dbuser = \"$TCATMYSQLUSER\"/g" "$CFG"
 sed -i "s/dbpass = \"\"/dbpass = \"$TCATMYSQLPASS\"/g" "$CFG"
 sed -i "s/example.com\/dmi-tcat\//$SERVERNAME\//g" "$CFG"
+
+if [ "$DB_USE_TOKUDB" = 'n' ]; then
+  sed -i "s|ENGINE=TokuDB COMPRESSION=TOKUDB_LZMA|ENGINE=MYISAM|" "$CFG"
+fi
+
 if [ "$LETSENCRYPT" = 'y' ]; then
     sed -i "s/http:\/\//https:\/\//g" "$CFG"
 fi
@@ -1295,12 +1304,12 @@ echo ""
 
 cat > /etc/logrotate.d/dmi-tcat <<EOF
 $TCAT_DIR/logs/controller.log $TCAT_DIR/logs/track.error.log $TCAT_DIR/logs/follow.error.log $TCAT_DIR/logs/onepercent.error.log
-{ 
-   weekly  
-   rotate 8  
-   compress  
-   delaycompress  
-   missingok  
+{
+   weekly
+   rotate 8
+   compress
+   delaycompress
+   missingok
    ifempty
    create 644 $SHELLUSER $SHELLGROUP
 }

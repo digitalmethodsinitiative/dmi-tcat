@@ -25,6 +25,7 @@ require_once __DIR__ . '/common/functions.php';
                 var _d1 = $("#ipt_startdate").val();
                 var _d2 = $("#ipt_enddate").val();
                 var outputformat = getOutputformat();
+                var replyto = getReplyto();
 
                 if(!_d1.match(/\d{4}-\d{2}-\d{2}/) || !_d2.match(/\d{4}-\d{2}-\d{2}/)) {
                     alert("Please check the date format!");
@@ -57,6 +58,7 @@ if (defined('ANALYSIS_URL'))
             "&from_source=" + $("#ipt_from_source").val().replace(/#/g,"%23") +
             "&startdate=" + $("#ipt_startdate").val() +
             "&enddate=" + $("#ipt_enddate").val() +
+            "&replyto=" + replyto +
             "&whattodo=" + $("#whattodo").val() +
             "&graph_resolution=" + $("input[name=graph_resolution]:checked").val() +
             "&outputformat=" + outputformat;
@@ -122,6 +124,10 @@ if (defined('ANALYSIS_URL'))
         var lower = parseInt(prompt("Do you want to convert all words to lowercase? (enter 0 [=no] or 1 [=yes])", "0"), 10);
         return lower;
     }
+    function askTextQuery() {
+        var keyword_query = prompt("List keywords to match in text seperated by OR (e.g., keyword1 OR keyword2 OR keyword3 ", "");
+        return keyword_query;
+    }
     function getInterval() {
         var selected = $('[name="interval"]:checked');
         var selectedValue = "";
@@ -132,6 +138,13 @@ if (defined('ANALYSIS_URL'))
     }
     function getOutputformat() {
         var selected = $('[name="outputformat"]:checked');
+        var selectedValue = undefined;
+        if (selected.length > 0)
+            selectedValue = selected.val();
+        return selectedValue;
+    }
+    function getReplyto() {
+        var selected = $('[name="replyto"]:checked');
         var selectedValue = undefined;
         if (selected.length > 0)
             selectedValue = selected.val();
@@ -192,6 +205,8 @@ if (defined('ANALYSIS_URL'))
                             $ordered_datasets["keyword captures"][$key] = $set;
                         } elseif ($set['type'] == "geotrack") {
                             $ordered_datasets["geo captures"][$key] = $set;
+                        } elseif ($set['type'] == "import 4ca") {
+                            $ordered_datasets["4CAT imports"][$key] = $set;
                         } elseif ($set['type'] == "follow") {
                             $ordered_datasets["user captures"][$key] = $set;
                         } elseif ($set['type'] == "onepercent") {
@@ -221,7 +236,11 @@ if (defined('ANALYSIS_URL'))
 
                             $v = ($key == $dataset) ? 'selected="selected"' : "";
 
-                            echo '<option value="' . $key . '" ' . $v . '>' . $set["bin"] . ' --- ' . number_format($set["notweets"], 0, ",", ".") . ' tweets from ' . $set['mintime'] . ' to ' . $set['maxtime'] . '</option>';
+                            //TODO: find out why min and max time are sometimes missing
+                            $mintime = (array_key_exists('mintime', $set)) ? $set['mintime'] : 'NA';
+                            $maxtime = (array_key_exists('maxtime', $set)) ? $set['maxtime'] : 'NA';
+
+                            echo '<option value="' . $key . '" ' . $v . '>' . $set["bin"] . ' --- ' . number_format($set["notweets"], 0, ",", ".") . ' tweets from ' . $mintime . ' to ' . $maxtime . '</option>';
                             $count += $set['notweets'];
                         }
 
@@ -283,6 +302,13 @@ if (defined('ANALYSIS_URL'))
 
                         <tr>
                             <td class="tbl_head">Enddate (UTC):</td><td><input type="text" id="ipt_enddate" size="60" name="enddate" value="<?php echo $enddate; ?>" /> (YYYY-MM-DD or YYYY-MM-DD HH:MM:SS)</td>
+                        </tr>
+                        <tr>
+                            <td class="tbl_head">Exclude "in reply to" Tweets:</td>
+                            <td>
+                            <input type='radio' name="replyto" value="yes"<?php if ($replyto == 'yes') print " CHECKED"; ?> id="ipt_replyto_yes"> <label for="ipt_replyto_yes">yes</label>
+                            <input type='radio' name="replyto" value="no"<?php if ($replyto == 'no') print " CHECKED"; ?> id="ipt_replyto_no"> <label for="ipt_replyto_no">no</label>
+                            </td>
                         </tr>
                         <tr>
                             <td valign="middle" style='padding-top: 4px'><input type="submit" value="update overview" /></td>
@@ -486,6 +512,9 @@ if (defined('ANALYSIS_URL'))
                                 <td class="tbl_head">Enddate:</td><td><?php echo $enddate; ?></td>
                             </tr>
                             <tr>
+                                <td class="tbl_head">Exclude "in reply to" Tweets:</td><td><?php echo $replyto; ?></td>
+                            </tr>
+                            <tr>
                                 <td class="tbl_head">Number of tweets:</td><td><?php echo number_format($numtweets, 0, ",", "."); ?></td>
                             </tr>
                             <tr>
@@ -637,7 +666,7 @@ if (defined('ANALYSIS_URL'))
 
                 <legend>Export selected data</legend>
 
-                <p class="txt_desc">All exports have the following filename convention: {dataset}-{startdate}-{enddate}-{query}-{exclude}-{from_user_name}-{exclude_from_user_name}-{from_user_lang}-{lang}-{url_query}-{media_url_query}--{module_name}-{module_settings}-{dmi-tcat_version}.{filetype}</p>
+                <p class="txt_desc">All exports have the following filename convention: {dataset}-{startdate}-{enddate}-{query}-{exclude}-{from_user_name}-{exclude_from_user_name}-{from_user_lang}-{lang}-{url_query}-{media_url_query}-{replyto}-{module_name}-{module_settings}-{dmi-tcat_version}.{filetype}</p>
 
                 <p>
                     <div class='txt_desc' style='background-color: #eee; padding: 5px;'>Output format for tables:
@@ -906,7 +935,7 @@ if (defined('ANALYSIS_URL'))
 
                     <h3>Social graph by mentions</h3>
                     <div class="txt_desc">Produces a <a href="http://en.wikipedia.org/wiki/Directed_graph">directed graph</a> based on interactions between users. If a users mentions another one, a directed link is created.
-                        The more often a user mentions another, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>"). The "count" value contains the number of tweets for each user in the specified period.</div>
+                        The more often a user mentions another, the stronger the link ("<a href="http://en.wikipedia.org/wiki/Weighted_graph#Weighted_graphs_and_networks">link weight</a>"). The count values contain the number of times each user both mentions other users and is mentioned by other users in the specified period.</div>
                     <div class="txt_desc">Use: analyze patterns in communication, find "hubs" and "communities", categorize user accounts.</div>
                     <div class="txt_link"> &raquo; <a href="" onclick="var topu = askMentions(); $('#whattodo').val('mention_graph&topu='+topu);sendUrl('mod.mention_graph.php');return false;">launch</a></div>
 
@@ -934,6 +963,14 @@ if (defined('ANALYSIS_URL'))
                     <div class="txt_desc">Use: explore the relations between hashtags, find and analyze sub-issues, distinguish between different types of hashtags (event related, qualifiers, etc.).</div>
                     <div class="txt_link"> &raquo; <a href="" onclick="var minf = askFrequency(); if(minf !== false) { $('#whattodo').val('hashtag_cooc&minf='+minf);sendUrl('mod.hashtag_cooc.php'); } return false;">launch</a> (set minimum frequency)</div><!-- with absolute weighting of cooccurrences</a></div>-->
                     <div class="txt_link"> &raquo; <a href="" onclick="var topu = askTopht(); if(topu !== false) { $('#whattodo').val('hashtag_cooc&topu='+topu);sendUrl('mod.hashtag_cooc.php'); } return false;">launch</a> (get top hashtags)</div>
+
+                    <hr />
+
+                    <h3>User Keyword Usage graph</h3>
+                    <div class="txt_desc">Produces an <a href="http://en.wikipedia.org/wiki/Graph_%28mathematics%29#Undirected_graph">undirected graph</a> based on user and keyword analysis. If a user's tweet contains a given keyword, they are linked.
+                        Each time a user tweet contains a keyword, the weight of a link is increased by 1.</div>
+                    <div class="txt_desc">Use: explore the relations between users and keywords.</div>
+                    <div class="txt_link"> &raquo; <a href="" onclick="var keyword_query = askTextQuery(); if(keyword_query !== false) { $('#whattodo').val('user_keywords&keyword_query='+keyword_query);sendUrl('mod.user_keywords.php'); } return false;">launch</a> (set keyword query)</div>
 
                     <hr />
 
