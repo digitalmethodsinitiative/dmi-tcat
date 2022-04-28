@@ -159,7 +159,7 @@ EOF
   # Install Let's Encrypt via certbot
   if [ "$LETSENCRYPT" = 'y' ]; then
       apt-get install -y certbot python-certbot-apache
-      certbot --apache -d $SERVERNAME
+      certbot --apache --non-interactive --agree-tos -m "$LETSENCRYPT_EMAIL" -d $SERVERNAME
   fi
 
   if [ "$LETSENCRYPT" = 'y' ]; then
