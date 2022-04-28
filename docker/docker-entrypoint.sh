@@ -65,8 +65,18 @@ else
   TCATUSER=tcat
   TCATPASS=$(openssl rand -base64 32 | tr -c -d 0-9A-Za-z | tr -d O01iIl)
   TCATMYSQLUSER=tcatdbuser
-  TCATMYSQLPASS=`openssl rand -base64 32 | tr -c -d 0-9A-Za-z | tr -d O01iIl`
+  TCATMYSQLPASS=$(openssl rand -base64 32 | tr -c -d 0-9A-Za-z | tr -d O01iIl)
 
+  #----------------------------------------------------------------
+  # Grab public IP if desired
+  if [ "$SERVERNAME" = 'public' ]; then
+    echo ""
+    echo "Collecting Public IP ..."
+    echo ""
+    apt-get install -y curl
+    SERVERNAME=$(curl -s https://api.ipify.org)
+    echo "SERVERNAME updated with public IP: $SERVERNAME"
+  fi
   #----------------------------------------------------------------
   echo ""
   echo "Configuring Apache 2 ..."
