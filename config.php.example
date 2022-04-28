@@ -2,7 +2,7 @@
 $config_file = __DIR__.'/config/config.json';
 if (!file_exists($config_file)) {
     header("Location: /capture/config_tcat.php");
-    exit();
+    exit(1);
 } else {
     $config_json = json_decode(file_get_contents($config_file), true);
 }
