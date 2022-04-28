@@ -32,6 +32,8 @@ if ($config_json["CAPTURE_MODE"] == 1) {
 }
 
 /*
+ * A user named 'admin' is required to use the interactive tcat_config setup for the first time (afterwards and users
+ * defined below can update the configuration settings).
  * The user(s) who can add and modify query bins. 
  * All users should exist in your htaccess authentication configuration.
  * Leave the array empty if you do not want to restrict access to the query manager - which, of course, is a security risk.

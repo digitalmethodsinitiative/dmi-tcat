@@ -1,6 +1,25 @@
 <?php
 $config_file = '../config/config.json';
+function check_admin($config_file){
+    if (file_exists($config_file)) {
+        // File already exists, therefore we should ensure user is an admin
+        // Cannot check for admin until config.json exists as we cannot load config.php
+        include_once __DIR__ . '/../config.php';
+        include_once __DIR__ . '/../common/functions.php';
+        // check if admin
+        if (!is_admin())
+            die("Sorry, access denied. Your username does not match the ADMIN user defined in the config.php file.");
+    } else {
+        // If the file does not exist ONLY a user named 'admin' can access it
+        // This is the default user, and explicitly defined in the Docker setup.
+        if ($_SERVER['PHP_AUTH_USER'] != 'admin'){
+            die("Sorry, access denied. Your username does not match the ADMIN user defined in the config.php file.");
+        }
+    }
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    check_admin($config_file);
 
     $filters=array(
         "CONSUMERKEY",
@@ -29,15 +48,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     header("Location: /");
     exit;
 } else {
+    check_admin($config_file);
     if (file_exists($config_file)) {
-        // File already exists, therefore we should ensure user is an admin
-        // Cannot check for admin until config.json exists as we cannot load config.php
-        include_once __DIR__ . '/../config.php';
-        include_once __DIR__ . '/../common/functions.php';
-
-        if (!is_admin())
-            die("Sorry, access denied. Your username does not match the ADMIN user defined in the config.php file.");
-
         $config_json = json_decode(file_get_contents($config_file), true);
     } else {
         $config_json = array();
