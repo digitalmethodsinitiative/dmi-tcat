@@ -22,45 +22,29 @@ curl https://raw.githubusercontent.com/digitalmethodsinitiative/dmi-tcat/master/
 ````
 
 ### Docker
-This Docker image uses a modified version of the installer (helpers/tcat-install-linux.sh) as a shortcut for easy deployment with docker.
-1. Clone this repository
-`git clone https://github.com/digitalmethodsinitiative/dmi-tcat.git`
-
-2. Add your Twitter token and key as well as any other needed information to the config file located here: `./docker/config`
-```
-# Update at minimum your Twitter API keys
-# https://developer.twitter.com/en/portal/
-# API Key and Secret: CONSUMERKEY and CONSUMERSECRET
-# Secret and Access Token: USERTOKEN and USERSECRET
-CONSUMERKEY=
-CONSUMERSECRET=
-USERTOKEN=
-USERSECRET=
-
-# You can define the type of capturing you will be doing (keywork, user following, or one percent sample)
-CAPTURE_MODE=1 # 1=track phrases/keywords, 2=follow users, 3=onepercent
-
-# You may also wish to define passwords (or will need to use the generated passwords in the logs)
-TCATMYSQLPASS=
-TCATADMINPASS=
-TCATPASS=
-
-# And you may need to set your servername if you are hosting TCAT somewhere other than localhost
-SERVERNAME=localhost
-```
-Note: if you intend on using a port other than 80, update `SERVERNAME=localhost` to include the port (e.g. `SERVERNAME=localhost:4000`)
-3. Build the image:
-`docker image build --progress=plain -t tcat:1.0 .`
-- The `--progress=plain` tag ensure you can see all the output; important if your config file does not include passwords and they are auto generated.
-4. Run a container with the image:
-`docker container run --publish 80:80 --volume tcat_data:/var/lib/mysql/ --detach --name tcat tcat:1.0`
-- `--publish HOST_PORT:80` allows you to define which port on the host network is used
-- `--volume volume_name:/var/lib/mysql/` ensures you are easily able to reuse your TCAT mysql database and recover data
-5. In the future, you can stop and start your TCAT container with:
+Our latest Docker images are availble on [Docker Hub](https://hub.docker.com/r/digitalmethodsinitiative/tcat).
+1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop), and start it. Note that on Windows, you may need to ensure that WSL (Windows Subsystem for Linux) integration is enabled in Docker. You can find this in the Docker setting in Settings -> Resources-> WSL Integration -> Enable integration with required distros.
+## Basic installation
+2. Run the command `docker run --publish 80:80 --volume tcat_data:/var/lib/mysql/ --detach --name tcat digitalmethodsinitiative/tcat:1.0` and Docker will download version 1.0 (or whatever tag with which you replace the "1.0")
+- `--publish HOST_PORT:80` allows you to define which port on the host network is used. If you are using a different port, you may also need to add `-e SERVERNAME=localhost:HOST_PORT` where HOST_PORT is the desired port as this is used for internal links in the TCAT interface.
+- `--volume volume_name:/var/lib/mysql/` ensures you are easily able to reuse your TCAT mysql database and recover data after you are no longer using TCAT
+3. Open the logs to retrieve you login information via either Docker's interface or the command line `docker logs tcat` (installation may take some time, so you can either wait or run `docker logs -f tcat` to follow along)
+4. Open http://localhost:80 in your browser and complete the configuration by providing your [Twitter API information](https://developer.twitter.com/en/portal/) and which type of tweet capturing you would like to do.
+5. Congratulations! You can use the `admin` menu to create your first tweet capture bins
+6. In the future, you can stop and start your TCAT container with:
 `docker stop tcat`
 and
 `docker start tcat`
-
+## Customize for you own server
+The Docker installation also allows you to easily host TCAT on a server. In addition to the `SERVERNAME` environment variable, you can also use Let's Encrypt by adding `-e LETSENCRYPT=y` and `-e LETSENCRYPT_EMAIL=youremail@wherever.net`. You should also open port 443 for Let's Encrypt to work. Your full command might look like this:
+`docker run --publish 80:80 --publish 443:443 --volume tcat_data:/var/lib/mysql/ --detach --name tcat -e SERVERNAME=my.website.com -e LETSENCRYPT=y -e LETSENCRYPT_EMAIL=myemail@my.website.com digitalmethodsinitiative/tcat:1.0`
+## Further TCAT customization
+Finally, if you wish to develop TCAT yourself, you can clone this repository and create your own image.
+1. Clone this repository
+`git clone https://github.com/digitalmethodsinitiative/dmi-tcat.git`
+2. Build the image (from the directory where you have cloned TCAT):
+`docker image build --progress=plain -t tcat:1.0 .`
+3. Replace `digitalmethodsinitiative/tcat:1.0` with `tcat:1.0` from above in your `docker run` command
 
 ## Issues
 
