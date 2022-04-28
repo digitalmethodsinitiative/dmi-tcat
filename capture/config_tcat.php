@@ -16,6 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     foreach ($filters as $filter) {
         if (in_array($filter, array("CAPTURE_MODE", "TCAT_AUTO_UPDATE"))) {
+            // Convert these options to integers
             $final[$filter] = intval($_POST[$filter]);
         } else {
             $final[$filter] = $_POST[$filter];
@@ -30,8 +31,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 } else {
     if (file_exists($config_file)) {
         // File already exists, therefore we should ensure user is an admin
+        // Cannot check for admin until config.json exists as we cannot load config.php
         include_once __DIR__ . '/../config.php';
-        include_once __DIR__ . '/../common/constants.php';
         include_once __DIR__ . '/../common/functions.php';
 
         if (!is_admin())
