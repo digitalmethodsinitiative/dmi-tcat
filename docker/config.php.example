@@ -17,7 +17,7 @@ $hostname = "localhost";
 /*
  * Capturing role(s) for DMI-TCAT
  * Here you can define which types of capturing you would like to do
- * Possible values are "track", "follow", "onepercent". 
+ * Possible values are "track", "follow", "onepercent".
  * Note that you can only do one of track, follow or onepercent per IP address and capturing key
  */
 if ($config_json["CAPTURE_MODE"] == 1) {
@@ -34,7 +34,7 @@ if ($config_json["CAPTURE_MODE"] == 1) {
 /*
  * A user named 'admin' is required to use the interactive tcat_config setup for the first time (afterwards and users
  * defined below can update the configuration settings).
- * The user(s) who can add and modify query bins. 
+ * The user(s) who can add and modify query bins.
  * All users should exist in your htaccess authentication configuration.
  * Leave the array empty if you do not want to restrict access to the query manager - which, of course, is a security risk.
  */
@@ -45,7 +45,7 @@ define('ADMIN_USER', serialize(array('admin', 'admin2')));
  * We have made it possible to tunnel Twitter API connections through other hosts (obtaining a different source IP address), and use multiple keysets for multiple streaming queries.
  * Each capture script should define its role, see define('CAPTUREROLES',serialize(array()))
  * Every distinct role should then get a different network path below
- * 
+ *
  */
 $GLOBALS["HOSTROLE"] = array(
     'track' => "https://stream.twitter.com/",
@@ -212,7 +212,7 @@ mb_internal_encoding("UTF-8");
  * Set default MySQL storage engine for the creation of new tables
  *
  * Historically, TCAT used the MyISAM storage engine exclusively, but newer versions may support multiple engines.
- * Since April 2019 the preferred engine for new TCAT deployments is TokuDB. 
+ * Since April 2019 the preferred engine for new TCAT deployments is TokuDB.
  * (EXPERTS ONLY)
  */
 define('MYSQL_ENGINE_OPTIONS', 'ENGINE=MYISAM');
@@ -253,5 +253,5 @@ define('REPOSITORY_URL', 'https://github.com/digitalmethodsinitiative/dmi-tcat.g
  * Enable producing a (huge) JSON dump with raw Tweet contents for debugging purposes.
  */
 define('ENABLE_JSON_DUMP', false);
- 
+
 ?>
