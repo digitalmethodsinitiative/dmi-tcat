@@ -1093,12 +1093,16 @@ fi
 
 chown -R $SHELLUSER:$SHELLGROUP "$TCAT_DIR"
 cd "$TCAT_DIR"
-mkdir analysis/cache logs proc
+mkdir analysis/cache logs proc config
 chown $WEBUSER:$WEBGROUP analysis/cache
 chmod 755 analysis/cache
 chown $SHELLUSER:$SHELLGROUP logs proc
 chmod 755 logs
 chmod 755 proc
+
+# This file existing tells config_tcat.php to not be used (as this setup handles everything)
+# Note: config_tcat.php is still accessible, but this json file is never used (docker/config.php.example shows how it could be however)
+touch config/config.json
 
 echo ""
 tput bold
