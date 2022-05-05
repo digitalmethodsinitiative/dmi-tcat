@@ -3,22 +3,9 @@
 # Installer for DMI-TCAT via Docker Build
 #
 #----------------------------------------------------------------
-# TCAT Installer parameters
-
-# Where TCAT files installed (set in DockerFile)
-TCAT_DIR=/var/www/dmi-tcat
-
-# Unix user and group to own the TCAT files
-SHELLUSER=tcat
-SHELLGROUP=tcat
-
-# Apache user and group
-WEBUSER=www-data
-WEBGROUP=www-data
-
-# Where the MySQL defaults files are written
-MYSQL_CNF_PREFIX='/etc/mysql/conf.d/tcat-'
-MYSQL_CNF_SUFFIX='.cnf'
+# Load Install Parameters
+# TCAT_DIR, MYSQL_CNF_PREFIX, MYSQL_CNF_SUFFIX, SHELLUSER, SHELLGROUP, WEBUSER, WEBGROUP
+. docker/config_parameters.txt
 
 #----------------------------------------------------------------
 # Error checking

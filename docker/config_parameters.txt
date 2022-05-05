@@ -1,0 +1,47 @@
+#
+# Installer for DMI-TCAT via Docker Build
+#
+#----------------------------------------------------------------
+# Used in Dockerfile, setup.sh, docker-entrypoint.sh, create_apache_users.sh
+
+# Where TCAT files installed (must match DockerFile)
+TCAT_DIR=/var/www/dmi-tcat
+
+#----------------------------------------------------------------
+# Used in setup.sh, docker-entrypoint.sh
+
+# Where the MySQL defaults files are written
+MYSQL_CNF_PREFIX='/etc/mysql/conf.d/tcat-'
+MYSQL_CNF_SUFFIX='.cnf'
+
+# Unix user and group to own the TCAT files
+SHELLUSER=tcat
+SHELLGROUP=tcat
+
+#----------------------------------------------------------------
+# Used in setup.sh
+
+# Apache user and group
+WEBUSER=www-data
+WEBGROUP=www-data
+
+#----------------------------------------------------------------
+# Used in docker-entrypoint.sh
+
+# Release of DMI-TCAT to install
+TCAT_GIT_REPOSITORY=https://github.com/digitalmethodsinitiative/dmi-tcat.git
+
+#----------------------------------------------------------------
+# Used in docker-entrypoint.sh, create_apache_users.sh
+
+# Where Apache configuration file is written
+APACHE_TCAT_CONFIG_FILE=/etc/apache2/sites-available/tcat.conf
+
+#----------------------------------------------------------------
+# Used in create_apache_users.sh
+
+# Where the TCAT logins for Apache Basic Authentication credentials are written
+APACHE_PASSWORDS_FILE=/etc/apache2/tcat.htpasswd
+
+# Where the TCAT logins are written for user reference
+TCAT_APACHE_LOGINS=/var/www/dmi-tcat/tcat-logins.txt

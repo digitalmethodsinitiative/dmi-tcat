@@ -6,28 +6,9 @@
 # SERVERNAME defaults to localhost on build
 # LETSENCRYPT defaults to n on build
 #----------------------------------------------------------------
-# TCAT Web user interface logins (blank password means randomly generate it)
-
-# Where the TCAT logins are written
-TCAT_CNF_PREFIX='/etc/apache2/tcat-login-'
-TCAT_CNF_SUFFIX='.txt'
-
-# Where the TCAT logins for Apache Basic Authentication credentials are written
-APACHE_PASSWORDS_FILE=/etc/apache2/tcat.htpasswd
-
-# Release of DMI-TCAT to install
-TCAT_GIT_REPOSITORY=https://github.com/digitalmethodsinitiative/dmi-tcat.git
-
-#----------------------------------------------------------------
-# TCAT SETUP VARIABLES ALSO USED DURING BUILD!
-# Where TCAT files installed (set in DockerFile)
-TCAT_DIR=/var/www/dmi-tcat
-# Where the MySQL defaults files are written
-MYSQL_CNF_PREFIX='/etc/mysql/conf.d/tcat-'
-MYSQL_CNF_SUFFIX='.cnf'
-# Unix user and group to own the TCAT files
-SHELLUSER=tcat
-SHELLGROUP=tcat
+# Load Install Parameters
+# TCAT_DIR, MYSQL_CNF_PREFIX, MYSQL_CNF_SUFFIX, SHELLUSER, SHELLGROUP, TCAT_GIT_REPOSITORY
+. docker/config_parameters.txt
 
 PROG=$(basename "$0")
 #----------------------------------------------------------------
