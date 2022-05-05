@@ -1,26 +1,55 @@
 <?php
+/*
+ * Configuration setup
+ *
+ * This file is used to create a config.json file that is used specifically by
+ * the docker/config.php.example version of config.php.
+ *
+ * It also can be used to create Apache users via create_apache_users.sh.
+ * Appropriate permissions must be granted AT YOUR OWN RISK and will not
+ * function by default. This should not allow users to be created more than once
+ * (based on the apache_file already existing).
+ *
+ * In the future, the manual installation via helpers/tcat-install-linux.sh
+ * could be modified to also use this frontend configuration.
+ */
+//
+// Apache user file is used to determine if admin and basic users have been created
+$apache_file = '/etc/apache2/tcat.htpasswd';
+
 $config_file = '../config/config.json';
-function check_admin($config_file){
-    if (file_exists($config_file)) {
-        // File already exists, therefore we should ensure user is an admin
-        // Cannot check for admin until config.json exists as we cannot load config.php
-        include_once __DIR__ . '/../config.php';
-        include_once __DIR__ . '/../common/functions.php';
-        // check if admin
-        if (!is_admin())
-            die("Sorry, access denied. Your username does not match the ADMIN user defined in the config.php file.");
-    } else {
-        // If the file does not exist ONLY a user named 'admin' can access it
-        // This is the default user, and explicitly defined in the Docker setup.
-        if ($_SERVER['PHP_AUTH_USER'] != 'admin'){
-            die("Sorry, access denied. Your username does not match the ADMIN user defined in the config.php file.");
-        }
+// Check that user is an admin user
+if (file_exists($config_file)) {
+    // File already exists, therefore we should ensure user is an admin
+    // Cannot check for admin until config.json exists as we cannot load config.php
+    include_once __DIR__ . '/../config.php';
+    include_once __DIR__ . '/../common/functions.php';
+    // check if admin
+    if (!is_admin())
+        die("Sorry, access denied. Your username does not match the ADMIN user defined in the config.php file.");
+} else {
+    // If the file does not exist ONLY a user named 'admin' can access it
+    // This is the default admin user, and explicitly defined in the Docker setup.
+    if ($_SERVER['PHP_AUTH_USER'] != 'admin'){
+        die("Sorry, access denied. Your username does not match the ADMIN user defined in the config.php file.");
     }
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    check_admin($config_file);
+// Checks if background process is running
+function isRunning($pid){
+    try{
+        $result = shell_exec(sprintf("ps %d", $pid));
+        if( count(preg_split("/\n/", $result)) > 2){
+            return true;
+        }
+    }catch(Exception $e){}
 
+    return false;
+}
+
+// Update or Load config.json
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Update config.json if POST method
     $filters=array(
         "CONSUMERKEY",
         "CONSUMERSECRET",
@@ -46,9 +75,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     fwrite($fp, json_encode($final));
     fclose($fp);
     header("Location: /");
+
+    if (!file_exists($apache_file)) {
+        // Also create Apache users
+        $cmd = "sudo ../helpers/create_apache_users.sh \"${_POST["admin_username"]}\" \"${_POST["admin_password"]}\" \"${_POST["basic_username"]}\" \"${_POST["basic_password"]}\"";
+        $outputfile = '../config/create_apache_users_output.txt';
+        $pidfile = '../config/create_apache_users.pid';
+
+        exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
+
+        echo "Adding admin user: \"${_POST["admin_username"]}\" with password: \"${_POST["admin_password"]}\"";
+        echo "Adding basic user: \"${_POST["basic_username"]}\" with password: \"${_POST["basic_password"]}\"";
+        echo "Please wait, you will be redirected...";
+
+        while (isRunning($pidfile)) {
+            sleep(.5);
+        }
+    }
+    echo 'Updated settings';
     exit;
 } else {
-    check_admin($config_file);
+    // Load config.json or defaults for form
     if (file_exists($config_file)) {
         $config_json = json_decode(file_get_contents($config_file), true);
     } else {
@@ -74,26 +121,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <table>
 
+        <?php if (!file_exists($apache_file)) {
+            echo <<<EOL
+<tr>
+<td class="tbl_head">Admin Username: </td><td><input type="text" id="username" required size="60" name="admin_username" value="admin" /></td>
+</tr>
+<tr>
+<td class="tbl_head">Admin Password: </td><td><input type="password" id="new-password" required autocomplete="new-password" size="60" name="admin_password" value="" /></td>
+</tr>
+<tr>
+<td class="tbl_head">Analysis Only Username: </td><td><input type="text" id="username_2" required size="60" name="basic_username" value="tcat" /></td>
+</tr>
+<tr>
+<td class="tbl_head"Analysis Only Password: </td><td><input type="password" id="new-password_2" required autocomplete="new-password" size="60" name="basic_password" value="" /></td>
+</tr>
+EOL;
+        }?>
+
         <tr>
-            <td class="tbl_head">Consumer API Key: </td><td><input type="text" id="consumer_key" size="60" name="CONSUMERKEY" value="<?php echo $config_json["CONSUMERKEY"]; ?>" /></td>
+            <td class="tbl_head">Consumer API Key: </td><td><input type="text" id="consumer_key" required size="60" name="CONSUMERKEY" value="<?php echo $config_json["CONSUMERKEY"]; ?>" /></td>
         </tr>
         <tr>
-            <td class="tbl_head">Consumer API Secret: </td><td><input type="text" id="consumer_secret" size="60" name="CONSUMERSECRET"  value="<?php echo $config_json["CONSUMERSECRET"]; ?>" /></td>
+            <td class="tbl_head">Consumer API Secret: </td><td><input type="text" id="consumer_secret" required size="60" name="CONSUMERSECRET"  value="<?php echo $config_json["CONSUMERSECRET"]; ?>" /></td>
         </tr>
         <tr>
-            <td class="tbl_head">Authentication Access Token: </td><td><input type="text" id="user_token" size="60" name="USERTOKEN"  value="<?php echo $config_json["USERTOKEN"]; ?>" /></td>
+            <td class="tbl_head">Authentication Access Token: </td><td><input type="text" id="user_token" required size="60" name="USERTOKEN"  value="<?php echo $config_json["USERTOKEN"]; ?>" /></td>
         </tr>
         <tr>
-            <td class="tbl_head">Authentication Access Secret: </td><td><input type="text" id="user_secret" size="60" name="USERSECRET"  value="<?php echo $config_json["USERSECRET"]; ?>" /></td>
+            <td class="tbl_head">Authentication Access Secret: </td><td><input type="text" id="user_secret" required size="60" name="USERSECRET"  value="<?php echo $config_json["USERSECRET"]; ?>" /></td>
         </tr>
         <tr>
-            <td class="tbl_head">Capture Mode: </td><td><input type="number" id="capture_mode" size="60" name="CAPTURE_MODE"  value="<?php echo $config_json["CAPTURE_MODE"]; ?>" /> (1=track phrases/keywords, 2=follow users, 3=onepercent)</td>
+            <td class="tbl_head">Capture Mode: </td><td><input type="number" id="capture_mode" required size="60" name="CAPTURE_MODE"  value="<?php echo $config_json["CAPTURE_MODE"]; ?>" /> (1=track phrases/keywords, 2=follow users, 3=onepercent)</td>
         </tr>
         <tr>
-            <td class="tbl_head">Install URL Expander: </td><td><input type="text" id="url_expander" size="60" name="URLEXPANDYES"  value="<?php echo $config_json["URLEXPANDYES"]; ?>" /> ('y' to install or 'n' to not)</td>
+            <td class="tbl_head">Install URL Expander: </td><td><input type="text" id="url_expander" required size="60" name="URLEXPANDYES"  value="<?php echo $config_json["URLEXPANDYES"]; ?>" /> ('y' to install or 'n' to not)</td>
         </tr>
         <tr>
-            <td class="tbl_head">Auto Update TCAT: </td><td><input type="number" id="tcat_auto_update" size="60" name="TCAT_AUTO_UPDATE"  value="<?php echo $config_json["TCAT_AUTO_UPDATE"]; ?>" /> (0=off, 1=trivial, 2=substantial, 3=expensive)</td>
+            <td class="tbl_head">Auto Update TCAT: </td><td><input type="number" id="tcat_auto_update" required size="60" name="TCAT_AUTO_UPDATE"  value="<?php echo $config_json["TCAT_AUTO_UPDATE"]; ?>" /> (0=off, 1=trivial, 2=substantial, 3=expensive)</td>
         </tr>
     </table>
     <input type="submit">
