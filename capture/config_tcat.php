@@ -81,15 +81,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
 
-        echo "Adding admin user: \"${_POST["admin_username"]}\" with password: \"${_POST["admin_password"]}\"";
-        echo "Adding basic user: \"${_POST["basic_username"]}\" with password: \"${_POST["basic_password"]}\"";
-        echo "Please wait, you will be redirected...";
-
         while (isRunning($pidfile)) {
             sleep(.5);
         }
     }
-    echo 'Updated settings';
     exit;
 } else {
     // Load config.json or defaults for form
@@ -120,7 +115,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <?php if (!file_exists($apache_file)) {
             echo <<<EOL
-<tr>
+<tr><td><h4>TCAT Apache User Creation</h4></td></tr>
+<tr><td>Please save your passwords; they will be needed immediately after submitting to log in</td></tr>
+<tr> Settings
 <td class="tbl_head">Admin Username: </td><td><input type="text" id="username" required size="60" name="admin_username" value="admin" /></td>
 </tr>
 <tr>
@@ -132,9 +129,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <tr>
 <td class="tbl_head">Analysis Only Password: </td><td><input type="password" id="new-password_2" required autocomplete="new-password" size="60" name="basic_password" value="" /></td>
 </tr>
+<tr size=70>
 EOL;
         }?>
-
+        <tr><td><h4>Twitter Keys</h4></td></tr>
         <tr>
             <td class="tbl_head">Consumer API Key: </td><td><input type="text" id="consumer_key" required size="60" name="CONSUMERKEY" value="<?php echo $config_json["CONSUMERKEY"]; ?>" /></td>
         </tr>
@@ -147,6 +145,7 @@ EOL;
         <tr>
             <td class="tbl_head">Authentication Access Secret: </td><td><input type="text" id="user_secret" required size="60" name="USERSECRET"  value="<?php echo $config_json["USERSECRET"]; ?>" /></td>
         </tr>
+        <tr><td><h4>Additonal TCAT Settings</h4></td></tr>
         <tr>
             <td class="tbl_head">Capture Mode: </td><td><input type="number" id="capture_mode" required size="60" name="CAPTURE_MODE"  value="<?php echo $config_json["CAPTURE_MODE"]; ?>" /> (1=track phrases/keywords, 2=follow users, 3=onepercent)</td>
         </tr>
@@ -157,7 +156,12 @@ EOL;
             <td class="tbl_head">Auto Update TCAT: </td><td><input type="number" id="tcat_auto_update" required size="60" name="TCAT_AUTO_UPDATE"  value="<?php echo $config_json["TCAT_AUTO_UPDATE"]; ?>" /> (0=off, 1=trivial, 2=substantial, 3=expensive)</td>
         </tr>
     </table>
-    <input type="submit">
+    <input type="submit" value="Submit Settings">
 </form>
+<style>
+    h4, p {
+       margin: 0;
+    }
+</style>
 </body>
 </html>
