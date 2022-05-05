@@ -28,11 +28,8 @@ if (file_exists($config_file)) {
     if (!is_admin())
         die("Sorry, access denied. Your username does not match the ADMIN user defined in the config.php file.");
 } else {
-    // If the file does not exist ONLY a user named 'admin' can access it
-    // This is the default admin user, and explicitly defined in the Docker setup.
-    if ($_SERVER['PHP_AUTH_USER'] != 'admin'){
-        die("Sorry, access denied. Your username does not match the ADMIN user defined in the config.php file.");
-    }
+    // Allow configuration to be used by anyone for the first time
+    // This should only occur at initial setup
 }
 
 // Checks if background process is running
