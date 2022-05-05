@@ -130,7 +130,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <td class="tbl_head">Analysis Only Username: </td><td><input type="text" id="username_2" required size="60" name="basic_username" value="tcat" /></td>
 </tr>
 <tr>
-<td class="tbl_head"Analysis Only Password: </td><td><input type="password" id="new-password_2" required autocomplete="new-password" size="60" name="basic_password" value="" /></td>
+<td class="tbl_head">Analysis Only Password: </td><td><input type="password" id="new-password_2" required autocomplete="new-password" size="60" name="basic_password" value="" /></td>
 </tr>
 EOL;
         }?>
