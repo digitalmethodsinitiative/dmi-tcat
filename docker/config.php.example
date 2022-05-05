@@ -1,4 +1,11 @@
 <?php
+$config_file = __DIR__.'/config/config.json';
+if (!file_exists($config_file)) {
+    header("Location: /capture/config_tcat.php");
+    exit(1);
+} else {
+    $config_json = json_decode(file_get_contents($config_file), true);
+}
 /*
  * Database credentials
  */
@@ -10,15 +17,24 @@ $hostname = "localhost";
 /*
  * Capturing role(s) for DMI-TCAT
  * Here you can define which types of capturing you would like to do
- * Possible values are "track", "follow", "onepercent".
+ * Possible values are "track", "follow", "onepercent". 
  * Note that you can only do one of track, follow or onepercent per IP address and capturing key
  */
-define('CAPTUREROLES', serialize(array('track')));
+if ($config_json["CAPTURE_MODE"] == 1) {
+    define('CAPTUREROLES', serialize(array('track')));
+} else if ($config_json["CAPTURE_MODE"] == 2) {
+    define('CAPTUREROLES', serialize(array('follow')));
+} else if ($config_json["CAPTURE_MODE"] == 3) {
+    define('CAPTUREROLES', serialize(array('onepercent')));
+} else {
+    $capture_mode_thing = $config_json['CAPTURE_MODE'];
+    die("CAPTURE_MODE ($capture_mode_thing) is not defined correctly.");
+}
 
 /*
  * A user named 'admin' is required to use the interactive tcat_config setup for the first time (afterwards and users
  * defined below can update the configuration settings).
- * The user(s) who can add and modify query bins.
+ * The user(s) who can add and modify query bins. 
  * All users should exist in your htaccess authentication configuration.
  * Leave the array empty if you do not want to restrict access to the query manager - which, of course, is a security risk.
  */
@@ -29,7 +45,7 @@ define('ADMIN_USER', serialize(array('admin', 'admin2')));
  * We have made it possible to tunnel Twitter API connections through other hosts (obtaining a different source IP address), and use multiple keysets for multiple streaming queries.
  * Each capture script should define its role, see define('CAPTUREROLES',serialize(array()))
  * Every distinct role should then get a different network path below
- *
+ * 
  */
 $GLOBALS["HOSTROLE"] = array(
     'track' => "https://stream.twitter.com/",
@@ -48,10 +64,10 @@ $mail_to = "";
 
 // Please fill in your API credentials here
 
-$twitter_consumer_key = "";
-$twitter_consumer_secret = "";
-$twitter_user_token = "";
-$twitter_user_secret = "";
+$twitter_consumer_key = $config_json["CONSUMERKEY"];
+$twitter_consumer_secret = $config_json["CONSUMERSECRET"];
+$twitter_user_token = $config_json["USERTOKEN"];
+$twitter_user_secret = $config_json["USERSECRET"];
 
 // List of additional keys to loop over when there is a limited amount of requests per key, e.g. search
 // twitter_keys is an array of arrays listing different Twitter API keys
@@ -107,11 +123,7 @@ define('BASE_URL', 'http://example.com/dmi-tcat/');
 define('ANALYSIS_URL', BASE_URL . 'analysis/');
 
 /*
-* Do you wish to enable fully automatic updates in the background?
- */
-define('AUTOUPDATE_ENABLED', false);
-
-/*
+ * Do you wish to enable fully automatic updates in the background?
  *
  * Up to what complexity level do you wish to allow automatic upgrades (ie. in the background or at user request from inside the capture panel)?
  *
@@ -120,7 +132,21 @@ define('AUTOUPDATE_ENABLED', false);
  *
  * Legal values are: trivial, substantial, expensive
  */
-define('AUTOUPDATE_LEVEL', 'trivial');
+if ($config_json["TCAT_AUTO_UPDATE"] == 0) {
+    define('AUTOUPDATE_ENABLED', false);
+    define('AUTOUPDATE_LEVEL', 'trivial');
+} else if ($config_json["TCAT_AUTO_UPDATE"] == 1) {
+    define('AUTOUPDATE_ENABLED', true);
+    define('AUTOUPDATE_LEVEL', 'trivial');
+} else if ($config_json["TCAT_AUTO_UPDATE"] == 2) {
+    define('AUTOUPDATE_ENABLED', true);
+    define('AUTOUPDATE_LEVEL', 'substantial');
+} else if ($config_json["TCAT_AUTO_UPDATE"] == 3) {
+    define('AUTOUPDATE_ENABLED', true);
+    define('AUTOUPDATE_LEVEL', 'expensive');
+} else {
+    die("TCAT_AUTO_UPDATE not configured correctly");
+}
 
 /*
  * When no database activity has occured for IDLETIME seconds during a track, the controller restarts the process. Do not set this too low,
@@ -157,7 +183,13 @@ ini_set("max_execution_time", 3600);
  * Enable URL expander? This script will follow the links of all URLs inside tweets and resolve the final location they point towards.
  * It generates a lot of requests to external hosts, but allows for more detailed URL queries.
  */
-define('ENABLE_URL_EXPANDER', false);
+if ($config_json["URLEXPANDYES"] == 'n') {
+    define('ENABLE_URL_EXPANDER', false);
+} else if ($config_json["URLEXPANDYES"] == 'y') {
+    define('ENABLE_URL_EXPANDER', true);
+} else {
+    die("URLEXPANDYES is not defined correctly.");
+}
 
 /* Sysload monitoring. Display a traffic light indicating system load in the analysis panel */
 
@@ -180,7 +212,7 @@ mb_internal_encoding("UTF-8");
  * Set default MySQL storage engine for the creation of new tables
  *
  * Historically, TCAT used the MyISAM storage engine exclusively, but newer versions may support multiple engines.
- * Since April 2019 the preferred engine for new TCAT deployments is TokuDB.
+ * Since April 2019 the preferred engine for new TCAT deployments is TokuDB. 
  * (EXPERTS ONLY)
  */
 define('MYSQL_ENGINE_OPTIONS', 'ENGINE=MYISAM');
@@ -221,5 +253,5 @@ define('REPOSITORY_URL', 'https://github.com/digitalmethodsinitiative/dmi-tcat.g
  * Enable producing a (huge) JSON dump with raw Tweet contents for debugging purposes.
  */
 define('ENABLE_JSON_DUMP', false);
-
+ 
 ?>
