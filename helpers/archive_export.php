@@ -322,11 +322,23 @@ foreach ($queryBins as $bin) {
     // Add selective table entries to file
     //
 
+    // Refresh db connection after mysqldumps
+    $dbh = refresh_dbh_connection($dbh, $hostname, $database, $dbuser, $dbpass);
+
+    // Collect bin comments
+    $sql = "SELECT comments FROM tcat_query_bins WHERE querybin=:querybinname";
+    $q = $dbh->prepare($sql);
+    $q->bindParam(':querybinname', $bin, PDO::PARAM_STR);
+    $q->execute();
+    $row = $q->fetch(PDO::FETCH_ASSOC);
+    $bincomment = $row['comments'];
+
     // Create object for metadata and deletion later
     $binObj = array();
     $binObj['export_successful'] = false;
     $binObj['name'] = $bin;
     $binObj['type'] = $bintype;
+    $binObj['comments'] = $bincomment;
 
     print date("Y-m-d H:i:s").": Exporting bin specific TCAT data\n";
 
@@ -337,11 +349,8 @@ foreach ($queryBins as $bin) {
     fputs($fh, "-- DMI-TCAT - Update TCAT tables\n");
     fputs($fh, "--\n");
 
-    // Refresh db connection after mysqldumps
-    $dbh = refresh_dbh_connection($dbh, $hostname, $database, $dbuser, $dbpass);
-
     // Insert bin entry to tcat_query_bins
-    $sql = "INSERT INTO tcat_query_bins ( querybin, `type`, active, access ) values ( " . $dbh->Quote($bin) . ", " . $dbh->Quote($bintype) . ", 0, 0 );";
+    $sql = "INSERT INTO tcat_query_bins ( querybin, `type`, active, access, comments ) values ( " . $dbh->Quote($bin) . ", " . $dbh->Quote($bintype) . ", 0, 0,". $dbh->Quote($bincomment) ." );";
     fputs($fh, $sql . "\n");
 
     // Collect bin periods
