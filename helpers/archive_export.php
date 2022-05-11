@@ -247,7 +247,7 @@ foreach ($queryBins as $bin) {
     $bintype = getBinType($bin);
     if ($bintype === false) {
         die("$prog: error: unknown query bin: $bin\n");
-    } else if (!in_array($bintype, array('track', 'follow'))) { // can add additional bin types here e.g., 'import 4ca'
+    } else if (!in_array($bintype, array('track', 'follow', 'geotrack'))) { // can add additional bin types here e.g., 'import 4ca'
         // Different types of bins require different export strategies and should be examined
         print date("Y-m-d H:i:s").": Bin type $bintype not implemented; Skipping $bin\n";
         // Skip bin
@@ -365,7 +365,7 @@ foreach ($queryBins as $bin) {
 
     // Collect and insert user or phrase specific data
     // $bintype == 'import 4ca' could be exported here as it follows the 'track' tables schema
-    if ( $bintype == 'track' ) {
+    if ( $bintype == 'track' || $bintype == 'geotrack' ) {
         print date("Y-m-d H:i:s").": Exporting phrase data\n";
 
         // Collect phrases
@@ -644,7 +644,7 @@ if ($deleteBins) {
             $drop->bindParam(':querybinid', $binID, PDO::PARAM_INT);
             $drop->execute();
 
-            if ($bintype == 'track' || $bintype == 'import 4ca') {
+            if ($bintype == 'track' || $bintype == 'geotrack') {
                 print date("Y-m-d H:i:s").": Deleting phrase periods tied to $name bin from tcat_query_bins_phrases\n";
                 // Remove rows from tcat_query_bins_phrases associated with bin's ID
                 $sql = "DELETE FROM tcat_query_bins_phrases where querybin_id=:querybinid";
