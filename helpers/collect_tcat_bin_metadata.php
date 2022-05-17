@@ -37,7 +37,7 @@ foreach ($queryBins as $bin) {
     $q->bindParam(':querybinname', $bin, PDO::PARAM_STR);
     $q->execute();
     $row = $q->fetch(PDO::FETCH_ASSOC);
-    $binObj['bin_id'] = $row['id'];
+    $binObj['bin_id'] = $bin_id = $row['id'];
     $binObj['type'] = $row['type'];
     $binObj['active_status'] = $row['active'];
     $binObj['access'] = $row['access'];
@@ -69,18 +69,21 @@ foreach ($queryBins as $bin) {
     // Get phrases
     $sql = "SELECT phrase FROM tcat_query_phrases WHERE id IN ( SELECT phrase_id FROM tcat_query_bins_phrases WHERE querybin_id = :binid)";
     $res = $dbh->prepare($sql);
-    $res->bindParam(':binid', $$binObj['bin_id'], PDO::PARAM_INT);
-    $binObj['phrases'] = $phrases ? $phrases->fetchAll(\PDO::FETCH_COLUMN, 0) : null;
+    $res->bindParam(':binid', $bin_id, PDO::PARAM_INT);
+    $binObj['phrases'] = array();
+    $res->execute();
+    while ($row = $res->fetch(PDO::FETCH_ASSOC)) {
+        $binObj['phrases'][] = $row['phrase'];
+    }
+
     // Or get users
     $sql = "SELECT id, user_name FROM tcat_query_users WHERE id IN ( SELECT user_id FROM tcat_query_bins_users WHERE querybin_id = :binid)";
     $res = $dbh->prepare($sql);
-    $res->bindParam(':binid', $$binObj['bin_id'], PDO::PARAM_INT);
-    $binObj['user_ids'] = array();
-    $binObj['user_names'] = array();
-    if ($res->execute()) {
-        $row = $q->fetch(PDO::FETCH_ASSOC);
-        $binObj['user_ids'][] = $row['id'];
-        $binObj['user_names'][] = $row['user_name'];
+    $res->bindParam(':binid', $bin_id, PDO::PARAM_INT);
+    $binObj['users'] = array();
+    $res->execute();
+    while ($row = $res->fetch(PDO::FETCH_ASSOC)) {
+        $binObj['users'][] = array('user_id' => $row['id'], 'user_name' => $row['user_name']);
     }
 
     // Add bin object for json file
