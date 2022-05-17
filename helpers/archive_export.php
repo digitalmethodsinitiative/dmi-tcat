@@ -455,7 +455,7 @@ foreach ($queryBins as $bin) {
 
         // Collect user start and end times
         $user_times = array();
-        $sql = "SELECT u.id as user_id, bu.starttime as starttime, bu.endtime as endtime FROM tcat_query_users u, tcat_query_bins_users bu, tcat_query_bins b
+        $sql = "SELECT u.id as user_id, u.user_name as user_name, bu.starttime as starttime, bu.endtime as endtime FROM tcat_query_users u, tcat_query_bins_users bu, tcat_query_bins b
                                           WHERE u.id = bu.user_id AND bu.querybin_id = b.id AND b.querybin = :querybin";
         $q = $dbh->prepare($sql);
         $q->bindParam(':querybin', $bin, PDO::PARAM_STR);
@@ -463,6 +463,7 @@ foreach ($queryBins as $bin) {
         while ($row = $q->fetch(PDO::FETCH_ASSOC)) {
             $obj = array();
             $obj['user_id'] = $user_id = $row['user_id'];
+            $obj['user_name'] = $row['user_name'];
             $obj['starttime'] = $starttime = $row['starttime'];
             $obj['endtime'] = $endtime = fix_endtime_if_not_ended($row['endtime']);
             $user_times[] = $obj;
