@@ -333,12 +333,28 @@ foreach ($queryBins as $bin) {
     $row = $q->fetch(PDO::FETCH_ASSOC);
     $bincomment = $row['comments'];
 
+    // Collect timestamp of first collected tweet
+    $sql = "SELECT created_at FROM ". $bin ."_tweets ORDER BY created_at ASC LIMIT 1";
+    $q = $dbh->prepare($sql);
+    $q->execute();
+    $row = $q->fetch(PDO::FETCH_ASSOC);
+    $first_tweet_date = $row['created_at'];
+
+    // Collect timestamp of last collected tweet
+    $sql = "SELECT created_at FROM ". $bin ."_tweets ORDER BY created_at DESC LIMIT 1";
+    $q = $dbh->prepare($sql);
+    $q->execute();
+    $row = $q->fetch(PDO::FETCH_ASSOC);
+    $last_tweet_date = $row['created_at'];
+
     // Create object for metadata and deletion later
     $binObj = array();
     $binObj['export_successful'] = false;
     $binObj['name'] = $bin;
     $binObj['type'] = $bintype;
     $binObj['comments'] = $bincomment;
+    $binObj['date_of_first_tweet'] = $first_tweet_date;
+    $binObj['date_of_last_tweet'] = $last_tweet_date;
 
     print date("Y-m-d H:i:s").": Exporting bin specific TCAT data\n";
 
