@@ -38,6 +38,14 @@
 //
 //     export.php -h
 //
+// # USAGE Tips:
+// You may also wish to increase some timeouts e.g. by changing your MySQL
+// config as root `mysql -uroot`
+// SET GLOBAL net_read_timeout=3600;
+// SET GLOBAL net_write_timeout=3600;
+//
+// Can add addtional options mysqldumps command:
+// --compress --max-allowed-packet=256
 
 require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../capture/query_manager.php';
@@ -305,6 +313,7 @@ foreach ($queryBins as $bin) {
     }
 
     $cmd = "$bin_mysqldump  --lock-tables=false --skip-add-drop-table --default-character-set=utf8mb4 -u$dbuser -h $hostname $database $string >> $filename";
+    // helpful options: --compress --max-allowed-packet=256m
     $mysqldump_result = system($cmd, $mysqldump_return);
     if ( $mysqldump_return !== 0 ) {
         die("$prog: mysqldump error: unable to export $bin, returned $mysqldump_return\n");
