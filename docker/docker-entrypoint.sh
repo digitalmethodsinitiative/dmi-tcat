@@ -45,7 +45,7 @@ else
     echo ""
     echo "Collecting Public IP ..."
     echo ""
-    apt-get install -y curl
+    apt-get update && apt-get install --fix-missing -y curl
     SERVERNAME=$(curl -s https://api.ipify.org)
     echo "SERVERNAME updated with public IP: $SERVERNAME"
   fi

@@ -23,6 +23,8 @@ trap "echo $PROG: command failed: install aborted; exit 3" ERR
 set -u # fail on attempts to expand undefined variables
 
 #----------------------------------------------------------------
+apt-get update
+
 # Generate random passwords
 apt-get -qq install -y openssl
 
@@ -34,7 +36,7 @@ echo
 echo "Installing GIT ..."
 echo ""
 
-apt-get update && apt-get -qq install -y git
+apt-get -qq install -y git
 
 #----------------------------------------------------------------
 echo
