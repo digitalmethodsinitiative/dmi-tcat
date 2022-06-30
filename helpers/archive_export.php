@@ -38,6 +38,14 @@
 //
 //     export.php -h
 //
+// # USAGE Tips:
+// You may also wish to increase some timeouts e.g. by changing your MySQL
+// config as root `mysql -uroot`
+// SET GLOBAL net_read_timeout=3600;
+// SET GLOBAL net_write_timeout=3600;
+//
+// Can add addtional options mysqldumps command:
+// --compress --max-allowed-packet=256
 
 require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../capture/query_manager.php';
@@ -247,7 +255,7 @@ foreach ($queryBins as $bin) {
     $bintype = getBinType($bin);
     if ($bintype === false) {
         die("$prog: error: unknown query bin: $bin\n");
-    } else if (!in_array($bintype, array('track', 'follow'))) { // can add additional bin types here e.g., 'import 4ca'
+    } else if (!in_array($bintype, array('track', 'follow', 'geotrack'))) { // can add additional bin types here e.g., 'import 4ca'
         // Different types of bins require different export strategies and should be examined
         print date("Y-m-d H:i:s").": Bin type $bintype not implemented; Skipping $bin\n";
         // Skip bin
@@ -305,6 +313,7 @@ foreach ($queryBins as $bin) {
     }
 
     $cmd = "$bin_mysqldump  --lock-tables=false --skip-add-drop-table --default-character-set=utf8mb4 -u$dbuser -h $hostname $database $string >> $filename";
+    // helpful options: --compress --max-allowed-packet=256m
     $mysqldump_result = system($cmd, $mysqldump_return);
     if ( $mysqldump_return !== 0 ) {
         die("$prog: mysqldump error: unable to export $bin, returned $mysqldump_return\n");
@@ -322,11 +331,39 @@ foreach ($queryBins as $bin) {
     // Add selective table entries to file
     //
 
+    // Refresh db connection after mysqldumps
+    $dbh = refresh_dbh_connection($dbh, $hostname, $database, $dbuser, $dbpass);
+
+    // Collect bin comments
+    $sql = "SELECT comments FROM tcat_query_bins WHERE querybin=:querybinname";
+    $q = $dbh->prepare($sql);
+    $q->bindParam(':querybinname', $bin, PDO::PARAM_STR);
+    $q->execute();
+    $row = $q->fetch(PDO::FETCH_ASSOC);
+    $bincomment = $row['comments'];
+
+    // Collect timestamp of first collected tweet
+    $sql = "SELECT created_at FROM ". $bin ."_tweets ORDER BY created_at ASC LIMIT 1";
+    $q = $dbh->prepare($sql);
+    $q->execute();
+    $row = $q->fetch(PDO::FETCH_ASSOC);
+    $first_tweet_date = $row['created_at'];
+
+    // Collect timestamp of last collected tweet
+    $sql = "SELECT created_at FROM ". $bin ."_tweets ORDER BY created_at DESC LIMIT 1";
+    $q = $dbh->prepare($sql);
+    $q->execute();
+    $row = $q->fetch(PDO::FETCH_ASSOC);
+    $last_tweet_date = $row['created_at'];
+
     // Create object for metadata and deletion later
     $binObj = array();
     $binObj['export_successful'] = false;
     $binObj['name'] = $bin;
     $binObj['type'] = $bintype;
+    $binObj['comments'] = $bincomment;
+    $binObj['date_of_first_tweet'] = $first_tweet_date;
+    $binObj['date_of_last_tweet'] = $last_tweet_date;
 
     print date("Y-m-d H:i:s").": Exporting bin specific TCAT data\n";
 
@@ -337,11 +374,8 @@ foreach ($queryBins as $bin) {
     fputs($fh, "-- DMI-TCAT - Update TCAT tables\n");
     fputs($fh, "--\n");
 
-    // Refresh db connection after mysqldumps
-    $dbh = refresh_dbh_connection($dbh, $hostname, $database, $dbuser, $dbpass);
-
     // Insert bin entry to tcat_query_bins
-    $sql = "INSERT INTO tcat_query_bins ( querybin, `type`, active, access ) values ( " . $dbh->Quote($bin) . ", " . $dbh->Quote($bintype) . ", 0, 0 );";
+    $sql = "INSERT INTO tcat_query_bins ( querybin, `type`, active, access, comments ) values ( " . $dbh->Quote($bin) . ", " . $dbh->Quote($bintype) . ", 0, 0,". $dbh->Quote($bincomment) ." );";
     fputs($fh, $sql . "\n");
 
     // Collect bin periods
@@ -365,7 +399,7 @@ foreach ($queryBins as $bin) {
 
     // Collect and insert user or phrase specific data
     // $bintype == 'import 4ca' could be exported here as it follows the 'track' tables schema
-    if ( $bintype == 'track' ) {
+    if ( $bintype == 'track' || $bintype == 'geotrack' ) {
         print date("Y-m-d H:i:s").": Exporting phrase data\n";
 
         // Collect phrases
@@ -446,7 +480,7 @@ foreach ($queryBins as $bin) {
 
         // Collect user start and end times
         $user_times = array();
-        $sql = "SELECT u.id as user_id, bu.starttime as starttime, bu.endtime as endtime FROM tcat_query_users u, tcat_query_bins_users bu, tcat_query_bins b
+        $sql = "SELECT u.id as user_id, u.user_name as user_name, bu.starttime as starttime, bu.endtime as endtime FROM tcat_query_users u, tcat_query_bins_users bu, tcat_query_bins b
                                           WHERE u.id = bu.user_id AND bu.querybin_id = b.id AND b.querybin = :querybin";
         $q = $dbh->prepare($sql);
         $q->bindParam(':querybin', $bin, PDO::PARAM_STR);
@@ -454,6 +488,7 @@ foreach ($queryBins as $bin) {
         while ($row = $q->fetch(PDO::FETCH_ASSOC)) {
             $obj = array();
             $obj['user_id'] = $user_id = $row['user_id'];
+            $obj['user_name'] = $row['user_name'];
             $obj['starttime'] = $starttime = $row['starttime'];
             $obj['endtime'] = $endtime = fix_endtime_if_not_ended($row['endtime']);
             $user_times[] = $obj;
@@ -644,7 +679,7 @@ if ($deleteBins) {
             $drop->bindParam(':querybinid', $binID, PDO::PARAM_INT);
             $drop->execute();
 
-            if ($bintype == 'track' || $bintype == 'import 4ca') {
+            if ($bintype == 'track' || $bintype == 'geotrack') {
                 print date("Y-m-d H:i:s").": Deleting phrase periods tied to $name bin from tcat_query_bins_phrases\n";
                 // Remove rows from tcat_query_bins_phrases associated with bin's ID
                 $sql = "DELETE FROM tcat_query_bins_phrases where querybin_id=:querybinid";
