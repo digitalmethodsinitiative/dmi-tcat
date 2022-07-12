@@ -6,7 +6,7 @@ services:
     image: digitalmethodsinitiative/tcat:latest
     restart: always
     environment:
-      - SERVERNAME=localhost
+      - SERVERNAME=public
     ports:
       - 80:80
       - 443:443
