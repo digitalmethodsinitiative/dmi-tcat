@@ -75,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!file_exists($apache_file)) {
         // Also create Apache users
-        $cmd = "sudo ../helpers/create_apache_users.sh \"${_POST["admin_username"]}\" \"${_POST["admin_password"]}\" \"${_POST["basic_username"]}\" \"${_POST["basic_password"]}\"";
+        $cmd = "sudo /bin/bash ../helpers/create_apache_users.sh \"${_POST["admin_username"]}\" \"${_POST["admin_password"]}\" \"${_POST["basic_username"]}\" \"${_POST["basic_password"]}\"";
         $outputfile = '../config/create_apache_users_output.txt';
         $pidfile = '../config/create_apache_users.pid';
 
