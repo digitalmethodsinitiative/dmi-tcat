@@ -93,7 +93,7 @@ fi
 chown -R $SHELLUSER:$SHELLGROUP "$TCAT_DIR"
 cd "$TCAT_DIR"
 mkdir analysis/cache logs proc config
-chown $WEBUSER:$WEBGROUP analysis/cache config
+chown $WEBUSER:$WEBGROUP analysis/cache config helpers/create_apache_users.sh
 chmod 755 analysis/cache
 chown $SHELLUSER:$SHELLGROUP logs proc
 # Changing logs from 755 to 777 so that both webuser and shelluser can write to them
