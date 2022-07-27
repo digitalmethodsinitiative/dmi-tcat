@@ -19,13 +19,13 @@ WORKDIR /var/www/dmi-tcat
 RUN chmod a+x docker/setup.sh
 RUN /bin/bash ./docker/setup.sh
 
+# Expose port
+EXPOSE 80
+
 # Set default container environment variables
 # These can be overwritten when running container
 ENV SERVERNAME=localhost
 ENV LETSENCRYPT=n
-
-# Expose port
-EXPOSE 80
 
 # Start apache, mysql, and cron
 CMD ./docker/docker-entrypoint.sh

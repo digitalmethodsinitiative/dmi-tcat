@@ -6,28 +6,9 @@
 # SERVERNAME defaults to localhost on build
 # LETSENCRYPT defaults to n on build
 #----------------------------------------------------------------
-# TCAT Web user interface logins (blank password means randomly generate it)
-
-# Where the TCAT logins are written
-TCAT_CNF_PREFIX='/etc/apache2/tcat-login-'
-TCAT_CNF_SUFFIX='.txt'
-
-# Where the TCAT logins for Apache Basic Authentication credentials are written
-APACHE_PASSWORDS_FILE=/etc/apache2/tcat.htpasswd
-
-# Release of DMI-TCAT to install
-TCAT_GIT_REPOSITORY=https://github.com/digitalmethodsinitiative/dmi-tcat.git
-
-#----------------------------------------------------------------
-# TCAT SETUP VARIABLES ALSO USED DURING BUILD!
-# Where TCAT files installed (set in DockerFile)
-TCAT_DIR=/var/www/dmi-tcat
-# Where the MySQL defaults files are written
-MYSQL_CNF_PREFIX='/etc/mysql/conf.d/tcat-'
-MYSQL_CNF_SUFFIX='.cnf'
-# Unix user and group to own the TCAT files
-SHELLUSER=tcat
-SHELLGROUP=tcat
+# Load Install Parameters
+# TCAT_DIR, MYSQL_CNF_PREFIX, MYSQL_CNF_SUFFIX, SHELLUSER, SHELLGROUP, TCAT_GIT_REPOSITORY
+. docker/config_parameters.txt
 
 PROG=$(basename "$0")
 #----------------------------------------------------------------
@@ -59,21 +40,12 @@ if [ -f "$CHECKFILE" ]; then
 else
   # First time setup
   #----------------------------------------------------------------
-  # Create TCAT users
-  TCATADMINUSER=admin
-  TCATADMINPASS=$(openssl rand -base64 32 | tr -c -d 0-9A-Za-z | tr -d O01iIl)
-  TCATUSER=tcat
-  TCATPASS=$(openssl rand -base64 32 | tr -c -d 0-9A-Za-z | tr -d O01iIl)
-  TCATMYSQLUSER=tcatdbuser
-  TCATMYSQLPASS=$(openssl rand -base64 32 | tr -c -d 0-9A-Za-z | tr -d O01iIl)
-
-  #----------------------------------------------------------------
   # Grab public IP if desired
   if [ "$SERVERNAME" = 'public' ]; then
     echo ""
     echo "Collecting Public IP ..."
     echo ""
-    apt-get install -y curl
+    apt-get update && apt-get install --fix-missing -y curl
     SERVERNAME=$(curl -s https://api.ipify.org)
     echo "SERVERNAME updated with public IP: $SERVERNAME"
   fi
@@ -81,32 +53,9 @@ else
   echo ""
   echo "Configuring Apache 2 ..."
   echo ""
-  # Save TCAT admin's password
-  FILE="${TCAT_CNF_PREFIX}${TCATADMINUSER}${TCAT_CNF_SUFFIX}"
-  touch "$FILE"
-  chown $SHELLUSER:$SHELLGROUP "$FILE"
-  chmod 600 "$FILE" # secure file before writing password to it
-  cat > "$FILE" <<EOF
-# TCAT Web-UI administrator user
-user=$TCATADMINUSER
-password="${TCATADMINPASS}"
-EOF
-  echo "$PROG: TCAT admin login details saved: $FILE"
-  # Save TCAT standard user's password
-  FILE="${TCAT_CNF_PREFIX}${TCATUSER}${TCAT_CNF_SUFFIX}"
-  touch "$FILE"
-  chown $SHELLUSER:$SHELLGROUP "$FILE"
-  chmod 600 "$FILE" # secure file before writing password to it
-  cat > "$FILE" <<EOF
-# TCAT Web-UI standard user
-user=$TCATUSER
-password="${TCATPASS}"
-EOF
-  echo "$PROG: TCAT tcat login details saved: $FILE"
 
-  #----------------------------------------------------------------
   # Create Apache TCAT config file
-  cat > /etc/apache2/sites-available/tcat.conf <<EOF
+  cat > "$APACHE_TCAT_CONFIG_FILE" <<EOF
 # Apache config for DMI-TCAT
 
 <VirtualHost *:80>
@@ -126,12 +75,6 @@ EOF
             # make sure directory lists are not possible
             Options -Indexes
             # basic authentication
-            AuthType Basic
-            AuthName "Log in to DMI-TCAT"
-            AuthBasicProvider file
-            AuthUserFile "$APACHE_PASSWORDS_FILE"
-
-            Require user $TCATADMINUSER $TCATUSER
 
             DirectoryIndex index.html index.php
             # some directories and files should not be accessible via the web, make sure to enable mod_rewrite
@@ -143,36 +86,27 @@ EOF
 
   a2dissite 000-default
   a2ensite tcat.conf
+  a2enmod rewrite
+
+  # This will allow create_apache_users.sh to be run by www-data (via the frontend in config_tcat.php) with the sudo command
+  # It should be the only file able to be run by www-data
+  echo 'www-data ALL = NOPASSWD: /var/www/dmi-tcat/helpers/create_apache_users.sh' | sudo EDITOR='tee -a' visudo
 
   # Create TCAT config file
 
   CFG="$TCAT_DIR/config.php"
 
-  cp "$TCAT_DIR/config.php.example" "$CFG"
-
-  VAR=ADMIN_USER
-  VALUE="'$TCATADMINUSER'"
-  sed -i "s|^define('$VAR'.*;$|define('$VAR', serialize(array($VALUE)));|" "$CFG"
+  cp "$TCAT_DIR/docker/config.php.example" "$CFG"
+  sed -i "s/example.com\/dmi-tcat\//$SERVERNAME\//g" "$CFG"
 
   VAR=REPOSITORY_URL
   VALUE="'$TCAT_GIT_REPOSITORY'"
   sed -i "s|^define('$VAR',[^)]*);|define('$VAR', $VALUE);|" "$CFG"
 
-  # Create TCAT login credentials file for Apache Basic Authentication
-
-  htpasswd -b -c "$APACHE_PASSWORDS_FILE" $TCATUSER $TCATPASS
-  htpasswd -b "$APACHE_PASSWORDS_FILE" $TCATADMINUSER $TCATADMINPASS
-  chown $SHELLUSER:$WEBGROUP "$APACHE_PASSWORDS_FILE"
-
-  a2enmod rewrite
-
   # Install Let's Encrypt via certbot
   if [ "$LETSENCRYPT" = 'y' ]; then
       apt-get install -y certbot python-certbot-apache
       certbot --apache --non-interactive --agree-tos -m "$LETSENCRYPT_EMAIL" -d $SERVERNAME
-  fi
-
-  if [ "$LETSENCRYPT" = 'y' ]; then
       sed -i "s/http:\/\//https:\/\//g" "$CFG"
   fi
 
@@ -208,7 +142,6 @@ EOF
   echo "FLUSH PRIVILEGES;" | mysql --defaults-file="$MYSQL_USER_ADMIN_CNF"
   sed -i "s/dbuser = \"\"/dbuser = \"$TCATMYSQLUSER\"/g" "$CFG"
   sed -i "s/dbpass = \"\"/dbpass = \"$TCATMYSQLPASS\"/g" "$CFG"
-  sed -i "s/example.com\/dmi-tcat\//$SERVERNAME\//g" "$CFG"
 
   #----------------------------------------------------------------
   # Create file for startup check
@@ -216,13 +149,6 @@ EOF
 
   #----------------------------------------------------------------
   # Finally!
-  echo "TCAT administrator login (for capture setup and analysis):"
-  echo "  Username: $TCATADMINUSER"
-  echo "  Password: $TCATADMINPASS"
-  echo "TCAT standard login (for analysis only):"
-  echo "  Username: $TCATUSER"
-  echo "  Password: $TCATPASS"
-  echo "TCAT logins have been saved to ${TCAT_CNF_PREFIX}*${TCAT_CNF_SUFFIX}."
   echo "MySQL accounts have been saved to ${MYSQL_CNF_PREFIX}*${MYSQL_CNF_SUFFIX}."
   # Start TCAT
   start_tcat

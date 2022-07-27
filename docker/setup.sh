@@ -3,22 +3,9 @@
 # Installer for DMI-TCAT via Docker Build
 #
 #----------------------------------------------------------------
-# TCAT Installer parameters
-
-# Where TCAT files installed (set in DockerFile)
-TCAT_DIR=/var/www/dmi-tcat
-
-# Unix user and group to own the TCAT files
-SHELLUSER=tcat
-SHELLGROUP=tcat
-
-# Apache user and group
-WEBUSER=www-data
-WEBGROUP=www-data
-
-# Where the MySQL defaults files are written
-MYSQL_CNF_PREFIX='/etc/mysql/conf.d/tcat-'
-MYSQL_CNF_SUFFIX='.cnf'
+# Load Install Parameters
+# TCAT_DIR, MYSQL_CNF_PREFIX, MYSQL_CNF_SUFFIX, SHELLUSER, SHELLGROUP, WEBUSER, WEBGROUP
+. docker/config_parameters.txt
 
 #----------------------------------------------------------------
 # Error checking
@@ -36,6 +23,8 @@ trap "echo $PROG: command failed: install aborted; exit 3" ERR
 set -u # fail on attempts to expand undefined variables
 
 #----------------------------------------------------------------
+apt-get update
+
 # Generate random passwords
 apt-get -qq install -y openssl
 
@@ -47,7 +36,7 @@ echo
 echo "Installing GIT ..."
 echo ""
 
-apt-get update && apt-get -qq install -y git
+apt-get -qq install -y git
 
 #----------------------------------------------------------------
 echo
@@ -104,7 +93,7 @@ fi
 chown -R $SHELLUSER:$SHELLGROUP "$TCAT_DIR"
 cd "$TCAT_DIR"
 mkdir analysis/cache logs proc config
-chown $WEBUSER:$WEBGROUP analysis/cache config
+chown $WEBUSER:$WEBGROUP analysis/cache config helpers/create_apache_users.sh
 chmod 755 analysis/cache
 chown $SHELLUSER:$SHELLGROUP logs proc
 # Changing logs from 755 to 777 so that both webuser and shelluser can write to them
