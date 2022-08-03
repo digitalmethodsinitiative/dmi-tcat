@@ -255,8 +255,11 @@ foreach ($queryBins as $bin) {
     $bintype = getBinType($bin);
     if ($bintype === false) {
         die("$prog: error: unknown query bin: $bin\n");
-    } else if (!in_array($bintype, array('track', 'follow', 'geotrack'))) { // can add additional bin types here e.g., 'import 4ca'
+    } else if (!in_array($bintype, array('track', 'follow', 'geotrack', 'timeline'))) { // can add additional bin types here e.g., 'import 4ca'
         // Different types of bins require different export strategies and should be examined
+        // The -i INACTIVE tag may remove many imports as they will likely not be actively tracking
+        // 'import twe' does NOT have phrase or user data
+        // 'import 4ca' has PHRASE data
         print date("Y-m-d H:i:s").": Bin type $bintype not implemented; Skipping $bin\n";
         // Skip bin
         continue;
@@ -398,8 +401,7 @@ foreach ($queryBins as $bin) {
     $binObj['periods'] = $periods;
 
     // Collect and insert user or phrase specific data
-    // $bintype == 'import 4ca' could be exported here as it follows the 'track' tables schema
-    if ( $bintype == 'track' || $bintype == 'geotrack' ) {
+    if ( $bintype == 'track' || $bintype == 'geotrack' || $bintype == 'import 4ca' ) {
         print date("Y-m-d H:i:s").": Exporting phrase data\n";
 
         // Collect phrases
@@ -462,7 +464,7 @@ foreach ($queryBins as $bin) {
             fputs($fh, $sql . "\n");
         }
 
-    } elseif ($bintype == 'follow') {
+    } elseif ( $bintype == 'follow' || $bintype == 'timeline' ) {
         print date("Y-m-d H:i:s").": Exporting user data\n";
 
         // Collect users
@@ -679,14 +681,14 @@ if ($deleteBins) {
             $drop->bindParam(':querybinid', $binID, PDO::PARAM_INT);
             $drop->execute();
 
-            if ($bintype == 'track' || $bintype == 'geotrack') {
+            if ( $bintype == 'track' || $bintype == 'geotrack'  || $bintype == 'import 4ca' ) {
                 print date("Y-m-d H:i:s").": Deleting phrase periods tied to $name bin from tcat_query_bins_phrases\n";
                 // Remove rows from tcat_query_bins_phrases associated with bin's ID
                 $sql = "DELETE FROM tcat_query_bins_phrases where querybin_id=:querybinid";
                 $drop = $dbh->prepare($sql);
                 $drop->bindParam(':querybinid', $binID, PDO::PARAM_INT);
                 $drop->execute();
-            } else if ($bintype == 'follow') {
+            } else if ( $bintype == 'follow'  || $bintype == 'timeline' ) {
                 print date("Y-m-d H:i:s").": Deleting user periods tied to $name bin from tcat_query_bins_users\n";
                 // Remove rows from tcat_query_bins_users associated with bin's ID
                 $sql = "DELETE FROM tcat_query_bins_users where querybin_id=:querybinid";
