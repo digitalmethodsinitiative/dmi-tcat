@@ -280,7 +280,7 @@ foreach ($roles as $role) {
     }
     if (!$running) {
 
-        if (script_lock($role, true) !== true) {
+        if (script_lock($role, true) === true) {
             logit("controller.log", "script $role was not running - starting");
 
             // record confirmed gap if we could measure it
