@@ -209,7 +209,7 @@ foreach ($roles as $role) {
                 logit("controller.log", "recording a data gap for script $role from '" . toDateTime($last) . "' to '" . toDateTime(time()) . "'");
               } else {
                 // No gap will be recoreded
-                logit("controller.log", "No gap was recorded for script $role from '" . toDateTime($last) . "' to '" . toDateTime(time()) . "'");
+                logit("controller.log", "no gap recorded (gap less than ideltime for script $role from '" . toDateTime($last) . "' to '" . toDateTime(time()) . "')");
               }
             } else {
               // last time was not found
@@ -291,7 +291,7 @@ foreach ($roles as $role) {
                 logit("controller.log", "recording a data gap for script $role from '" . toDateTime($last) . "' to '" . toDateTime(time()) . "'");
               } else {
                 // No gap will be recoreded
-                logit("controller.log", "No gap was recorded for script $role from '" . toDateTime($last) . "' to '" . toDateTime(time()) . "'");
+                logit("controller.log", "no gap recorded (gap less than ideltime for script $role from '" . toDateTime($last) . "' to '" . toDateTime(time()) . "')");
               }
             } else {
               // last time was not found
