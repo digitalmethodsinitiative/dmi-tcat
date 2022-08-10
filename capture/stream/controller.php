@@ -25,7 +25,7 @@ $dbh = pdo_connect();
 $roles = unserialize(CAPTUREROLES);
 
 // We need the tcat_status table
-   
+
 create_error_logs();
 
 // We need the tcat_captured_phrases table
@@ -189,10 +189,10 @@ foreach ($roles as $role) {
         $procfile = read_procfile(__DIR__ . "/../../proc/$role.procinfo");
         $pid = $procfile['pid'];
         $last = $procfile['last'];
-	    if ($pid == -1) exit();
+	      if ($pid == -1) exit();
 
         $running = (script_lock($role, true) !== true);
-        
+
         if($running)
             logit("controller.log", "script $role is running with pid [" . $pid . "] and has been idle for " . (time() - $last) . " seconds");
 
@@ -202,9 +202,17 @@ foreach ($roles as $role) {
         if ($reload || $idled) {
 
             // record confirmed gap if we could measure it
-            if ($last && gap_record($role, $last, time())) {
+            if ($last) {
+              // last time script was running has been collected
+              if (gap_record($role, $last, time())) {
+                // Gap should be recoreded
                 logit("controller.log", "recording a data gap for script $role from '" . toDateTime($last) . "' to '" . toDateTime(time()) . "'");
+              } else {
+                // No gap will be recoreded
+                logit("controller.log", "No gap was recorded for script $role from '" . toDateTime($last) . "' to '" . toDateTime(time()) . "'");
+              }
             } else {
+              // last time was not found
                 logit("controller.log", "we have no information about previous running time of script $role - cannot record a gap");
             }
 
@@ -272,13 +280,21 @@ foreach ($roles as $role) {
     }
     if (!$running) {
 
-        if (script_lock($role, true) === true) {
+        if (script_lock($role, true) !== true) {
             logit("controller.log", "script $role was not running - starting");
 
             // record confirmed gap if we could measure it
-            if ($last && gap_record($role, $last, time())) {
+            if ($last) {
+              // last time script was running has been collected
+              if (gap_record($role, $last, time())) {
+                // Gap should be recoreded
                 logit("controller.log", "recording a data gap for script $role from '" . toDateTime($last) . "' to '" . toDateTime(time()) . "'");
+              } else {
+                // No gap will be recoreded
+                logit("controller.log", "No gap was recorded for script $role from '" . toDateTime($last) . "' to '" . toDateTime(time()) . "'");
+              }
             } else {
+              // last time was not found
                 logit("controller.log", "we have no information about previous running time of script $role - cannot record a gap");
             }
 

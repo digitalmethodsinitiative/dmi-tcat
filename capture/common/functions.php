@@ -596,6 +596,7 @@ function gap_record($role, $ustart, $uend) {
     $h->bindParam(":start", $ustart, PDO::PARAM_STR);
     $h->bindParam(":end", $uend, PDO::PARAM_STR);
     $h->execute();
+    return TRUE;
 }
 
 /*
