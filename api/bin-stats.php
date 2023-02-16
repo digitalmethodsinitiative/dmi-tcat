@@ -57,7 +57,71 @@ foreach($bins as $name => $data) {
         $bins[$name]['phrases'][$index] = iconv($encoding, 'utf-8//IGNORE', $phrase);
         restore_error_handler();
     }
+
+    // Adding phrase and user times using method from archive_export
+    $dbh = null;
+    $dbh = refresh_dbh_connection($dbh, $db_host, $db_database, $db_user, $db_password);
+    // Collect phrase start and end times
+    $phrase_times = array();
+    $sql = "SELECT p.phrase as phrase, bp.starttime as starttime, bp.endtime as endtime FROM tcat_query_phrases p, tcat_query_bins_phrases bp, tcat_query_bins b
+                                          WHERE p.id = bp.phrase_id AND bp.querybin_id = b.id AND b.querybin = :querybin";
+    $q = $dbh->prepare($sql);
+    $q->bindParam(':querybin', $name, PDO::PARAM_STR);
+    $q->execute();
+    while ($row = $q->fetch(PDO::FETCH_ASSOC)) {
+        $obj = array();
+        $obj['phrase'] = sniff_and_correct_encoding($row['phrase']);
+        $obj['starttime'] = $starttime = $row['starttime'];
+        $obj['endtime'] = $endtime = $row['endtime'];
+        $phrase_times[] = $obj;
+    }
+    // Collect user start and end times
+    $user_times = array();
+    $sql = "SELECT u.id as user_id, u.user_name as user_name, bu.starttime as starttime, bu.endtime as endtime FROM tcat_query_users u, tcat_query_bins_users bu, tcat_query_bins b
+                                          WHERE u.id = bu.user_id AND bu.querybin_id = b.id AND b.querybin = :querybin";
+    $q = $dbh->prepare($sql);
+    $q->bindParam(':querybin', $name, PDO::PARAM_STR);
+    $q->execute();
+    while ($row = $q->fetch(PDO::FETCH_ASSOC)) {
+        $obj = array();
+        $obj['user_id'] = $user_id = $row['user_id'];
+        $obj['user_name'] = $row['user_name'];
+        $obj['starttime'] = $starttime = $row['starttime'];
+        $obj['endtime'] = $endtime = $row['endtime'];
+        $user_times[] = $obj;
+
+    }
+    // Now add these phrase and user times to the bins object
+    $bins[$name]['phrase_times'] = $phrase_times;
+    $bins[$name]['user_times'] = $user_times;
 }
 
 header('Content-type: application/json');
 echo json_encode($bins);
+
+/**
+ * Closes an existing database connection and establishes a new one.
+ * Attempting to resolve "2006 MySQL server has gone away" issues due to long running script.
+ */
+function refresh_dbh_connection($dbh, $hostname, $database, $dbuser, $dbpass) {
+    $dbh = null;
+    $dbh = new PDO("mysql:host=$hostname;dbname=$database;charset=utf8mb4", $dbuser, $dbpass, array(PDO::MYSQL_ATTR_INIT_COMMAND => "set sql_mode='ALLOW_INVALID_DATES'"));
+    $dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    // This bad-boy should reduce memory usage significantly
+    $dbh->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
+    return $dbh;
+}
+
+/**
+ * Copy Stijn's encoding thing
+ */
+function sniff_and_correct_encoding($words){
+    $encoding = mb_detect_encoding($words);
+
+    // It appears we're just going to ignore any errors at all?
+    set_error_handler(function() {});
+    $new_words = iconv($encoding, 'utf-8//IGNORE', $words);
+    restore_error_handler();
+
+    return $new_words;
+}
