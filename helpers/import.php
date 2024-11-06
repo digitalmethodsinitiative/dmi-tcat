@@ -96,7 +96,11 @@ putenv('MYSQL_PWD=' . $dbpass);     /* this avoids having to put the password on
 $engine_options = MYSQL_ENGINE_OPTIONS;
 $hot_conversion = "sed -e 's/^  FULLTEXT KEY `from_user_description` (`from_user_description`),/  KEY `from_user_description` (`from_user_description`(32)),/g' | sed -e 's/^  FULLTEXT KEY `text` (`text`)/  KEY `text` (`text`(32))/g' | sed -e 's/^  FULLTEXT KEY `url_followed` (`url_followed`)/   KEY `url_followed` (`url_followed`(32))/g' | sed -e 's/^) ENGINE=MyISAM /) $engine_options /g' | sed -e 's/DEFAULT CHARSET=utf8;$/DEFAULT CHARSET=utf8mb4;/g'";
 
-$cmd = "$bin_zcat $file | $hot_conversion | $bin_mysql --default-character-set=utf8mb4 -u$dbuser -h $hostname $database";
+$cmd = "$bin_zcat $file | $hot_conversion | $bin_mysql --default-character-set=utf8mb4";
+if (!empty($dbuser)) {
+    $cmd .= " -u $dbuser";
+}
+$cmd .= " -h $hostname $database 2>mysql_import_error.log";
 system($cmd, $return_code);
 
 if ($return_code == 0) {
